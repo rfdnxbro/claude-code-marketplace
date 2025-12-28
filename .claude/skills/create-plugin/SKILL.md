@@ -1,53 +1,63 @@
-# プラグイン作成スキル
+---
+name: creating-plugins
+description: Creates Claude Code marketplace plugins with proper structure. Use when creating new plugins, adding commands, agents, hooks, or MCP servers to the marketplace.
+---
 
-Claude Codeマーケットプレイス用のプラグインを作成します。
+# Creating Plugins
 
-## ディレクトリ構造
-
-プラグインは以下の構造で `plugins/` に配置します：
+## Directory structure
 
 ```
 plugins/[plugin-name]/
 ├── .claude-plugin/
-│   └── plugin.json       # 必須：プラグインマニフェスト
-├── commands/             # スラッシュコマンド
+│   └── plugin.json       # Required
+├── commands/
 │   └── [command-name].md
-├── agents/               # サブエージェント
+├── agents/
 │   └── [agent-name].md
-├── hooks/                # フック
+├── hooks/
 │   └── hooks.json
-├── .mcp.json             # MCPサーバー設定
-└── README.md             # プラグイン説明
+├── .mcp.json
+└── README.md
 ```
 
-## 命名規則
+## Naming conventions
 
-| 項目 | 規則 | 例 |
-|------|------|-----|
-| プラグイン名 | kebab-case | `my-awesome-plugin` |
-| コマンドファイル | kebab-case.md | `review-code.md` |
-| エージェントファイル | kebab-case.md | `code-reviewer.md` |
+| Item | Rule | Example |
+|------|------|---------|
+| Plugin name | kebab-case | `my-awesome-plugin` |
+| Command file | kebab-case.md | `review-code.md` |
+| Agent file | kebab-case.md | `code-reviewer.md` |
 
-## 作成手順
+## Workflow
 
-1. `plugins/[plugin-name]/` ディレクトリを作成
-2. `.claude-plugin/plugin.json` を作成（必須）
-3. 必要なコンポーネントを追加：
-   - `commands/` - スラッシュコマンド
-   - `agents/` - サブエージェント
-   - `hooks/hooks.json` - フック
-   - `.mcp.json` - MCPサーバー
-4. `README.md` でプラグインを説明
+Copy this checklist:
 
-## 必須要件
-
-- `.claude-plugin/plugin.json` に `name` フィールドが必須
-- コマンドとエージェントには `description` フィールドが必須
-
-## 検証
-
-作成後は以下のコマンドで検証：
-
-```bash
-claude plugin validate ./plugins/[plugin-name]
 ```
+Plugin Creation:
+- [ ] Step 1: Create plugin directory
+- [ ] Step 2: Create plugin.json
+- [ ] Step 3: Add components
+- [ ] Step 4: Write README.md
+- [ ] Step 5: Validate
+```
+
+**Step 1**: Create `plugins/[plugin-name]/` directory
+
+**Step 2**: Create `.claude-plugin/plugin.json` with required `name` field
+
+**Step 3**: Add needed components:
+- `commands/` for slash commands
+- `agents/` for sub-agents
+- `hooks/hooks.json` for hooks
+- `.mcp.json` for MCP servers
+
+**Step 4**: Write `README.md` explaining the plugin
+
+**Step 5**: Validate with `claude plugin validate ./plugins/[plugin-name]`
+
+## Required fields
+
+- `plugin.json`: `name` (kebab-case)
+- Commands: `description` in frontmatter
+- Agents: `name` and `description` in frontmatter
