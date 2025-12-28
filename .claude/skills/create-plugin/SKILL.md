@@ -15,6 +15,9 @@ plugins/[plugin-name]/
 │   └── [command-name].md
 ├── agents/
 │   └── [agent-name].md
+├── skills/
+│   └── [skill-name]/
+│       └── SKILL.md
 ├── hooks/
 │   └── hooks.json
 ├── .mcp.json
@@ -28,6 +31,8 @@ plugins/[plugin-name]/
 | プラグイン名 | kebab-case | `my-awesome-plugin` |
 | コマンドファイル | kebab-case.md | `review-code.md` |
 | エージェントファイル | kebab-case.md | `code-reviewer.md` |
+| スキルディレクトリ | kebab-case | `pdf-processing` |
+| スキルファイル | SKILL.md（大文字） | `SKILL.md` |
 
 ## ワークフロー
 
@@ -49,6 +54,7 @@ plugins/[plugin-name]/
 **Step 3**: 必要なコンポーネントを追加:
 - `commands/` - スラッシュコマンド
 - `agents/` - サブエージェント
+- `skills/` - スキル
 - `hooks/hooks.json` - フック
 - `.mcp.json` - MCPサーバー
 

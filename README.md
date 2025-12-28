@@ -11,9 +11,10 @@ Claude Codeの機能を拡張するプラグイン（スラッシュコマンド
 | タイプ | 説明 |
 |--------|------|
 | **スラッシュコマンド** | `/`で始まるカスタムコマンド（例: `/review`, `/commit`） |
-| **MCPサーバー** | Model Context Protocolを使用した外部ツール連携 |
-| **フック** | Claude Codeのイベントに応じて実行されるスクリプト |
 | **サブエージェント** | 特定タスクに特化した専門エージェント |
+| **スキル** | Claudeの知識を拡張する再利用可能な指示セット |
+| **フック** | Claude Codeのイベントに応じて実行されるスクリプト |
+| **MCPサーバー** | Model Context Protocolを使用した外部ツール連携 |
 
 ## ディレクトリ構成
 
@@ -29,6 +30,9 @@ claude-code-marketplace/
 │       │   └── [command].md
 │       ├── agents/         # サブエージェント
 │       │   └── [agent].md
+│       ├── skills/         # スキル
+│       │   └── [skill-name]/
+│       │       └── SKILL.md
 │       ├── hooks/          # フック
 │       │   └── hooks.json
 │       ├── .mcp.json       # MCPサーバー設定
@@ -70,6 +74,7 @@ claude --plugin-dir ./plugins/my-plugin
 |--------------|---------|
 | コマンド (`.md`) | `.claude/commands/` または `~/.claude/commands/` |
 | エージェント (`.md`) | `.claude/agents/` または `~/.claude/agents/` |
+| スキル (`SKILL.md`) | `.claude/skills/[name]/` または `~/.claude/skills/[name]/` |
 | フック (`hooks.json`) | `.claude/settings.json` に統合 |
 | MCP (`.mcp.json`) | プロジェクトルートの `.mcp.json` に統合 |
 
@@ -82,7 +87,7 @@ claude --plugin-dir ./plugins/my-plugin
 1. このリポジトリをフォーク
 2. `plugins/` に新しいプラグインディレクトリを作成
 3. `.claude-plugin/plugin.json` を作成（必須）
-4. 必要なコンポーネント（commands/, agents/, hooks/, .mcp.json）を追加
+4. 必要なコンポーネント（commands/, agents/, skills/, hooks/, .mcp.json）を追加
 5. README.mdを含めてドキュメントを整備
 6. プルリクエストを作成
 
