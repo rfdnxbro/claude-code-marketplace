@@ -9,7 +9,7 @@ paths: plugins/*/skills/**/SKILL.md, .claude/skills/**/SKILL.md
 ```yaml
 ---
 name: processing-something
-description: Does X and Y. Use when user mentions Z or needs to do W.
+description: XとYを処理する。ユーザーがZについて言及した時やWが必要な時に使用。
 ---
 ```
 
@@ -21,7 +21,7 @@ description: Does X and Y. Use when user mentions Z or needs to do W.
 
 **description**:
 - 最大1024文字
-- 三人称で記述（"Processes files"、"I process files"ではない）
+- 三人称で記述（「ファイルを処理する」、「私がファイルを処理します」ではない）
 - 何をするか AND いつ使うかを含める
 - 発見性のため具体的なキーワードを含める
 
