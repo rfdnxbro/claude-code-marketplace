@@ -19,23 +19,41 @@ Claude Codeの機能を拡張するプラグイン（スラッシュコマンド
 
 ```
 claude-code-marketplace/
-├── commands/           # スラッシュコマンド
-│   └── [category]/
-│       └── [command-name].md
-├── mcp-servers/        # MCPサーバー
-│   └── [server-name]/
-│       ├── README.md
-│       └── .mcp.json
-├── hooks/              # フック
-│   └── [hook-name]/
-│       ├── README.md
-│       └── hooks.json
-├── agents/             # サブエージェント
-│   └── [agent-name].md
+├── .claude-plugin/
+│   └── marketplace.json    # マーケットプレイス設定
+├── plugins/
+│   └── [plugin-name]/      # 各プラグイン
+│       ├── .claude-plugin/
+│       │   └── plugin.json # プラグインマニフェスト
+│       ├── commands/       # スラッシュコマンド
+│       │   └── [command].md
+│       ├── agents/         # サブエージェント
+│       │   └── [agent].md
+│       ├── hooks/          # フック
+│       │   └── hooks.json
+│       ├── .mcp.json       # MCPサーバー設定
+│       └── README.md
 └── README.md
 ```
 
 ## ファイル形式
+
+### プラグインマニフェスト（`plugin.json`）
+
+```json
+{
+  "name": "my-plugin",
+  "version": "1.0.0",
+  "description": "プラグインの説明",
+  "author": {
+    "name": "Author Name"
+  },
+  "commands": "./commands/",
+  "agents": "./agents/",
+  "hooks": "./hooks/hooks.json",
+  "mcpServers": "./.mcp.json"
+}
+```
 
 ### スラッシュコマンド（`.md`）
 
@@ -111,62 +129,40 @@ model: inherit
 
 ## プラグインの使い方
 
-### スラッシュコマンドのインストール
-
-1. 使いたいコマンドの`.md`ファイルをダウンロード
-2. 以下のいずれかにコピー：
-   - `.claude/commands/` （プロジェクト用・チーム共有）
-   - `~/.claude/commands/` （個人用・全プロジェクト共通）
-3. Claude Codeで`/[コマンド名]`を実行
-
-### MCPサーバーのインストール
-
-**CLIを使用（推奨）：**
-```bash
-# HTTPサーバー
-claude mcp add --transport http <name> <url>
-
-# Stdioサーバー
-claude mcp add --transport stdio <name> -- <command> [args...]
-
-# 環境変数付き
-claude mcp add --transport stdio <name> --env API_KEY=xxx -- npx -y server
-```
-
-**手動設定：**
-- プロジェクト用: `.mcp.json`
-- 個人用: `~/.claude.json`
-
-### フックのインストール
-
-1. フック設定ファイルをダウンロード
-2. 以下のいずれかに設定を追加：
-   - `.claude/settings.json` （プロジェクト用）
-   - `~/.claude/settings.json` （個人用）
-   - `.claude/hooks/hooks.json` （別ファイル管理）
-
-### サブエージェントのインストール
-
-1. 使いたいエージェントの`.md`ファイルをダウンロード
-2. 以下のいずれかにコピー：
-   - `.claude/agents/` （プロジェクト用）
-   - `~/.claude/agents/` （個人用）
-3. Claude CodeがTaskツールで自動的に利用可能に
-
-### プラグインとしてインストール
-
-複数のコンポーネントをまとめてインストールする場合：
+### CLIでインストール（推奨）
 
 ```bash
-# マーケットプレイスを登録
-/plugin marketplace add <marketplace-url>
+# このマーケットプレイスを登録
+/plugin marketplace add <このリポジトリのURL>
+
+# プラグイン一覧を表示
+/plugin install
 
 # プラグインをインストール
 /plugin install <plugin-name>
 
-# ローカルでテスト
-claude --plugin-dir ./path/to/plugin
+# スコープを指定してインストール
+/plugin install <plugin-name> --scope project  # プロジェクト共有
+/plugin install <plugin-name> --scope user     # 個人用（デフォルト）
 ```
+
+### ローカルでテスト
+
+```bash
+# プラグインディレクトリを指定して起動
+claude --plugin-dir ./plugins/my-plugin
+```
+
+### 手動インストール
+
+個別のコンポーネントのみ使用する場合：
+
+| コンポーネント | コピー先 |
+|--------------|---------|
+| コマンド (`.md`) | `.claude/commands/` または `~/.claude/commands/` |
+| エージェント (`.md`) | `.claude/agents/` または `~/.claude/agents/` |
+| フック (`hooks.json`) | `.claude/settings.json` に統合 |
+| MCP (`.mcp.json`) | プロジェクトルートの `.mcp.json` に統合 |
 
 ## コントリビューション
 
@@ -175,17 +171,25 @@ claude --plugin-dir ./path/to/plugin
 ### プラグインの追加方法
 
 1. このリポジトリをフォーク
-2. 適切なディレクトリにプラグインを追加
-3. READMEを含めてドキュメントを整備
-4. プルリクエストを作成
+2. `plugins/` に新しいプラグインディレクトリを作成
+3. `.claude-plugin/plugin.json` を作成（必須）
+4. 必要なコンポーネント（commands/, agents/, hooks/, .mcp.json）を追加
+5. README.mdを含めてドキュメントを整備
+6. プルリクエストを作成
 
 ### プラグイン作成ガイドライン
 
-- 各プラグインには`README.md`を含める
+- `.claude-plugin/plugin.json` に `name` を必ず記載（kebab-case）
+- 各プラグインには `README.md` を含める
+- スラッシュコマンドとエージェントには `description` を必ず記載
 - 使用方法、設定例、依存関係を明記する
-- 可能であればスクリーンショットや使用例を追加する
 - ライセンスを明記する（デフォルト: MIT）
-- スラッシュコマンドとエージェントには`description`を必ず記載する
+
+### プラグインの検証
+
+```bash
+claude plugin validate ./plugins/my-plugin
+```
 
 ## 関連リンク
 
