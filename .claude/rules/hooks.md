@@ -1,5 +1,5 @@
 ---
-paths: plugins/*/hooks/*.json
+paths: plugins/*/hooks/hooks.json
 ---
 
 # フック
