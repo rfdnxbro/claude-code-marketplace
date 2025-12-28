@@ -1,16 +1,16 @@
 ---
 name: creating-plugins
-description: Creates Claude Code marketplace plugins with proper structure. Use when creating new plugins, adding commands, agents, hooks, or MCP servers to the marketplace.
+description: Claude Codeマーケットプレイス用のプラグインを作成する。新規プラグイン作成、コマンド・エージェント・フック・MCPサーバーの追加時に使用。
 ---
 
-# Creating Plugins
+# プラグイン作成
 
-## Directory structure
+## ディレクトリ構造
 
 ```
 plugins/[plugin-name]/
 ├── .claude-plugin/
-│   └── plugin.json       # Required
+│   └── plugin.json       # 必須
 ├── commands/
 │   └── [command-name].md
 ├── agents/
@@ -21,43 +21,43 @@ plugins/[plugin-name]/
 └── README.md
 ```
 
-## Naming conventions
+## 命名規則
 
-| Item | Rule | Example |
-|------|------|---------|
-| Plugin name | kebab-case | `my-awesome-plugin` |
-| Command file | kebab-case.md | `review-code.md` |
-| Agent file | kebab-case.md | `code-reviewer.md` |
+| 項目 | 規則 | 例 |
+|------|------|-----|
+| プラグイン名 | kebab-case | `my-awesome-plugin` |
+| コマンドファイル | kebab-case.md | `review-code.md` |
+| エージェントファイル | kebab-case.md | `code-reviewer.md` |
 
-## Workflow
+## ワークフロー
 
-Copy this checklist:
+このチェックリストをコピー:
 
 ```
-Plugin Creation:
-- [ ] Step 1: Create plugin directory
-- [ ] Step 2: Create plugin.json
-- [ ] Step 3: Add components
-- [ ] Step 4: Write README.md
-- [ ] Step 5: Validate
+プラグイン作成:
+- [ ] Step 1: プラグインディレクトリ作成
+- [ ] Step 2: plugin.json作成
+- [ ] Step 3: コンポーネント追加
+- [ ] Step 4: README.md作成
+- [ ] Step 5: 検証
 ```
 
-**Step 1**: Create `plugins/[plugin-name]/` directory
+**Step 1**: `plugins/[plugin-name]/` ディレクトリを作成
 
-**Step 2**: Create `.claude-plugin/plugin.json` with required `name` field
+**Step 2**: `.claude-plugin/plugin.json` を作成（`name`フィールド必須）
 
-**Step 3**: Add needed components:
-- `commands/` for slash commands
-- `agents/` for sub-agents
-- `hooks/hooks.json` for hooks
-- `.mcp.json` for MCP servers
+**Step 3**: 必要なコンポーネントを追加:
+- `commands/` - スラッシュコマンド
+- `agents/` - サブエージェント
+- `hooks/hooks.json` - フック
+- `.mcp.json` - MCPサーバー
 
-**Step 4**: Write `README.md` explaining the plugin
+**Step 4**: `README.md` でプラグインを説明
 
-**Step 5**: Validate with `claude plugin validate ./plugins/[plugin-name]`
+**Step 5**: `claude plugin validate ./plugins/[plugin-name]` で検証
 
-## Required fields
+## 必須フィールド
 
-- `plugin.json`: `name` (kebab-case)
-- Commands: `description` in frontmatter
-- Agents: `name` and `description` in frontmatter
+- `plugin.json`: `name`（kebab-case）
+- コマンド: frontmatterに`description`
+- エージェント: frontmatterに`name`と`description`
