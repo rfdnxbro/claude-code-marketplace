@@ -1,5 +1,5 @@
 ---
-paths: plugins/*/agents/**/*.md
+paths: plugins/*/agents/**/*.md, .claude/agents/**/*.md
 ---
 
 # サブエージェント

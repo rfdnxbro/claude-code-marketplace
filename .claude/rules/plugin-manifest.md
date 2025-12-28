@@ -1,5 +1,5 @@
 ---
-paths: plugins/*/.claude-plugin/plugin.json
+paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 ---
 
 # プラグインマニフェスト（plugin.json）

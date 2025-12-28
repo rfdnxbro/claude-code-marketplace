@@ -1,5 +1,5 @@
 ---
-paths: plugins/*/.mcp.json
+paths: plugins/*/.mcp.json, .mcp.json
 ---
 
 # MCPサーバー

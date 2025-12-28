@@ -1,5 +1,5 @@
 ---
-paths: plugins/*/commands/**/*.md
+paths: plugins/*/commands/**/*.md, .claude/commands/**/*.md
 ---
 
 # スラッシュコマンド

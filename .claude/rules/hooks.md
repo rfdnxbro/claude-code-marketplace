@@ -1,5 +1,5 @@
 ---
-paths: plugins/*/hooks/hooks.json
+paths: plugins/*/hooks/hooks.json, .claude/hooks/hooks.json
 ---
 
 # フック
