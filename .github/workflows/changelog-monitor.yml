@@ -66,6 +66,7 @@ jobs:
       - name: 初回実行時はスナップショット作成のみ
         if: steps.check-diff.outputs.is_first_run == 'true'
         run: |
+          set -e
           cp current-changelog.md .changelog-snapshot.md
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
@@ -76,7 +77,7 @@ jobs:
 
       - name: Claude Codeをインストール
         if: (steps.check-diff.outputs.changed == 'true' && steps.check-diff.outputs.is_first_run == 'false') || inputs.force_check
-        run: npm install -g @anthropic-ai/claude-code
+        run: npm install -g @anthropic-ai/claude-code@2.0.76
 
       - name: Claudeで変更を解析しIssue/PRを作成
         id: claude-analysis
@@ -126,6 +127,7 @@ jobs:
       - name: スナップショットを更新
         if: steps.claude-analysis.outcome == 'success'
         run: |
+          set -e
           cp current-changelog.md .changelog-snapshot.md
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
