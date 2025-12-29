@@ -1,0 +1,10 @@
+version: 2
+updates:
+  # GitHub Actionsのバージョン自動更新
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "ci/cd"

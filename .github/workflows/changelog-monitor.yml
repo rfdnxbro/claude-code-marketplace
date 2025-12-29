@@ -79,7 +79,7 @@ jobs:
 
       - name: Claude Codeをインストール
         if: (steps.check-diff.outputs.changed == 'true' && steps.check-diff.outputs.is_first_run == 'false') || inputs.force_check
-        run: npm install -g @anthropic-ai/claude-code@2.0.76
+        run: npm install -g @anthropic-ai/claude-code
 
       - name: Claudeで変更を解析しIssue/PRを作成
         id: claude-analysis
