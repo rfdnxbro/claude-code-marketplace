@@ -52,52 +52,17 @@ Claude Codeプラグインのベストプラクティス準拠を自動検証す
 
 ```bash
 # プロジェクトルートで実行
-cd scripts
-
-# 手動テスト（pytest不要）
-python3 -c "
-import sys
-sys.path.insert(0, '.')
-from tests.test_base import *
-from tests.test_slash_command import *
-from tests.test_agent import *
-from tests.test_skill import *
-from tests.test_hooks_json import *
-from tests.test_mcp_json import *
-from tests.test_plugin_json import *
-from tests.test_integration import *
-
-test_classes = [
-    TestValidationResult, TestParseFrontmatter,
-    TestValidateSlashCommand, TestValidateAgent, TestValidateSkill,
-    TestValidateHooksJson, TestValidateMcpJson, TestValidatePluginJson,
-    TestIntegration,
-]
-
-total = passed = 0
-for cls in test_classes:
-    for method in dir(cls()):
-        if method.startswith('test_'):
-            total += 1
-            try:
-                getattr(cls(), method)()
-                passed += 1
-                print(f'  ✓ {cls.__name__}.{method}')
-            except Exception as e:
-                print(f'  ✗ {cls.__name__}.{method}: {e}')
-print(f'\n結果: {passed}/{total}')
-"
-
-# pytest（インストール済みの場合）
-python -m pytest tests/ -v
+python3 -m pytest scripts/tests/ -v
 ```
 
 ## 新しいバリデーターの追加方法
 
-1. `validators/`に新しいファイルを作成:
+以下のパスはプロジェクトルートからの相対パスです。
+
+1. `scripts/validators/`に新しいファイルを作成:
 
 ```python
-# validators/new_file.py
+# scripts/validators/new_file.py
 from pathlib import Path
 from .base import ValidationResult, parse_frontmatter
 
@@ -115,23 +80,56 @@ def validate_new_file(file_path: Path, content: str) -> ValidationResult:
     return result
 ```
 
-2. `validators/__init__.py`でエクスポート:
+2. `scripts/validators/__init__.py`でインポートと`__all__`に追加:
 
 ```python
 from .new_file import validate_new_file
-__all__ = [..., "validate_new_file"]
+
+__all__ = [
+    # ... 既存のエクスポート ...
+    "validate_new_file",
+]
 ```
 
-3. `validate_plugin.py`のパス判定に追加:
+3. `scripts/validate_plugin.py`を修正:
 
 ```python
+# importに追加
+from validators import (
+    # ... 既存のインポート ...
+    validate_new_file,
+)
+
+# main()内のパス判定に追加（elseの前に）
 elif file_path.name == "new_file.ext":
     content = read_file_content(file_path)
     if content is not None:
         result = validate_new_file(file_path, content)
 ```
 
-4. `tests/test_new_file.py`でテストを追加
+4. `scripts/tests/test_new_file.py`でテストを追加:
+
+```python
+# scripts/tests/test_new_file.py
+from pathlib import Path
+from textwrap import dedent
+
+from scripts.validators.new_file import validate_new_file
+
+
+class TestValidateNewFile:
+    """new_file検証のテスト"""
+
+    def test_valid_file(self):
+        content = dedent("""
+            ---
+            required_field: value
+            ---
+            本文
+        """).strip()
+        result = validate_new_file(Path("test.ext"), content)
+        assert not result.has_errors()
+```
 
 ## 制限事項
 
