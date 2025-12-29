@@ -4,7 +4,31 @@ __pycache__/
 *.pyo
 .pytest_cache/
 
+# 依存関係
+node_modules/
+
 # 環境変数・機密情報
 .env
 .env.local
+.env.*.local
 credentials.json
+*.pem
+*.key
+
+# OS生成ファイル
+.DS_Store
+Thumbs.db
+
+# エディタ設定
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# CI一時ファイル
+current-changelog.md
+changelog-diff.txt
+
+# ログファイル
+*.log
+npm-debug.log*
