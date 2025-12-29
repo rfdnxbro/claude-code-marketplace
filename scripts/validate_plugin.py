@@ -44,48 +44,50 @@ def main():
     # パスベースでバリデーターを選択
     path_parts = file_path.parts
 
+    def read_file_content(path: Path) -> str | None:
+        """ファイルをUTF-8で読み込む。エラー時はNoneを返す"""
+        try:
+            return path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            result.add_error(f"{path.name}: ファイルがUTF-8でエンコードされていません")
+            return None
+        except FileNotFoundError:
+            result.add_error(f"{path.name}: ファイルが見つかりません")
+            return None
+        except Exception as e:
+            result.add_error(f"{path.name}: ファイル読み込みエラー: {e}")
+            return None
+
     if file_path.name == "SKILL.md":
         # スキルファイル
-        try:
-            content = file_path.read_text(encoding="utf-8")
+        content = read_file_content(file_path)
+        if content is not None:
             result = validate_skill(file_path, content)
-        except Exception as e:
-            result.add_error(f"ファイル読み込みエラー: {e}")
     elif "commands" in path_parts and file_path.suffix == ".md":
         # スラッシュコマンド
-        try:
-            content = file_path.read_text(encoding="utf-8")
+        content = read_file_content(file_path)
+        if content is not None:
             result = validate_slash_command(file_path, content)
-        except Exception as e:
-            result.add_error(f"ファイル読み込みエラー: {e}")
     elif "agents" in path_parts and file_path.suffix == ".md":
         # サブエージェント
-        try:
-            content = file_path.read_text(encoding="utf-8")
+        content = read_file_content(file_path)
+        if content is not None:
             result = validate_agent(file_path, content)
-        except Exception as e:
-            result.add_error(f"ファイル読み込みエラー: {e}")
     elif file_path.name == "hooks.json":
         # hooks設定
-        try:
-            content = file_path.read_text(encoding="utf-8")
+        content = read_file_content(file_path)
+        if content is not None:
             result = validate_hooks_json(file_path, content)
-        except Exception as e:
-            result.add_error(f"ファイル読み込みエラー: {e}")
     elif file_path.name == ".mcp.json":
         # MCP設定
-        try:
-            content = file_path.read_text(encoding="utf-8")
+        content = read_file_content(file_path)
+        if content is not None:
             result = validate_mcp_json(file_path, content)
-        except Exception as e:
-            result.add_error(f"ファイル読み込みエラー: {e}")
     elif file_path.name == "plugin.json" and ".claude-plugin" in path_parts:
         # プラグインマニフェスト
-        try:
-            content = file_path.read_text(encoding="utf-8")
+        content = read_file_content(file_path)
+        if content is not None:
             result = validate_plugin_json(file_path, content)
-        except Exception as e:
-            result.add_error(f"ファイル読み込みエラー: {e}")
     else:
         # 対象外ファイル
         sys.exit(0)

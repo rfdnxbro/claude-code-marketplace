@@ -153,3 +153,71 @@ class TestValidateMcpJson:
         })
         result = validate_mcp_json(Path(".mcp.json"), content)
         assert not result.has_errors()
+
+    def test_openai_api_key_detected(self):
+        """OpenAI APIキーの検出"""
+        content = json.dumps({
+            "mcpServers": {
+                "test-server": {
+                    "type": "stdio",
+                    "command": "node",
+                    "env": {
+                        "OPENAI_API_KEY": "sk-proj-abcdefghijklmnopqrstuvwxyz123456"
+                    }
+                }
+            }
+        })
+        result = validate_mcp_json(Path(".mcp.json"), content)
+        assert result.has_errors()
+        assert any("OpenAI" in e for e in result.errors)
+
+    def test_github_token_detected(self):
+        """GitHub Personal Access Tokenの検出"""
+        content = json.dumps({
+            "mcpServers": {
+                "test-server": {
+                    "type": "stdio",
+                    "command": "node",
+                    "env": {
+                        "GITHUB_TOKEN": "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                    }
+                }
+            }
+        })
+        result = validate_mcp_json(Path(".mcp.json"), content)
+        assert result.has_errors()
+        assert any("GitHub" in e for e in result.errors)
+
+    def test_slack_token_detected(self):
+        """Slack Bot Tokenの検出"""
+        content = json.dumps({
+            "mcpServers": {
+                "test-server": {
+                    "type": "stdio",
+                    "command": "node",
+                    "env": {
+                        "SLACK_TOKEN": "xoxb-123456789-abcdefghij"
+                    }
+                }
+            }
+        })
+        result = validate_mcp_json(Path(".mcp.json"), content)
+        assert result.has_errors()
+        assert any("Slack" in e for e in result.errors)
+
+    def test_aws_access_key_detected(self):
+        """AWS Access Key IDの検出"""
+        content = json.dumps({
+            "mcpServers": {
+                "test-server": {
+                    "type": "stdio",
+                    "command": "node",
+                    "env": {
+                        "AWS_ACCESS_KEY_ID": "AKIAIOSFODNN7EXAMPLE"
+                    }
+                }
+            }
+        })
+        result = validate_mcp_json(Path(".mcp.json"), content)
+        assert result.has_errors()
+        assert any("AWS" in e for e in result.errors)

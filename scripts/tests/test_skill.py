@@ -108,13 +108,11 @@ class TestValidateSkill:
 
     def test_body_too_long(self):
         long_body = "\n".join([f"行 {i}" for i in range(501)])
-        content = dedent(f"""
-            ---
-            name: test-skill
-            description: 説明
-            ---
-            {long_body}
-        """).strip()
+        content = f"""---
+name: test-skill
+description: 説明
+---
+{long_body}"""
         result = validate_skill(Path("SKILL.md"), content)
         assert not result.has_errors()
         assert any("500行" in w for w in result.warnings)
