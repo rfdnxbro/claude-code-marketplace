@@ -143,6 +143,13 @@ gh workflow run changelog-monitor.yml
 
 MIT License
 
+### サードパーティコンテンツ
+
+`.changelog-snapshot.md` はClaude Code公式リポジトリのCHANGELOGのスナップショットであり、Anthropic, PBC の著作物です。このファイルはCHANGELOG監視機能の差分検出のために使用されており、元のライセンスはAnthropicに帰属します。
+
+- 元ファイル: https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md
+- 著作権: © Anthropic, PBC
+
 ---
 
 **注意**: このリポジトリはコミュニティ主導のプロジェクトであり、Anthropic社の公式プロジェクトではありません。
