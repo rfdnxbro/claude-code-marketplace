@@ -1,3 +1,9 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
 # 依存関係
 node_modules/
 
