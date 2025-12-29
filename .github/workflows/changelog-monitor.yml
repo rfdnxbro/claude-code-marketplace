@@ -1,0 +1,114 @@
+name: Claude Code CHANGELOG監視
+
+on:
+  schedule:
+    # 毎日日本時間9:00（UTC 0:00）に実行
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    inputs:
+      force_check:
+        description: '前回チェックを無視して強制実行'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  monitor-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Node.jsをセットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 最新のCHANGELOGを取得
+        run: |
+          curl -s https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md -o current-changelog.md
+          echo "取得完了: $(wc -l < current-changelog.md) 行"
+
+      - name: 前回のCHANGELOGと比較
+        id: check-diff
+        run: |
+          if [ -f .changelog-snapshot.md ]; then
+            if diff -q .changelog-snapshot.md current-changelog.md > /dev/null 2>&1; then
+              echo "changed=false" >> $GITHUB_OUTPUT
+              echo "CHANGELOGに変更はありません"
+            else
+              echo "changed=true" >> $GITHUB_OUTPUT
+              echo "CHANGELOGに変更を検出しました"
+              # 差分を保存
+              diff .changelog-snapshot.md current-changelog.md > changelog-diff.txt || true
+            fi
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "初回実行です"
+            echo "初回実行のため、現在のCHANGELOGを基準として保存します" > changelog-diff.txt
+          fi
+
+      - name: Claude Codeをインストール
+        if: steps.check-diff.outputs.changed == 'true' || inputs.force_check
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Claudeで変更を解析しIssue/PRを作成
+        if: steps.check-diff.outputs.changed == 'true' || inputs.force_check
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          claude --print "
+          あなたはClaude Codeマーケットプレイスのメンテナーです。
+
+          ## タスク
+          Claude Code公式リポジトリのCHANGELOGを解析し、プラグイン関連の変更があれば対応してください。
+
+          ## ファイル
+          - current-changelog.md: 最新のCHANGELOG
+          - .changelog-snapshot.md: 前回チェック時点のCHANGELOG（存在しない場合は初回実行）
+          - changelog-diff.txt: 差分情報
+
+          ## 検出すべきプラグイン関連の変更
+          - plugin.json / marketplace.json のフィールド追加・変更・削除
+          - フロントマターの新規フィールドや仕様変更（スラッシュコマンド、エージェント、スキル）
+          - 新しいコンポーネントタイプの追加（例: 新しい種類のプラグイン機能）
+          - MCPサーバー設定の仕様変更
+          - フックのイベント追加や仕様変更
+          - プラグインコマンド（/plugin install等）の変更
+          - 既存仕様の非推奨化（deprecated）や削除
+
+          ## 実行手順
+
+          1. current-changelog.mdを読んで、プラグイン関連の変更を特定
+          2. .changelog-snapshot.mdが存在する場合は、それと比較して新しい変更のみを抽出
+          3. .claude/rules/配下のドキュメントを読んで、現在のドキュメントの状態を把握
+          4. プラグイン関連の変更がある場合:
+             a. gh issue create で変更内容をまとめたIssueを作成（ラベル: changelog-update）
+             b. ドキュメント更新が必要な場合は、修正を行いPRを作成
+          5. プラグイン関連の変更がない場合:
+             a. 「プラグイン関連の変更なし」と報告して終了
+
+          ## 重要
+          - 変更があった場合のみIssue/PRを作成
+          - Issueにはどのバージョンでどのような変更があったかを明記
+          - PRには具体的な修正内容とその理由を記載
+          - 不明確な変更は「要確認」としてマーク
+          "
+
+      - name: スナップショットを更新
+        if: steps.check-diff.outputs.changed == 'true' || inputs.force_check
+        run: |
+          cp current-changelog.md .changelog-snapshot.md
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .changelog-snapshot.md
+          git diff --staged --quiet || git commit -m "chore: CHANGELOGスナップショットを更新"
+          git push

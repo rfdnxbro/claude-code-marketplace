@@ -105,6 +105,34 @@ claude --plugin-dir ./plugins/my-plugin
 claude plugin validate ./plugins/my-plugin
 ```
 
+## CI/CD
+
+### CHANGELOG監視
+
+このリポジトリはClaude Code公式リポジトリのCHANGELOGを毎日監視し、プラグイン関連の変更を自動検出します。
+
+変更が検出されると：
+1. 自動でIssueが作成される
+2. 必要に応じてドキュメント修正のPRが作成される
+
+#### セットアップ
+
+1. リポジトリのSecretsに `ANTHROPIC_API_KEY` を設定
+2. GitHub Actionsを有効化
+
+```bash
+# 手動でワークフローを実行する場合
+gh workflow run changelog-monitor.yml
+```
+
+### 検出対象
+
+- plugin.json / marketplace.json の仕様変更
+- フロントマターの新規フィールドや変更
+- 新しいコンポーネントタイプの追加
+- 既存仕様の非推奨化や削除
+- MCP、フック、スキル、エージェントの仕様変更
+
 ## 関連リンク
 
 - [Claude Code 公式ドキュメント](https://docs.anthropic.com/en/docs/claude-code)
