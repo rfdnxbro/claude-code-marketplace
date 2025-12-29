@@ -159,3 +159,118 @@ class TestIntegration:
 
             result = self._run_validator("Write", str(skill_path), content)
             assert result.get("continue") is True
+
+
+class TestCLIMode:
+    """CLIモードのテスト"""
+
+    def _run_cli(self, *args: str) -> subprocess.CompletedProcess:
+        """CLIモードでバリデーターを実行"""
+        scripts_dir = Path(__file__).parent.parent
+        return subprocess.run(
+            [sys.executable, str(scripts_dir / "validate_plugin.py"), *args],
+            capture_output=True,
+            text=True,
+            cwd=scripts_dir,
+        )
+
+    def test_cli_valid_file(self):
+        """正常なファイルではexit code 0"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_path = Path(tmpdir) / "skills" / "test" / "SKILL.md"
+            skill_path.parent.mkdir(parents=True, exist_ok=True)
+            skill_path.write_text(dedent("""
+                ---
+                name: test-skill
+                description: テストスキル。テスト時に使用する。
+                ---
+                スキル本文
+            """).strip())
+
+            result = self._run_cli(str(skill_path))
+            assert result.returncode == 0
+
+    def test_cli_invalid_file_error(self):
+        """エラーのあるファイルではexit code 1"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_path = Path(tmpdir) / "skills" / "test" / "SKILL.md"
+            skill_path.parent.mkdir(parents=True, exist_ok=True)
+            skill_path.write_text(dedent("""
+                ---
+                name: Invalid_Name
+                ---
+                本文
+            """).strip())
+
+            result = self._run_cli(str(skill_path))
+            assert result.returncode == 1
+            assert "エラー" in result.stderr
+
+    def test_cli_warning_without_strict(self):
+        """--strictなしでは警告はexit code 0"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cmd_path = Path(tmpdir) / "commands" / "test.md"
+            cmd_path.parent.mkdir(parents=True, exist_ok=True)
+            # descriptionがない（警告のみ）
+            cmd_path.write_text(dedent("""
+                ---
+                allowed-tools: Read
+                ---
+                本文があるのでdescription未設定は警告のみ
+            """).strip())
+
+            result = self._run_cli(str(cmd_path))
+            assert result.returncode == 0
+            assert "警告" in result.stderr
+
+    def test_cli_warning_with_strict(self):
+        """--strictありでは警告もexit code 1"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cmd_path = Path(tmpdir) / "commands" / "test.md"
+            cmd_path.parent.mkdir(parents=True, exist_ok=True)
+            cmd_path.write_text(dedent("""
+                ---
+                allowed-tools: Read
+                ---
+                本文があるのでdescription未設定は警告のみ
+            """).strip())
+
+            result = self._run_cli("--strict", str(cmd_path))
+            assert result.returncode == 1
+
+    def test_cli_multiple_files(self):
+        """複数ファイルを一度に検証"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # 正常なファイル
+            valid_path = Path(tmpdir) / "skills" / "valid" / "SKILL.md"
+            valid_path.parent.mkdir(parents=True, exist_ok=True)
+            valid_path.write_text(dedent("""
+                ---
+                name: valid-skill
+                description: 正常なスキル。テスト用。
+                ---
+                本文
+            """).strip())
+
+            # エラーのあるファイル
+            invalid_path = Path(tmpdir) / "skills" / "invalid" / "SKILL.md"
+            invalid_path.parent.mkdir(parents=True, exist_ok=True)
+            invalid_path.write_text(dedent("""
+                ---
+                name: Invalid_Name
+                ---
+                本文
+            """).strip())
+
+            result = self._run_cli(str(valid_path), str(invalid_path))
+            assert result.returncode == 1
+            assert "Invalid_Name" in result.stderr or "invalid" in result.stderr.lower()
+
+    def test_cli_non_target_file(self):
+        """対象外ファイルはスキップされexit code 0"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file_path = Path(tmpdir) / "random.txt"
+            file_path.write_text("test content")
+
+            result = self._run_cli(str(file_path))
+            assert result.returncode == 0
