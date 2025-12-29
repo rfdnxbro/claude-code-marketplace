@@ -1,0 +1,25 @@
+name: テスト（scripts）
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+
+      - name: uvをセットアップ
+        uses: astral-sh/setup-uv@v5
+
+      - name: テストを実行
+        run: uvx pytest scripts/tests/ -v

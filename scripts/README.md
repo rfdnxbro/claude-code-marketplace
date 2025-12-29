@@ -50,9 +50,25 @@ Claude Codeプラグインのベストプラクティス準拠を自動検証す
 
 ## テスト実行
 
+### uvを使用する場合（推奨）
+
 ```bash
 # プロジェクトルートで実行
-python3 -m pytest scripts/tests/ -v
+uvx pytest scripts/tests/ -v
+```
+
+### venvを使用する場合
+
+```bash
+# 仮想環境を作成・有効化
+python3 -m venv scripts/.venv
+source scripts/.venv/bin/activate
+
+# 依存関係をインストール
+pip install -e "scripts/[dev]"
+
+# テスト実行
+pytest scripts/tests/ -v
 ```
 
 ## 新しいバリデーターの追加方法
