@@ -17,14 +17,16 @@ permissions:
   issues: write
   pull-requests: write
 
+concurrency:
+  group: changelog-monitor
+  cancel-in-progress: false
+
 jobs:
   monitor-changelog:
     runs-on: ubuntu-latest
     steps:
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Node.jsをセットアップ
         uses: actions/setup-node@v4
