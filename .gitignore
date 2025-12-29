@@ -1,0 +1,10 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
+# 環境変数・機密情報
+.env
+.env.local
+credentials.json
