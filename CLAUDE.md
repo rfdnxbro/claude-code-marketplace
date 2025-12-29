@@ -12,14 +12,6 @@ Claude Codeのマーケットプレイスプラグイン。Claude Codeの拡張�
 - コード内のコメントは日本語で記述する
 - コミットメッセージは日本語で記述する
 
-## プロジェクト構造
-
-```
-claude-code-marketplace/
-├── CLAUDE.md          # Claude Code用ガイダンス
-└── README.md          # プロジェクト概要
-```
-
 ## コマンド
 
 （プロジェクトが進行するにつれて追加予定）
