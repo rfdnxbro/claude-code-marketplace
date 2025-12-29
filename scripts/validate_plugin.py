@@ -21,6 +21,7 @@ from validators import (
     validate_skill,
     validate_hooks_json,
     validate_mcp_json,
+    validate_lsp_json,
     validate_plugin_json,
 )
 
@@ -70,6 +71,11 @@ def validate_file(file_path: Path) -> ValidationResult:
         content = read_file_content(file_path)
         if content is not None:
             result = validate_mcp_json(file_path, content)
+    elif file_path.name == ".lsp.json":
+        # LSP設定
+        content = read_file_content(file_path)
+        if content is not None:
+            result = validate_lsp_json(file_path, content)
     elif file_path.name == "plugin.json" and ".claude-plugin" in path_parts:
         # プラグインマニフェスト
         content = read_file_content(file_path)
