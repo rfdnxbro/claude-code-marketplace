@@ -1,0 +1,24 @@
+{
+  "hooks": {
+    "InvalidEvent": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "invalid_type",
+            "command": "echo hello"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "Invalid_Test_Plugin",
+  "version": "invalid-version",
+  "description": "",
+  "commands": [
+    "commands/test.md"
+  ],
+  "agents": [
+    "agents/test.md"
+  ]
+}
