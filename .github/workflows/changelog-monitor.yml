@@ -32,9 +32,16 @@ jobs:
           node-version: '20'
 
       - name: 最新のCHANGELOGを取得
+        id: fetch
         run: |
-          curl -s https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md -o current-changelog.md
-          echo "取得完了: $(wc -l < current-changelog.md) 行"
+          if curl -fsSL https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md -o current-changelog.md; then
+            echo "success=true" >> $GITHUB_OUTPUT
+            echo "取得完了: $(wc -l < current-changelog.md) 行"
+          else
+            echo "success=false" >> $GITHUB_OUTPUT
+            echo "::error::CHANGELOGの取得に失敗しました"
+            exit 1
+          fi
 
       - name: 前回のCHANGELOGと比較
         id: check-diff
@@ -42,30 +49,43 @@ jobs:
           if [ -f .changelog-snapshot.md ]; then
             if diff -q .changelog-snapshot.md current-changelog.md > /dev/null 2>&1; then
               echo "changed=false" >> $GITHUB_OUTPUT
+              echo "is_first_run=false" >> $GITHUB_OUTPUT
               echo "CHANGELOGに変更はありません"
             else
               echo "changed=true" >> $GITHUB_OUTPUT
+              echo "is_first_run=false" >> $GITHUB_OUTPUT
               echo "CHANGELOGに変更を検出しました"
-              # 差分を保存
               diff .changelog-snapshot.md current-changelog.md > changelog-diff.txt || true
             fi
           else
             echo "changed=true" >> $GITHUB_OUTPUT
-            echo "初回実行です"
-            echo "初回実行のため、現在のCHANGELOGを基準として保存します" > changelog-diff.txt
+            echo "is_first_run=true" >> $GITHUB_OUTPUT
+            echo "初回実行: スナップショットを作成します"
           fi
 
+      - name: 初回実行時はスナップショット作成のみ
+        if: steps.check-diff.outputs.is_first_run == 'true'
+        run: |
+          cp current-changelog.md .changelog-snapshot.md
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .changelog-snapshot.md
+          git commit -m "chore: CHANGELOGスナップショットを初期化"
+          git push
+          echo "初回実行完了。次回以降の実行で変更を検出します。"
+
       - name: Claude Codeをインストール
-        if: steps.check-diff.outputs.changed == 'true' || inputs.force_check
+        if: (steps.check-diff.outputs.changed == 'true' && steps.check-diff.outputs.is_first_run == 'false') || inputs.force_check
         run: npm install -g @anthropic-ai/claude-code
 
       - name: Claudeで変更を解析しIssue/PRを作成
-        if: steps.check-diff.outputs.changed == 'true' || inputs.force_check
+        id: claude-analysis
+        if: (steps.check-diff.outputs.changed == 'true' && steps.check-diff.outputs.is_first_run == 'false') || inputs.force_check
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          claude --print "
+          claude -p "
           あなたはClaude Codeマーケットプレイスのメンテナーです。
 
           ## タスク
@@ -73,7 +93,7 @@ jobs:
 
           ## ファイル
           - current-changelog.md: 最新のCHANGELOG
-          - .changelog-snapshot.md: 前回チェック時点のCHANGELOG（存在しない場合は初回実行）
+          - .changelog-snapshot.md: 前回チェック時点のCHANGELOG
           - changelog-diff.txt: 差分情報
 
           ## 検出すべきプラグイン関連の変更
@@ -87,8 +107,8 @@ jobs:
 
           ## 実行手順
 
-          1. current-changelog.mdを読んで、プラグイン関連の変更を特定
-          2. .changelog-snapshot.mdが存在する場合は、それと比較して新しい変更のみを抽出
+          1. changelog-diff.txtを読んで、差分の概要を把握
+          2. current-changelog.mdを読んで、プラグイン関連の変更を特定
           3. .claude/rules/配下のドキュメントを読んで、現在のドキュメントの状態を把握
           4. プラグイン関連の変更がある場合:
              a. gh issue create で変更内容をまとめたIssueを作成（ラベル: changelog-update）
@@ -104,7 +124,7 @@ jobs:
           "
 
       - name: スナップショットを更新
-        if: steps.check-diff.outputs.changed == 'true' || inputs.force_check
+        if: steps.claude-analysis.outcome == 'success'
         run: |
           cp current-changelog.md .changelog-snapshot.md
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
