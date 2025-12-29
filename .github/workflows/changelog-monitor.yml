@@ -77,13 +77,26 @@ jobs:
           git push
           echo "初回実行完了。次回以降の実行で変更を検出します。"
 
-      - name: Claude Codeをインストール
+      - name: APIキーの確認
+        id: check-api-key
         if: (steps.check-diff.outputs.changed == 'true' && steps.check-diff.outputs.is_first_run == 'false') || inputs.force_check
+        env:
+          API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$API_KEY" ]; then
+            echo "has_key=false" >> $GITHUB_OUTPUT
+            echo "::warning::ANTHROPIC_API_KEYが設定されていません。解析をスキップします。"
+          else
+            echo "has_key=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Claude Codeをインストール
+        if: steps.check-api-key.outputs.has_key == 'true'
         run: npm install -g @anthropic-ai/claude-code
 
       - name: Claudeで変更を解析しIssue/PRを作成
         id: claude-analysis
-        if: (steps.check-diff.outputs.changed == 'true' && steps.check-diff.outputs.is_first_run == 'false') || inputs.force_check
+        if: steps.check-api-key.outputs.has_key == 'true'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

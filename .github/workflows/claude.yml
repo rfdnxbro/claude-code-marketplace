@@ -30,7 +30,20 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: シークレットの確認
+        id: check-secret
+        env:
+          CLAUDE_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          if [ -z "$CLAUDE_TOKEN" ]; then
+            echo "has_token=false" >> $GITHUB_OUTPUT
+            echo "::warning::CLAUDE_CODE_OAUTH_TOKENが設定されていません。処理をスキップします。"
+          else
+            echo "has_token=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Run Claude Code
+        if: steps.check-secret.outputs.has_token == 'true'
         id: claude
         uses: anthropics/claude-code-action@v1
         with:
