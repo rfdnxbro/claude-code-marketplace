@@ -4,7 +4,9 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 
 # プラグインマニフェスト（plugin.json）
 
-`.claude-plugin/plugin.json` はプラグインの必須ファイルです。
+`.claude-plugin/plugin.json` は個別プラグインの定義ファイルです。
+
+マーケットプレイス全体の管理には `marketplace.json` を使用します。
 
 ## 必須フィールド
 

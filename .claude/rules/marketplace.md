@@ -4,7 +4,9 @@ paths: .claude-plugin/marketplace.json
 
 # マーケットプレイス設定（marketplace.json）
 
-`.claude-plugin/marketplace.json` はマーケットプレイスの設定ファイルです。
+`.claude-plugin/marketplace.json` はマーケットプレイス全体の設定ファイルです。
+
+個別プラグインの定義には `plugin.json` を使用します。
 
 ## 必須フィールド
 
