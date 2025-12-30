@@ -12,21 +12,6 @@ from .base import ValidationResult
 # 有効なtransport値
 VALID_TRANSPORTS = {"stdio", "socket"}
 
-# 有効なオプションフィールド
-OPTIONAL_FIELDS = {
-    "args",
-    "transport",
-    "env",
-    "initializationOptions",
-    "settings",
-    "workspaceFolder",
-    "startupTimeout",
-    "shutdownTimeout",
-    "restartOnCrash",
-    "maxRestarts",
-    "loggingConfig",
-}
-
 
 def validate_lsp_json(file_path: Path, content: str) -> ValidationResult:
     """LSPサーバー設定を検証する"""
