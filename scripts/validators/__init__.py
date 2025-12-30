@@ -8,6 +8,7 @@ from .hooks_json import validate_hooks_json
 from .lsp_json import validate_lsp_json
 from .mcp_json import validate_mcp_json
 from .plugin_json import validate_plugin_json
+from .readme import validate_readme
 from .skill import validate_skill
 from .slash_command import validate_slash_command
 
@@ -21,4 +22,5 @@ __all__ = [
     "validate_mcp_json",
     "validate_lsp_json",
     "validate_plugin_json",
+    "validate_readme",
 ]
