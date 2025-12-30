@@ -98,7 +98,7 @@ class TestValidateLspJson:
         """拡張子が.で始まっていない（警告）"""
         content = json.dumps({"go": {"command": "gopls", "extensionToLanguage": {"go": "go"}}})
         result = validate_lsp_json(Path(".lsp.json"), content)
-        assert any(".で始める" in w for w in result.warnings)
+        assert any(".で開始" in w for w in result.warnings)
 
     def test_empty_language_id(self):
         """言語IDが空（エラー）"""
@@ -256,7 +256,7 @@ class TestValidateLspJson:
         content = json.dumps({"go": "invalid"})
         result = validate_lsp_json(Path(".lsp.json"), content)
         assert result.has_errors()
-        assert any("サーバー設定はオブジェクト" in e for e in result.errors)
+        assert any("設定はオブジェクトが必要" in e for e in result.errors)
 
     def test_root_not_object(self):
         """ルートがオブジェクトでない"""
