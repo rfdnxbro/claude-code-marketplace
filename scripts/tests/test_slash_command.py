@@ -91,3 +91,41 @@ class TestValidateSlashCommand:
         """).strip()
         result = validate_slash_command(Path("test.md"), content)
         assert any("model" in w for w in result.warnings)
+
+    def test_valid_short_models(self):
+        """短縮形のmodelが受け入れられることを確認"""
+        for model in ["sonnet", "opus", "haiku"]:
+            content = dedent(f"""
+                ---
+                description: テスト
+                model: {model}
+                ---
+                本文
+            """).strip()
+            result = validate_slash_command(Path("test.md"), content)
+            assert not result.has_errors(), f"model={model} でエラーが発生"
+            assert not any("model" in w for w in result.warnings), f"model={model} で警告が発生"
+
+    def test_inherit_not_allowed(self):
+        """スラッシュコマンドではinheritは使用不可"""
+        content = dedent("""
+            ---
+            description: テスト
+            model: inherit
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert any("model" in w for w in result.warnings)
+
+    def test_full_model_id_not_allowed(self):
+        """完全なモデルIDは警告される"""
+        content = dedent("""
+            ---
+            description: テスト
+            model: claude-3-5-haiku-20241022
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert any("model" in w for w in result.warnings)

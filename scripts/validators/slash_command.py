@@ -47,9 +47,11 @@ def validate_slash_command(file_path: Path, content: str) -> ValidationResult:
                 f"{file_path.name}: 危険な操作の可能性。disable-model-invocation: trueを検討"
             )
 
-    # modelの値チェック
-    model = frontmatter.get("model", "")
-    if model and not any(m in str(model) for m in ["haiku", "sonnet", "opus"]):
-        result.add_warning(f"{file_path.name}: modelの値が不明です: {model}")
+    # modelの値チェック（短縮形のみ許可、inheritは不可）
+    model = frontmatter.get("model")
+    model_str = str(model).strip() if model is not None else ""
+    valid_models = {"sonnet", "opus", "haiku"}
+    if model_str and model_str not in valid_models:
+        result.add_warning(f"{file_path.name}: modelが不正: {model_str}（sonnet/opus/haiku）")
 
     return result
