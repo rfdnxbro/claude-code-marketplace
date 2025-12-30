@@ -9,6 +9,7 @@ from .lsp_json import validate_lsp_json
 from .mcp_json import validate_mcp_json
 from .output_style import validate_output_style
 from .plugin_json import validate_plugin_json
+from .readme import validate_readme
 from .skill import validate_skill
 from .slash_command import validate_slash_command
 
@@ -23,4 +24,5 @@ __all__ = [
     "validate_lsp_json",
     "validate_output_style",
     "validate_plugin_json",
+    "validate_readme",
 ]

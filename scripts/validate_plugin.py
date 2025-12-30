@@ -22,6 +22,7 @@ from validators import (
     validate_mcp_json,
     validate_output_style,
     validate_plugin_json,
+    validate_readme,
     validate_skill,
     validate_slash_command,
 )
@@ -87,6 +88,11 @@ def validate_file(file_path: Path) -> ValidationResult:
         content = read_file_content(file_path)
         if content is not None:
             result = validate_output_style(file_path, content)
+    elif file_path.name == "README.md" and "plugins" in path_parts:
+        # プラグインREADME
+        content = read_file_content(file_path)
+        if content is not None:
+            result = validate_readme(file_path, content)
 
     return result
 
