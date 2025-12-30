@@ -42,7 +42,7 @@ keep-coding-instructions: false
 
 ```markdown
 ---
-name: Teaching Mode
+name: teaching-mode
 description: コーディング中に概念を説明する
 keep-coding-instructions: true
 ---
@@ -59,7 +59,7 @@ keep-coding-instructions: true
 
 ```markdown
 ---
-name: Data Analysis Agent
+name: data-analysis
 description: データ分析タスクに最適化
 keep-coding-instructions: false
 ---
