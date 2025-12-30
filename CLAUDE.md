@@ -37,14 +37,14 @@ uvx pytest scripts/tests/ -v
 # Pythonファイルのチェック
 uvx ruff check scripts/
 
-# Pythonファイルのフォーマット
+# Pythonファイルのフォーマット（CIでは --check で検証）
 uvx ruff format scripts/
 
 # Markdownのチェック
-npx markdownlint-cli2 "**/*.md"
+npx markdownlint-cli --config .markdownlint.json README.md CLAUDE.md scripts/README.md '.claude/rules/*.md' '.claude/skills/**/SKILL.md'
 
 # YAMLのチェック
-uvx yamllint .
+uvx yamllint -c .yamllint.yml .github/workflows/
 ```
 
 ## 注意事項
