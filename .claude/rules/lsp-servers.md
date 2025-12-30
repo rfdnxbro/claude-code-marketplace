@@ -165,11 +165,13 @@ JSON形式で記述します。配置場所はプラグインルートの `.lsp.
 - `command` にはPATH内の実行可能ファイル、または `${CLAUDE_PLUGIN_ROOT}` を使った絶対パスを指定
 
 良い例:
+
 ```json
 "env": { "API_KEY": "${API_KEY}" }
 ```
 
 悪い例（機密情報を直接記述）:
+
 ```json
 "env": { "API_KEY": "secret-key-xxx" }
 ```
