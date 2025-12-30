@@ -3,16 +3,18 @@ name: Lint
 on:
   push:
     paths:
-      - 'scripts/**'
-      - '.github/workflows/**'
+      - '**/*.py'
+      - '**/*.yml'
+      - '**/*.yaml'
       - '**/*.md'
       - 'pyproject.toml'
       - '.yamllint.yml'
       - '.markdownlint.json'
   pull_request:
     paths:
-      - 'scripts/**'
-      - '.github/workflows/**'
+      - '**/*.py'
+      - '**/*.yml'
+      - '**/*.yaml'
       - '**/*.md'
       - 'pyproject.toml'
       - '.yamllint.yml'
