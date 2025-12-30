@@ -14,6 +14,7 @@
 | [lsp-servers.md](lsp-servers.md) | LSPサーバーの設定方法 |
 | [skill-authoring.md](skill-authoring.md) | スキル作成のベストプラクティス |
 | [slash-commands.md](slash-commands.md) | スラッシュコマンドの定義方法 |
+| [output-styles.md](output-styles.md) | 出力スタイルの定義方法 |
 
 ## 用語集
 
