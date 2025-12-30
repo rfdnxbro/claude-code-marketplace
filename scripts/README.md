@@ -1,8 +1,10 @@
 # プラグイン検証スクリプト
 
-Claude Codeプラグインのベストプラクティス準拠を自動検証するhookスクリプト。
+Claude Codeプラグインのベストプラクティス準拠を自動検証するスクリプト。
 
-## セットアップ
+CI/CDとローカルhookの両方で利用可能。
+
+## hookとしてセットアップ（任意）
 
 `.claude/settings.json`に以下を追加:
 
@@ -47,6 +49,19 @@ Claude Codeプラグインのベストプラクティス準拠を自動検証す
 - Google API Key (`AIza...`)
 
 機密情報は`${VAR}`形式で環境変数から参照してください。
+
+## 手動実行
+
+```bash
+# 単一ファイルを検証
+python3 scripts/validate_plugin.py plugins/my-plugin/commands/review.md
+
+# 複数ファイルを検証
+python3 scripts/validate_plugin.py plugins/my-plugin/commands/*.md
+
+# プラグイン全体を検証（ディレクトリ内の対象ファイルすべて）
+python3 scripts/validate_plugin.py plugins/my-plugin/**/*.md plugins/my-plugin/**/*.json
+```
 
 ## テスト実行
 

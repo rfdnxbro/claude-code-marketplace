@@ -20,12 +20,18 @@ Claude Codeの機能を拡張するプラグイン（スラッシュコマンド
 
 ```
 claude-code-marketplace/
-├── .claude-plugin/
-│   └── marketplace.json    # マーケットプレイス設定
-├── plugins/
-│   └── [plugin-name]/      # 各プラグイン
+├── .claude/
+│   ├── rules/              # ルールドキュメント
+│   ├── skills/             # マーケットプレイス開発用スキル
+│   │   └── create-plugin/
+│   │       └── SKILL.md
+│   └── settings.json       # プラグイン検証hookの設定
+├── .github/
+│   └── workflows/          # CI/CDワークフロー
+├── plugins/                # 公開プラグイン（コントリビューション先）
+│   └── [plugin-name]/
 │       ├── .claude-plugin/
-│       │   └── plugin.json # プラグインマニフェスト
+│       │   └── plugin.json # プラグインマニフェスト（必須）
 │       ├── commands/       # スラッシュコマンド
 │       │   └── [command].md
 │       ├── agents/         # サブエージェント
@@ -37,6 +43,9 @@ claude-code-marketplace/
 │       │   └── hooks.json
 │       ├── .mcp.json       # MCPサーバー設定
 │       └── README.md
+├── scripts/                # プラグイン検証スクリプト
+│   ├── validators/         # 検証ロジック
+│   └── tests/              # テスト
 └── README.md
 ```
 
@@ -102,14 +111,35 @@ claude --plugin-dir ./plugins/my-plugin
 ### プラグインの検証
 
 ```bash
-claude plugin validate ./plugins/my-plugin
+# Pythonスクリプトで検証
+python3 scripts/validate_plugin.py ./plugins/my-plugin
+
+# テストを実行
+uvx pytest scripts/tests/ -v
 ```
 
 ## CI/CD
 
+### プラグイン検証
+
+`plugins/`配下のファイルが変更されると、自動的に検証スクリプトが実行されます。
+
+検証対象:
+
+- `plugin.json` - プラグインマニフェスト
+- `commands/*.md` - スラッシュコマンド
+- `agents/*.md` - サブエージェント
+- `SKILL.md` - スキル
+- `hooks.json` - フック設定
+- `.mcp.json` - MCPサーバー設定
+
+### スクリプトテスト
+
+`scripts/`配下のファイルが変更されると、自動的にpytestが実行されます。
+
 ### CHANGELOG監視
 
-このリポジトリはClaude Code公式リポジトリのCHANGELOGを毎日監視し、プラグイン関連の変更を自動検出します。
+Claude Code公式リポジトリのCHANGELOGを毎日監視し、プラグイン関連の変更を自動検出します。
 
 変更が検出されると：
 1. 自動でIssueが作成される
@@ -125,7 +155,7 @@ claude plugin validate ./plugins/my-plugin
 gh workflow run changelog-monitor.yml
 ```
 
-### 検出対象
+#### 検出対象
 
 - plugin.json / marketplace.json の仕様変更
 - フロントマターの新規フィールドや変更
