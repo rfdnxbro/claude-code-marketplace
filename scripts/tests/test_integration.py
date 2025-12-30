@@ -13,17 +13,16 @@ from textwrap import dedent
 class TestIntegration:
     """統合テスト"""
 
-    def _run_validator(self, tool_name: str, file_path: str, file_content: str | None = None) -> dict:
+    def _run_validator(
+        self, tool_name: str, file_path: str, file_content: str | None = None
+    ) -> dict:
         """バリデーターを実行してJSON出力を取得"""
         # テスト用ファイルを作成
         if file_content is not None:
             Path(file_path).parent.mkdir(parents=True, exist_ok=True)
             Path(file_path).write_text(file_content, encoding="utf-8")
 
-        hook_input = {
-            "tool_name": tool_name,
-            "tool_input": {"file_path": file_path}
-        }
+        hook_input = {"tool_name": tool_name, "tool_input": {"file_path": file_path}}
 
         scripts_dir = Path(__file__).parent.parent
         result = subprocess.run(
@@ -130,17 +129,17 @@ class TestIntegration:
         """MCPファイルでの機密情報検出"""
         with tempfile.TemporaryDirectory() as tmpdir:
             mcp_path = Path(tmpdir) / ".mcp.json"
-            content = json.dumps({
-                "mcpServers": {
-                    "test": {
-                        "type": "stdio",
-                        "command": "node",
-                        "env": {
-                            "KEY": "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            content = json.dumps(
+                {
+                    "mcpServers": {
+                        "test": {
+                            "type": "stdio",
+                            "command": "node",
+                            "env": {"KEY": "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"},
                         }
                     }
                 }
-            })
+            )
 
             result = self._run_validator("Write", str(mcp_path), content)
             assert "systemMessage" in result
@@ -179,13 +178,15 @@ class TestCLIMode:
         with tempfile.TemporaryDirectory() as tmpdir:
             skill_path = Path(tmpdir) / "skills" / "test" / "SKILL.md"
             skill_path.parent.mkdir(parents=True, exist_ok=True)
-            skill_path.write_text(dedent("""
+            skill_path.write_text(
+                dedent("""
                 ---
                 name: test-skill
                 description: テストスキル。テスト時に使用する。
                 ---
                 スキル本文
-            """).strip())
+            """).strip()
+            )
 
             result = self._run_cli(str(skill_path))
             assert result.returncode == 0
@@ -195,12 +196,14 @@ class TestCLIMode:
         with tempfile.TemporaryDirectory() as tmpdir:
             skill_path = Path(tmpdir) / "skills" / "test" / "SKILL.md"
             skill_path.parent.mkdir(parents=True, exist_ok=True)
-            skill_path.write_text(dedent("""
+            skill_path.write_text(
+                dedent("""
                 ---
                 name: Invalid_Name
                 ---
                 本文
-            """).strip())
+            """).strip()
+            )
 
             result = self._run_cli(str(skill_path))
             assert result.returncode == 1
@@ -212,12 +215,14 @@ class TestCLIMode:
             cmd_path = Path(tmpdir) / "commands" / "test.md"
             cmd_path.parent.mkdir(parents=True, exist_ok=True)
             # descriptionがない（警告のみ）
-            cmd_path.write_text(dedent("""
+            cmd_path.write_text(
+                dedent("""
                 ---
                 allowed-tools: Read
                 ---
                 本文があるのでdescription未設定は警告のみ
-            """).strip())
+            """).strip()
+            )
 
             result = self._run_cli(str(cmd_path))
             assert result.returncode == 0
@@ -228,12 +233,14 @@ class TestCLIMode:
         with tempfile.TemporaryDirectory() as tmpdir:
             cmd_path = Path(tmpdir) / "commands" / "test.md"
             cmd_path.parent.mkdir(parents=True, exist_ok=True)
-            cmd_path.write_text(dedent("""
+            cmd_path.write_text(
+                dedent("""
                 ---
                 allowed-tools: Read
                 ---
                 本文があるのでdescription未設定は警告のみ
-            """).strip())
+            """).strip()
+            )
 
             result = self._run_cli("--strict", str(cmd_path))
             assert result.returncode == 1
@@ -244,23 +251,27 @@ class TestCLIMode:
             # 正常なファイル
             valid_path = Path(tmpdir) / "skills" / "valid" / "SKILL.md"
             valid_path.parent.mkdir(parents=True, exist_ok=True)
-            valid_path.write_text(dedent("""
+            valid_path.write_text(
+                dedent("""
                 ---
                 name: valid-skill
                 description: 正常なスキル。テスト用。
                 ---
                 本文
-            """).strip())
+            """).strip()
+            )
 
             # エラーのあるファイル
             invalid_path = Path(tmpdir) / "skills" / "invalid" / "SKILL.md"
             invalid_path.parent.mkdir(parents=True, exist_ok=True)
-            invalid_path.write_text(dedent("""
+            invalid_path.write_text(
+                dedent("""
                 ---
                 name: Invalid_Name
                 ---
                 本文
-            """).strip())
+            """).strip()
+            )
 
             result = self._run_cli(str(valid_path), str(invalid_path))
             assert result.returncode == 1

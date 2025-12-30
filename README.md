@@ -18,7 +18,7 @@ Claude Codeの機能を拡張するプラグイン（スラッシュコマンド
 
 ## ディレクトリ構成
 
-```
+```text
 claude-code-marketplace/
 ├── .claude-plugin/
 │   └── marketplace.json    # マーケットプレイス設定
@@ -112,6 +112,7 @@ claude plugin validate ./plugins/my-plugin
 このリポジトリはClaude Code公式リポジトリのCHANGELOGを毎日監視し、プラグイン関連の変更を自動検出します。
 
 変更が検出されると：
+
 1. 自動でIssueが作成される
 2. 必要に応じてドキュメント修正のPRが作成される
 
@@ -147,7 +148,7 @@ MIT License
 
 `.changelog-snapshot.md` はClaude Code公式リポジトリのCHANGELOGのスナップショットであり、Anthropic, PBC の著作物です。このファイルはCHANGELOG監視機能の差分検出のために使用されており、元のライセンスはAnthropicに帰属します。
 
-- 元ファイル: https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md
+- 元ファイル: <https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md>
 - 著作権: © Anthropic, PBC
 
 ---

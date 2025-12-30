@@ -93,7 +93,7 @@ JSON形式で記述します。配置場所はプラグインルートの `.mcp.
 
 MCPリソースはプロンプトで参照可能：
 
-```
+```text
 @server-name:protocol://resource/path
 ```
 
@@ -104,6 +104,7 @@ MCPリソースはプロンプトで参照可能：
 デフォルト: 25,000トークン
 
 環境変数で変更可能：
+
 ```bash
 export MAX_MCP_OUTPUT_TOKENS=50000
 ```

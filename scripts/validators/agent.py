@@ -25,7 +25,9 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
     else:
         # kebab-case（小文字とハイフンのみ）チェック
         if not re.match(r"^[a-z0-9]+(-[a-z0-9]+)*$", name_str):
-            result.add_error(f"{file_path.name}: nameは小文字とハイフンのみ使用可能です（kebab-case）: {name_str}")
+            result.add_error(
+                f"{file_path.name}: nameはkebab-case（小文字とハイフン）のみ: {name_str}"
+            )
 
     # descriptionの確認
     description = frontmatter.get("description", "")
@@ -33,14 +35,18 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
     if not description_str:
         result.add_error(f"{file_path.name}: descriptionが必須です")
     elif len(description_str) < 20:
-        result.add_warning(f"{file_path.name}: descriptionが短すぎます。いつ使うべきかを明確に記述してください")
+        result.add_warning(
+            f"{file_path.name}: descriptionが短すぎます。いつ使うべきかを明確に記述してください"
+        )
 
     # modelの値チェック
     model = frontmatter.get("model", "")
     model_str = str(model) if model else ""
     valid_models = ["sonnet", "opus", "haiku", "inherit", ""]
     if model_str and model_str not in valid_models:
-        result.add_warning(f"{file_path.name}: modelの値が不正です: {model_str}（sonnet, opus, haiku, inheritのいずれか）")
+        result.add_warning(
+            f"{file_path.name}: modelが不正: {model_str}（sonnet/opus/haiku/inherit）"
+        )
 
     # permissionModeの値チェック
     permission_mode = frontmatter.get("permissionMode", "")

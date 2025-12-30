@@ -20,7 +20,9 @@ def validate_slash_command(file_path: Path, content: str) -> ValidationResult:
     if not frontmatter.get("description"):
         # 本文の最初の行がデフォルトになるが、明示的に設定することを推奨
         if body.strip():
-            result.add_warning(f"{file_path.name}: descriptionが未設定（本文の最初の行がデフォルトで使用される）")
+            result.add_warning(
+                f"{file_path.name}: descriptionが未設定（本文の最初の行がデフォルトで使用される）"
+            )
         else:
             result.add_error(f"{file_path.name}: descriptionが未設定で本文も空")
 
@@ -29,7 +31,9 @@ def validate_slash_command(file_path: Path, content: str) -> ValidationResult:
     if allowed_tools:
         # Bash(*)のような広範なワイルドカードを警告
         if "Bash(*)" in str(allowed_tools):
-            result.add_warning(f"{file_path.name}: allowed-toolsに広範なBash(*)が指定されています。より具体的なパターンを推奨")
+            result.add_warning(
+                f"{file_path.name}: allowed-toolsにBash(*)が指定。具体的なパターンを推奨"
+            )
 
     # disable-model-invocationの確認
     disable_model = frontmatter.get("disable-model-invocation", False)
@@ -39,7 +43,9 @@ def validate_slash_command(file_path: Path, content: str) -> ValidationResult:
     description_str = str(description) if description else ""
     if any(kw in body.lower() or kw in description_str.lower() for kw in dangerous_keywords):
         if disable_model is not True:
-            result.add_warning(f"{file_path.name}: 危険な操作を含む可能性があります。disable-model-invocation: trueを検討してください")
+            result.add_warning(
+                f"{file_path.name}: 危険な操作の可能性。disable-model-invocation: trueを検討"
+            )
 
     # modelの値チェック
     model = frontmatter.get("model", "")

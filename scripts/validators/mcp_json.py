@@ -29,12 +29,18 @@ def validate_mcp_json(file_path: Path, content: str) -> ValidationResult:
 
         if server_type == "stdio":
             if not config.get("command"):
-                result.add_error(f"{file_path.name}: {server_name}: stdioタイプにはcommandが必須です")
+                result.add_error(
+                    f"{file_path.name}: {server_name}: stdioタイプにはcommandが必須です"
+                )
         elif server_type in ["http", "sse"]:
             if not config.get("url"):
-                result.add_error(f"{file_path.name}: {server_name}: {server_type}タイプにはurlが必須です")
+                result.add_error(
+                    f"{file_path.name}: {server_name}: {server_type}タイプにはurlが必須です"
+                )
         else:
-            result.add_warning(f"{file_path.name}: {server_name}: 不明なサーバータイプ: {server_type}")
+            result.add_warning(
+                f"{file_path.name}: {server_name}: 不明なサーバータイプ: {server_type}"
+            )
 
         # 環境変数の直接記述をチェック
         env = config.get("env", {})
@@ -57,11 +63,17 @@ def validate_mcp_json(file_path: Path, content: str) -> ValidationResult:
 
                 for pattern, description in secret_patterns:
                     if re.search(pattern, value):
-                        result.add_error(f"{file_path.name}: {server_name}: envの{key}に{description}が直接記述されています。${{VAR}}形式を使用してください")
+                        result.add_error(
+                            f"{file_path.name}: {server_name}: "
+                            f"envの{key}に{description}が直接記述。${{{{VAR}}}}形式を使用"
+                        )
                         break
                 else:
                     # 既知パターンに一致しない場合、汎用チェック（警告）
                     if len(value) > 20 and re.match(r"^[a-zA-Z0-9_-]+$", value):
-                        result.add_warning(f"{file_path.name}: {server_name}: envの{key}に機密情報が直接記述されている可能性があります。${{VAR}}形式を使用してください")
+                        result.add_warning(
+                            f"{file_path.name}: {server_name}: "
+                            f"envの{key}に機密情報の可能性。${{{{VAR}}}}形式を使用"
+                        )
 
     return result

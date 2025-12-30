@@ -3,7 +3,6 @@ hooks_json.py のテスト
 """
 
 import json
-
 from pathlib import Path
 
 from scripts.validators.hooks_json import validate_hooks_json
@@ -13,18 +12,18 @@ class TestValidateHooksJson:
     """hooks.json検証のテスト"""
 
     def test_valid_hooks(self):
-        content = json.dumps({
-            "hooks": {
-                "PostToolUse": [
-                    {
-                        "matcher": "Edit|Write",
-                        "hooks": [
-                            {"type": "command", "command": "echo test"}
-                        ]
-                    }
-                ]
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PostToolUse": [
+                        {
+                            "matcher": "Edit|Write",
+                            "hooks": [{"type": "command", "command": "echo test"}],
+                        }
+                    ]
+                }
             }
-        })
+        )
         result = validate_hooks_json(Path("hooks.json"), content)
         assert not result.has_errors()
 
@@ -41,13 +40,7 @@ class TestValidateHooksJson:
         assert any("空" in w for w in result.warnings)
 
     def test_invalid_event_name(self):
-        content = json.dumps({
-            "hooks": {
-                "InvalidEvent": [
-                    {"matcher": "*", "hooks": []}
-                ]
-            }
-        })
+        content = json.dumps({"hooks": {"InvalidEvent": [{"matcher": "*", "hooks": []}]}})
         result = validate_hooks_json(Path("hooks.json"), content)
         assert result.has_errors()
         assert any("無効なイベント名" in e for e in result.errors)
@@ -55,83 +48,52 @@ class TestValidateHooksJson:
     def test_all_valid_events(self):
         """すべての有効なイベント名をテスト"""
         valid_events = [
-            "PreToolUse", "PostToolUse", "PermissionRequest", "UserPromptSubmit",
-            "Notification", "Stop", "SubagentStop", "PreCompact", "SessionStart", "SessionEnd"
+            "PreToolUse",
+            "PostToolUse",
+            "PermissionRequest",
+            "UserPromptSubmit",
+            "Notification",
+            "Stop",
+            "SubagentStop",
+            "PreCompact",
+            "SessionStart",
+            "SessionEnd",
         ]
         for event in valid_events:
-            content = json.dumps({
-                "hooks": {
-                    event: [
-                        {"hooks": [{"type": "command", "command": "test"}]}
-                    ]
-                }
-            })
+            content = json.dumps(
+                {"hooks": {event: [{"hooks": [{"type": "command", "command": "test"}]}]}}
+            )
             result = validate_hooks_json(Path("hooks.json"), content)
             assert not result.has_errors(), f"Event {event} should be valid"
 
     def test_invalid_hook_type(self):
-        content = json.dumps({
-            "hooks": {
-                "PostToolUse": [
-                    {
-                        "matcher": "*",
-                        "hooks": [
-                            {"type": "invalid"}
-                        ]
-                    }
-                ]
-            }
-        })
+        content = json.dumps(
+            {"hooks": {"PostToolUse": [{"matcher": "*", "hooks": [{"type": "invalid"}]}]}}
+        )
         result = validate_hooks_json(Path("hooks.json"), content)
         assert result.has_errors()
         assert any("type" in e for e in result.errors)
 
     def test_missing_command_field(self):
-        content = json.dumps({
-            "hooks": {
-                "PostToolUse": [
-                    {
-                        "matcher": "*",
-                        "hooks": [
-                            {"type": "command"}
-                        ]
-                    }
-                ]
-            }
-        })
+        content = json.dumps(
+            {"hooks": {"PostToolUse": [{"matcher": "*", "hooks": [{"type": "command"}]}]}}
+        )
         result = validate_hooks_json(Path("hooks.json"), content)
         assert result.has_errors()
         assert any("command" in e for e in result.errors)
 
     def test_missing_prompt_field(self):
-        content = json.dumps({
-            "hooks": {
-                "PostToolUse": [
-                    {
-                        "matcher": "*",
-                        "hooks": [
-                            {"type": "prompt"}
-                        ]
-                    }
-                ]
-            }
-        })
+        content = json.dumps(
+            {"hooks": {"PostToolUse": [{"matcher": "*", "hooks": [{"type": "prompt"}]}]}}
+        )
         result = validate_hooks_json(Path("hooks.json"), content)
         assert result.has_errors()
         assert any("prompt" in e for e in result.errors)
 
     def test_missing_matcher_warning(self):
-        content = json.dumps({
-            "hooks": {
-                "PostToolUse": [
-                    {
-                        "hooks": [
-                            {"type": "command", "command": "test"}
-                        ]
-                    }
-                ]
-            }
-        })
+        content = json.dumps(
+            {"hooks": {"PostToolUse": [{"hooks": [{"type": "command", "command": "test"}]}]}}
+        )
         result = validate_hooks_json(Path("hooks.json"), content)
         assert not result.has_errors()
         assert any("matcher" in w for w in result.warnings)

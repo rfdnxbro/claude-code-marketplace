@@ -1,0 +1,74 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**/*.py'
+      - '**/*.yml'
+      - '**/*.yaml'
+      - '**/*.md'
+      - 'pyproject.toml'
+      - '.yamllint.yml'
+      - '.markdownlint.json'
+  pull_request:
+    paths:
+      - '**/*.py'
+      - '**/*.yml'
+      - '**/*.yaml'
+      - '**/*.md'
+      - 'pyproject.toml'
+      - '.yamllint.yml'
+      - '.markdownlint.json'
+  workflow_dispatch:
+
+jobs:
+  python-lint:
+    name: Python (Ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+
+      - name: uvをセットアップ
+        uses: astral-sh/setup-uv@v5
+
+      - name: Ruff check
+        run: uvx ruff check scripts/
+
+      - name: Ruff format check
+        run: uvx ruff format --check scripts/
+
+  yaml-lint:
+    name: YAML (yamllint)
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+
+      - name: uvをセットアップ
+        uses: astral-sh/setup-uv@v5
+
+      - name: yamllint
+        run: uvx yamllint -c .yamllint.yml .github/workflows/
+
+  markdown-lint:
+    name: Markdown (markdownlint)
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+
+      - name: Node.jsをセットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: markdownlint
+        run: |
+          npx markdownlint-cli --config .markdownlint.json \
+            README.md \
+            CLAUDE.md \
+            scripts/README.md \
+            '.claude/rules/*.md' \
+            '.claude/skills/**/SKILL.md'

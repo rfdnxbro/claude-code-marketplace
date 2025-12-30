@@ -25,8 +25,16 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
 
     # 有効なイベント名
     valid_events = [
-        "PreToolUse", "PostToolUse", "PermissionRequest", "UserPromptSubmit",
-        "Notification", "Stop", "SubagentStop", "PreCompact", "SessionStart", "SessionEnd"
+        "PreToolUse",
+        "PostToolUse",
+        "PermissionRequest",
+        "UserPromptSubmit",
+        "Notification",
+        "Stop",
+        "SubagentStop",
+        "PreCompact",
+        "SessionStart",
+        "SessionEnd",
     ]
 
     for event_name, event_hooks in hooks.items():
@@ -36,23 +44,38 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
 
         for hook_config in event_hooks:
             # matcherの確認（マッチャー対応イベントのみ）
-            events_with_matcher = ["PreToolUse", "PostToolUse", "PermissionRequest", "Notification", "PreCompact", "SessionStart"]
+            events_with_matcher = [
+                "PreToolUse",
+                "PostToolUse",
+                "PermissionRequest",
+                "Notification",
+                "PreCompact",
+                "SessionStart",
+            ]
             if event_name in events_with_matcher:
                 matcher = hook_config.get("matcher")
                 if not matcher:
-                    result.add_warning(f"{file_path.name}: {event_name}のmatcherが未設定（全ツールにマッチ）")
+                    result.add_warning(
+                        f"{file_path.name}: {event_name}のmatcherが未設定（全ツールにマッチ）"
+                    )
 
             # hooksの確認
             inner_hooks = hook_config.get("hooks", [])
             for h in inner_hooks:
                 hook_type = h.get("type")
                 if hook_type not in ["command", "prompt"]:
-                    result.add_error(f"{file_path.name}: 無効なhook type: {hook_type}（command, promptのいずれか）")
+                    result.add_error(
+                        f"{file_path.name}: 無効なhook type: {hook_type}（command/prompt）"
+                    )
 
                 if hook_type == "command" and not h.get("command"):
-                    result.add_error(f"{file_path.name}: commandタイプにcommandフィールドがありません")
+                    result.add_error(
+                        f"{file_path.name}: commandタイプにcommandフィールドがありません"
+                    )
 
                 if hook_type == "prompt" and not h.get("prompt"):
-                    result.add_error(f"{file_path.name}: promptタイプにpromptフィールドがありません")
+                    result.add_error(
+                        f"{file_path.name}: promptタイプにpromptフィールドがありません"
+                    )
 
     return result
