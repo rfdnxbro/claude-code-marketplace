@@ -38,6 +38,7 @@ CI/CDとローカルhookの両方で利用可能。
 | MCP設定 | `**/.mcp.json` | サーバータイプ、必須フィールド、機密情報検出 |
 | プラグイン定義 | `**/.claude-plugin/plugin.json` | name（必須・kebab-case）、version形式、パス記述 |
 | README | `**/plugins/**/README.md` | 必須セクション、相対リンク切れ、コードブロック言語指定 |
+| 出力スタイル | `**/output-styles/**/*.md` | name、description、keep-coding-instructions、本文 |
 
 ## 機密情報検出
 
