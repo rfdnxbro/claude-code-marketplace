@@ -36,13 +36,14 @@ CI/CDとローカルhookの両方で利用可能。
 | スキル | `**/SKILL.md` | name（64文字・形式・予約語）、description（1024文字）、本文500行 |
 | hooks.json | `**/hooks.json` | イベント名、hookタイプ、必須フィールド |
 | MCP設定 | `**/.mcp.json` | サーバータイプ、必須フィールド、機密情報検出 |
+| LSP設定 | `**/.lsp.json` | command、extensionToLanguage、transport、機密情報検出 |
 | プラグイン定義 | `**/.claude-plugin/plugin.json` | name（必須・kebab-case）、version形式、パス記述 |
 | README | `**/plugins/**/README.md` | 必須セクション、相対リンク切れ、コードブロック言語指定 |
 | 出力スタイル | `**/output-styles/**/*.md` | name、description、keep-coding-instructions、本文 |
 
 ## 機密情報検出
 
-`.mcp.json`で以下の機密情報パターンを検出してエラーとして報告:
+`.mcp.json`と`.lsp.json`で以下の機密情報パターンを検出してエラーとして報告:
 
 - OpenAI APIキー (`sk-...`, `sk-proj-...`)
 - GitHub Token (`ghp_...`, `gho_...`, `ghu_...`, `ghs_...`)

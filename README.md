@@ -15,6 +15,7 @@ Claude Codeの機能を拡張するプラグイン（スラッシュコマンド
 | **スキル** | Claudeの知識を拡張する再利用可能な指示セット |
 | **フック** | Claude Codeのイベントに応じて実行されるスクリプト |
 | **MCPサーバー** | Model Context Protocolを使用した外部ツール連携 |
+| **LSPサーバー** | Language Server Protocolを使用したコード補完・診断 |
 
 ## ディレクトリ構成
 
@@ -42,6 +43,7 @@ claude-code-marketplace/
 │       ├── hooks/          # フック
 │       │   └── hooks.json
 │       ├── .mcp.json       # MCPサーバー設定
+│       ├── .lsp.json       # LSPサーバー設定
 │       └── README.md
 ├── scripts/                # プラグイン検証スクリプト
 │   ├── validators/         # 検証ロジック
@@ -86,6 +88,7 @@ claude --plugin-dir ./plugins/my-plugin
 | スキル (`SKILL.md`) | `.claude/skills/[name]/` または `~/.claude/skills/[name]/` |
 | フック (`hooks.json`) | `.claude/settings.json` に統合 |
 | MCP (`.mcp.json`) | プロジェクトルートの `.mcp.json` に統合 |
+| LSP (`.lsp.json`) | プロジェクトルートの `.lsp.json` に統合 |
 
 ## コントリビューション
 
@@ -132,6 +135,7 @@ uvx pytest scripts/tests/ -v
 - `SKILL.md` - スキル
 - `hooks.json` - フック設定
 - `.mcp.json` - MCPサーバー設定
+- `.lsp.json` - LSPサーバー設定
 
 ### スクリプトテスト
 
