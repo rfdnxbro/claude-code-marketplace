@@ -28,7 +28,9 @@ jobs:
             --cov-report=term \
             --cov-report=html:htmlcov \
             --cov-report=json:coverage.json \
-            --cov-fail-under=100
+            --junitxml=pytest.xml \
+            --cov-fail-under=100 \
+            | tee pytest-coverage.txt
 
       - name: カバレッジレポートをアーティファクトとして保存
         uses: actions/upload-artifact@v4
@@ -39,11 +41,10 @@ jobs:
 
       - name: PRにカバレッジレポートをコメント
         if: github.event_name == 'pull_request'
-        uses: py-cov-action/python-coverage-comment-action@v3
+        uses: MishaKav/pytest-coverage-comment@main
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COVERAGE_DATA_BRANCH: coverage-data
-          COVERAGE_PATH: scripts/coverage.json
+          pytest-coverage-path: scripts/pytest-coverage.txt
+          junitxml-path: scripts/pytest.xml
 
       - name: カバレッジ値を抽出
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
