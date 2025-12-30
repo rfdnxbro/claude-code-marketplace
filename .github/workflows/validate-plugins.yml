@@ -40,14 +40,8 @@ jobs:
               BASE_SHA=$(git rev-parse HEAD~1 2>/dev/null || echo "")
               if [ -z "$BASE_SHA" ]; then
                 # 最初のコミットの場合、全ファイルを対象
-                FILES=$(find plugins -type f \( \
-                  -name 'plugin.json' -o \
-                  -name 'SKILL.md' -o \
-                  -name 'hooks.json' -o \
-                  -name '.mcp.json' -o \
-                  \( -path '*/commands/*.md' \) -o \
-                  \( -path '*/agents/*.md' \) \
-                \) 2>/dev/null | tr '\n' ' ')
+              # CLAUDE.mdの検証コマンドと同じ範囲: **/*.md と **/*.json
+                FILES=$(find plugins -type f \( -name '*.md' -o -name '*.json' \) 2>/dev/null | tr '\n' ' ')
                 echo "files=$FILES" >> $GITHUB_OUTPUT
                 exit 0
               fi
@@ -55,7 +49,8 @@ jobs:
           fi
 
           # 変更されたplugins/配下のファイルを取得（削除されたファイルは除外: --diff-filter=d）
-          PATTERN='(plugin\.json|SKILL\.md|hooks\.json|\.mcp\.json|commands/.*\.md|agents/.*\.md)$'
+          # CLAUDE.mdの検証コマンドと同じ範囲: **/*.md と **/*.json
+          PATTERN='\.(md|json)$'
           CHANGED=$(git diff --name-only --diff-filter=d "$BASE_SHA" "$HEAD_SHA" -- 'plugins/**' \
             | grep -E "$PATTERN" | tr '\n' ' ')
           echo "files=$CHANGED" >> $GITHUB_OUTPUT

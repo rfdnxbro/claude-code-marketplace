@@ -1,0 +1,11 @@
+{
+  "name": "ai-dlc",
+  "version": "0.1.0",
+  "description": "AI駆動開発ライフサイクル（AI-DLC）のスラッシュコマンド、サブエージェント、スキルを提供するプラグイン",
+  "author": {
+    "name": "rfdnxbro"
+  },
+  "repository": "https://github.com/rfdnxbro/claude-code-marketplace",
+  "license": "MIT",
+  "keywords": ["ai-dlc", "sdlc", "agile", "ddd", "methodology"]
+}
