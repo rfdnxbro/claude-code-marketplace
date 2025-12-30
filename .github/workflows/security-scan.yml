@@ -1,0 +1,19 @@
+name: セキュリティスキャン
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  secret-scan:
+    name: シークレットスキャン
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: GitLeaksでシークレットをスキャン
+        uses: gacts/gitleaks@v1
