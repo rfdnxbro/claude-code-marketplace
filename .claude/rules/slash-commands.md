@@ -12,7 +12,7 @@ Markdown + YAML Frontmatter形式で記述します。
 ---
 description: コマンドの説明
 allowed-tools: Bash(git add:*), Bash(git commit:*)
-model: claude-3-5-haiku-20241022
+model: haiku
 argument-hint: [message]
 disable-model-invocation: false
 ---
@@ -28,7 +28,7 @@ $ARGUMENTS で引数を受け取れます
 |-----------|------|------|-----------|
 | `description` | No | コマンドの説明（`/help`で表示） | プロンプトの最初の行 |
 | `allowed-tools` | No | 使用可能なツール（カンマ区切り） | 会話から継承 |
-| `model` | No | 使用するモデル | 会話から継承 |
+| `model` | No | 使用するモデル（`sonnet`, `opus`, `haiku`）| 未指定時は会話のモデルを使用 |
 | `argument-hint` | No | 引数のヒント（オートコンプリート表示） | なし |
 | `disable-model-invocation` | No | SlashCommandツール経由の実行を防止 | `false` |
 
@@ -63,3 +63,11 @@ allowed-tools: Bash(deploy:*)
 
 - `true`: Claudeの自動実行を禁止（ユーザーの手動実行のみ可能）
 - `false`: Claudeが会話中に自動実行可能
+
+## フィールド命名規則について
+
+フロントマターのフィールド名は**Claude Code本体の仕様**に従っています。
+
+- `allowed-tools`, `argument-hint`, `disable-model-invocation`: kebab-case（Claude Code公式仕様）
+
+この命名規則は当プロジェクト独自のものではなく、Claude Codeでそのまま使用できる形式です。`agents.md`の`permissionMode`（camelCase）も同様にClaude Code本体の仕様に従っています。

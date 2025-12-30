@@ -15,6 +15,7 @@
 | [skill-authoring.md](skill-authoring.md) | スキル作成のベストプラクティス |
 | [slash-commands.md](slash-commands.md) | スラッシュコマンドの定義方法 |
 | [plugin-readme.md](plugin-readme.md) | プラグインREADMEの作成ガイドライン |
+| [output-styles.md](output-styles.md) | 出力スタイルの定義方法 |
 
 ## 用語集
 
