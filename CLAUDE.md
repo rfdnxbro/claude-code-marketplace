@@ -14,7 +14,38 @@ Claude Codeのマーケットプレイスプラグイン。Claude Codeの拡張�
 
 ## コマンド
 
-（プロジェクトが進行するにつれて追加予定）
+### プラグイン検証
+
+```bash
+# 単一ファイルを検証
+python3 scripts/validate_plugin.py plugins/my-plugin/commands/review.md
+
+# プラグイン全体を検証
+python3 scripts/validate_plugin.py plugins/my-plugin/**/*.md plugins/my-plugin/**/*.json
+```
+
+### テスト実行
+
+```bash
+# テストを実行（uvを使用）
+uvx pytest scripts/tests/ -v
+```
+
+### Linter/Formatter
+
+```bash
+# Pythonファイルのチェック
+uvx ruff check scripts/
+
+# Pythonファイルのフォーマット
+uvx ruff format scripts/
+
+# Markdownのチェック
+npx markdownlint-cli2 "**/*.md"
+
+# YAMLのチェック
+uvx yamllint .
+```
 
 ## 注意事項
 
