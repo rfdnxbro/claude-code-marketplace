@@ -1,0 +1,21 @@
+{
+  "name": "claude-code-marketplace",
+  "owner": {
+    "name": "rfdnxbro"
+  },
+  "metadata": {
+    "description": "Claude Codeプラグインのマーケットプレイス",
+    "version": "0.1.0",
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "ai-dlc",
+      "source": "./plugins/ai-dlc",
+      "description": "AI駆動開発ライフサイクル（AI-DLC）のスラッシュコマンド、サブエージェント、スキルを提供するプラグイン",
+      "version": "0.1.0",
+      "keywords": ["ai-dlc", "sdlc", "agile", "ddd", "methodology"],
+      "category": "methodology"
+    }
+  ]
+}
