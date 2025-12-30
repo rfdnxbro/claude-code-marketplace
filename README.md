@@ -1,5 +1,8 @@
 # Claude Code Marketplace
 
+[![テスト](https://github.com/rfdnxbro/claude-code-marketplace/actions/workflows/test-scripts.yml/badge.svg)](https://github.com/rfdnxbro/claude-code-marketplace/actions/workflows/test-scripts.yml)
+![カバレッジ](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/rfdnxbro/584b9ff17fd95a2c4aa38dcf30c5a391/raw/coverage.json)
+
 Claude Codeの機能を拡張するプラグイン（スラッシュコマンド、MCPサーバー、フック、サブエージェント）を共有・発見できるマーケットプレイスです。
 
 ## 概要
@@ -115,7 +118,7 @@ claude --plugin-dir ./plugins/my-plugin
 
 ```bash
 # Pythonスクリプトで検証
-python3 scripts/validate_plugin.py ./plugins/my-plugin
+python3 scripts/validate_plugin.py plugins/my-plugin/**/*.md plugins/my-plugin/**/*.json
 
 # テストを実行
 uvx pytest scripts/tests/ -v
@@ -136,10 +139,20 @@ uvx pytest scripts/tests/ -v
 - `hooks.json` - フック設定
 - `.mcp.json` - MCPサーバー設定
 - `.lsp.json` - LSPサーバー設定
+- `README.md` - プラグインREADME
+- `output-styles/*.md` - 出力スタイル
 
 ### スクリプトテスト
 
 `scripts/`配下のファイルが変更されると、自動的にpytestが実行されます。
+
+#### カバレッジバッジのセットアップ
+
+カバレッジバッジを有効にするには以下の設定が必要です：
+
+1. [GitHub Settings > Developer settings > Personal access tokens](https://github.com/settings/tokens)で`gist`スコープのトークンを生成
+2. リポジトリのSecrets（`GIST_SECRET`）にトークンを設定
+3. リポジトリのVariables（`COVERAGE_GIST_ID`）に`584b9ff17fd95a2c4aa38dcf30c5a391`を設定
 
 ### CHANGELOG監視
 
