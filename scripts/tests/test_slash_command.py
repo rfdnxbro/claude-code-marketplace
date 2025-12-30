@@ -129,3 +129,16 @@ class TestValidateSlashCommand:
         """).strip()
         result = validate_slash_command(Path("test.md"), content)
         assert any("model" in w for w in result.warnings)
+
+    def test_yaml_warning_nested(self):
+        """YAMLのネスト構文で警告が出ることを確認"""
+        content = dedent("""
+            ---
+            description: テスト
+            options:
+              key: value
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert any("ネスト" in w for w in result.warnings)

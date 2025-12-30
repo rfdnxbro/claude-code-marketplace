@@ -105,3 +105,16 @@ class TestValidateAgent:
         result = validate_agent(Path("agent.md"), content)
         assert not result.has_errors()
         assert any("システムプロンプト" in w for w in result.warnings)
+
+    def test_yaml_warning_multiline(self):
+        """YAMLの複数行構文で警告が出ることを確認"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: |
+              複数行の説明
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert any("複数行" in w for w in result.warnings)
