@@ -12,6 +12,24 @@ AI-DLCは、Amazon Web ServicesのRaja SP氏が提唱するAIネイティブな�
 - **スラッシュコマンド**: ホワイトペーパーのサンプルプロンプトをベースにしたコマンド群
 - **サブエージェント**: ホワイトペーパーで言及されている役割を再現
 
+## インストール
+
+```bash
+claude plugins install ai-dlc
+```
+
+## 使い方
+
+プラグインをインストール後、以下のスラッシュコマンドが利用可能になります（実装予定）:
+
+- `/aidlc-setup` - AI-DLCセッションの初期化
+- `/aidlc-user-stories` - ユーザーストーリー作成
+- `/aidlc-units` - ユニット分解
+- `/aidlc-domain-model` - ドメインモデル作成
+- `/aidlc-code-gen` - コード生成
+- `/aidlc-architecture` - アーキテクチャ設計
+- `/aidlc-api` - REST API作成
+
 ## ドキュメント
 
 ### docs/whitepaper.md（英語版）
