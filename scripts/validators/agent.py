@@ -2,10 +2,9 @@
 サブエージェントのバリデーター
 """
 
-import re
 from pathlib import Path
 
-from .base import ValidationResult, parse_frontmatter
+from .base import ValidationResult, parse_frontmatter, validate_kebab_case
 
 
 def validate_agent(file_path: Path, content: str) -> ValidationResult:
@@ -24,10 +23,9 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
         result.add_error(f"{file_path.name}: nameが必須です")
     else:
         # kebab-case（小文字とハイフンのみ）チェック
-        if not re.match(r"^[a-z0-9]+(-[a-z0-9]+)*$", name_str):
-            result.add_error(
-                f"{file_path.name}: nameはkebab-case（小文字とハイフン）のみ: {name_str}"
-            )
+        kebab_error = validate_kebab_case(name_str)
+        if kebab_error:
+            result.add_error(f"{file_path.name}: {kebab_error}")
 
     # descriptionの確認
     description = frontmatter.get("description", "")

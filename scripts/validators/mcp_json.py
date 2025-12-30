@@ -3,10 +3,9 @@
 """
 
 import json
-import re
 from pathlib import Path
 
-from .base import ValidationResult
+from .base import ValidationResult, check_env_secrets
 
 
 def validate_mcp_json(file_path: Path, content: str) -> ValidationResult:
@@ -44,36 +43,6 @@ def validate_mcp_json(file_path: Path, content: str) -> ValidationResult:
 
         # 環境変数の直接記述をチェック
         env = config.get("env", {})
-        for key, value in env.items():
-            if isinstance(value, str) and not value.startswith("${"):
-                # 既知の機密情報パターン（検出時はエラー）
-                secret_patterns = [
-                    (r"sk-[a-zA-Z0-9]{32,}", "OpenAI APIキー"),
-                    (r"sk-proj-[a-zA-Z0-9]{32,}", "OpenAI Project APIキー"),
-                    (r"ghp_[a-zA-Z0-9]{36}", "GitHub Personal Access Token"),
-                    (r"gho_[a-zA-Z0-9]{36}", "GitHub OAuth Token"),
-                    (r"ghu_[a-zA-Z0-9]{36}", "GitHub User Token"),
-                    (r"ghs_[a-zA-Z0-9]{36}", "GitHub Server Token"),
-                    (r"xoxb-[a-zA-Z0-9-]+", "Slack Bot Token"),
-                    (r"xoxa-[a-zA-Z0-9-]+", "Slack App Token"),
-                    (r"xoxp-[a-zA-Z0-9-]+", "Slack User Token"),
-                    (r"AKIA[A-Z0-9]{16}", "AWS Access Key ID"),
-                    (r"AIza[a-zA-Z0-9_-]{35}", "Google API Key"),
-                ]
-
-                for pattern, description in secret_patterns:
-                    if re.search(pattern, value):
-                        result.add_error(
-                            f"{file_path.name}: {server_name}: "
-                            f"envの{key}に{description}が直接記述。${{{{VAR}}}}形式を使用"
-                        )
-                        break
-                else:
-                    # 既知パターンに一致しない場合、汎用チェック（警告）
-                    if len(value) > 20 and re.match(r"^[a-zA-Z0-9_-]+$", value):
-                        result.add_warning(
-                            f"{file_path.name}: {server_name}: "
-                            f"envの{key}に機密情報の可能性。${{{{VAR}}}}形式を使用"
-                        )
+        check_env_secrets(result, file_path, server_name, env)
 
     return result

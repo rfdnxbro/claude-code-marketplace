@@ -6,7 +6,7 @@ import json
 import re
 from pathlib import Path
 
-from .base import ValidationResult
+from .base import ValidationResult, validate_kebab_case
 
 
 def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
@@ -25,10 +25,9 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
     else:
         name = data["name"]
         # kebab-caseチェック
-        if not re.match(r"^[a-z0-9]+(-[a-z0-9]+)*$", name):
-            result.add_error(
-                f"{file_path.name}: nameはkebab-case（小文字とハイフン）で記述してください: {name}"
-            )
+        kebab_error = validate_kebab_case(name)
+        if kebab_error:
+            result.add_error(f"{file_path.name}: {kebab_error}")
         if " " in name:
             result.add_error(f"{file_path.name}: nameにスペースは使用できません")
 
