@@ -8,26 +8,11 @@
             "type": "command",
             "command": "python3 ${CLAUDE_PROJECT_DIR}/scripts/validate_plugin.py",
             "timeout": 30
-          }
-        ]
-      },
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
+          },
           {
             "type": "command",
-            "command": "cd ${CLAUDE_PROJECT_DIR} && uvx ruff format --quiet ${CLAUDE_FILE_PATH} 2>/dev/null || true",
-            "timeout": 10
-          }
-        ]
-      },
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "cd ${CLAUDE_PROJECT_DIR} && uvx ruff check --fix --quiet ${CLAUDE_FILE_PATH} 2>/dev/null || true",
-            "timeout": 10
+            "command": "cd ${CLAUDE_PROJECT_DIR} && [[ ${CLAUDE_FILE_PATH} == *.py ]] && uvx ruff check --fix --quiet ${CLAUDE_FILE_PATH} && uvx ruff format --quiet ${CLAUDE_FILE_PATH} || true",
+            "timeout": 15
           }
         ]
       }
