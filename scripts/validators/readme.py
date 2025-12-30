@@ -62,8 +62,7 @@ def _check_relative_links(file_path: Path, content: str, result: ValidationResul
 
         if not target_path.exists():
             result.add_error(
-                f"{file_path.name}: リンク切れ [{link_text}]({link_path}) "
-                f"- ファイルが存在しません"
+                f"{file_path.name}: リンク切れ [{link_text}]({link_path}) - ファイルが存在しません"
             )
 
     # 画像参照: ![alt](path) 形式
