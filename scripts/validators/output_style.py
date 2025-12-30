@@ -23,9 +23,11 @@ def validate_output_style(file_path: Path, content: str) -> ValidationResult:
         # ファイル名（拡張子除く）と異なる場合は警告
         stem = file_path.stem
         if name_str != stem:
-            result.add_warning(
-                f"{file_path.name}: nameとファイル名が異なります（name: {name_str}, ファイル: {stem}）"
+            msg = (
+                f"{file_path.name}: nameとファイル名が異なります"
+                f"（name: {name_str}, ファイル: {stem}）"
             )
+            result.add_warning(msg)
 
     # descriptionフィールドの検証（オプション、推奨）
     description = frontmatter.get("description", "")
