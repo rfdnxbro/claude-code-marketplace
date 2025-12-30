@@ -20,5 +20,40 @@ jobs:
       - name: uvをセットアップ
         uses: astral-sh/setup-uv@v7
 
-      - name: テストを実行
-        run: uvx pytest scripts/tests/ -v
+      - name: テストを実行（カバレッジ計測）
+        working-directory: scripts
+        run: |
+          uvx --with pytest-cov pytest tests/ -v \
+            --cov=validators \
+            --cov-report=term \
+            --cov-report=html:htmlcov \
+            --cov-report=json:coverage.json \
+            --cov-fail-under=80
+
+      - name: カバレッジレポートをアーティファクトとして保存
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: scripts/htmlcov/
+
+      - name: カバレッジ値を抽出
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        working-directory: scripts
+        run: |
+          COVERAGE=$(python3 -c "import json; print(int(json.load(open('coverage.json'))['totals']['percent_covered']))")
+          echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
+
+      - name: カバレッジバッジを更新
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.GIST_SECRET }}
+          gistID: ${{ vars.COVERAGE_GIST_ID }}
+          filename: coverage.json
+          label: coverage
+          message: ${{ env.COVERAGE }}%
+          valColorRange: ${{ env.COVERAGE }}
+          minColorRange: 50
+          maxColorRange: 90
+          namedLogo: pytest

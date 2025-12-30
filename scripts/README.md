@@ -73,6 +73,9 @@ python3 scripts/validate_plugin.py plugins/my-plugin/**/*.md plugins/my-plugin/*
 ```bash
 # プロジェクトルートで実行
 uvx pytest scripts/tests/ -v
+
+# カバレッジ付きで実行
+uvx --with pytest-cov pytest scripts/tests/ -v --cov=scripts/validators --cov-report=term
 ```
 
 ### venvを使用する場合
