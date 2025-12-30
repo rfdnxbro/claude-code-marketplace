@@ -13,6 +13,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v6
@@ -37,10 +40,14 @@ jobs:
         if: always()
         with:
           name: coverage-report
-          path: |
-            scripts/htmlcov/
-            scripts/pytest-coverage.txt
-            scripts/pytest.xml
+          path: scripts/htmlcov/
+
+      - name: PRにカバレッジレポートをコメント
+        if: github.event_name == 'pull_request'
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-coverage-path: scripts/pytest-coverage.txt
+          junitxml-path: scripts/pytest.xml
 
       - name: カバレッジ値を抽出
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -62,23 +69,3 @@ jobs:
           minColorRange: 50
           maxColorRange: 90
           namedLogo: pytest
-
-  # PRコメントは別ジョブで実行（PR時のみ権限が必要）
-  coverage-comment:
-    if: github.event_name == 'pull_request'
-    needs: test
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-    steps:
-      - name: カバレッジレポートをダウンロード
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-report
-          path: scripts/
-
-      - name: PRにカバレッジレポートをコメント
-        uses: MishaKav/pytest-coverage-comment@main
-        with:
-          pytest-coverage-path: scripts/pytest-coverage.txt
-          junitxml-path: scripts/pytest.xml
