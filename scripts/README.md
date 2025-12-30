@@ -37,6 +37,7 @@ CI/CDとローカルhookの両方で利用可能。
 | hooks.json | `**/hooks.json` | イベント名、hookタイプ、必須フィールド |
 | MCP設定 | `**/.mcp.json` | サーバータイプ、必須フィールド、機密情報検出 |
 | プラグイン定義 | `**/.claude-plugin/plugin.json` | name（必須・kebab-case）、version形式、パス記述 |
+| README | `**/plugins/**/README.md` | 必須セクション、相対リンク切れ、コードブロック言語指定 |
 
 ## 機密情報検出
 
