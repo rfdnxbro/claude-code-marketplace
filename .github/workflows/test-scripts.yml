@@ -37,6 +37,14 @@ jobs:
           name: coverage-report
           path: scripts/htmlcov/
 
+      - name: PRにカバレッジレポートをコメント
+        if: github.event_name == 'pull_request'
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERAGE_DATA_BRANCH: coverage-data
+          COVERAGE_PATH: scripts/coverage.json
+
       - name: カバレッジ値を抽出
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         working-directory: scripts
