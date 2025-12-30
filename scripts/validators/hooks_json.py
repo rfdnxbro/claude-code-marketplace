@@ -2,20 +2,17 @@
 hooks.json のバリデーター
 """
 
-import json
 from pathlib import Path
 
-from .base import ValidationResult
+from .base import ValidationResult, parse_json_safe
 
 
 def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
     """hooks.jsonを検証する"""
     result = ValidationResult()
 
-    try:
-        data = json.loads(content)
-    except json.JSONDecodeError as e:
-        result.add_error(f"{file_path.name}: JSONパースエラー: {e}")
+    data = parse_json_safe(content, file_path, result)
+    if data is None:
         return result
 
     hooks = data.get("hooks", {})
