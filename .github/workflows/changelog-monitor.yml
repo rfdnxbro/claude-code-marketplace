@@ -24,6 +24,7 @@ concurrency:
 jobs:
   monitor-changelog:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v6

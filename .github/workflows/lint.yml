@@ -26,6 +26,7 @@ jobs:
   python-lint:
     name: Python (Ruff)
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v4
@@ -42,6 +43,7 @@ jobs:
   yaml-lint:
     name: YAML (yamllint)
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v4
@@ -55,6 +57,7 @@ jobs:
   markdown-lint:
     name: Markdown (markdownlint)
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v4
