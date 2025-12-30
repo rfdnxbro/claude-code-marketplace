@@ -1,0 +1,10 @@
+# GitLeaks設定ファイル
+# テストファイル内のダミー認証情報を除外する
+
+title = "claude-code-marketplace gitleaks config"
+
+# テストファイルを除外
+[allowlist]
+paths = [
+    '''scripts/tests/.*\.py$''',
+]
