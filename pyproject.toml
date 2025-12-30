@@ -1,0 +1,22 @@
+[tool.ruff]
+# Python linter/formatter 設定
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+# デフォルトルールセット + 追加ルール
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = []
+
+[tool.ruff.format]
+# フォーマット設定
+quote-style = "double"
+indent-style = "space"

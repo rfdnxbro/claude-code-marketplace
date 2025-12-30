@@ -2,7 +2,6 @@
 skill.py のテスト
 """
 
-
 from pathlib import Path
 from textwrap import dedent
 

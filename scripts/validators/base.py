@@ -62,7 +62,7 @@ def parse_frontmatter(content: str) -> tuple[dict[str, Any], str, list[str]]:
         return {}, content, warnings
 
     frontmatter_lines = lines[1:end_idx]
-    body = "\n".join(lines[end_idx + 1:])
+    body = "\n".join(lines[end_idx + 1 :])
 
     # 簡易YAMLパーサー（PyYAMLを使わない）
     frontmatter = {}

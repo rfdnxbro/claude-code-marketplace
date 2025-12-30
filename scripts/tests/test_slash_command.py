@@ -2,7 +2,6 @@
 slash_command.py のテスト
 """
 
-
 from pathlib import Path
 from textwrap import dedent
 

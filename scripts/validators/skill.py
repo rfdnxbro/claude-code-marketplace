@@ -25,7 +25,9 @@ def validate_skill(file_path: Path, content: str) -> ValidationResult:
     else:
         # 形式チェック
         if len(name_str) > 64:
-            result.add_error(f"{file_path.name}: nameは64文字以内にしてください: {len(name_str)}文字")
+            result.add_error(
+                f"{file_path.name}: nameは64文字以内にしてください: {len(name_str)}文字"
+            )
         if not re.match(r"^[a-z0-9-]+$", name_str):
             result.add_error(f"{file_path.name}: nameは小文字、数字、ハイフンのみ使用可能です")
         # 予約語チェック
@@ -38,11 +40,13 @@ def validate_skill(file_path: Path, content: str) -> ValidationResult:
     if not description_str:
         result.add_error(f"{file_path.name}: descriptionが必須です")
     elif len(description_str) > 1024:
-        result.add_error(f"{file_path.name}: descriptionは1024文字以内にしてください: {len(description_str)}文字")
+        result.add_error(
+            f"{file_path.name}: descriptionは1024文字以内にしてください: {len(description_str)}文字"
+        )
 
     # 本文の行数チェック
     body_lines = body.strip().split("\n")
     if len(body_lines) > 500:
-        result.add_warning(f"{file_path.name}: 本文が500行を超えています（{len(body_lines)}行）。別ファイルへの分割を検討してください")
+        result.add_warning(f"{file_path.name}: 本文が500行超（{len(body_lines)}行）。分割を検討")
 
     return result

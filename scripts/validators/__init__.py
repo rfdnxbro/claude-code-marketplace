@@ -2,14 +2,14 @@
 プラグイン検証バリデーター
 """
 
-from .base import ValidationResult, parse_frontmatter
-from .slash_command import validate_slash_command
 from .agent import validate_agent
-from .skill import validate_skill
+from .base import ValidationResult, parse_frontmatter
 from .hooks_json import validate_hooks_json
 from .mcp_json import validate_mcp_json
 from .lsp_json import validate_lsp_json
 from .plugin_json import validate_plugin_json
+from .skill import validate_skill
+from .slash_command import validate_slash_command
 
 __all__ = [
     "ValidationResult",

@@ -2,7 +2,6 @@
 base.py のテスト
 """
 
-
 from textwrap import dedent
 
 from scripts.validators.base import ValidationResult, parse_frontmatter

@@ -18,7 +18,7 @@ Claude Codeの機能を拡張するプラグイン（スラッシュコマンド
 
 ## ディレクトリ構成
 
-```
+```text
 claude-code-marketplace/
 ├── .claude-plugin/
 │   └── marketplace.json    # マーケットプレイス設定
@@ -112,6 +112,7 @@ claude plugin validate ./plugins/my-plugin
 このリポジトリはClaude Code公式リポジトリのCHANGELOGを毎日監視し、プラグイン関連の変更を自動検出します。
 
 変更が検出されると：
+
 1. 自動でIssueが作成される
 2. 必要に応じてドキュメント修正のPRが作成される
 

@@ -14,12 +14,14 @@ description: XとYを処理する。ユーザーがZについて言及した時�
 ```
 
 **name**:
+
 - 最大64文字
 - 小文字、数字、ハイフンのみ
 - 動名詞形を推奨（`processing-pdfs`、`pdf-processor`ではない）
 - 予約語禁止: `anthropic`, `claude`
 
 **description**:
+
 - 最大1024文字
 - 三人称で記述（「ファイルを処理する」、「私がファイルを処理します」ではない）
 - 何をするか AND いつ使うかを含める
@@ -29,7 +31,7 @@ description: XとYを処理する。ユーザーがZについて言及した時�
 
 スキルはSKILL.mdを中心に、必要に応じてサポートファイルを配置:
 
-```
+```text
 my-skill/
 ├── SKILL.md           # 必須: エントリーポイント
 ├── reference.md       # オプション: 詳細リファレンス
@@ -74,6 +76,7 @@ bash scripts/validate.sh
 ## 構造パターン
 
 **ワークフローパターン** - 複数ステップのタスク向け:
+
 ```markdown
 このチェックリストをコピー:
 - [ ] Step 1: Xを実行
@@ -82,6 +85,7 @@ bash scripts/validate.sh
 ```
 
 **段階的開示** - 詳細へのリンク:
+
 ```markdown
 ## クイックスタート
 [必須コンテンツ]

@@ -16,13 +16,13 @@ from pathlib import Path
 
 from validators import (
     ValidationResult,
-    validate_slash_command,
     validate_agent,
-    validate_skill,
     validate_hooks_json,
     validate_mcp_json,
     validate_lsp_json,
     validate_plugin_json,
+    validate_skill,
+    validate_slash_command,
 )
 
 
@@ -139,10 +139,7 @@ def run_hook_mode() -> int:
 
     # 結果を出力
     if result.has_errors() or result.warnings:
-        output = {
-            "continue": True,
-            "systemMessage": result.to_message()
-        }
+        output = {"continue": True, "systemMessage": result.to_message()}
         print(json.dumps(output, ensure_ascii=False))
 
     return 0
@@ -150,19 +147,11 @@ def run_hook_mode() -> int:
 
 def main():
     """メインエントリーポイント"""
-    parser = argparse.ArgumentParser(
-        description="プラグインファイルを検証する"
-    )
+    parser = argparse.ArgumentParser(description="プラグインファイルを検証する")
     parser.add_argument(
-        "files",
-        nargs="*",
-        help="検証するファイルのパス（指定しない場合はhookモード）"
+        "files", nargs="*", help="検証するファイルのパス（指定しない場合はhookモード）"
     )
-    parser.add_argument(
-        "--strict",
-        action="store_true",
-        help="警告もエラーとして扱う"
-    )
+    parser.add_argument("--strict", action="store_true", help="警告もエラーとして扱う")
 
     args = parser.parse_args()
 
