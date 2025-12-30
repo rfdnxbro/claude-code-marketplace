@@ -103,3 +103,40 @@ class TestValidateOutputStyle:
         assert not result.has_errors()
         # descriptionがないので警告
         assert any("description" in w for w in result.warnings)
+
+    def test_invalid_name_type(self):
+        content = dedent("""
+            ---
+            name: 123
+            description: 説明
+            ---
+            スタイル指示
+        """).strip()
+        result = validate_output_style(Path("test.md"), content)
+        assert result.has_errors()
+        assert any("nameは文字列" in e for e in result.errors)
+
+    def test_invalid_description_type(self):
+        content = dedent("""
+            ---
+            name: test
+            description: true
+            ---
+            スタイル指示
+        """).strip()
+        result = validate_output_style(Path("test.md"), content)
+        assert result.has_errors()
+        assert any("descriptionは文字列" in e for e in result.errors)
+
+    def test_empty_body_with_whitespace_only(self):
+        content = dedent("""
+            ---
+            name: test
+            description: 説明
+            ---
+
+
+        """).strip()
+        result = validate_output_style(Path("test.md"), content)
+        assert result.has_errors()
+        assert any("本文" in e for e in result.errors)

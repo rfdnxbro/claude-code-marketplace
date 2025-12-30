@@ -18,7 +18,11 @@ def validate_output_style(file_path: Path, content: str) -> ValidationResult:
 
     # nameフィールドの検証（オプション、指定時はファイル名と一致推奨）
     name = frontmatter.get("name", "")
-    name_str = str(name) if name else ""
+    if name and not isinstance(name, str):
+        result.add_error(f"{file_path.name}: nameは文字列で指定してください")
+        name_str = ""
+    else:
+        name_str = str(name) if name else ""
     if name_str:
         # ファイル名（拡張子除く）と異なる場合は警告
         stem = file_path.stem
@@ -31,7 +35,11 @@ def validate_output_style(file_path: Path, content: str) -> ValidationResult:
 
     # descriptionフィールドの検証（オプション、推奨）
     description = frontmatter.get("description", "")
-    description_str = str(description) if description else ""
+    if description and not isinstance(description, str):
+        result.add_error(f"{file_path.name}: descriptionは文字列で指定してください")
+        description_str = ""
+    else:
+        description_str = str(description) if description else ""
     if not description_str:
         result.add_warning(f"{file_path.name}: descriptionの指定を推奨します（UIに表示されます）")
 
