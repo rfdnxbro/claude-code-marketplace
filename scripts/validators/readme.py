@@ -37,7 +37,7 @@ def _check_relative_links(file_path: Path, content: str, result: ValidationResul
     """相対パスのリンク切れをチェックする"""
     # Markdownリンク: [text](path) 形式
     # 外部URL（http://, https://）は除外
-    link_pattern = r"\[([^\]]*)\]\(([^)]+)\)"
+    link_pattern = r"\[([^\]]*)\]\(([^)]*)\)"
     base_dir = file_path.parent
 
     for match in re.finditer(link_pattern, content):

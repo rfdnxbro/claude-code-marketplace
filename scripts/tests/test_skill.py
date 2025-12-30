@@ -115,3 +115,16 @@ description: 説明
         result = validate_skill(Path("SKILL.md"), content)
         assert not result.has_errors()
         assert any("500行" in w for w in result.warnings)
+
+    def test_yaml_warning_multiline(self):
+        """YAMLの複数行構文で警告が出ることを確認"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: >
+              折り畳み形式の説明
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert any("複数行" in w for w in result.warnings)

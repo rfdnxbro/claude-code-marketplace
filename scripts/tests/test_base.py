@@ -134,3 +134,14 @@ class TestParseFrontmatter:
         fm, body, warnings = parse_frontmatter(content)
         assert fm["name"] == "test"
         assert "#" not in fm
+
+    def test_nested_object_warning(self):
+        """ネストされたオブジェクトで警告が出ることを確認"""
+        content = dedent("""
+            ---
+            env:
+              KEY: value
+            ---
+        """).strip()
+        fm, body, warnings = parse_frontmatter(content)
+        assert any("ネスト" in w for w in warnings)

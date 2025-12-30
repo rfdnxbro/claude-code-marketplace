@@ -140,3 +140,18 @@ class TestValidateOutputStyle:
         result = validate_output_style(Path("test.md"), content)
         assert result.has_errors()
         assert any("本文" in e for e in result.errors)
+
+    def test_yaml_warning_list(self):
+        """YAMLのリスト構文で警告が出ることを確認"""
+        content = dedent("""
+            ---
+            name: test
+            description: 説明
+            items:
+              - item1
+              - item2
+            ---
+            スタイル指示
+        """).strip()
+        result = validate_output_style(Path("test.md"), content)
+        assert any("リスト" in w or "ネスト" in w for w in result.warnings)

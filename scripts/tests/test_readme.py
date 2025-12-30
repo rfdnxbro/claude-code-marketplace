@@ -456,3 +456,30 @@ class TestCodeBlockCheck:
         """).strip()
         result = validate_readme(Path("README.md"), content)
         assert len(result.warnings) == 0
+
+
+class TestLinkWithEmptyPath:
+    """アンカーのみリンクのテスト"""
+
+    def test_empty_link_path(self):
+        """空のリンクパスは正常にスキップされる"""
+        # 空のパス()はMarkdownでは技術的に有効だがリンク切れチェック不要
+        content = dedent("""
+            # Plugin
+
+            ## 概要
+
+            [空リンク]()は空パスのケース。
+
+            ## インストール
+
+            手順
+
+            ## 使い方
+
+            使い方
+        """).strip()
+        result = validate_readme(Path("README.md"), content)
+        # 空パスはスキップされる
+        link_errors = [e for e in result.errors if "リンク切れ" in e]
+        assert len(link_errors) == 0
