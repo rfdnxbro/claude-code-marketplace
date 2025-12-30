@@ -8,6 +8,7 @@ from .agent import validate_agent
 from .skill import validate_skill
 from .hooks_json import validate_hooks_json
 from .mcp_json import validate_mcp_json
+from .lsp_json import validate_lsp_json
 from .plugin_json import validate_plugin_json
 
 __all__ = [
@@ -18,5 +19,6 @@ __all__ = [
     "validate_skill",
     "validate_hooks_json",
     "validate_mcp_json",
+    "validate_lsp_json",
     "validate_plugin_json",
 ]

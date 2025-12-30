@@ -34,8 +34,8 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 | `agents` | string/array | エージェントファイル/ディレクトリ |
 | `skills` | string/array | スキルディレクトリ |
 | `hooks` | string/object | フック設定パスまたはインライン |
-| `mcpServers` | string/object | MCP設定パスまたはインライン |
-| `lspServers` | string/object | LSP設定パスまたはインライン |
+| `mcpServers` | string/object | MCP設定パスまたはインライン（→ [mcp-servers.md](mcp-servers.md)） |
+| `lspServers` | string/object | LSP設定パスまたはインライン（→ [lsp-servers.md](lsp-servers.md)） |
 | `outputStyles` | string/array | 出力スタイルファイル/ディレクトリ |
 
 ## 完全な例
