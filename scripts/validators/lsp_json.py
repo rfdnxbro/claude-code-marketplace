@@ -2,10 +2,9 @@
 .lsp.json のバリデーター
 """
 
-import json
 from pathlib import Path
 
-from .base import ValidationResult, check_env_secrets
+from .base import ValidationResult, check_env_secrets, parse_json_safe
 
 # 有効なtransport値
 VALID_TRANSPORTS = {"stdio", "socket"}
@@ -15,10 +14,8 @@ def validate_lsp_json(file_path: Path, content: str) -> ValidationResult:
     """LSPサーバー設定を検証する"""
     result = ValidationResult()
 
-    try:
-        data = json.loads(content)
-    except json.JSONDecodeError as e:
-        result.add_error(f"{file_path.name}: JSONパースエラー: {e}")
+    data = parse_json_safe(content, file_path, result)
+    if data is None:
         return result
 
     if not data:

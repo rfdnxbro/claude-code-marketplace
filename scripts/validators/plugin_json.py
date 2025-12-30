@@ -2,21 +2,18 @@
 plugin.json のバリデーター
 """
 
-import json
 import re
 from pathlib import Path
 
-from .base import ValidationResult, validate_kebab_case
+from .base import ValidationResult, parse_json_safe, validate_kebab_case
 
 
 def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
     """plugin.jsonを検証する"""
     result = ValidationResult()
 
-    try:
-        data = json.loads(content)
-    except json.JSONDecodeError as e:
-        result.add_error(f"{file_path.name}: JSONパースエラー: {e}")
+    data = parse_json_safe(content, file_path, result)
+    if data is None:
         return result
 
     # 必須フィールド

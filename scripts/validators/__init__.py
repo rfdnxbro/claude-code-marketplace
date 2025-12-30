@@ -3,7 +3,7 @@
 """
 
 from .agent import validate_agent
-from .base import ValidationResult, parse_frontmatter
+from .base import ValidationResult, parse_frontmatter, parse_json_safe
 from .hooks_json import validate_hooks_json
 from .lsp_json import validate_lsp_json
 from .mcp_json import validate_mcp_json
@@ -16,6 +16,7 @@ from .slash_command import validate_slash_command
 __all__ = [
     "ValidationResult",
     "parse_frontmatter",
+    "parse_json_safe",
     "validate_slash_command",
     "validate_agent",
     "validate_skill",

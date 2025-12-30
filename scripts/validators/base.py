@@ -2,6 +2,7 @@
 共通ユーティリティ: ValidationResult と parse_frontmatter
 """
 
+import json
 import re
 from pathlib import Path
 from typing import Any
@@ -179,3 +180,22 @@ def check_env_secrets(
                     f"{file_path.name}: {context_name}: "
                     f"envの{key}に機密情報の可能性。${{{{VAR}}}}形式を使用"
                 )
+
+
+def parse_json_safe(content: str, file_path: Path, result: ValidationResult) -> dict | None:
+    """
+    JSON文字列を安全にパースする
+
+    Args:
+        content: JSON文字列
+        file_path: エラーメッセージ用のファイルパス
+        result: 検証結果オブジェクト
+
+    Returns:
+        パース成功時はdict、失敗時はNone（resultにエラーを追加）
+    """
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError as e:
+        result.add_error(f"{file_path.name}: JSONパースエラー: {e}")
+        return None
