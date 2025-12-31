@@ -4,7 +4,7 @@
 
 from pathlib import Path
 
-from .base import ValidationResult, check_env_secrets, parse_json_safe
+from .base import ValidationResult, parse_json_safe
 
 # 有効なtransport値
 VALID_TRANSPORTS = {"stdio", "socket"}
@@ -68,24 +68,12 @@ def validate_lsp_json(file_path: Path, content: str) -> ValidationResult:
         # 数値フィールドのバリデーション
         for field in ["startupTimeout", "shutdownTimeout", "maxRestarts"]:
             value = config.get(field)
-            if value is not None and not isinstance(value, (int, float)):
+            if value is not None and not isinstance(value, int | float):
                 result.add_error(f"{file_path.name}: {server_name}: {field}は数値が必要")
 
         # ブールフィールドのバリデーション
         restart_on_crash = config.get("restartOnCrash")
         if restart_on_crash is not None and not isinstance(restart_on_crash, bool):
             result.add_error(f"{file_path.name}: {server_name}: restartOnCrashはブール値が必要")
-
-        # 環境変数の直接記述をチェック
-        env = config.get("env", {})
-        if isinstance(env, dict):
-            check_env_secrets(result, file_path, server_name, env)
-
-        # loggingConfigのenvもチェック
-        logging_config = config.get("loggingConfig", {})
-        if isinstance(logging_config, dict):
-            logging_env = logging_config.get("env", {})
-            if isinstance(logging_env, dict):
-                check_env_secrets(result, file_path, server_name, logging_env)
 
     return result

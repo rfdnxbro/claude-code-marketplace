@@ -125,27 +125,6 @@ class TestIntegration:
             result = self._run_validator("Read", str(skill_path))
             assert result == {}
 
-    def test_mcp_secret_detection(self):
-        """MCPファイルでの機密情報検出"""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            mcp_path = Path(tmpdir) / ".mcp.json"
-            content = json.dumps(
-                {
-                    "mcpServers": {
-                        "test": {
-                            "type": "stdio",
-                            "command": "node",
-                            "env": {"KEY": "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"},
-                        }
-                    }
-                }
-            )
-
-            result = self._run_validator("Write", str(mcp_path), content)
-            assert "systemMessage" in result
-            assert "GitHub" in result["systemMessage"]
-            assert "エラー" in result["systemMessage"]
-
     def test_continue_flag_is_true(self):
         """continueフラグが常にtrueであること"""
         with tempfile.TemporaryDirectory() as tmpdir:
