@@ -17,8 +17,6 @@ DISABLE_PATTERN = re.compile(r"<!--\s*validator-disable\s+([\w-]+)\s*-->")
 # 警告ID定数
 WARNING_DANGEROUS_OPERATION = "dangerous-operation"
 WARNING_BROAD_BASH_WILDCARD = "broad-bash-wildcard"
-WARNING_MISSING_DESCRIPTION = "missing-description"
-WARNING_INVALID_MODEL = "invalid-model"
 
 # シークレット検出用パターン（プリコンパイル）
 SECRET_PATTERNS = [

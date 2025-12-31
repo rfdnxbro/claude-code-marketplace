@@ -82,8 +82,10 @@ APIエンドポイントを作成...
 
 | 警告ID | 説明 |
 |--------|------|
-| `dangerous-operation` | 危険なキーワード（deploy, delete等）検出時の警告 |
+| `dangerous-operation` | 危険なキーワード（deploy, delete, drop, production, 本番）検出時の警告 |
 | `broad-bash-wildcard` | `Bash(*)`使用時の警告 |
+
+**注意**: キーワード検出は大文字小文字を区別しません（`DELETE`も`delete`として検出）。
 
 ## フィールド命名規則について
 
