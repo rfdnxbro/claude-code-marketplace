@@ -7,8 +7,5 @@
   },
   "repository": "https://github.com/rfdnxbro/claude-code-marketplace",
   "license": "MIT",
-  "keywords": ["ai-dlc", "sdlc", "agile", "ddd", "methodology"],
-  "commands": "./commands/",
-  "agents": "./agents/",
-  "skills": "./skills/"
+  "keywords": ["ai-dlc", "sdlc", "agile", "ddd", "methodology"]
 }
