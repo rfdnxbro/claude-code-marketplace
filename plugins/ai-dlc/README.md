@@ -34,16 +34,19 @@ AI-DLCは、Amazon Web ServicesのRaja SP氏が提唱するAIネイティブな�
 ### 4. セッション状態管理
 
 ボルトディレクトリ内に `current.yml` ファイルを作成し、現在のセッション状態を追跡します。
-
-```yaml
-bolt: 20251230_user-auth
-type: greenfield  # or brownfield
-phase: inception
-step: user-stories
-updated: 2025-12-30T10:00:00
-```
+詳細は [docs/session-management.md](docs/session-management.md) を参照。
 
 `/ai-dlc:guide:current` コマンドで現在のステップと次に実行すべきコマンドを確認できます。
+
+### 5. 設計技法の統合（DDD/BDD/TDD）（対応予定）
+
+ホワイトペーパーでは「DDD/BDD/TDDの異なるフレーバー」に言及しています。本プラグインではこれらを**排他的な選択肢ではなく、各フェーズで組み合わせて活用**する方針です。
+
+| 技法 | 適用フェーズ | 活用方法 | 実装状況 |
+|------|-------------|----------|----------|
+| **BDD** | インセプション | 受け入れ基準をGiven/When/Then形式で明確化 | 対応予定 |
+| **DDD** | コンストラクション | ドメインモデルで設計の骨格を構築 | 実装済み |
+| **TDD** | コンストラクション | テストファーストで実装を進行 | 対応予定 |
 
 ## インストール
 
@@ -106,13 +109,11 @@ claude plugins install ai-dlc
 
 ## ドキュメント
 
-### docs/whitepaper.md（英語版）
-
-AI-DLCホワイトペーパーの原文を参考資料として保管しています。
-
-### docs/whitepaper-ja.md（日本語版）
-
-AI-DLCホワイトペーパーの日本語訳を参考資料として保管しています。
+| ファイル | 説明 |
+|----------|------|
+| [docs/session-management.md](docs/session-management.md) | セッション状態管理（current.yml）の詳細仕様 |
+| [docs/whitepaper.md](docs/whitepaper.md) | AI-DLCホワイトペーパー原文（英語） |
+| [docs/whitepaper-ja.md](docs/whitepaper-ja.md) | AI-DLCホワイトペーパー日本語訳 |
 
 > **著作権について**
 >
@@ -132,7 +133,7 @@ AI-DLCホワイトペーパーの日本語訳を参考資料として保管し�
 
 1. **インセプションフェーズ**: モブエラボレーションリチュアルを通じてインテントをユニットに分解
 2. **コンストラクションフェーズ**: ドメイン設計→論理設計→コード生成→テストの反復
-3. **オペレーションフェーズ**: デプロイ、監視、運用の自動化
+3. **オペレーションフェーズ**（今後実装）: デプロイ、監視、運用の自動化
 
 ## 参考リンク
 
