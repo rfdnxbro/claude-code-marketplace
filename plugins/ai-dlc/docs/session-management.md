@@ -29,7 +29,7 @@ updated: YYYY-MM-DDTHH:MM:SS
 | construction | domain-model | code-gen |
 | construction | code-gen | architecture |
 | construction | architecture | api |
-| construction | api | deploy（→operation） |
+| construction | api | deploy（→operation、今後実装） |
 
 ## 状態更新ルール
 
