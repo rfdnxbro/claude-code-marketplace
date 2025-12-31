@@ -142,3 +142,49 @@ class TestValidateSlashCommand:
         """).strip()
         result = validate_slash_command(Path("test.md"), content)
         assert any("ネスト" in w for w in result.warnings)
+
+    def test_disable_dangerous_operation_warning(self):
+        """validator-disableコメントでdangerous-operation警告をスキップ"""
+        content = dedent("""
+            ---
+            description: API作成
+            ---
+
+            <!-- validator-disable dangerous-operation -->
+
+            本番環境へdeployを実行します
+        """).strip()
+        result = validate_slash_command(Path("api.md"), content)
+        assert not result.has_errors()
+        # deployキーワードがあるが、スキップコメントにより警告なし
+        assert not any("disable-model-invocation" in w for w in result.warnings)
+
+    def test_dangerous_operation_warning_not_skipped_without_comment(self):
+        """スキップコメントがなければ警告が出ることを確認"""
+        content = dedent("""
+            ---
+            description: API作成
+            ---
+
+            本番環境へdeployを実行します
+        """).strip()
+        result = validate_slash_command(Path("api.md"), content)
+        assert not result.has_errors()
+        # スキップコメントがないので警告が出る
+        assert any("disable-model-invocation" in w for w in result.warnings)
+
+    def test_disable_broad_bash_wildcard_warning(self):
+        """validator-disableコメントでbroad-bash-wildcard警告をスキップ"""
+        content = dedent("""
+            ---
+            description: テスト
+            allowed-tools: Bash(*)
+            ---
+
+            <!-- validator-disable broad-bash-wildcard -->
+
+            任意のコマンドを実行
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert not any("Bash(*)" in w for w in result.warnings)

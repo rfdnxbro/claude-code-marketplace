@@ -24,6 +24,21 @@ python3 scripts/validate_plugin.py plugins/my-plugin/commands/review.md
 python3 scripts/validate_plugin.py plugins/my-plugin/**/*.md plugins/my-plugin/**/*.json
 ```
 
+#### 警告のスキップ
+
+バリデーターの警告を意図的にスキップするには、ファイル内にHTMLコメントを追加:
+
+```markdown
+<!-- validator-disable dangerous-operation -->
+```
+
+| 警告ID | 説明 |
+|--------|------|
+| `dangerous-operation` | 危険なキーワード（deploy, delete等）検出時 |
+| `broad-bash-wildcard` | `Bash(*)`使用時 |
+
+詳細は `.claude/rules/slash-commands.md` を参照。
+
 ### テスト実行
 
 ```bash
