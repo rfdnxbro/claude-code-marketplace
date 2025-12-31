@@ -28,15 +28,21 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 
 ## コンポーネント参照
 
-| フィールド | 型 | 説明 |
-|-----------|---|------|
-| `commands` | string/array | コマンドファイル/ディレクトリ |
-| `agents` | string/array | エージェントファイル/ディレクトリ |
-| `skills` | string/array | スキルディレクトリ |
-| `hooks` | string/object | フック設定パスまたはインライン |
-| `mcpServers` | string/object | MCP設定パスまたはインライン（→ [mcp-servers.md](mcp-servers.md)） |
-| `lspServers` | string/object | LSP設定パスまたはインライン（→ [lsp-servers.md](lsp-servers.md)） |
-| `outputStyles` | string/array | 出力スタイルファイル/ディレクトリ（→ [output-styles.md](output-styles.md)） |
+| フィールド | 型 | 説明 | デフォルトディレクトリ |
+|-----------|---|------|----------------------|
+| `commands` | string/array | コマンドファイル/ディレクトリ | `commands/` |
+| `agents` | string/array | エージェントファイル/ディレクトリ | `agents/` |
+| `skills` | string/array | スキルディレクトリ | `skills/` |
+| `hooks` | string/object | フック設定パスまたはインライン | `hooks/hooks.json` |
+| `mcpServers` | string/object | MCP設定パスまたはインライン（→ [mcp-servers.md](mcp-servers.md)） | `.mcp.json` |
+| `lspServers` | string/object | LSP設定パスまたはインライン（→ [lsp-servers.md](lsp-servers.md)） | `.lsp.json` |
+| `outputStyles` | string/array | 出力スタイルファイル/ディレクトリ（→ [output-styles.md](output-styles.md)） | なし |
+
+**デフォルトディレクトリの動作**:
+
+- デフォルトディレクトリ（`commands/`, `agents/`, `skills/`等）が存在すれば自動的に読み込まれる
+- plugin.jsonでの明示的な指定は不要
+- カスタムパスを指定した場合、デフォルトディレクトリと**両方が読み込まれる**（置き換えではなく補足）
 
 ## 完全な例
 
