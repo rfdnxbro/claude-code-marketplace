@@ -64,6 +64,27 @@ allowed-tools: Bash(deploy:*)
 - `true`: Claudeの自動実行を禁止（ユーザーの手動実行のみ可能）
 - `false`: Claudeが会話中に自動実行可能
 
+## バリデーター警告のスキップ
+
+バリデーターが出す警告を意図的にスキップするには、本文中にHTMLコメントを追加します:
+
+```markdown
+---
+description: REST API作成
+---
+
+<!-- validator-disable dangerous-operation -->
+
+APIエンドポイントを作成...
+```
+
+### 警告ID一覧
+
+| 警告ID | 説明 |
+|--------|------|
+| `dangerous-operation` | 危険なキーワード（deploy, delete等）検出時の警告 |
+| `broad-bash-wildcard` | `Bash(*)`使用時の警告 |
+
 ## フィールド命名規則について
 
 フロントマターのフィールド名は**Claude Code本体の仕様**に従っています。

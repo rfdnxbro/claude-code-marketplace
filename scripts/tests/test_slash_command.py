@@ -142,3 +142,34 @@ class TestValidateSlashCommand:
         """).strip()
         result = validate_slash_command(Path("test.md"), content)
         assert any("ネスト" in w for w in result.warnings)
+
+    def test_disable_dangerous_operation_warning(self):
+        """validator-disableコメントでdangerous-operation警告をスキップ"""
+        content = dedent("""
+            ---
+            description: API作成
+            ---
+
+            <!-- validator-disable dangerous-operation -->
+
+            REST APIエンドポイントを作成します
+        """).strip()
+        result = validate_slash_command(Path("api.md"), content)
+        assert not result.has_errors()
+        assert not any("disable-model-invocation" in w for w in result.warnings)
+
+    def test_disable_broad_bash_wildcard_warning(self):
+        """validator-disableコメントでbroad-bash-wildcard警告をスキップ"""
+        content = dedent("""
+            ---
+            description: テスト
+            allowed-tools: Bash(*)
+            ---
+
+            <!-- validator-disable broad-bash-wildcard -->
+
+            任意のコマンドを実行
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert not any("Bash(*)" in w for w in result.warnings)

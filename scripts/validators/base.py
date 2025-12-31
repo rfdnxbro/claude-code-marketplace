@@ -10,6 +10,16 @@ from typing import Any
 # kebab-case検証用の正規表現（プリコンパイル）
 KEBAB_CASE_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
+# 警告スキップコメントの正規表現
+# 形式: <!-- validator-disable warning-id -->
+DISABLE_PATTERN = re.compile(r"<!--\s*validator-disable\s+([\w-]+)\s*-->")
+
+# 警告ID定数
+WARNING_DANGEROUS_OPERATION = "dangerous-operation"
+WARNING_BROAD_BASH_WILDCARD = "broad-bash-wildcard"
+WARNING_MISSING_DESCRIPTION = "missing-description"
+WARNING_INVALID_MODEL = "invalid-model"
+
 # シークレット検出用パターン（プリコンパイル）
 SECRET_PATTERNS = [
     (re.compile(r"sk-[a-zA-Z0-9]{32,}"), "OpenAI APIキー"),
@@ -199,3 +209,18 @@ def parse_json_safe(content: str, file_path: Path, result: ValidationResult) -> 
     except json.JSONDecodeError as e:
         result.add_error(f"{file_path.name}: JSONパースエラー: {e}")
         return None
+
+
+def get_disabled_warnings(content: str) -> set[str]:
+    """
+    ファイル内容から無効化された警告IDを取得する
+
+    形式: <!-- validator-disable warning-id -->
+
+    Args:
+        content: ファイル全体の内容
+
+    Returns:
+        無効化されている警告IDのset
+    """
+    return set(DISABLE_PATTERN.findall(content))
