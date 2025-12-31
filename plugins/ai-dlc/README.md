@@ -89,6 +89,21 @@ claude plugins install ai-dlc
 /ai-dlc:construction:code-gen aidlc-docs/20251230_recommendation-engine
 ```
 
+### サブエージェント
+
+| エージェント | 役割 |
+|-------------|------|
+| `product-manager` | ユーザーストーリー作成、要件定義 |
+| `software-architect` | ユニット分解、ドメインモデル設計 |
+| `software-engineer` | コード生成、テスト作成 |
+| `cloud-architect` | クラウドアーキテクチャ設計、デプロイ計画 |
+
+### スキル
+
+| スキル | 説明 |
+|--------|------|
+| `ai-dlc` | AI-DLCの概念、原則、ベストプラクティスを説明 |
+
 ## ドキュメント
 
 ### docs/whitepaper.md（英語版）
