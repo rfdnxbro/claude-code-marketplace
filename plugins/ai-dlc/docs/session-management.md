@@ -40,6 +40,8 @@ aidlc-docs/
 | `greenfield` | 新規システムの開発 |
 | `brownfield` | 既存システムへの機能追加・改善 |
 
+> **ブラウンフィールドの動作**: `brownfield` を選択した場合、`construction/domain-model` の実行時に既存コードベースの分析（静的・動的モデルの抽出）が先に行われます。詳細は `commands/construction/domain-model.md` を参照。
+
 #### phase
 
 現在のフェーズ。ステップ遷移に応じて自動更新。
