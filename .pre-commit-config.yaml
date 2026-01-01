@@ -22,7 +22,7 @@ repos:
 
   # Markdown lint（CIと同じ対象ファイル）
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.43.0
+    rev: v0.47.0
     hooks:
       - id: markdownlint
         args: [--config, .markdownlint.json]
@@ -30,7 +30,7 @@ repos:
 
   # YAML lint（CIと同じ対象: .github/workflows/）
   - repo: https://github.com/adrienverge/yamllint
-    rev: v1.35.0
+    rev: v1.37.1
     hooks:
       - id: yamllint
         args: [-c, .yamllint.yml]
