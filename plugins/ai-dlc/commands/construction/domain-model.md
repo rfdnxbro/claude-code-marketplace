@@ -12,7 +12,17 @@ argument-hint: [unit-name]
 
 ### 0. ブラウンフィールド判定
 
-`current.yml` の `type` を確認し、`brownfield` の場合は先に既存コード分析を実行：
+1. **current.ymlの読み込み**
+   - Readツールで `aidlc-docs/<bolt>/current.yml` を読み込み
+   - `type` フィールドを確認
+
+2. **分岐処理**
+   - `type: brownfield` の場合 → 既存コード分析を実行（以下の手順）
+   - `type: greenfield` の場合 → ステップ1へスキップ
+
+**前提条件チェック**:
+- `current.yml` が存在しない場合: エラー「セッションが見つかりません。先に `/ai-dlc:setup` を実行してください」
+- `type` フィールドが存在しない場合: `greenfield` として扱う
 
 #### 既存コード分析（ブラウンフィールドのみ）
 
