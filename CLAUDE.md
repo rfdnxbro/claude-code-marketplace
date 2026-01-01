@@ -55,7 +55,7 @@ uvx --with pytest-cov pytest scripts/tests/ -v --cov=scripts/validators --cov-re
 
 ```bash
 # 初回セットアップ
-brew install pre-commit  # または pip install pre-commit
+brew install pre-commit gitleaks  # または pip install pre-commit
 pre-commit install
 
 # 手動で全ファイルに実行
