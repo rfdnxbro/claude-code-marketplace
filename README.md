@@ -139,22 +139,24 @@ uvx pytest scripts/tests/ -v
 
 ## 品質保証
 
-### pre-commitによるローカルチェック
+### ローカル検証（pre-commit）
 
-コミット時に以下のチェックが自動実行されます:
+コミット時に以下の検証が自動実行されます:
 
-| チェック | 説明 |
+| 検証項目 | 説明 |
 |---------|------|
 | gitleaks | 機密情報（APIキー、トークン等）の検出 |
 | ruff | Python lint/format（`scripts/`配下） |
-| markdownlint | Markdown構文チェック |
-| yamllint | YAML構文チェック（`.github/workflows/`配下） |
+| markdownlint | Markdown構文検証 |
+| yamllint | YAML構文検証（`.github/workflows/`配下） |
 | validate-plugin | プラグインファイル検証（`plugins/`配下） |
 | pytest | テスト実行（push時のみ） |
 
-### CIによる自動チェック
+初回セットアップ方法は[プラグインの検証](#プラグインの検証)セクションを参照してください。
 
-PRおよびpush時に以下が実行されます:
+### CI/CD
+
+PRおよびpush時に以下のワークフローが実行されます:
 
 | ワークフロー | トリガー | 説明 |
 |-------------|---------|------|
@@ -164,17 +166,7 @@ PRおよびpush時に以下が実行されます:
 | セキュリティスキャン | PR/push時 | gitleaksで機密情報検出 |
 | CHANGELOG監視 | 日次 | Claude Code公式の変更検出 |
 
-### 依存関係の自動更新
-
-Dependabotにより、GitHub Actionsの依存関係が週次で自動更新されます。
-
-## CI/CD
-
-### プラグイン検証
-
-`plugins/`配下のファイルが変更されると、自動的に検証スクリプトが実行されます。
-
-検証対象:
+#### プラグイン検証の対象
 
 - `plugin.json` - プラグインマニフェスト
 - `commands/*.md` - スラッシュコマンド
@@ -186,10 +178,6 @@ Dependabotにより、GitHub Actionsの依存関係が週次で自動更新さ�
 - `README.md` - プラグインREADME
 - `output-styles/*.md` - 出力スタイル
 
-### スクリプトテスト
-
-`scripts/`配下のファイルが変更されると、自動的にpytestが実行されます。
-
 #### カバレッジバッジのセットアップ
 
 カバレッジバッジを有効にするには以下の設定が必要です：
@@ -198,7 +186,7 @@ Dependabotにより、GitHub Actionsの依存関係が週次で自動更新さ�
 2. リポジトリのSecrets（`GIST_SECRET`）にトークンを設定
 3. リポジトリのVariables（`COVERAGE_GIST_ID`）に`584b9ff17fd95a2c4aa38dcf30c5a391`を設定
 
-### CHANGELOG監視
+#### CHANGELOG監視
 
 Claude Code公式リポジトリのCHANGELOGを毎日監視し、プラグイン関連の変更を自動検出します。
 
@@ -207,7 +195,7 @@ Claude Code公式リポジトリのCHANGELOGを毎日監視し、プラグイン
 1. 自動でIssueが作成される
 2. 必要に応じてドキュメント修正のPRが作成される
 
-#### セットアップ
+セットアップ:
 
 1. リポジトリのSecretsに `ANTHROPIC_API_KEY` を設定
 2. GitHub Actionsを有効化
@@ -217,13 +205,17 @@ Claude Code公式リポジトリのCHANGELOGを毎日監視し、プラグイン
 gh workflow run changelog-monitor.yml
 ```
 
-#### 検出対象
+検出対象:
 
 - plugin.json / marketplace.json の仕様変更
 - フロントマターの新規フィールドや変更
 - 新しいコンポーネントタイプの追加
 - 既存仕様の非推奨化や削除
 - MCP、フック、スキル、エージェントの仕様変更
+
+### 依存関係の自動更新
+
+Dependabotにより、GitHub Actionsの依存関係が週次で自動更新されます。
 
 ## 関連リンク
 
