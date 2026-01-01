@@ -137,6 +137,37 @@ python3 scripts/validate_plugin.py plugins/my-plugin/**/*.md plugins/my-plugin/*
 uvx pytest scripts/tests/ -v
 ```
 
+## 品質保証
+
+### pre-commitによるローカルチェック
+
+コミット時に以下のチェックが自動実行されます:
+
+| チェック | 説明 |
+|---------|------|
+| gitleaks | 機密情報（APIキー、トークン等）の検出 |
+| ruff | Python lint/format（`scripts/`配下） |
+| markdownlint | Markdown構文チェック |
+| yamllint | YAML構文チェック（`.github/workflows/`配下） |
+| validate-plugin | プラグインファイル検証（`plugins/`配下） |
+| pytest | テスト実行（push時のみ） |
+
+### CIによる自動チェック
+
+PRおよびpush時に以下が実行されます:
+
+| ワークフロー | トリガー | 説明 |
+|-------------|---------|------|
+| プラグイン検証 | `plugins/**`変更時 | プラグインファイルのバリデーション |
+| スクリプトテスト | `scripts/**`変更時 | pytest実行、カバレッジ測定 |
+| Lint | 各種ファイル変更時 | ruff、markdownlint、yamllint |
+| セキュリティスキャン | PR/push時 | gitleaksで機密情報検出 |
+| CHANGELOG監視 | 日次 | Claude Code公式の変更検出 |
+
+### 依存関係の自動更新
+
+Dependabotにより、GitHub Actionsの依存関係が週次で自動更新されます。
+
 ## CI/CD
 
 ### プラグイン検証
