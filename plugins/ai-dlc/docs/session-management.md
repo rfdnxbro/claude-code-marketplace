@@ -16,11 +16,11 @@ aidlc-docs/
 
 | フィールド | 型 | 必須 | 説明 |
 |-----------|-----|------|------|
-| `bolt` | string | Yes | ボルト識別子（`YYYYMMDD_<name>`形式） |
-| `type` | enum | Yes | 開発タイプ |
-| `phase` | enum | Yes | 現在のフェーズ |
-| `step` | string | Yes | 現在のステップ |
-| `updated` | datetime | Yes | 最終更新日時（ISO 8601形式） |
+| `bolt` | string | ○ | ボルト識別子（`YYYYMMDD_<name>`形式） |
+| `type` | enum | ○ | 開発タイプ |
+| `phase` | enum | ○ | 現在のフェーズ |
+| `step` | string | ○ | 現在のステップ |
+| `updated` | datetime | ○ | 最終更新日時（ISO 8601形式） |
 
 ### フィールド詳細
 
@@ -65,10 +65,12 @@ aidlc-docs/
 
 #### updated
 
-最終更新日時。ISO 8601形式。
+最終更新日時。ISO 8601形式（タイムゾーンなし、ローカル時刻）。
 
 - 形式: `YYYY-MM-DDTHH:MM:SS`
 - 例: `2025-12-30T14:30:00`
+
+> **注**: タイムゾーン情報は含めない。ローカル時刻として扱う。
 
 ### 完全な例
 
