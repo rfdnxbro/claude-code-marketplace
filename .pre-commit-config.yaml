@@ -9,7 +9,7 @@ repos:
     hooks:
       - id: gitleaks
         name: Detect secrets with gitleaks
-        entry: "bash -c 'command -v gitleaks >/dev/null && gitleaks git --pre-commit --staged --verbose || echo \"gitleaks not installed. Run: brew install gitleaks\"'"
+        entry: "bash -c 'command -v gitleaks >/dev/null && gitleaks git --pre-commit --staged --verbose || { echo \"ERROR: gitleaks not installed. Run: brew install gitleaks\"; exit 1; }'"
         language: system
         pass_filenames: false
 
