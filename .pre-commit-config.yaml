@@ -13,13 +13,15 @@ repos:
         language: system
         pass_filenames: false
 
-  # Python lint/format
+  # Python lint/format（CIと同じ対象: scripts/）
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.8.0
     hooks:
       - id: ruff
         args: [--fix]
+        files: ^scripts/
       - id: ruff-format
+        files: ^scripts/
 
   # Markdown lint（CIと同じ対象ファイル）
   - repo: https://github.com/igorshubovych/markdownlint-cli
@@ -29,12 +31,13 @@ repos:
         args: [--config, .markdownlint.json]
         files: ^(README\.md|CLAUDE\.md|scripts/README\.md|\.claude/rules/.*\.md|\.claude/skills/.*/SKILL\.md)$
 
-  # YAML lint
+  # YAML lint（CIと同じ対象: .github/workflows/）
   - repo: https://github.com/adrienverge/yamllint
     rev: v1.35.0
     hooks:
       - id: yamllint
         args: [-c, .yamllint.yml]
+        files: ^\.github/workflows/
 
   # プラグイン検証（ローカルhook）
   - repo: local
