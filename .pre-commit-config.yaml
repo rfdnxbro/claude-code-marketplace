@@ -12,7 +12,7 @@ repos:
 
   # Python lint/format（CIと同じ対象: scripts/）
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.0
+    rev: v0.14.10
     hooks:
       - id: ruff
         args: [--fix]
