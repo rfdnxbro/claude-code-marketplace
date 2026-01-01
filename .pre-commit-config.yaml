@@ -1,0 +1,56 @@
+# pre-commit設定
+# インストール: pre-commit install
+# 手動実行: pre-commit run --all-files
+# 参考: https://pre-commit.com/
+
+repos:
+  # 機密情報検出（pre-commitが自動でgitleaksをダウンロード）
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+
+  # Python lint/format（CIと同じ対象: scripts/）
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.10
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^scripts/
+      - id: ruff-format
+        files: ^scripts/
+
+  # Markdown lint（CIと同じ対象ファイル）
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.47.0
+    hooks:
+      - id: markdownlint
+        args: [--config, .markdownlint.json]
+        files: ^(README\.md|CLAUDE\.md|scripts/README\.md|\.claude/rules/.*\.md|\.claude/skills/.*/SKILL\.md)$
+
+  # YAML lint（CIと同じ対象: .github/workflows/）
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.37.1
+    hooks:
+      - id: yamllint
+        args: [-c, .yamllint.yml]
+        files: ^\.github/workflows/
+
+  # プラグイン検証（ローカルhook）
+  - repo: local
+    hooks:
+      - id: validate-plugin
+        name: Validate plugin files
+        entry: python3 scripts/validate_plugin.py
+        language: system
+        files: ^plugins/.*\.(md|json)$
+        pass_filenames: true
+
+      # テスト（staged filesにscripts/配下が含まれる場合のみ実行）
+      - id: pytest
+        name: Run tests
+        entry: uvx pytest scripts/tests/ -v --tb=short
+        language: system
+        files: ^scripts/.*\.py$
+        pass_filenames: false
+        stages: [pre-push]  # コミット時はスキップ、push時に実行

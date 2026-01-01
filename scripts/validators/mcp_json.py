@@ -4,7 +4,7 @@
 
 from pathlib import Path
 
-from .base import ValidationResult, check_env_secrets, parse_json_safe
+from .base import ValidationResult, parse_json_safe
 
 
 def validate_mcp_json(file_path: Path, content: str) -> ValidationResult:
@@ -37,9 +37,5 @@ def validate_mcp_json(file_path: Path, content: str) -> ValidationResult:
             result.add_warning(
                 f"{file_path.name}: {server_name}: 不明なサーバータイプ: {server_type}"
             )
-
-        # 環境変数の直接記述をチェック
-        env = config.get("env", {})
-        check_env_secrets(result, file_path, server_name, env)
 
     return result

@@ -49,7 +49,29 @@ uvx pytest scripts/tests/ -v
 uvx --with pytest-cov pytest scripts/tests/ -v --cov=scripts/validators --cov-report=term
 ```
 
-### Linter/Formatter
+### Linter/Formatter（pre-commit）
+
+品質チェックはpre-commitで一括管理されています。
+
+```bash
+# 初回セットアップ
+brew install pre-commit  # または pip install pre-commit
+pre-commit install
+
+# 手動で全ファイルに実行
+pre-commit run --all-files
+```
+
+pre-commitで実行されるチェック:
+
+- gitleaks: 機密情報検出（自動ダウンロード）
+- ruff: Python lint/format
+- markdownlint: Markdown lint
+- yamllint: YAML lint
+- validate-plugin: プラグインファイル検証
+- pytest: テスト実行（push時のみ）
+
+個別に手動実行する場合:
 
 ```bash
 # Pythonファイルのチェック

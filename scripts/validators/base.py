@@ -18,24 +18,6 @@ DISABLE_PATTERN = re.compile(r"<!--\s*validator-disable\s+([\w-]+)\s*-->")
 WARNING_DANGEROUS_OPERATION = "dangerous-operation"
 WARNING_BROAD_BASH_WILDCARD = "broad-bash-wildcard"
 
-# シークレット検出用パターン（プリコンパイル）
-SECRET_PATTERNS = [
-    (re.compile(r"sk-[a-zA-Z0-9]{32,}"), "OpenAI APIキー"),
-    (re.compile(r"sk-proj-[a-zA-Z0-9]{32,}"), "OpenAI Project APIキー"),
-    (re.compile(r"ghp_[a-zA-Z0-9]{36}"), "GitHub Personal Access Token"),
-    (re.compile(r"gho_[a-zA-Z0-9]{36}"), "GitHub OAuth Token"),
-    (re.compile(r"ghu_[a-zA-Z0-9]{36}"), "GitHub User Token"),
-    (re.compile(r"ghs_[a-zA-Z0-9]{36}"), "GitHub Server Token"),
-    (re.compile(r"xoxb-[a-zA-Z0-9-]+"), "Slack Bot Token"),
-    (re.compile(r"xoxa-[a-zA-Z0-9-]+"), "Slack App Token"),
-    (re.compile(r"xoxp-[a-zA-Z0-9-]+"), "Slack User Token"),
-    (re.compile(r"AKIA[A-Z0-9]{16}"), "AWS Access Key ID"),
-    (re.compile(r"AIza[a-zA-Z0-9_-]{35}"), "Google API Key"),
-]
-
-# 汎用的な機密情報パターン（長い英数字文字列）
-GENERIC_SECRET_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
-
 
 class ValidationResult:
     """検証結果を管理するクラス"""
@@ -152,42 +134,6 @@ def validate_kebab_case(name: str) -> str | None:
     if not KEBAB_CASE_PATTERN.match(name):
         return f"nameはkebab-case（小文字とハイフン）のみ: {name}"
     return None
-
-
-def check_env_secrets(
-    result: ValidationResult,
-    file_path: Path,
-    context_name: str,
-    env: dict,
-) -> None:
-    """
-    環境変数に機密情報が直接記述されていないかチェック
-
-    Args:
-        result: 検証結果オブジェクト
-        file_path: 検証対象ファイルのパス
-        context_name: エラーメッセージに含めるコンテキスト名（サーバー名など）
-        env: 環境変数の辞書
-    """
-    for key, value in env.items():
-        if not isinstance(value, str) or value.startswith("${"):
-            continue
-
-        # 既知の機密情報パターンをチェック
-        for pattern, description in SECRET_PATTERNS:
-            if pattern.search(value):
-                result.add_error(
-                    f"{file_path.name}: {context_name}: "
-                    f"envの{key}に{description}が直接記述。${{{{VAR}}}}形式を使用"
-                )
-                break
-        else:
-            # 既知パターンに一致しない場合、汎用チェック（警告）
-            if len(value) > 20 and GENERIC_SECRET_PATTERN.match(value):
-                result.add_warning(
-                    f"{file_path.name}: {context_name}: "
-                    f"envの{key}に機密情報の可能性。${{{{VAR}}}}形式を使用"
-                )
 
 
 def parse_json_safe(content: str, file_path: Path, result: ValidationResult) -> dict | None:

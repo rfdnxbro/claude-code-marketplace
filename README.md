@@ -123,7 +123,14 @@ claude --plugin-dir ./plugins/my-plugin
 ### プラグインの検証
 
 ```bash
-# Pythonスクリプトで検証
+# 初回セットアップ（pre-commitの導入）
+brew install pre-commit  # または pip install pre-commit
+pre-commit install
+
+# 全ファイルを検証
+pre-commit run --all-files
+
+# 個別にPythonスクリプトで検証
 python3 scripts/validate_plugin.py plugins/my-plugin/**/*.md plugins/my-plugin/**/*.json
 
 # テストを実行
