@@ -124,7 +124,7 @@ claude --plugin-dir ./plugins/my-plugin
 
 ```bash
 # 初回セットアップ（pre-commitの導入）
-brew install pre-commit gitleaks  # または pip install pre-commit
+brew install pre-commit  # または pip install pre-commit
 pre-commit install
 
 # 全ファイルを検証

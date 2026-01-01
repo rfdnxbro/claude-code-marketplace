@@ -69,9 +69,9 @@ class TestValidatePluginJson:
         for version in ["1.0.0", "0.1.0", "2.3.4", "1.0.0-alpha", "1.0.0-beta.1"]:
             content = json.dumps({"name": "my-plugin", "version": version})
             result = validate_plugin_json(Path("plugin.json"), content)
-            assert not any("セマンティックバージョニング" in w for w in result.warnings), (
-                f"Version {version} should be valid"
-            )
+            assert not any(
+                "セマンティックバージョニング" in w for w in result.warnings
+            ), f"Version {version} should be valid"
 
     def test_path_without_prefix(self):
         content = json.dumps({"name": "my-plugin", "commands": "commands/"})
@@ -104,6 +104,6 @@ class TestValidatePluginJson:
         for field in path_fields:
             content = json.dumps({"name": "my-plugin", field: "some/path"})
             result = validate_plugin_json(Path("plugin.json"), content)
-            assert any("./" in w for w in result.warnings), (
-                f"Field {field} should trigger path warning"
-            )
+            assert any(
+                "./" in w for w in result.warnings
+            ), f"Field {field} should trigger path warning"

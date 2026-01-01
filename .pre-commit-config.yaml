@@ -4,14 +4,11 @@
 # 参考: https://pre-commit.com/
 
 repos:
-  # 機密情報検出（brew install gitleaks が必要）
-  - repo: local
+  # 機密情報検出（pre-commitが自動でgitleaksをダウンロード）
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
     hooks:
       - id: gitleaks
-        name: Detect secrets with gitleaks
-        entry: gitleaks git --pre-commit --staged --verbose
-        language: system
-        pass_filenames: false
 
   # Python lint/format（CIと同じ対象: scripts/）
   - repo: https://github.com/astral-sh/ruff-pre-commit
