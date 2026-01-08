@@ -16,6 +16,7 @@ permissions:
   contents: write
   issues: write
   pull-requests: write
+  id-token: write
 
 concurrency:
   group: changelog-monitor
@@ -28,11 +29,6 @@ jobs:
     steps:
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v6
-
-      - name: Node.jsをセットアップ
-        uses: actions/setup-node@v6
-        with:
-          node-version: '20'
 
       - name: 最新のCHANGELOGを取得
         id: fetch
@@ -54,6 +50,8 @@ jobs:
               echo "changed=false" >> $GITHUB_OUTPUT
               echo "is_first_run=false" >> $GITHUB_OUTPUT
               echo "CHANGELOGに変更はありません"
+              # force_check用に空のdiffファイルを作成
+              echo "変更なし" > changelog-diff.txt
             else
               echo "changed=true" >> $GITHUB_OUTPUT
               echo "is_first_run=false" >> $GITHUB_OUTPUT
@@ -64,6 +62,7 @@ jobs:
             echo "changed=true" >> $GITHUB_OUTPUT
             echo "is_first_run=true" >> $GITHUB_OUTPUT
             echo "初回実行: スナップショットを作成します"
+            echo "初回実行のため差分なし" > changelog-diff.txt
           fi
 
       - name: 初回実行時はスナップショット作成のみ
@@ -78,54 +77,52 @@ jobs:
           git push
           echo "初回実行完了。次回以降の実行で変更を検出します。"
 
-      - name: Claude Codeをインストール
-        if: (steps.check-diff.outputs.changed == 'true' && steps.check-diff.outputs.is_first_run == 'false') || inputs.force_check
-        run: npm install -g @anthropic-ai/claude-code
-
       - name: Claudeで変更を解析しIssue/PRを作成
         id: claude-analysis
         if: (steps.check-diff.outputs.changed == 'true' && steps.check-diff.outputs.is_first_run == 'false') || inputs.force_check
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          claude -p "
-          あなたはClaude Codeマーケットプレイスのメンテナーです。
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            あなたはClaude Codeマーケットプレイスのメンテナーです。
 
-          ## タスク
-          Claude Code公式リポジトリのCHANGELOGを解析し、プラグイン関連の変更があれば対応してください。
+            ## タスク
+            Claude Code公式リポジトリのCHANGELOGを解析し、プラグイン関連の変更があれば対応してください。
 
-          ## ファイル
-          - current-changelog.md: 最新のCHANGELOG
-          - .changelog-snapshot.md: 前回チェック時点のCHANGELOG
-          - changelog-diff.txt: 差分情報
+            ## ファイル
+            - current-changelog.md: 最新のCHANGELOG
+            - .changelog-snapshot.md: 前回チェック時点のCHANGELOG
+            - changelog-diff.txt: 差分情報
 
-          ## 検出すべきプラグイン関連の変更
-          - plugin.json / marketplace.json のフィールド追加・変更・削除
-          - フロントマターの新規フィールドや仕様変更（スラッシュコマンド、エージェント、スキル）
-          - 新しいコンポーネントタイプの追加（例: 新しい種類のプラグイン機能）
-          - MCPサーバー設定の仕様変更
-          - フックのイベント追加や仕様変更
-          - プラグインコマンド（/plugin install等）の変更
-          - 既存仕様の非推奨化（deprecated）や削除
+            ## 検出すべきプラグイン関連の変更
+            - plugin.json / marketplace.json のフィールド追加・変更・削除
+            - フロントマターの新規フィールドや仕様変更（スラッシュコマンド、エージェント、スキル）
+            - 新しいコンポーネントタイプの追加（例: 新しい種類のプラグイン機能）
+            - MCPサーバー設定の仕様変更
+            - フックのイベント追加や仕様変更
+            - プラグインコマンド（/plugin install等）の変更
+            - 既存仕様の非推奨化（deprecated）や削除
 
-          ## 実行手順
+            ## 実行手順
 
-          1. changelog-diff.txtを読んで、差分の概要を把握
-          2. current-changelog.mdを読んで、プラグイン関連の変更を特定
-          3. .claude/rules/配下のドキュメントを読んで、現在のドキュメントの状態を把握
-          4. プラグイン関連の変更がある場合:
-             a. gh issue create で変更内容をまとめたIssueを作成（ラベル: changelog-update）
-             b. ドキュメント更新が必要な場合は、修正を行いPRを作成
-          5. プラグイン関連の変更がない場合:
-             a. 「プラグイン関連の変更なし」と報告して終了
+            1. changelog-diff.txtを読んで、差分の概要を把握
+            2. current-changelog.mdを読んで、プラグイン関連の変更を特定
+            3. .claude/rules/配下のドキュメントを読んで、現在のドキュメントの状態を把握
+            4. プラグイン関連の変更がある場合:
+               a. gh issue create で変更内容をまとめたIssueを作成（ラベル: changelog-update）
+               b. ドキュメント更新が必要な場合は、修正を行いPRを作成
+            5. プラグイン関連の変更がない場合:
+               a. 「プラグイン関連の変更なし」と報告して終了
 
-          ## 重要
-          - 変更があった場合のみIssue/PRを作成
-          - Issueにはどのバージョンでどのような変更があったかを明記
-          - PRには具体的な修正内容とその理由を記載
-          - 不明確な変更は「要確認」としてマーク
-          "
+            ## 重要
+            - 変更があった場合のみIssue/PRを作成
+            - Issueにはどのバージョンでどのような変更があったかを明記
+            - PRには具体的な修正内容とその理由を記載
+            - 不明確な変更は「要確認」としてマーク
+          claude_args: >-
+            --allowed-tools
+            "Bash(gh issue create:*),Bash(gh issue list:*),Bash(gh pr create:*),Bash(gh pr list:*),
+            Read,Grep,Glob,Edit,Write"
 
       - name: スナップショットを更新
         if: steps.claude-analysis.outcome == 'success'
