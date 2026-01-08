@@ -77,7 +77,22 @@ jobs:
           git push
           echo "初回実行完了。次回以降の実行で変更を検出します。"
 
-      - name: Claudeで変更を解析しIssue/PRを作成
+      - name: claude-code-updateラベルを作成（存在しない場合）
+        if: (steps.check-diff.outputs.changed == 'true' && steps.check-diff.outputs.is_first_run == 'false') || inputs.force_check
+        run: |
+          # ラベルが存在しない場合のみ作成
+          if ! gh label list --json name -q '.[].name' | grep -q '^claude-code-update$'; then
+            gh label create claude-code-update \
+              --description "Claude Codeのアップデートによる新機能・変更への対応" \
+              --color "6f42c1"
+            echo "ラベル claude-code-update を作成しました"
+          else
+            echo "ラベル claude-code-update は既に存在します"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Claudeで変更を解析しIssueを作成
         id: claude-analysis
         if: (steps.check-diff.outputs.changed == 'true' && steps.check-diff.outputs.is_first_run == 'false') || inputs.force_check
         uses: anthropics/claude-code-action@v1
@@ -109,18 +124,19 @@ jobs:
             2. current-changelog.mdを読んで、プラグイン関連の変更を特定
             3. .claude/rules/配下のドキュメントを読んで、現在のドキュメントの状態を把握
             4. プラグイン関連の変更がある場合:
-               a. gh issue create で変更内容をまとめたIssueを作成（ラベル: changelog-update）
-               b. ドキュメント更新が必要な場合は、修正を行いPRを作成
+               a. gh issue create で変更内容をまとめたIssueを作成（ラベル: claude-code-update）
+               b. 【重要】PRは作成しないでください。Issueのみ作成し、実装は別のCIに任せます
             5. プラグイン関連の変更がない場合:
                a. 「プラグイン関連の変更なし」と報告して終了
 
             ## 重要
-            - 変更があった場合のみIssue/PRを作成
+            - 変更があった場合のみIssueを作成（PRは作成しない）
             - Issueにはどのバージョンでどのような変更があったかを明記
-            - PRには具体的な修正内容とその理由を記載
+            - Issueタイトルは「[CHANGELOG vX.X.X] 」で始める形式にする
             - 不明確な変更は「要確認」としてマーク
+            - ラベル claude-code-update は必ず付与する（これにより自動実装CIがトリガーされる）
           # yamllint disable-line rule:line-length
-          claude_args: '--allowed-tools "Bash(gh issue create:*),Bash(gh issue list:*),Bash(gh pr create:*),Bash(gh pr list:*),Read,Grep,Glob,Edit,Write"'
+          claude_args: '--allowed-tools "Bash(gh issue create:*),Bash(gh issue list:*),Read,Grep,Glob"'
 
       - name: スナップショットを更新
         if: steps.claude-analysis.outcome == 'success'
