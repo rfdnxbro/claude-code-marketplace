@@ -102,8 +102,9 @@ jobs:
             - 破壊的変更がある場合は明確にコメントを残す
             - 不明確な部分は「TODO: 要確認」としてマーク
 
+          # セキュリティ: 編集可能なパスを制限（プロンプトインジェクション対策）
           # yamllint disable-line rule:line-length
-          claude_args: '--allowed-tools "Bash(uvx ruff:*),Read,Grep,Glob,Edit,Write"'
+          claude_args: '--allowed-tools "Bash(uvx ruff check:*),Bash(uvx ruff format:*),Read,Grep,Glob,Edit(.claude/rules/*),Edit(scripts/validators/*),Edit(scripts/tests/*),Write(.claude/rules/*),Write(scripts/validators/*),Write(scripts/tests/*)"'
 
       - name: 変更があるか確認
         id: check-changes
@@ -120,6 +121,7 @@ jobs:
       - name: 変更をコミットしてプッシュ
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
+          set -e
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add -A
@@ -130,18 +132,24 @@ jobs:
           🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
           Co-Authored-By: Claude <noreply@anthropic.com>"
-          git push -u origin ${{ steps.branch.outputs.name }}
+
+          if ! git push -u origin ${{ steps.branch.outputs.name }}; then
+            echo "::error::git push に失敗しました"
+            exit 1
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: PRを作成
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
-          ISSUE_TITLE=$(cat issue-title.txt)
+          ISSUE_TITLE=$(cat issue-title.txt | tr -d '\n' | xargs)
 
-          # IssueタイトルをもとにPRタイトルを作成
-          # [CHANGELOG vX.X.X] 形式の場合はそのまま使用、そうでない場合はfeat:プレフィックスを追加
-          if [[ "$ISSUE_TITLE" =~ ^\[CHANGELOG ]]; then
+          # Issueタイトルが空の場合のフォールバック
+          if [ -z "$ISSUE_TITLE" ]; then
+            PR_TITLE="feat: Issue #${{ github.event.issue.number }} の自動実装"
+          # [CHANGELOG vX.X.X] 形式の場合はそのまま使用
+          elif [[ "$ISSUE_TITLE" =~ ^\[CHANGELOG\ v[0-9]+\.[0-9]+\.[0-9]+\] ]]; then
             PR_TITLE="$ISSUE_TITLE"
           else
             PR_TITLE="feat: $ISSUE_TITLE"
@@ -175,6 +183,7 @@ jobs:
 
       - name: Issueにコメントを追加（変更あり）
         if: steps.check-changes.outputs.has_changes == 'true'
+        continue-on-error: true
         run: |
           gh issue comment ${{ github.event.issue.number }} --body "🤖 **自動実装完了**
 
@@ -187,6 +196,7 @@ jobs:
 
       - name: Issueにコメントを追加（変更なし）
         if: steps.check-changes.outputs.has_changes == 'false'
+        continue-on-error: true
         run: |
           gh issue comment ${{ github.event.issue.number }} --body "🤖 **自動実装結果**
 
