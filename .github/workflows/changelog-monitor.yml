@@ -119,7 +119,10 @@ jobs:
             - Issueにはどのバージョンでどのような変更があったかを明記
             - PRには具体的な修正内容とその理由を記載
             - 不明確な変更は「要確認」としてマーク
-          claude_args: '--allowed-tools "Bash(gh issue create:*),Bash(gh issue list:*),Bash(gh pr create:*),Bash(gh pr list:*),Read,Grep,Glob,Edit,Write"'
+          claude_args: >-
+            --allowed-tools
+            "Bash(gh issue create:*),Bash(gh issue list:*),Bash(gh pr create:*),Bash(gh pr list:*),
+            Read,Grep,Glob,Edit,Write"
 
       - name: スナップショットを更新
         if: steps.claude-analysis.outcome == 'success'
