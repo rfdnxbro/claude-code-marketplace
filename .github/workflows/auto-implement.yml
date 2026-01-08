@@ -26,12 +26,29 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: シークレット検証
+        run: |
+          if [ -z "${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}" ]; then
+            echo "::error::CLAUDE_CODE_OAUTH_TOKEN が設定されていません"
+            exit 1
+          fi
+          echo "✓ 必要なシークレットが設定されています"
+
       - name: 作業ブランチを作成
         id: branch
         run: |
           BRANCH_NAME="auto/claude-code-update-issue-${{ github.event.issue.number }}"
           echo "name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
+
+          # ブランチが既に存在する場合は削除して再作成
+          if git rev-parse --verify "${BRANCH_NAME}" >/dev/null 2>&1; then
+            echo "既存ブランチを削除します: ${BRANCH_NAME}"
+            git branch -D "${BRANCH_NAME}" || true
+            git push origin --delete "${BRANCH_NAME}" || true
+          fi
+
           git checkout -b "${BRANCH_NAME}"
+          echo "作業ブランチを作成しました: ${BRANCH_NAME}"
 
       - name: Issueの内容を取得
         id: issue
@@ -67,9 +84,8 @@ jobs:
                a. ドキュメント更新（.claude/rules/*.md）
                b. バリデーター更新（scripts/validators/*.py）
                c. テスト更新（scripts/tests/*.py）
-            5. 変更を行ったら、テストを実行して確認:
-               uvx pytest scripts/tests/ -v
-            6. 実装完了後、変更内容のサマリーを出力
+            5. 実装完了後、変更内容のサマリーを出力
+               （テスト実行はCI側で実行されるため、ここでは実行しない）
 
             ## ドキュメント構造
             - .claude/rules/plugin-manifest.md: plugin.jsonの仕様
@@ -90,7 +106,7 @@ jobs:
             - 不明確な部分は「TODO: 要確認」としてマーク
 
           # yamllint disable-line rule:line-length
-          claude_args: '--allowed-tools "Bash(uvx pytest:*),Bash(uvx ruff:*),Read,Grep,Glob,Edit,Write"'
+          claude_args: '--allowed-tools "Bash(uvx ruff:*),Read,Grep,Glob,Edit,Write"'
 
       - name: 変更があるか確認
         id: check-changes
@@ -124,8 +140,18 @@ jobs:
       - name: PRを作成
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
+          ISSUE_TITLE=$(cat issue-title.txt)
+
+          # IssueタイトルをもとにPRタイトルを作成
+          # [CHANGELOG vX.X.X] 形式の場合はそのまま使用、そうでない場合はfeat:プレフィックスを追加
+          if [[ "$ISSUE_TITLE" =~ ^\[CHANGELOG ]]; then
+            PR_TITLE="$ISSUE_TITLE"
+          else
+            PR_TITLE="feat: $ISSUE_TITLE"
+          fi
+
           gh pr create \
-            --title "feat: Claude Code更新対応 (Issue #${{ github.event.issue.number }})" \
+            --title "$PR_TITLE" \
             --body "$(cat <<'EOF'
           ## 概要
           Issue #${{ github.event.issue.number }} で報告されたClaude Codeのアップデートに対応します。
