@@ -5,7 +5,7 @@ extends: default
 rules:
   # 行長制限を緩和（GitHub Actionsのrunステップで長いコマンドが必要なため）
   line-length:
-    max: 160
+    max: 200
     allow-non-breakable-words: true
     allow-non-breakable-inline-mappings: true
 
