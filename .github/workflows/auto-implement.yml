@@ -1,0 +1,209 @@
+name: Claude Code自動更新対応
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  id-token: write
+
+concurrency:
+  group: auto-implement-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  auto-implement:
+    # claude-code-updateラベルが付いたissueにのみ反応
+    if: github.event.label.name == 'claude-code-update'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: シークレット検証
+        run: |
+          if [ -z "${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}" ]; then
+            echo "::error::CLAUDE_CODE_OAUTH_TOKEN が設定されていません"
+            exit 1
+          fi
+          echo "✓ 必要なシークレットが設定されています"
+
+      - name: 作業ブランチを作成
+        id: branch
+        run: |
+          BRANCH_NAME="auto/claude-code-update-issue-${{ github.event.issue.number }}"
+          echo "name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
+
+          # ブランチが既に存在する場合は削除して再作成
+          if git rev-parse --verify "${BRANCH_NAME}" >/dev/null 2>&1; then
+            echo "既存ブランチを削除します: ${BRANCH_NAME}"
+            git branch -D "${BRANCH_NAME}" || true
+            git push origin --delete "${BRANCH_NAME}" || true
+          fi
+
+          git checkout -b "${BRANCH_NAME}"
+          echo "作業ブランチを作成しました: ${BRANCH_NAME}"
+
+      - name: Issueの内容を取得
+        id: issue
+        run: |
+          # Issue本文をファイルに保存
+          gh issue view ${{ github.event.issue.number }} --json title,body --jq '.body' > issue-body.md
+          gh issue view ${{ github.event.issue.number }} --json title --jq '.title' > issue-title.txt
+          echo "取得完了: Issue #${{ github.event.issue.number }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Claudeで実装を実行
+        id: claude-implement
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            あなたはClaude Codeマーケットプレイスのソフトウェアエンジニアです。
+
+            ## タスク
+            Issue #${{ github.event.issue.number }} の内容に基づいて、必要な実装を行ってください。
+
+            ## Issue情報
+            - タイトル: (issue-title.txtを参照)
+            - 本文: (issue-body.mdを参照)
+
+            ## 実行手順
+
+            1. issue-title.txtとissue-body.mdを読んで、Issueの内容を把握
+            2. CLAUDE.mdを読んで、プロジェクトのガイドラインを把握
+            3. .claude/rules/README.md を読んで、ドキュメント構造の全体像を把握
+            4. 必要に応じて .claude/rules/ 配下の関連ドキュメントを読む
+            5. scripts/validators/ 配下のバリデーターを確認（__init__.py でエクスポート一覧を確認）
+            6. 必要な変更を特定し、以下を実装:
+               a. ドキュメント更新（.claude/rules/*.md）
+               b. バリデーター更新（scripts/validators/*.py）
+               c. テスト更新（scripts/tests/*.py）
+            7. 実装完了後、変更内容のサマリーを出力
+               （テスト実行はCI側で実行されるため、ここでは実行しない）
+
+            ## プロジェクト構造
+            - CLAUDE.md: プロジェクトのガイドライン（必読）
+            - .claude/rules/: プラグイン仕様ドキュメント（README.mdに索引あり）
+            - scripts/validators/: バリデーター実装
+            - scripts/tests/: テストコード
+
+            ## 重要
+            - CLAUDE.mdのガイドラインに従う
+            - 既存のコードスタイルを維持
+            - 新機能を追加する場合は対応するテストも追加
+            - 破壊的変更がある場合は明確にコメントを残す
+            - 不明確な部分は「TODO: 要確認」としてマーク
+
+          # セキュリティ: 編集可能なパスを制限（プロンプトインジェクション対策）
+          # yamllint disable-line rule:line-length
+          claude_args: '--allowed-tools "Bash(uvx ruff check:*),Bash(uvx ruff format:*),Read,Grep,Glob,Edit(.claude/rules/*),Edit(scripts/validators/*),Edit(scripts/tests/*),Write(.claude/rules/*),Write(scripts/validators/*),Write(scripts/tests/*)"'
+
+      - name: 変更があるか確認
+        id: check-changes
+        run: |
+          if git diff --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "変更なし"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "変更あり"
+            git diff --stat
+          fi
+
+      - name: 変更をコミットしてプッシュ
+        if: steps.check-changes.outputs.has_changes == 'true'
+        run: |
+          set -e
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -A
+          git commit -m "feat: Issue #${{ github.event.issue.number }} の自動実装
+
+          Claude Codeのアップデートに伴うドキュメント・バリデーター更新
+
+          🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+          Co-Authored-By: Claude <noreply@anthropic.com>"
+
+          if ! git push -u origin ${{ steps.branch.outputs.name }}; then
+            echo "::error::git push に失敗しました"
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: PRを作成
+        if: steps.check-changes.outputs.has_changes == 'true'
+        run: |
+          ISSUE_TITLE=$(cat issue-title.txt | tr -d '\n' | xargs)
+
+          # Issueタイトルが空の場合のフォールバック
+          if [ -z "$ISSUE_TITLE" ]; then
+            PR_TITLE="feat: Issue #${{ github.event.issue.number }} の自動実装"
+          # [CHANGELOG vX.X.X] 形式の場合はそのまま使用
+          elif [[ "$ISSUE_TITLE" =~ ^\[CHANGELOG\ v[0-9]+\.[0-9]+\.[0-9]+\] ]]; then
+            PR_TITLE="$ISSUE_TITLE"
+          else
+            PR_TITLE="feat: $ISSUE_TITLE"
+          fi
+
+          gh pr create \
+            --title "$PR_TITLE" \
+            --body "$(cat <<'EOF'
+          ## 概要
+          Issue #${{ github.event.issue.number }} で報告されたClaude Codeのアップデートに対応します。
+
+          ## 関連Issue
+          Closes #${{ github.event.issue.number }}
+
+          ## 変更内容
+          Claude Actionによって自動生成された変更です。詳細はコミット履歴を参照してください。
+
+          ## 確認事項
+          - [ ] ドキュメントの変更が適切か
+          - [ ] バリデーターが正しく動作するか
+          - [ ] テストが通過するか
+
+          ---
+          🤖 Generated with [Claude Code](https://claude.com/claude-code)
+          EOF
+          )" \
+            --label "claude-code-update" \
+            --label "documentation"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Issueにコメントを追加（変更あり）
+        if: steps.check-changes.outputs.has_changes == 'true'
+        continue-on-error: true
+        run: |
+          gh issue comment ${{ github.event.issue.number }} --body "🤖 **自動実装完了**
+
+          PRを作成しました。レビューをお願いします。
+
+          ---
+          *このコメントはClaude Code自動更新対応ワークフローによって生成されました*"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Issueにコメントを追加（変更なし）
+        if: steps.check-changes.outputs.has_changes == 'false'
+        continue-on-error: true
+        run: |
+          gh issue comment ${{ github.event.issue.number }} --body "🤖 **自動実装結果**
+
+          Issueの内容を分析しましたが、自動で実装可能な変更は見つかりませんでした。
+          手動での対応が必要な可能性があります。
+
+          ---
+          *このコメントはClaude Code自動更新対応ワークフローによって生成されました*"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
