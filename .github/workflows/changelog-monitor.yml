@@ -54,6 +54,8 @@ jobs:
               echo "changed=false" >> $GITHUB_OUTPUT
               echo "is_first_run=false" >> $GITHUB_OUTPUT
               echo "CHANGELOGに変更はありません"
+              # force_check用に空のdiffファイルを作成
+              echo "変更なし" > changelog-diff.txt
             else
               echo "changed=true" >> $GITHUB_OUTPUT
               echo "is_first_run=false" >> $GITHUB_OUTPUT
@@ -64,6 +66,7 @@ jobs:
             echo "changed=true" >> $GITHUB_OUTPUT
             echo "is_first_run=true" >> $GITHUB_OUTPUT
             echo "初回実行: スナップショットを作成します"
+            echo "初回実行のため差分なし" > changelog-diff.txt
           fi
 
       - name: 初回実行時はスナップショット作成のみ
@@ -78,18 +81,25 @@ jobs:
           git push
           echo "初回実行完了。次回以降の実行で変更を検出します。"
 
-      - name: Claude Codeをインストール
+      - name: APIキーの確認
+        id: check-api-key
         if: (steps.check-diff.outputs.changed == 'true' && steps.check-diff.outputs.is_first_run == 'false') || inputs.force_check
+        run: |
+          if [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+            echo "::warning::ANTHROPIC_API_KEYが設定されていません。Claude解析をスキップします。"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Claude Codeをインストール
+        if: ((steps.check-diff.outputs.changed == 'true' && steps.check-diff.outputs.is_first_run == 'false') || inputs.force_check) && steps.check-api-key.outputs.skip != 'true'
         run: npm install -g @anthropic-ai/claude-code
 
-      - name: Claudeで変更を解析しIssue/PRを作成
-        id: claude-analysis
-        if: (steps.check-diff.outputs.changed == 'true' && steps.check-diff.outputs.is_first_run == 'false') || inputs.force_check
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: プロンプトファイルを作成
+        if: ((steps.check-diff.outputs.changed == 'true' && steps.check-diff.outputs.is_first_run == 'false') || inputs.force_check) && steps.check-api-key.outputs.skip != 'true'
         run: |
-          claude -p "
+          cat << 'PROMPT_EOF' > /tmp/changelog-prompt.txt
           あなたはClaude Codeマーケットプレイスのメンテナーです。
 
           ## タスク
@@ -125,10 +135,19 @@ jobs:
           - Issueにはどのバージョンでどのような変更があったかを明記
           - PRには具体的な修正内容とその理由を記載
           - 不明確な変更は「要確認」としてマーク
-          "
+          PROMPT_EOF
+
+      - name: Claudeで変更を解析しIssue/PRを作成
+        id: claude-analysis
+        if: ((steps.check-diff.outputs.changed == 'true' && steps.check-diff.outputs.is_first_run == 'false') || inputs.force_check) && steps.check-api-key.outputs.skip != 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          claude -p "$(cat /tmp/changelog-prompt.txt)"
 
       - name: スナップショットを更新
-        if: steps.claude-analysis.outcome == 'success'
+        if: steps.claude-analysis.outcome == 'success' || (steps.check-api-key.outputs.skip == 'true' && steps.check-diff.outputs.changed == 'true')
         run: |
           set -e
           cp current-changelog.md .changelog-snapshot.md
