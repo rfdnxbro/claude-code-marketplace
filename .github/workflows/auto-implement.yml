@@ -78,25 +78,22 @@ jobs:
             ## 実行手順
 
             1. issue-title.txtとissue-body.mdを読んで、Issueの内容を把握
-            2. .claude/rules/ 配下のドキュメントを読んで、現在の仕様を把握
-            3. scripts/validators/ 配下のバリデーターを確認
-            4. 必要な変更を特定し、以下を実装:
+            2. CLAUDE.mdを読んで、プロジェクトのガイドラインを把握
+            3. .claude/rules/README.md を読んで、ドキュメント構造の全体像を把握
+            4. 必要に応じて .claude/rules/ 配下の関連ドキュメントを読む
+            5. scripts/validators/ 配下のバリデーターを確認（__init__.py でエクスポート一覧を確認）
+            6. 必要な変更を特定し、以下を実装:
                a. ドキュメント更新（.claude/rules/*.md）
                b. バリデーター更新（scripts/validators/*.py）
                c. テスト更新（scripts/tests/*.py）
-            5. 実装完了後、変更内容のサマリーを出力
+            7. 実装完了後、変更内容のサマリーを出力
                （テスト実行はCI側で実行されるため、ここでは実行しない）
 
-            ## ドキュメント構造
-            - .claude/rules/plugin-manifest.md: plugin.jsonの仕様
-            - .claude/rules/marketplace.md: marketplace.jsonの仕様
-            - .claude/rules/agents.md: エージェント定義
-            - .claude/rules/hooks.md: フック定義
-            - .claude/rules/mcp-servers.md: MCPサーバー設定
-            - .claude/rules/lsp-servers.md: LSPサーバー設定
-            - .claude/rules/skill-authoring.md: スキル作成
-            - .claude/rules/slash-commands.md: スラッシュコマンド
-            - .claude/rules/output-styles.md: 出力スタイル
+            ## プロジェクト構造
+            - CLAUDE.md: プロジェクトのガイドライン（必読）
+            - .claude/rules/: プラグイン仕様ドキュメント（README.mdに索引あり）
+            - scripts/validators/: バリデーター実装
+            - scripts/tests/: テストコード
 
             ## 重要
             - CLAUDE.mdのガイドラインに従う
