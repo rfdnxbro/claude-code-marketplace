@@ -76,8 +76,6 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
                     )
 
                 if hook_type == "agent" and not h.get("agent"):
-                    result.add_error(
-                        f"{file_path.name}: agentタイプにagentフィールドがありません"
-                    )
+                    result.add_error(f"{file_path.name}: agentタイプにagentフィールドがありません")
 
     return result

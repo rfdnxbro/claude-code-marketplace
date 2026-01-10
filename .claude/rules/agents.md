@@ -57,11 +57,13 @@ description: コードレビュー  # 曖昧で自動委譲されにくい
 - **最小限のツールを付与**することを推奨（セキュリティ向上）
 
 カンマ区切り形式:
+
 ```yaml
 tools: Read, Grep, Glob, Bash(git:*)
 ```
 
 YAML形式のリスト:
+
 ```yaml
 tools:
   - Read

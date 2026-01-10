@@ -123,6 +123,7 @@ LLMを使用してプロンプトを評価:
 フックを一度だけ実行する場合は `once: true` を指定:
 
 **hooks.json形式:**
+
 ```json
 {
   "hooks": {
@@ -143,6 +144,7 @@ LLMを使用してプロンプトを評価:
 ```
 
 **Frontmatter形式:**
+
 ```yaml
 hooks:
   PreToolUse:

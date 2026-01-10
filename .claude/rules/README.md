@@ -39,4 +39,3 @@
 | `$1`, `$2`, `$3`... | 位置指定引数 | slash-commands |
 | `${VAR}` | 任意の環境変数を展開 | mcp-servers, lsp-servers |
 | `${VAR:-default}` | デフォルト値付き環境変数 | mcp-servers, lsp-servers |
-

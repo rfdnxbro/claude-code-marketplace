@@ -86,11 +86,13 @@ context: fork
 スキル実行時に使用可能なツールを制限。省略時は会話から継承。
 
 カンマ区切り形式:
+
 ```yaml
 allowed-tools: Read, Grep, Bash(git:*)
 ```
 
 YAML形式のリスト:
+
 ```yaml
 allowed-tools:
   - Read

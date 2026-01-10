@@ -45,6 +45,7 @@ $ARGUMENTS で引数を受け取れます
 **必要最小限のツールのみ指定**（セキュリティ向上）:
 
 カンマ区切り形式:
+
 ```yaml
 # 良い例: 特定のコマンドパターンのみ許可
 allowed-tools: Bash(git add:*), Bash(git commit:*)
@@ -54,6 +55,7 @@ allowed-tools: Bash(*)
 ```
 
 YAML形式のリスト:
+
 ```yaml
 # 良い例: 特定のツールのみ許可
 allowed-tools:
