@@ -154,7 +154,7 @@ jobs:
             3. .claude/rules/ 配下の関連ルールドキュメントを確認
             4. 対象プラグインのファイルを確認:
                - plugin.json（.claude-plugin/plugin.json）
-               - commands/, agents/, skills/ 配下のファイル
+               - 各サブディレクトリ配下のコンポーネントファイル
             5. Issueに記載された改善内容を実装
             6. 実装完了後、変更内容のサマリーを出力
 

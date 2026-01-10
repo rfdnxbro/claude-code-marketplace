@@ -119,7 +119,7 @@ jobs:
             2. 変更されたバリデーターを読む（scripts/validators/*.py）
             3. 各プラグインについて以下を分析:
                a. plugin.json（.claude-plugin/plugin.json）を確認
-               b. commands/, agents/, skills/ の各コンポーネントを確認
+               b. 各サブディレクトリ配下のコンポーネントファイルを確認
                c. 以下の観点で改善点を特定:
                   - 新フィールド・オプションの活用可能性
                   - 既存実装の改善点
