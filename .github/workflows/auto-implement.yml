@@ -170,7 +170,8 @@ jobs:
             - リポジトリに永続的に必要なファイルのみ作成・変更すること
             - issue-body.md, issue-title.txt などの一時ファイルは参照のみで、変更やコミットに含めないこと
 
-          claude_args: '--allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx pytest*)"'
+          # yamllint disable-line rule:line-length
+          claude_args: '--allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx pytest*),Bash(python3 scripts/validate_plugin.py*)"'
 
       - name: 変更があるか確認
         id: check-changes
