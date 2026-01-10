@@ -41,11 +41,10 @@ jobs:
           BRANCH_NAME="auto/claude-code-update-issue-${{ github.event.issue.number }}"
           echo "name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
 
-          # ブランチが既に存在する場合は削除して再作成
+          # ローカルブランチが既に存在する場合は削除
           if git rev-parse --verify "${BRANCH_NAME}" >/dev/null 2>&1; then
-            echo "既存ブランチを削除します: ${BRANCH_NAME}"
+            echo "既存ローカルブランチを削除します: ${BRANCH_NAME}"
             git branch -D "${BRANCH_NAME}" || true
-            git push origin --delete "${BRANCH_NAME}" || true
           fi
 
           git checkout -b "${BRANCH_NAME}"
@@ -103,9 +102,9 @@ jobs:
             - 破壊的変更がある場合は明確にコメントを残す
             - 不明確な部分は「TODO: 要確認」としてマーク
 
-          # セキュリティ: 編集可能なパスを制限しつつ必要な操作を許可
-          # yamllint disable-line rule:line-length
-          claude_args: '--allowed-tools "Read,Grep,Glob,Bash(uvx ruff check*),Bash(uvx ruff format*),Bash(uvx pytest*),Edit(.claude/rules/*),Edit(scripts/validators/*),Edit(scripts/tests/*),Edit(scripts/validators/__init__.py),Write(.claude/rules/*),Write(scripts/validators/*),Write(scripts/tests/*)"'
+          # ラベルは手動付与のため、Edit/Writeのパス制限は不要
+          # Bashは特定コマンドのみ許可
+          claude_args: '--allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx ruff check*),Bash(uvx ruff format*),Bash(uvx pytest*)"'
 
       - name: 変更があるか確認
         id: check-changes
@@ -143,7 +142,8 @@ jobs:
           # 明示的にトークンを使用してリモートURLを設定
           git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
 
-          if ! git push -u origin ${{ steps.branch.outputs.name }}; then
+          # 前回の実行でブランチが残っている場合があるためforce push
+          if ! git push -u --force origin ${{ steps.branch.outputs.name }}; then
             echo "::error::git push に失敗しました"
             exit 1
           fi
