@@ -105,7 +105,7 @@ jobs:
 
           # セキュリティ: 編集可能なパスを制限しつつ必要な操作を許可
           # yamllint disable-line rule:line-length
-          claude_args: '--allowed-tools "Read,Grep,Glob,Bash(uvx ruff check:*),Bash(uvx ruff format:*),Bash(uvx pytest:*),Edit(.claude/rules/*),Edit(scripts/validators/*),Edit(scripts/tests/*),Edit(scripts/__init__.py),Write(.claude/rules/*),Write(scripts/validators/*),Write(scripts/tests/*)"'
+          claude_args: '--allowed-tools "Read,Grep,Glob,Bash(uvx ruff check*),Bash(uvx ruff format*),Bash(uvx pytest*),Edit(.claude/rules/*),Edit(scripts/validators/*),Edit(scripts/tests/*),Edit(scripts/validators/__init__.py),Write(.claude/rules/*),Write(scripts/validators/*),Write(scripts/tests/*)"'
 
       - name: 変更があるか確認
         id: check-changes
