@@ -2,8 +2,7 @@ name: セキュリティスキャン
 
 on:
   pull_request:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 jobs:
   secret-scan:

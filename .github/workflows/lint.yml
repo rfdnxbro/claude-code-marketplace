@@ -1,16 +1,6 @@
 name: Lint
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '**/*.py'
-      - '**/*.yml'
-      - '**/*.yaml'
-      - '**/*.md'
-      - 'pyproject.toml'
-      - '.yamllint.yml'
-      - '.markdownlint.json'
   pull_request:
     paths:
       - '**/*.py'
