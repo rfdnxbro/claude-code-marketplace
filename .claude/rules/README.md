@@ -40,4 +40,3 @@
 | `${VAR}` | 任意の環境変数を展開 | mcp-servers, lsp-servers |
 | `${VAR:-default}` | デフォルト値付き環境変数 | mcp-servers, lsp-servers |
 
-**注**: v2.1.0以前は`allowed-tools` frontmatter内で`${CLAUDE_PLUGIN_ROOT}`が正しく展開されないバグがありました。v2.1.0で修正されました。
