@@ -134,12 +134,21 @@ jobs:
 
           Co-Authored-By: Claude <noreply@anthropic.com>"
 
+          # デバッグ情報を出力
+          echo "=== デバッグ情報 ==="
+          echo "ブランチ名: ${{ steps.branch.outputs.name }}"
+          git remote -v
+          echo "==================="
+
+          # 明示的にトークンを使用してリモートURLを設定
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
+
           if ! git push -u origin ${{ steps.branch.outputs.name }}; then
             echo "::error::git push に失敗しました"
             exit 1
           fi
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: PRを作成
         if: steps.check-changes.outputs.has_changes == 'true'
