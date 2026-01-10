@@ -27,6 +27,11 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: pre-commitをセットアップ
+        run: |
+          pip install pre-commit
+          pre-commit install
+
       - name: シークレット検証
         run: |
           if [ -z "${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}" ]; then
@@ -87,7 +92,7 @@ jobs:
                b. バリデーター更新（scripts/validators/*.py）
                c. テスト更新（scripts/tests/*.py）
             7. 実装完了後、変更内容のサマリーを出力
-               （テスト実行はCI側で実行されるため、ここでは実行しない）
+               （lint/formatはCI側でpre-commitが自動実行するため不要）
 
             ## プロジェクト構造
             - CLAUDE.md: プロジェクトのガイドライン（必読）
@@ -101,10 +106,12 @@ jobs:
             - 新機能を追加する場合は対応するテストも追加
             - 破壊的変更がある場合は明確にコメントを残す
             - 不明確な部分は「TODO: 要確認」としてマーク
+            - リポジトリに永続的に必要なファイルのみ作成・変更すること
+            - issue-body.md, issue-title.txt などの一時ファイルは参照のみで、変更やコミットに含めないこと
 
           # ラベルは手動付与のため、Edit/Writeのパス制限は不要
-          # Bashは特定コマンドのみ許可
-          claude_args: '--allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx ruff check*),Bash(uvx ruff format*),Bash(uvx pytest*)"'
+          # Bashは特定コマンドのみ許可（lint/formatはgit commit時にpre-commitが自動実行）
+          claude_args: '--allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx pytest*)"'
 
       - name: 変更があるか確認
         id: check-changes

@@ -90,6 +90,29 @@ class TestValidateHooksJson:
         assert result.has_errors()
         assert any("prompt" in e for e in result.errors)
 
+    def test_valid_agent_type(self):
+        """agentタイプのフックが有効であることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PostToolUse": [
+                        {"matcher": "*", "hooks": [{"type": "agent", "agent": "code-reviewer"}]}
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_missing_agent_field(self):
+        """agentタイプでagentフィールドが無い場合のテスト"""
+        content = json.dumps(
+            {"hooks": {"PostToolUse": [{"matcher": "*", "hooks": [{"type": "agent"}]}]}}
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("agent" in e for e in result.errors)
+
     def test_missing_matcher_warning(self):
         content = json.dumps(
             {"hooks": {"PostToolUse": [{"hooks": [{"type": "command", "command": "test"}]}]}}

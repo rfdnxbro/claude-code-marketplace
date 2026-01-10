@@ -15,6 +15,7 @@ allowed-tools: Bash(git add:*), Bash(git commit:*)
 model: haiku
 argument-hint: [message]
 disable-model-invocation: false
+context: main
 ---
 
 コマンドの本体プロンプト
@@ -27,10 +28,12 @@ $ARGUMENTS で引数を受け取れます
 | フィールド | 必須 | 説明 | デフォルト |
 |-----------|------|------|-----------|
 | `description` | No | コマンドの説明（`/help`で表示） | プロンプトの最初の行 |
-| `allowed-tools` | No | 使用可能なツール（カンマ区切り） | 会話から継承 |
+| `allowed-tools` | No | 使用可能なツール（カンマ/YAML形式） | 会話から継承 |
 | `model` | No | 使用するモデル（`sonnet`, `opus`, `haiku`）| 未指定時は会話のモデルを使用 |
 | `argument-hint` | No | 引数のヒント（オートコンプリート表示） | なし |
 | `disable-model-invocation` | No | SlashCommandツール経由の実行を防止 | `false` |
+| `context` | No | 実行コンテキスト（`main`, `fork`） | `main` |
+| `hooks` | No | フック定義（[hooks.md](hooks.md)参照） | なし |
 
 ## 引数
 
@@ -41,12 +44,61 @@ $ARGUMENTS で引数を受け取れます
 
 **必要最小限のツールのみ指定**（セキュリティ向上）:
 
+カンマ区切り形式:
+
 ```yaml
 # 良い例: 特定のコマンドパターンのみ許可
 allowed-tools: Bash(git add:*), Bash(git commit:*)
 
 # 避けるべき例: 広範なワイルドカード
 allowed-tools: Bash(*)
+```
+
+YAML形式のリスト:
+
+```yaml
+# 良い例: 特定のツールのみ許可
+allowed-tools:
+  - Bash(git add:*)
+  - Bash(git commit:*)
+  - Read
+  - Edit
+
+# 避けるべき例: 広範なワイルドカード
+allowed-tools:
+  - Bash(*)
+```
+
+## context
+
+実行コンテキストを指定:
+
+```yaml
+---
+context: fork
+---
+```
+
+- `main`（デフォルト）: メインスレッドで実行
+- `fork`: フォークされたサブエージェントコンテキストで実行
+
+## hooks
+
+コマンド実行時のフックを定義。詳細は[hooks.md](hooks.md)を参照:
+
+```yaml
+---
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: "${CLAUDE_PLUGIN_ROOT}/scripts/validate.sh"
+  Stop:
+    - hooks:
+        - type: prompt
+          prompt: "処理完了を確認"
+---
 ```
 
 ## disable-model-invocation

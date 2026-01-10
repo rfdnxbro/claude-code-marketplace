@@ -24,8 +24,17 @@ paths: plugins/*/skills/**/SKILL.md, .claude/skills/**/SKILL.md
 ---
 name: processing-something
 description: XとYを処理する。ユーザーがZについて言及した時やWが必要な時に使用。
+user-invocable: true
+agent: general-purpose
+context: main
+allowed-tools:
+  - Read
+  - Grep
+  - Bash
 ---
 ```
+
+### 必須フィールド
 
 **name**:
 
@@ -40,6 +49,69 @@ description: XとYを処理する。ユーザーがZについて言及した時�
 - 三人称で記述（「ファイルを処理する」、「私がファイルを処理します」ではない）
 - 何をするか AND いつ使うかを含める
 - 発見性のため具体的なキーワードを含める
+
+### オプションフィールド
+
+**user-invocable** (デフォルト: `true`):
+
+- `true`: スラッシュコマンドメニューに表示
+- `false`: メニューから非表示（プログラマティックに呼び出し可能）
+
+```yaml
+# スキルをメニューから非表示にする
+user-invocable: false
+```
+
+**agent**:
+
+使用するエージェントタイプを指定。指定しない場合は会話コンテキストで実行。
+
+```yaml
+# 特定のエージェントタイプで実行
+agent: Explore
+```
+
+**context** (デフォルト: `main`):
+
+- `main`: メインスレッドで実行
+- `fork`: フォークされたサブエージェントコンテキストで実行
+
+```yaml
+# フォークされたコンテキストで実行
+context: fork
+```
+
+**allowed-tools**:
+
+スキル実行時に使用可能なツールを制限。省略時は会話から継承。
+
+カンマ区切り形式:
+
+```yaml
+allowed-tools: Read, Grep, Bash(git:*)
+```
+
+YAML形式のリスト:
+
+```yaml
+allowed-tools:
+  - Read
+  - Grep
+  - Bash(git:*)
+```
+
+**hooks**:
+
+スキル実行時のフックを定義。詳細は[hooks.md](hooks.md)を参照。
+
+```yaml
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: "${CLAUDE_PLUGIN_ROOT}/scripts/validate.sh"
+```
 
 ## ディレクトリ構造
 

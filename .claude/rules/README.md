@@ -33,7 +33,7 @@
 
 | 変数 | 説明 | 使用箇所 |
 |------|------|----------|
-| `${CLAUDE_PLUGIN_ROOT}` | プラグインルートへの絶対パス | hooks, mcp-servers, lsp-servers |
+| `${CLAUDE_PLUGIN_ROOT}` | プラグインルートへの絶対パス | hooks, mcp-servers, lsp-servers, allowed-tools |
 | `${CLAUDE_PROJECT_DIR}` | プロジェクトルートへの絶対パス | hooks |
 | `$ARGUMENTS` | フック入力JSON / コマンド引数 | hooks, slash-commands |
 | `$1`, `$2`, `$3`... | 位置指定引数 | slash-commands |
