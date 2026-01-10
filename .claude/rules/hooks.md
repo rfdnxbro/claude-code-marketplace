@@ -4,9 +4,12 @@ paths: plugins/*/hooks/hooks.json
 
 # フック
 
-JSON形式で記述します。配置場所は `hooks/hooks.json`。
+フックは以下の2つの方法で定義できます:
 
-## 形式
+1. **hooks.json** - プラグイン全体のフック（`hooks/hooks.json`）
+2. **Frontmatter** - エージェント/スキル/スラッシュコマンド内のフック（YAML形式）
+
+## hooks.json形式
 
 ```json
 {
@@ -14,6 +17,7 @@ JSON形式で記述します。配置場所は `hooks/hooks.json`。
     "PreToolUse": [
       {
         "matcher": "Bash|Edit|Write",
+        "once": false,
         "hooks": [
           {
             "type": "command",
@@ -25,6 +29,27 @@ JSON形式で記述します。配置場所は `hooks/hooks.json`。
     ]
   }
 }
+```
+
+## Frontmatter形式
+
+エージェント、スキル、スラッシュコマンドのfrontmatter内でフックを定義できます:
+
+```yaml
+---
+name: my-agent
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      once: false
+      hooks:
+        - type: command
+          command: "${CLAUDE_PLUGIN_ROOT}/scripts/check.sh"
+  Stop:
+    - hooks:
+        - type: prompt
+          prompt: "処理完了を確認"
+---
 ```
 
 ## 対応イベント
@@ -46,6 +71,8 @@ JSON形式で記述します。配置場所は `hooks/hooks.json`。
 
 ### command（Bashコマンド）
 
+Bashコマンドを実行:
+
 ```json
 {
   "type": "command",
@@ -56,11 +83,27 @@ JSON形式で記述します。配置場所は `hooks/hooks.json`。
 
 ### prompt（LLM評価）
 
+LLMを使用してプロンプトを評価:
+
 ```json
 {
   "type": "prompt",
   "prompt": "タスク完了を評価: $ARGUMENTS",
   "timeout": 30
+}
+```
+
+**注**: プラグインからは`prompt`と`agent`タイプもサポートされます（v2.1.0以降）。以前は`command`タイプのみがプラグインからサポートされていました。
+
+### agent（エージェント起動）
+
+特定のエージェントを起動:
+
+```json
+{
+  "type": "agent",
+  "agent": "code-reviewer",
+  "timeout": 120
 }
 ```
 
@@ -74,6 +117,44 @@ JSON形式で記述します。配置場所は `hooks/hooks.json`。
 | MCPツール | `mcp__github__.*` | githubサーバーのすべて |
 
 **注意**: 大文字小文字を区別
+
+## once フィールド
+
+フックを一度だけ実行する場合は `once: true` を指定:
+
+**hooks.json形式:**
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "once": true,
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '初回のみ実行'"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Frontmatter形式:**
+```yaml
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      once: true
+      hooks:
+        - type: command
+          command: "echo '初回のみ実行'"
+```
+
+- `true`: フックは最初のマッチ時のみ実行
+- `false`（デフォルト）: マッチするたびに実行
 
 ## Exit Code
 
