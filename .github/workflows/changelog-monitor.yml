@@ -98,6 +98,9 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # yamllint disable-line rule:line-length
+          allowed_tools: 'Bash(gh issue create:*),Bash(gh issue list:*),Read,Grep,Glob'
+          max_turns: 20
           prompt: |
             あなたはClaude Codeマーケットプレイスのメンテナーです。
 
@@ -134,8 +137,7 @@ jobs:
             - Issueタイトルは「[CHANGELOG vX.X.X] 」で始める形式にする
             - 不明確な変更は「要確認」としてマーク
             - ラベル claude-code-update は必ず付与する（これにより自動実装CIがトリガーされる）
-          # yamllint disable-line rule:line-length
-          claude_args: '--allowed-tools "Bash(gh issue create:*),Bash(gh issue list:*),Read,Grep,Glob"'
+            - gh issue create が失敗した場合は、エラーメッセージを確認して対処する
 
       - name: スナップショットを更新
         if: steps.claude-analysis.outcome == 'success'
