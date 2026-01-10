@@ -98,9 +98,9 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          # yamllint disable-line rule:line-length
-          allowed_tools: 'Bash(gh issue create:*),Bash(gh issue list:*),Read,Grep,Glob'
           max_turns: 20
+          # yamllint disable-line rule:line-length
+          claude_args: '--allowedTools "Bash(gh issue create:*),Bash(gh issue list:*),Read,Grep,Glob"'
           prompt: |
             あなたはClaude Codeマーケットプレイスのメンテナーです。
 
