@@ -86,8 +86,8 @@ jobs:
                a. ドキュメント更新（.claude/rules/*.md）
                b. バリデーター更新（scripts/validators/*.py）
                c. テスト更新（scripts/tests/*.py）
-            7. 実装完了後、変更内容のサマリーを出力
-               （テスト実行はCI側で実行されるため、ここでは実行しない）
+            7. 実装完了後、`pre-commit run --all-files` を実行してlint/formatエラーを修正
+            8. 変更内容のサマリーを出力
 
             ## プロジェクト構造
             - CLAUDE.md: プロジェクトのガイドライン（必読）
@@ -106,7 +106,7 @@ jobs:
 
           # ラベルは手動付与のため、Edit/Writeのパス制限は不要
           # Bashは特定コマンドのみ許可
-          claude_args: '--allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx ruff check*),Bash(uvx ruff format*),Bash(uvx pytest*)"'
+          claude_args: '--allowed-tools "Read,Grep,Glob,Edit,Write,Bash(pre-commit run*),Bash(uvx ruff check*),Bash(uvx ruff format*),Bash(uvx pytest*)"'
 
       - name: 変更があるか確認
         id: check-changes
