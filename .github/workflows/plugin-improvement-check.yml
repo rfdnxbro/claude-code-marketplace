@@ -41,9 +41,9 @@ jobs:
             RULES=$(find .claude/rules -name '*.md' -type f | tr '\n' ',' | sed 's/,$//')
             VALIDATORS=$(find scripts/validators -name '*.py' -type f | tr '\n' ',' | sed 's/,$//')
           else
-            # push: 差分から特定
-            RULES=$(git diff --name-only HEAD~1 HEAD -- '.claude/rules/*.md' | tr '\n' ',' | sed 's/,$//')
-            VALIDATORS=$(git diff --name-only HEAD~1 HEAD -- 'scripts/validators/*.py' | tr '\n' ',' | sed 's/,$//')
+            # push: 差分から特定（再帰的に検索）
+            RULES=$(git diff --name-only HEAD~1 HEAD -- .claude/rules/ | grep '\.md$' | tr '\n' ',' | sed 's/,$//')
+            VALIDATORS=$(git diff --name-only HEAD~1 HEAD -- scripts/validators/ | grep '\.py$' | tr '\n' ',' | sed 's/,$//')
           fi
 
           echo "rules=${RULES}" >> $GITHUB_OUTPUT
@@ -76,7 +76,7 @@ jobs:
           echo "プラグイン数: ${COUNT}"
 
       - name: plugin-updateラベルを作成（存在しない場合）
-        if: steps.changed-files.outputs.has_changes == 'true' && steps.plugins.outputs.count != '0'
+        if: steps.changed-files.outputs.has_changes == 'true' && steps.plugins.outputs.count > 0
         run: |
           if ! gh label list --json name -q '.[].name' | grep -q '^plugin-update$'; then
             gh label create plugin-update \
@@ -90,13 +90,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Claude Codeでプラグイン改善を分析
-        if: steps.changed-files.outputs.has_changes == 'true' && steps.plugins.outputs.count != '0'
+        if: steps.changed-files.outputs.has_changes == 'true' && steps.plugins.outputs.count > 0
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           max_turns: 30
           # yamllint disable-line rule:line-length
-          claude_args: '--allowedTools "Read,Grep,Glob,Bash(gh issue create:*),Bash(gh issue list:*)"'
+          claude_args: '--allowed-tools "Read,Grep,Glob,Bash(gh issue create:*),Bash(gh issue list:*)"'
           prompt: |
             あなたはClaude Codeマーケットプレイスのメンテナーです。
 
@@ -169,7 +169,7 @@ jobs:
             - 既存のIssueと重複しないよう、gh issue listで確認してから作成
 
       - name: プラグインが存在しない場合
-        if: steps.plugins.outputs.count == '0'
+        if: steps.plugins.outputs.count == 0
         run: |
           echo "plugins/配下にプラグインが存在しません。スキップします。"
 
