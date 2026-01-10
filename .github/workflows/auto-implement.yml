@@ -103,9 +103,8 @@ jobs:
             - 破壊的変更がある場合は明確にコメントを残す
             - 不明確な部分は「TODO: 要確認」としてマーク
 
-          # セキュリティ: 編集可能なパスを制限（プロンプトインジェクション対策）
-          # yamllint disable-line rule:line-length
-          claude_args: '--allowed-tools "Bash(uvx ruff check:*),Bash(uvx ruff format:*),Read,Grep,Glob,Edit(.claude/rules/*),Edit(scripts/validators/*),Edit(scripts/tests/*),Write(.claude/rules/*),Write(scripts/validators/*),Write(scripts/tests/*)"'
+          # ラベルは手動付与のため、ツール制限は不要
+          # claude_args: ''
 
       - name: 変更があるか確認
         id: check-changes
