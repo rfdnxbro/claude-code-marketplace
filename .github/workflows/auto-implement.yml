@@ -16,8 +16,8 @@ concurrency:
 
 jobs:
   auto-implement:
-    # claude-code-updateラベルが付いたissueにのみ反応
-    if: github.event.label.name == 'claude-code-update'
+    # claude-code-updateまたはplugin-updateラベルが付いたissueに反応
+    if: github.event.label.name == 'claude-code-update' || github.event.label.name == 'plugin-update'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -40,10 +40,27 @@ jobs:
           fi
           echo "✓ 必要なシークレットが設定されています"
 
+      - name: ラベルに基づく設定を決定
+        id: config
+        run: |
+          LABEL="${{ github.event.label.name }}"
+
+          if [ "$LABEL" = "claude-code-update" ]; then
+            echo "branch_prefix=auto/claude-code-update" >> $GITHUB_OUTPUT
+            echo "pr_label=documentation" >> $GITHUB_OUTPUT
+            echo "target_type=docs" >> $GITHUB_OUTPUT
+          elif [ "$LABEL" = "plugin-update" ]; then
+            echo "branch_prefix=auto/plugin-update" >> $GITHUB_OUTPUT
+            echo "pr_label=plugin" >> $GITHUB_OUTPUT
+            echo "target_type=plugin" >> $GITHUB_OUTPUT
+          fi
+
+          echo "ラベル: $LABEL"
+
       - name: 作業ブランチを作成
         id: branch
         run: |
-          BRANCH_NAME="auto/claude-code-update-issue-${{ github.event.issue.number }}"
+          BRANCH_NAME="${{ steps.config.outputs.branch_prefix }}-issue-${{ github.event.issue.number }}"
           echo "name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
 
           # ローカルブランチが既に存在する場合は削除
@@ -65,8 +82,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Claudeで実装を実行
-        id: claude-implement
+      - name: Claudeで実装を実行（claude-code-update）
+        if: github.event.label.name == 'claude-code-update'
+        id: claude-implement-docs
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -113,6 +131,47 @@ jobs:
           # Bashは特定コマンドのみ許可（lint/formatはgit commit時にpre-commitが自動実行）
           claude_args: '--allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx pytest*)"'
 
+      - name: Claudeで実装を実行（plugin-update）
+        if: github.event.label.name == 'plugin-update'
+        id: claude-implement-plugin
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            あなたはClaude Codeマーケットプレイスのソフトウェアエンジニアです。
+
+            ## タスク
+            Issue #${{ github.event.issue.number }} の改善提案に基づいて、プラグインを更新してください。
+
+            ## Issue情報
+            - タイトル: (issue-title.txtを参照)
+            - 本文: (issue-body.mdを参照)
+
+            ## 実行手順
+
+            1. issue-title.txtとissue-body.mdを読んで、改善提案の内容を把握
+            2. CLAUDE.mdを読んで、プロジェクトのガイドラインを把握
+            3. .claude/rules/ 配下の関連ルールドキュメントを確認
+            4. 対象プラグインのファイルを確認:
+               - plugin.json（.claude-plugin/plugin.json）
+               - 各サブディレクトリ配下のコンポーネントファイル
+            5. Issueに記載された改善内容を実装
+            6. 実装完了後、変更内容のサマリーを出力
+
+            ## プロジェクト構造
+            - CLAUDE.md: プロジェクトのガイドライン（必読）
+            - .claude/rules/: プラグイン仕様ドキュメント（README.mdに索引あり）
+            - plugins/: プラグインディレクトリ
+
+            ## 重要
+            - CLAUDE.mdのガイドラインに従う
+            - Issueの改善提案に忠実に実装する
+            - 既存の動作を壊さないよう注意
+            - リポジトリに永続的に必要なファイルのみ作成・変更すること
+            - issue-body.md, issue-title.txt などの一時ファイルは参照のみで、変更やコミットに含めないこと
+
+          claude_args: '--allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx pytest*)"'
+
       - name: 変更があるか確認
         id: check-changes
         run: |
@@ -132,9 +191,17 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add -A
+
+          # ラベルに応じてコミットメッセージを変更
+          if [ "${{ github.event.label.name }}" = "claude-code-update" ]; then
+            COMMIT_DESC="Claude Codeのアップデートに伴うドキュメント・バリデーター更新"
+          else
+            COMMIT_DESC="ルール更新に伴うプラグイン改善"
+          fi
+
           git commit -m "feat: Issue #${{ github.event.issue.number }} の自動実装
 
-          Claude Codeのアップデートに伴うドキュメント・バリデーター更新
+          ${COMMIT_DESC}
 
           🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
@@ -168,14 +235,16 @@ jobs:
           # [CHANGELOG vX.X.X] 形式の場合はそのまま使用
           elif [[ "$ISSUE_TITLE" =~ ^\[CHANGELOG\ v[0-9]+\.[0-9]+\.[0-9]+\] ]]; then
             PR_TITLE="$ISSUE_TITLE"
+          # [プラグイン改善] 形式の場合はそのまま使用
+          elif [[ "$ISSUE_TITLE" =~ ^\[プラグイン改善\] ]]; then
+            PR_TITLE="$ISSUE_TITLE"
           else
             PR_TITLE="feat: $ISSUE_TITLE"
           fi
 
-          gh pr create \
-            --title "$PR_TITLE" \
-            --body "$(cat <<'EOF'
-          ## 概要
+          # ラベルに応じてPR本文を変更
+          if [ "${{ github.event.label.name }}" = "claude-code-update" ]; then
+            PR_BODY="## 概要
           Issue #${{ github.event.issue.number }} で報告されたClaude Codeのアップデートに対応します。
 
           ## 関連Issue
@@ -190,11 +259,30 @@ jobs:
           - [ ] テストが通過するか
 
           ---
-          🤖 Generated with [Claude Code](https://claude.com/claude-code)
-          EOF
-          )" \
-            --label "claude-code-update" \
-            --label "documentation"
+          🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+          else
+            PR_BODY="## 概要
+          Issue #${{ github.event.issue.number }} のプラグイン改善提案を実装します。
+
+          ## 関連Issue
+          Closes #${{ github.event.issue.number }}
+
+          ## 変更内容
+          Claude Actionによって自動生成された変更です。詳細はコミット履歴を参照してください。
+
+          ## 確認事項
+          - [ ] プラグインの変更が適切か
+          - [ ] 既存の動作に影響がないか
+
+          ---
+          🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+          fi
+
+          gh pr create \
+            --title "$PR_TITLE" \
+            --body "$PR_BODY" \
+            --label "${{ github.event.label.name }}" \
+            --label "${{ steps.config.outputs.pr_label }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

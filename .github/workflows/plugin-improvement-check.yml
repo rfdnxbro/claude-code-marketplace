@@ -1,0 +1,179 @@
+name: プラグイン改善チェック
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.claude/rules/**'
+      - 'scripts/validators/**'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Issue作成をスキップ（分析のみ）'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+  id-token: write
+
+concurrency:
+  group: plugin-improvement-check
+  cancel-in-progress: true
+
+jobs:
+  check-improvements:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: 変更されたルール/バリデーターを特定
+        id: changed-files
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # 手動実行: 全ファイルを対象
+            RULES=$(find .claude/rules -name '*.md' -type f | tr '\n' ',' | sed 's/,$//')
+            VALIDATORS=$(find scripts/validators -name '*.py' -type f | tr '\n' ',' | sed 's/,$//')
+          else
+            # push: 差分から特定（再帰的に検索）
+            RULES=$(git diff --name-only HEAD~1 HEAD -- .claude/rules/ | grep '\.md$' | tr '\n' ',' | sed 's/,$//')
+            VALIDATORS=$(git diff --name-only HEAD~1 HEAD -- scripts/validators/ | grep '\.py$' | tr '\n' ',' | sed 's/,$//')
+          fi
+
+          echo "rules=${RULES}" >> $GITHUB_OUTPUT
+          echo "validators=${VALIDATORS}" >> $GITHUB_OUTPUT
+
+          # 変更があるかチェック
+          if [ -z "${RULES}" ] && [ -z "${VALIDATORS}" ]; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "変更されたルール/バリデーターはありません"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "変更されたルール: ${RULES}"
+            echo "変更されたバリデーター: ${VALIDATORS}"
+          fi
+
+      - name: プラグイン一覧を取得
+        id: plugins
+        run: |
+          # plugins/配下のディレクトリ一覧
+          if [ -d plugins ]; then
+            PLUGINS=$(find plugins -maxdepth 1 -mindepth 1 -type d | tr '\n' ',' | sed 's/,$//')
+            COUNT=$(echo "$PLUGINS" | tr ',' '\n' | grep -c . || echo "0")
+          else
+            PLUGINS=""
+            COUNT=0
+          fi
+
+          echo "list=${PLUGINS}" >> $GITHUB_OUTPUT
+          echo "count=${COUNT}" >> $GITHUB_OUTPUT
+          echo "プラグイン数: ${COUNT}"
+
+      - name: plugin-updateラベルを作成（存在しない場合）
+        if: steps.changed-files.outputs.has_changes == 'true' && steps.plugins.outputs.count > 0
+        run: |
+          if ! gh label list --json name -q '.[].name' | grep -q '^plugin-update$'; then
+            gh label create plugin-update \
+              --description "ルール/バリデーター更新に伴うプラグイン改善提案" \
+              --color "1d76db"
+            echo "ラベル plugin-update を作成しました"
+          else
+            echo "ラベル plugin-update は既に存在します"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Claude Codeでプラグイン改善を分析
+        if: steps.changed-files.outputs.has_changes == 'true' && steps.plugins.outputs.count > 0
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          max_turns: 30
+          # yamllint disable-line rule:line-length
+          claude_args: '--allowed-tools "Read,Grep,Glob,Bash(gh issue create:*),Bash(gh issue list:*)"'
+          prompt: |
+            あなたはClaude Codeマーケットプレイスのメンテナーです。
+
+            ## タスク
+            ルール/バリデーターの更新に基づき、各プラグインの改善提案を行ってください。
+
+            ## 変更されたファイル
+            - ルールファイル: ${{ steps.changed-files.outputs.rules }}
+            - バリデーター: ${{ steps.changed-files.outputs.validators }}
+
+            ## 対象プラグイン
+            ${{ steps.plugins.outputs.list }}
+
+            ## dry_runモード
+            ${{ inputs.dry_run || 'false' }}
+
+            ## 実行手順
+
+            1. 変更されたルールファイルを読む（.claude/rules/*.md）
+            2. 変更されたバリデーターを読む（scripts/validators/*.py）
+            3. 各プラグインについて以下を分析:
+               a. plugin.json（.claude-plugin/plugin.json）を確認
+               b. 各サブディレクトリ配下のコンポーネントファイルを確認
+               c. 以下の観点で改善点を特定:
+                  - 新フィールド・オプションの活用可能性
+                  - 既存実装の改善点
+                  - 非推奨になった記法がないか
+                  - 更新されたベストプラクティスに沿っているか
+
+            4. 改善提案がある場合:
+               - dry_runがtrueの場合: 分析結果のみ出力（Issueは作成しない）
+               - dry_runがfalseの場合: プラグインごとに1つのIssueを作成
+                 - ラベル: plugin-update
+                 - タイトル: 「[プラグイン改善] <plugin-name>: <概要>」
+
+            5. 改善提案がない場合:
+               「プラグイン改善提案なし」と報告して終了
+
+            ## Issue本文テンプレート
+
+            ```markdown
+            ## 概要
+            [変更されたルールに基づく改善提案の概要]
+
+            ## 対象コンポーネント
+            - [ ] `<path/to/file>`
+
+            ## 改善内容
+
+            ### 1. [改善項目名]
+            **現状:**
+            [現在の実装の説明]
+
+            **提案:**
+            [改善後の実装例]
+
+            **理由:** [参照: .claude/rules/<rule>.md]
+
+            ## 参考ドキュメント
+            - `.claude/rules/<rule>.md`
+
+            ---
+            🤖 このIssueはルール更新に基づいて自動生成されました
+            ```
+
+            ## 重要
+            - PRは作成しない（Issueのみ）
+            - ラベル plugin-update は必ず付与
+            - 改善提案がない場合はIssueを作成しない
+            - 既存のIssueと重複しないよう、gh issue listで確認してから作成
+
+      - name: プラグインが存在しない場合
+        if: steps.plugins.outputs.count == 0
+        run: |
+          echo "plugins/配下にプラグインが存在しません。スキップします。"
+
+      - name: 変更がない場合
+        if: steps.changed-files.outputs.has_changes == 'false'
+        run: |
+          echo "ルール/バリデーターに変更がありません。スキップします。"
