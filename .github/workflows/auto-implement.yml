@@ -102,9 +102,9 @@ jobs:
             - 破壊的変更がある場合は明確にコメントを残す
             - 不明確な部分は「TODO: 要確認」としてマーク
 
-          # セキュリティ: 編集可能なパスを制限しつつ必要な操作を許可
-          # yamllint disable-line rule:line-length
-          claude_args: '--allowed-tools "Read,Grep,Glob,Bash(uvx ruff check*),Bash(uvx ruff format*),Bash(uvx pytest*),Edit(.claude/rules/*),Edit(scripts/validators/*),Edit(scripts/tests/*),Edit(scripts/validators/__init__.py),Write(.claude/rules/*),Write(scripts/validators/*),Write(scripts/tests/*)"'
+          # ラベルは手動付与のため、Edit/Writeのパス制限は不要
+          # Bashは特定コマンドのみ許可
+          claude_args: '--allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx ruff check*),Bash(uvx ruff format*),Bash(uvx pytest*)"'
 
       - name: 変更があるか確認
         id: check-changes
