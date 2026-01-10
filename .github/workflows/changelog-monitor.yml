@@ -99,7 +99,7 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           # yamllint disable-line rule:line-length
-          claude_args: '--max-turns 20 --allowedTools "Bash(gh issue create:*),Bash(gh issue list:*),Read,Grep,Glob"'
+          claude_args: '--max-turns 20 --allowed-tools "Bash(gh issue create:*),Bash(gh issue list:*),Read,Grep,Glob"'
           prompt: |
             あなたはClaude Codeマーケットプレイスのメンテナーです。
 
