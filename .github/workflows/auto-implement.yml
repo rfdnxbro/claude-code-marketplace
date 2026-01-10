@@ -189,6 +189,8 @@ jobs:
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
           set -e
+          # 一時ファイルを削除（コミットに含めないため）
+          rm -f issue-body.md issue-title.txt
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add -A
