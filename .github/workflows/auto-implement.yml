@@ -27,6 +27,11 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: pre-commitをセットアップ
+        run: |
+          pip install pre-commit
+          pre-commit install
+
       - name: シークレット検証
         run: |
           if [ -z "${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}" ]; then
@@ -105,15 +110,8 @@ jobs:
             - issue-body.md, issue-title.txt などの一時ファイルは参照のみで、変更やコミットに含めないこと
 
           # ラベルは手動付与のため、Edit/Writeのパス制限は不要
-          # Bashは特定コマンドのみ許可（lint/formatはCI側でpre-commitが実行）
+          # Bashは特定コマンドのみ許可（lint/formatはgit commit時にpre-commitが自動実行）
           claude_args: '--allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx pytest*)"'
-
-      - name: pre-commitでlint/format修正
-        run: |
-          pip install pre-commit
-          pre-commit run --all-files || true
-          # pre-commitが修正したファイルがあれば表示
-          git diff --stat
 
       - name: 変更があるか確認
         id: check-changes
