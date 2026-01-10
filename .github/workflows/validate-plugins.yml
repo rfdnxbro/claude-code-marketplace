@@ -24,13 +24,17 @@ jobs:
       - name: 変更されたプラグインファイルを取得
         id: changed-files
         run: |
-          BASE_SHA="${{ github.event.pull_request.base.sha }}"
-          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
-
-          # 変更されたplugins/配下の.mdと.jsonを取得（削除ファイルは除外）
-          CHANGED=$(git diff --name-only --diff-filter=d "$BASE_SHA" "$HEAD_SHA" -- 'plugins/**' \
-            | grep -E '\.(md|json)$' | tr '\n' ' ')
-          echo "files=$CHANGED" >> $GITHUB_OUTPUT
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # 手動実行: 全ファイルを対象
+            FILES=$(find plugins -type f \( -name '*.md' -o -name '*.json' \) 2>/dev/null | tr '\n' ' ')
+          else
+            # PR: baseブランチとの差分
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+            FILES=$(git diff --name-only --diff-filter=d "$BASE_SHA" "$HEAD_SHA" -- 'plugins/**' \
+              | grep -E '\.(md|json)$' | tr '\n' ' ')
+          fi
+          echo "files=$FILES" >> $GITHUB_OUTPUT
 
       - name: プラグインを検証
         if: steps.changed-files.outputs.files != ''
