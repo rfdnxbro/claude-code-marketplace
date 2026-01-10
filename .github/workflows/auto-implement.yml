@@ -225,6 +225,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: ラベルが存在しない場合は作成
+        if: steps.check-changes.outputs.has_changes == 'true'
+        run: |
+          # PRに付与するラベルが存在するか確認し、なければ作成
+          for LABEL in "${{ github.event.label.name }}" "${{ steps.config.outputs.pr_label }}"; do
+            if ! gh label list --json name --jq '.[].name' | grep -q "^${LABEL}$"; then
+              echo "ラベル '${LABEL}' が存在しないため作成します"
+              gh label create "${LABEL}" --description "自動生成されたラベル" || true
+            else
+              echo "ラベル '${LABEL}' は既に存在します"
+            fi
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: PRを作成
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
