@@ -86,8 +86,8 @@ jobs:
                a. ドキュメント更新（.claude/rules/*.md）
                b. バリデーター更新（scripts/validators/*.py）
                c. テスト更新（scripts/tests/*.py）
-            7. 実装完了後、`pre-commit run --all-files` を実行してlint/formatエラーを修正
-            8. 変更内容のサマリーを出力
+            7. 実装完了後、変更内容のサマリーを出力
+               （lint/formatはCI側でpre-commitが自動実行するため不要）
 
             ## プロジェクト構造
             - CLAUDE.md: プロジェクトのガイドライン（必読）
@@ -105,8 +105,15 @@ jobs:
             - issue-body.md, issue-title.txt などの一時ファイルは参照のみで、変更やコミットに含めないこと
 
           # ラベルは手動付与のため、Edit/Writeのパス制限は不要
-          # Bashは特定コマンドのみ許可
-          claude_args: '--allowed-tools "Read,Grep,Glob,Edit,Write,Bash(pre-commit run*),Bash(uvx ruff check*),Bash(uvx ruff format*),Bash(uvx pytest*)"'
+          # Bashは特定コマンドのみ許可（lint/formatはCI側でpre-commitが実行）
+          claude_args: '--allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx pytest*)"'
+
+      - name: pre-commitでlint/format修正
+        run: |
+          pip install pre-commit
+          pre-commit run --all-files || true
+          # pre-commitが修正したファイルがあれば表示
+          git diff --stat
 
       - name: 変更があるか確認
         id: check-changes
