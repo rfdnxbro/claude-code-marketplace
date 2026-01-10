@@ -171,7 +171,7 @@ jobs:
             - issue-body.md, issue-title.txt などの一時ファイルは参照のみで、変更やコミットに含めないこと
 
           # yamllint disable-line rule:line-length
-          claude_args: '--max-turns 50 --allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx pytest*),Bash(python3 scripts/validate_plugin.py*)"'
+          claude_args: '--max-turns 50 --allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx *),Bash(python3 scripts/*),Bash(npx *)"'
 
       - name: 変更があるか確認
         id: check-changes
