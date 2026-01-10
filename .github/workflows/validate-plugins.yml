@@ -1,9 +1,6 @@
 name: プラグイン検証
 
 on:
-  push:
-    paths:
-      - 'plugins/**'
   pull_request:
     paths:
       - 'plugins/**'
