@@ -22,7 +22,10 @@ AI-DLCは、Amazon Web ServicesのRaja SP氏が提唱するAIネイティブな�
 
 **ディレクトリ命名規則**: `aidlc-docs/YYYYMMDD_<bolt-name>/` 形式
 
-- 例: `aidlc-docs/20251230_user-auth/`, `aidlc-docs/20251231_payment/`
+```text
+aidlc-docs/20251230_user-auth/
+aidlc-docs/20251231_payment/
+```
 
 ### 3. グリーンフィールド/ブラウンフィールド対応
 
@@ -71,7 +74,7 @@ claude plugins install ai-dlc
 
 ### 基本的なワークフロー
 
-```bash
+```text
 # 1. ボルトのセットアップ（グリーンフィールド/ブラウンフィールド選択）
 /ai-dlc:setup
 
