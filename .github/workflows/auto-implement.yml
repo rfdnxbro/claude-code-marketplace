@@ -130,7 +130,7 @@ jobs:
 
           # ラベルは手動付与のため、Edit/Writeのパス制限は不要
           # Bashは特定コマンドのみ許可（lint/formatはgit commit時にpre-commitが自動実行）
-          claude_args: '--allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx pytest*)"'
+          claude_args: '--max-turns 50 --allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx pytest*)"'
 
       - name: Claudeで実装を実行（plugin-update）
         if: github.event.label.name == 'plugin-update'
@@ -138,7 +138,6 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          max_turns: 50
           prompt: |
             あなたはClaude Codeマーケットプレイスのソフトウェアエンジニアです。
 
@@ -173,7 +172,7 @@ jobs:
             - issue-body.md, issue-title.txt などの一時ファイルは参照のみで、変更やコミットに含めないこと
 
           # yamllint disable-line rule:line-length
-          claude_args: '--allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx pytest*),Bash(python3 scripts/validate_plugin.py*)"'
+          claude_args: '--max-turns 50 --allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx pytest*),Bash(python3 scripts/validate_plugin.py*)"'
 
       - name: 変更があるか確認
         id: check-changes
