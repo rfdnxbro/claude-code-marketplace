@@ -1,7 +1,8 @@
 name: プラグイン改善チェック
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches: [main]
     paths:
       - '.claude/rules/**'
@@ -17,6 +18,7 @@ on:
 permissions:
   contents: read
   issues: write
+  pull-requests: read
   id-token: write
 
 concurrency:
@@ -27,11 +29,15 @@ jobs:
   check-improvements:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # PRがマージされた場合のみ実行（クローズのみは除外）
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.merged == true
     steps:
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v6
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: 変更されたルール/バリデーターを特定
         id: changed-files
@@ -41,9 +47,11 @@ jobs:
             RULES=$(find .claude/rules -name '*.md' -type f | tr '\n' ',' | sed 's/,$//')
             VALIDATORS=$(find scripts/validators -name '*.py' -type f | tr '\n' ',' | sed 's/,$//')
           else
-            # push: 差分から特定（再帰的に検索）
-            RULES=$(git diff --name-only HEAD~1 HEAD -- .claude/rules/ | grep '\.md$' | tr '\n' ',' | sed 's/,$//')
-            VALIDATORS=$(git diff --name-only HEAD~1 HEAD -- scripts/validators/ | grep '\.py$' | tr '\n' ',' | sed 's/,$//')
+            # pull_request: PRの差分から特定
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+            RULES=$(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}" -- .claude/rules/ | grep '\.md$' | tr '\n' ',' | sed 's/,$//')
+            VALIDATORS=$(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}" -- scripts/validators/ | grep '\.py$' | tr '\n' ',' | sed 's/,$//')
           fi
 
           echo "rules=${RULES}" >> $GITHUB_OUTPUT
