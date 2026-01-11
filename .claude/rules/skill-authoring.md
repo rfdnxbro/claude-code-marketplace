@@ -4,6 +4,17 @@ paths: plugins/*/skills/**/SKILL.md, .claude/skills/**/SKILL.md
 
 # スキル作成ベストプラクティス
 
+## スラッシュコマンドとの関係
+
+スキルとスラッシュコマンドは統一されたコンセプトです（Claude Code v2.1.3以降）。
+
+| 種類 | ファイル | 用途 |
+|------|----------|------|
+| スキル | `skills/**/SKILL.md` | 複雑なワークフロー、サポートファイル付き |
+| スラッシュコマンド | `commands/**/*.md` | シンプルなプロンプト展開 |
+
+どちらも同じfrontmatterオプション（`allowed-tools`、`hooks`等）を使用できます。詳細は[slash-commands.md](slash-commands.md)を参照。
+
 ## 基本原則
 
 **簡潔に**: コンテキストウィンドウは共有リソース。Claudeが既に知っている情報は含めない。
