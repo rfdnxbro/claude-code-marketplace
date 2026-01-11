@@ -74,7 +74,7 @@ claude plugins install ai-dlc
 
 ### 基本的なワークフロー
 
-```text
+```bash
 # 1. ボルトのセットアップ（グリーンフィールド/ブラウンフィールド選択）
 /ai-dlc:setup
 
