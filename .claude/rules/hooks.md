@@ -77,9 +77,11 @@ Bashコマンドを実行:
 {
   "type": "command",
   "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check.sh",
-  "timeout": 60
+  "timeout": 30
 }
 ```
+
+`timeout`は秒単位で指定。省略時のデフォルトは600秒（10分）。
 
 ### prompt（LLM評価）
 

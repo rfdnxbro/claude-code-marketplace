@@ -6,6 +6,17 @@ paths: plugins/*/commands/**/*.md, .claude/commands/**/*.md
 
 Markdown + YAML Frontmatter形式で記述します。
 
+## スキルとの関係
+
+スラッシュコマンドとスキルは統一されたコンセプトです（Claude Code v2.1.3以降）。
+
+| 種類 | ファイル | 用途 |
+|------|----------|------|
+| スラッシュコマンド | `commands/**/*.md` | シンプルなプロンプト展開 |
+| スキル | `skills/**/SKILL.md` | 複雑なワークフロー、サポートファイル付き |
+
+どちらも同じfrontmatterオプション（`allowed-tools`、`hooks`等）を使用できます。詳細は[skill-authoring.md](skill-authoring.md)を参照。
+
 ## 形式
 
 ```markdown
