@@ -14,8 +14,28 @@
       "source": "./plugins/ai-dlc",
       "description": "AI駆動開発ライフサイクル（AI-DLC）のスラッシュコマンド、サブエージェント、スキルを提供するプラグイン",
       "version": "0.1.0",
-      "keywords": ["ai-dlc", "sdlc", "agile", "ddd", "methodology"],
+      "keywords": [
+        "ai-dlc",
+        "sdlc",
+        "agile",
+        "ddd",
+        "methodology"
+      ],
       "category": "methodology"
+    },
+    {
+      "name": "bbl",
+      "source": "./plugins/bbl",
+      "description": "ビジネス基礎知識学習教材の記事作成を支援するプラグイン",
+      "version": "0.1.0",
+      "keywords": [
+        "business",
+        "learning",
+        "education",
+        "content",
+        "article"
+      ],
+      "category": "education"
     }
   ]
 }
