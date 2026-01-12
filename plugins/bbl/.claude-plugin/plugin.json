@@ -1,0 +1,12 @@
+{
+  "name": "bbl",
+  "version": "0.1.0",
+  "description": "ビジネス基礎知識学習教材の記事作成を支援するプラグイン",
+  "author": {
+    "name": "rfdnxbro"
+  },
+  "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/bbl",
+  "repository": "https://github.com/rfdnxbro/claude-code-marketplace",
+  "license": "MIT",
+  "keywords": ["business", "learning", "education", "content", "article"]
+}
