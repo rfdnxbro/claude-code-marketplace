@@ -116,7 +116,7 @@ outline: |
     問い: どのように改善すべきか
   ...
 file_path: docs/ヒト/組織行動・リーダーシップ/心理的安全性.md
-phase: brainstorm
+phase: outline_created  # outline_created → article_created → completed
 updated: 2025-01-12T10:00:00
 ```
 

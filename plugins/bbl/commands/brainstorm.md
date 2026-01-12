@@ -94,7 +94,7 @@ subcategory: [サブカテゴリ名]
 outline: |
   [作成したアウトライン]
 file_path: docs/[カテゴリ]/[サブカテゴリ]/[概念名].md
-phase: brainstorm
+phase: outline_created
 updated: [現在時刻]
 ```
 

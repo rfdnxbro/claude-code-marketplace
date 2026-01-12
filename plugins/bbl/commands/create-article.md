@@ -23,7 +23,11 @@ allowed-tools: Read, Write, Edit, Glob, Grep
 - アウトライン
 - 出力先パス
 
-コンテキストファイルが存在しない場合は、先に `/bbl:brainstorm` を実行するよう案内してください。
+**エラーハンドリング**:
+
+- ファイルが存在しない場合: 「`.bbl-context.yml`が見つかりません。先に `/bbl:brainstorm [概念名]` を実行してください。」
+- `phase`が`outline_created`でない場合: 現在のphaseを表示し、適切なコマンドを案内
+- 必須フィールド（concept, category, subcategory, outline, file_path）が欠けている場合: 欠けているフィールドを明示し、`/bbl:brainstorm`の再実行を促す
 
 ### 2. 出力先ディレクトリの確認
 
@@ -47,10 +51,10 @@ allowed-tools: Read, Write, Edit, Glob, Grep
 
 ### 5. コンテキストの更新
 
-`.bbl-context.yml` の `phase` を `create` から `review` に更新：
+`.bbl-context.yml` の `phase` を `article_created` に更新：
 
 ```yaml
-phase: review
+phase: article_created
 updated: [現在時刻]
 ```
 

@@ -10,7 +10,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep
 ## 前提条件
 
 - `/bbl:create-article` で記事が作成済みであること
-- `.bbl-context.yml` が存在し、`phase` が `review` であること
+- `.bbl-context.yml` が存在し、`phase` が `article_created` であること
 
 ## 手順
 
@@ -18,7 +18,14 @@ allowed-tools: Read, Write, Edit, Glob, Grep
 
 `.bbl-context.yml` を読み込み、対象記事のパスを取得。
 
-コンテキストファイルが存在しない、または `phase` が `review` でない場合は、適切なコマンドを案内。
+**エラーハンドリング**:
+
+- ファイルが存在しない場合: 「`.bbl-context.yml`が見つかりません。先に `/bbl:brainstorm [概念名]` を実行してください。」
+- `phase`が`article_created`でない場合:
+  - `outline_created`: 「記事がまだ作成されていません。`/bbl:create-article` を実行してください。」
+  - `completed`: 「この記事は既にレビュー済みです。」
+  - その他: 現在のphaseを表示し、ワークフローを案内
+- `file_path`で指定されたファイルが存在しない場合: 「記事ファイルが見つかりません。`/bbl:create-article` を再実行してください。」
 
 ### 2. 記事の読み込み
 
