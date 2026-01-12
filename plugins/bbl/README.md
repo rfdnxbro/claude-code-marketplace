@@ -106,6 +106,25 @@ docs/<カテゴリ>/<サブカテゴリ>/<概念名>.md
 
 プラグインは `.bbl-context.yml` ファイルで作業状態を管理します。
 
+### phaseの遷移フロー
+
+```
+outline_created → article_created → completed
+     ↑                    ↑
+     |                    |
+  brainstorm          create-article      review-article
+```
+
+### phaseの値と意味
+
+| phase | 説明 | 対応するコマンド |
+|-------|------|-----------------|
+| `outline_created` | ブレインストーミング完了、アウトライン作成済み | `/bbl:brainstorm` 実行後 |
+| `article_created` | 記事作成完了、レビュー待ち | `/bbl:create-article` 実行後 |
+| `completed` | レビュー完了、公開可能 | `/bbl:review-article` 実行後 |
+
+### コンテキストファイルの例
+
 ```yaml
 concept: 心理的安全性
 category: ヒト
@@ -116,9 +135,18 @@ outline: |
     問い: どのように改善すべきか
   ...
 file_path: docs/ヒト/組織行動・リーダーシップ/心理的安全性.md
-phase: outline_created  # outline_created → article_created → completed
+phase: article_created  # 状態: 記事作成済み、レビュー待ち
+review_score: 85        # (完了後) レビュースコア
 updated: 2025-01-12T10:00:00
 ```
+
+### エラー時の対応
+
+各コマンドは以下の場合にエラーを報告します：
+
+- **コンテキストファイル不在**: `/bbl:brainstorm [概念名]` を実行
+- **phase不整合**: 現在のphaseに応じて適切なコマンドを案内
+- **必須フィールド欠落**: `/bbl:brainstorm` を再実行して修正
 
 ## ライセンス
 
