@@ -92,6 +92,18 @@ uvx yamllint -c .yamllint.yml .github/workflows/
 - `.claude/rules/` - Claude Code機能の仕様ドキュメント
 - `scripts/validators/` - 各定義ファイルのバリデーター
 - `scripts/tests/` - バリデーターのテスト
+- `.github/workflows/` - GitHub Actionsワークフロー
+
+## GitHub Actionsワークフロー
+
+### 自動実装ワークフロー（auto-implement.yml）
+
+Issueに特定のラベルが付与されると、Claude Codeが自動で実装を行う。
+
+- `claude-code-update`: Claude Codeのアップデートに伴うドキュメント・バリデーター更新
+- `plugin-update`: プラグインの改善提案を実装
+
+Claude Codeは実装完了後に `pre-commit run --all-files` を実行し、lint/formatエラーがあれば自動修正して再実行する。
 
 ## .claude/rules/に新規定義を追加する場合
 

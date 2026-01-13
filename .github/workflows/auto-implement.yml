@@ -109,8 +109,11 @@ jobs:
                a. ドキュメント更新（.claude/rules/*.md）
                b. バリデーター更新（scripts/validators/*.py）
                c. テスト更新（scripts/tests/*.py）
-            7. 実装完了後、変更内容のサマリーを出力
-               （lint/formatはCI側でpre-commitが自動実行するため不要）
+            7. 実装完了後、pre-commitを実行してlint/formatエラーをチェック
+               - `pre-commit run --all-files` を実行
+               - エラーがあれば内容を確認し、該当ファイルを修正
+               - 再度pre-commitを実行し、すべてパスするまで繰り返す
+            8. すべてのチェックがパスしたら、変更内容のサマリーを出力
 
             ## プロジェクト構造
             - CLAUDE.md: プロジェクトのガイドライン（必読）
@@ -128,8 +131,8 @@ jobs:
             - issue-body.md, issue-title.txt などの一時ファイルは参照のみで、変更やコミットに含めないこと
 
           # ラベルは手動付与のため、Edit/Writeのパス制限は不要
-          # Bashは特定コマンドのみ許可（lint/formatはgit commit時にpre-commitが自動実行）
-          claude_args: '--max-turns 50 --allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx pytest*)"'
+          # Bashは特定コマンドのみ許可（pytest実行とpre-commitによるlint/format）
+          claude_args: '--max-turns 50 --allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx pytest*),Bash(pre-commit*)"'
 
       - name: Claudeで実装を実行（plugin-update）
         if: github.event.label.name == 'plugin-update'
@@ -156,7 +159,11 @@ jobs:
                - plugin.json（.claude-plugin/plugin.json）
                - 各サブディレクトリ配下のコンポーネントファイル
             5. Issueに記載された改善内容を実装
-            6. 実装完了後、変更内容のサマリーを出力
+            6. 実装完了後、pre-commitを実行してlint/formatエラーをチェック
+               - `pre-commit run --all-files` を実行
+               - エラーがあれば内容を確認し、該当ファイルを修正
+               - 再度pre-commitを実行し、すべてパスするまで繰り返す
+            7. すべてのチェックがパスしたら、変更内容のサマリーを出力
 
             ## プロジェクト構造
             - CLAUDE.md: プロジェクトのガイドライン（必読）
@@ -171,7 +178,7 @@ jobs:
             - issue-body.md, issue-title.txt などの一時ファイルは参照のみで、変更やコミットに含めないこと
 
           # yamllint disable-line rule:line-length
-          claude_args: '--max-turns 50 --allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx *),Bash(python3 scripts/*),Bash(npx *)"'
+          claude_args: '--max-turns 50 --allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx *),Bash(python3 scripts/*),Bash(npx *),Bash(pre-commit*)"'
 
       - name: 変更があるか確認
         id: check-changes
