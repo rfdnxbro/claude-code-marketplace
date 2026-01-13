@@ -138,6 +138,30 @@ my-skill/
     └── validate.sh
 ```
 
+### スキルの自動検出
+
+Claude Codeは`.claude/skills`ディレクトリ内のスキルを自動的に検出します（v2.1.6以降）:
+
+- **親ディレクトリからの検出**: サブディレクトリ内のファイルで作業している場合でも、親ディレクトリの`.claude/skills`が自動的に検出される
+- **ネストされたスキル**: `.claude/skills`配下に任意の階層でスキルを配置可能（`skills/category/my-skill/SKILL.md`等）
+- **プラグイン内のスキル**: プラグインの`skills/`ディレクトリ内のスキルも同様に検出される
+
+検出されるスキルの例:
+
+```text
+project/
+├── .claude/
+│   └── skills/
+│       ├── skill-a/SKILL.md           # 検出される
+│       └── category/
+│           └── skill-b/SKILL.md       # 検出される（ネスト）
+└── src/
+    └── feature/
+        └── .claude/
+            └── skills/
+                └── skill-c/SKILL.md   # 検出される（サブディレクトリ）
+```
+
 ### ファイル分割の基準
 
 - **SKILL.md**: 500行以下。クイックスタートと基本的なワークフロー
