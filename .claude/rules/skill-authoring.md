@@ -138,6 +138,29 @@ my-skill/
     └── validate.sh
 ```
 
+### スキルの自動検出
+
+Claude Codeは以下のディレクトリからスキルを自動的に検出します:
+
+1. **プロジェクトルートの `.claude/skills/`**
+2. **プラグインの `skills/` ディレクトリ**
+3. **ネストされた `.claude/skills/` ディレクトリ** (v2.1.6以降)
+
+v2.1.6以降、サブディレクトリ内のファイルで作業している場合でも、親ディレクトリ階層をさかのぼって `.claude/skills/` ディレクトリを検出します。
+
+```text
+project-root/
+├── .claude/skills/        # 常に検出される
+│   └── global-skill/
+└── subproject/
+    ├── .claude/skills/    # subproject/ 配下で作業時に検出される
+    │   └── local-skill/
+    └── src/
+        └── file.py        # ここで作業中でもlocal-skillが利用可能
+```
+
+この機能により、モノレポやマルチプロジェクト環境で、サブプロジェクト固有のスキルを提供できます。
+
 ### ファイル分割の基準
 
 - **SKILL.md**: 500行以下。クイックスタートと基本的なワークフロー

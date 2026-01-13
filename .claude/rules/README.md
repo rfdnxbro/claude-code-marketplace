@@ -16,6 +16,7 @@
 | [slash-commands.md](slash-commands.md) | スラッシュコマンドの定義方法 |
 | [plugin-readme.md](plugin-readme.md) | プラグインREADMEの作成ガイドライン |
 | [output-styles.md](output-styles.md) | 出力スタイルの定義方法 |
+| [statusline.md](statusline.md) | ステータスラインのカスタマイズ方法 |
 
 ## 用語集
 
