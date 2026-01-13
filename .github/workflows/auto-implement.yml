@@ -192,6 +192,19 @@ jobs:
             git diff --stat
           fi
 
+      - name: pre-commitで最終検証
+        if: steps.check-changes.outputs.has_changes == 'true'
+        run: |
+          echo "=== 最終検証: pre-commit実行 ==="
+          # 一時ファイルを除外してステージング
+          rm -f issue-body.md issue-title.txt
+          git add -A
+          if ! pre-commit run --all-files; then
+            echo "::error::pre-commitチェックに失敗しました。Claude Codeによる自動修正が不完全です。"
+            exit 1
+          fi
+          echo "✓ すべてのpre-commitチェックがパスしました"
+
       - name: 変更をコミットしてプッシュ
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
