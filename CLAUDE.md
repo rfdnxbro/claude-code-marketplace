@@ -103,8 +103,6 @@ Issueに特定のラベルが付与されると、Claude Codeが自動で実装�
 - `claude-code-update`: Claude Codeのアップデートに伴うドキュメント・バリデーター更新
 - `plugin-update`: プラグインの改善提案を実装
 
-Claude Codeは実装完了後に `pre-commit run --all-files` を実行し、lint/formatエラーがあれば自動修正して再実行する。
-
 ## .claude/rules/に新規定義を追加する場合
 
 ドキュメント作成だけでなく、対応するバリデーターとテストも追加すること：
