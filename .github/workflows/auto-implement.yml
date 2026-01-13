@@ -199,11 +199,18 @@ jobs:
           # 一時ファイルを除外してステージング
           rm -f issue-body.md issue-title.txt
           git add -A
+
+          # pre-commit実行（自動修正があれば適用）
           if ! pre-commit run --all-files; then
-            echo "::error::pre-commitチェックに失敗しました。Claude Codeによる自動修正が不完全です。"
-            git status
-            git diff
-            exit 1
+            echo "自動修正が適用されました。再度ステージングして検証します。"
+            git add -A
+            # 2回目の実行
+            if ! pre-commit run --all-files; then
+              echo "::error::pre-commitチェックに失敗しました。Claude Codeによる自動修正が不完全です。"
+              git status
+              git diff
+              exit 1
+            fi
           fi
           echo "✓ すべてのpre-commitチェックがパスしました"
 
