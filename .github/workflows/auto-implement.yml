@@ -131,8 +131,8 @@ jobs:
             - issue-body.md, issue-title.txt などの一時ファイルは参照のみで、変更やコミットに含めないこと
 
           # ラベルは手動付与のため、Edit/Writeのパス制限は不要
-          # Bashは特定コマンドのみ許可（pytest実行とpre-commitによるlint/format）
-          claude_args: '--max-turns 50 --allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx pytest*),Bash(pre-commit run*)"'
+          # Bashは全コマンド許可（ラベルは手動付与なので信頼できる）
+          claude_args: '--max-turns 50 --allowed-tools "Read,Grep,Glob,Edit,Write,Bash(*)"'
 
       - name: Claudeで実装を実行（plugin-update）
         if: github.event.label.name == 'plugin-update'
