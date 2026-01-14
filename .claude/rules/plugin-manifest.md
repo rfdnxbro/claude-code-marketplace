@@ -73,3 +73,11 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 - カスタムパスはデフォルトディレクトリを**置き換えない、補足する**
 - 複数パスは配列で指定可能
 - `commands/`, `agents/`, `skills/` は `.claude-plugin/` 内ではなく、プラグインルート直下に配置
+
+## プラグインのインストール
+
+**Git submodule対応**（v2.1.7以降）:
+
+- Claude Codeはプラグインインストール時にgit submoduleを完全に初期化します
+- サブモジュールを使用するプラグインも正常にインストールされます
+- 手動でのサブモジュール初期化は不要です

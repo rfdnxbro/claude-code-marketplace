@@ -25,18 +25,18 @@ paths: .claude/settings.local.json, .claude/settings.json
 
 ### コンテキストウィンドウ
 
-| フィールド | 型 | 説明 | 例 |
-|-----------|---|------|-----|
-| `context_window.used_tokens` | number | 使用済みトークン数 | `45000` |
-| `context_window.max_tokens` | number | 最大トークン数 | `200000` |
-| `context_window.remaining_tokens` | number | 残りトークン数 | `155000` |
-| `context_window.used_percentage` | number | 使用率（%、小数点以下1桁） | `22.5` |
-| `context_window.remaining_percentage` | number | 残り率（%、小数点以下1桁） | `77.5` |
+| フィールド | 型 | 説明 | 例 | バージョン |
+|-----------|---|------|-----|-----------|
+| `context_window.used_tokens` | number | 使用済みトークン数 | `45000` | - |
+| `context_window.max_tokens` | number | 最大トークン数 | `200000` | - |
+| `context_window.remaining_tokens` | number | 残りトークン数 | `155000` | - |
+| `context_window.used_percentage` | number | 使用率（%、小数点以下1桁） | `22.5` | v2.1.6+ |
+| `context_window.remaining_percentage` | number | 残り率（%、小数点以下1桁） | `77.5` | v2.1.6+ |
 
 **バージョン情報**:
 
-- `used_percentage`と`remaining_percentage`はv2.1.6で追加
-- それ以前のバージョンでは手動計算が必要: `{{ (context_window.used_tokens / context_window.max_tokens * 100) | round(1) }}`
+- `used_percentage`と`remaining_percentage`はv2.1.6で追加されました
+- v2.1.5以前のバージョンでは手動計算が必要: `{{ (context_window.used_tokens / context_window.max_tokens * 100) | round(1) }}`
 
 ### プロジェクト情報
 
