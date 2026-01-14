@@ -4,164 +4,344 @@ paths: .claude/settings.local.json, .claude/settings.json
 
 # ステータスライン設定
 
-ステータスラインはClaude Codeのターミナル下部に表示される情報バーです。プロジェクト固有の情報を表示するようカスタマイズできます。
+ステータスラインはClaude Codeのターミナル下部に表示される情報バーです。カスタムスクリプトを使用して、コンテキスト情報を表示するようカスタマイズできます。
 
-## 設定ファイル
+## 設定方法
 
-ステータスラインの設定は`.claude/settings.local.json`または`.claude/settings.json`で行います:
+### 方法1: `/statusline` コマンド（推奨）
+
+```text
+/statusline
+```
+
+Claude Codeがカスタムステータスラインの設定を支援します。
+
+```text
+/statusline show the model name in orange
+```
+
+のように希望する動作を伝えることも可能です。
+
+### 方法2: 直接設定
+
+`.claude/settings.json` または `.claude/settings.local.json` に `statusLine` を追加:
 
 ```json
 {
-  "status.line": "{{ context_window.used_tokens }}/{{ context_window.max_tokens }} tokens ({{ context_window.used_percentage }}%)"
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.sh",
+    "padding": 0
+  }
 }
 ```
+
+| オプション | 必須 | 説明 |
+|-----------|------|------|
+| `type` | Yes | `"command"` を指定 |
+| `command` | Yes | 実行するスクリプトのパス（`~` 展開対応） |
+| `padding` | No | 左側のパディング（`0` で端まで表示） |
 
 **ファイルの使い分け**:
 
 - `.claude/settings.json`: プロジェクト全体で共有する設定（バージョン管理にコミット）
 - `.claude/settings.local.json`: 個人用設定（`.gitignore`に追加推奨）
 
-## 利用可能なフィールド
+## 仕組み
 
-### コンテキストウィンドウ
+- ステータスラインは会話メッセージが更新されるときに更新される
+- 更新は最大300msごとに実行される
+- コマンドのstdoutの最初の行がステータスラインテキストになる
+- ANSIカラーコードがサポートされている
+- Claude Codeは現在のセッションに関するコンテキスト情報をJSON形式でstdin経由でスクリプトに渡す
+
+## JSON入力構造
+
+ステータスラインスクリプトはstdin経由で以下のJSON形式のデータを受け取ります:
+
+```json
+{
+  "hook_event_name": "Status",
+  "session_id": "abc123...",
+  "transcript_path": "/path/to/transcript.json",
+  "cwd": "/current/working/directory",
+  "model": {
+    "id": "claude-opus-4-1",
+    "display_name": "Opus"
+  },
+  "workspace": {
+    "current_dir": "/current/working/directory",
+    "project_dir": "/original/project/directory"
+  },
+  "version": "1.0.80",
+  "output_style": {
+    "name": "default"
+  },
+  "cost": {
+    "total_cost_usd": 0.01234,
+    "total_duration_ms": 45000,
+    "total_api_duration_ms": 2300,
+    "total_lines_added": 156,
+    "total_lines_removed": 23
+  },
+  "context_window": {
+    "total_input_tokens": 15234,
+    "total_output_tokens": 4521,
+    "context_window_size": 200000,
+    "used_percentage": 22.5,
+    "remaining_percentage": 77.5,
+    "current_usage": {
+      "input_tokens": 8500,
+      "output_tokens": 1200,
+      "cache_creation_input_tokens": 5000,
+      "cache_read_input_tokens": 2000
+    }
+  }
+}
+```
+
+### 利用可能なフィールド
+
+#### モデル情報
 
 | フィールド | 型 | 説明 | 例 |
 |-----------|---|------|-----|
-| `context_window.used_tokens` | number | 使用済みトークン数 | `45000` |
-| `context_window.max_tokens` | number | 最大トークン数 | `200000` |
-| `context_window.remaining_tokens` | number | 残りトークン数 | `155000` |
-| `context_window.used_percentage` | number | 使用率（%、小数点以下1桁） | `22.5` |
-| `context_window.remaining_percentage` | number | 残り率（%、小数点以下1桁） | `77.5` |
+| `model.id` | string | モデルID | `claude-opus-4-1` |
+| `model.display_name` | string | 表示名 | `Opus` |
 
-**バージョン情報**:
-
-- `used_percentage`と`remaining_percentage`はv2.1.6で追加
-- それ以前のバージョンでは手動計算が必要: `{{ (context_window.used_tokens / context_window.max_tokens * 100) | round(1) }}`
-
-### プロジェクト情報
+#### ワークスペース情報
 
 | フィールド | 型 | 説明 | 例 |
 |-----------|---|------|-----|
-| `project.name` | string | プロジェクト名 | `my-project` |
-| `project.path` | string | プロジェクトの絶対パス | `/home/user/my-project` |
+| `workspace.current_dir` | string | 現在のディレクトリ | `/home/user/project` |
+| `workspace.project_dir` | string | プロジェクトディレクトリ | `/home/user/project` |
+| `cwd` | string | 現在のワーキングディレクトリ | `/home/user/project` |
 
-### Git情報
+#### セッション情報
 
 | フィールド | 型 | 説明 | 例 |
 |-----------|---|------|-----|
-| `git.branch` | string | 現在のブランチ名 | `main` |
-| `git.status` | string | Gitステータス概要 | `modified: 3` |
+| `version` | string | Claude Codeのバージョン | `1.0.80` |
+| `session_id` | string | セッションID | `abc123...` |
+| `output_style.name` | string | 出力スタイル名 | `default` |
 
-## テンプレート構文
+#### コスト情報
 
-ステータスラインは[Liquid](https://shopify.github.io/liquid/)テンプレート構文を使用します。
+| フィールド | 型 | 説明 | 例 |
+|-----------|---|------|-----|
+| `cost.total_cost_usd` | number | 累計コスト（USD） | `0.01234` |
+| `cost.total_duration_ms` | number | 累計時間（ms） | `45000` |
+| `cost.total_api_duration_ms` | number | API呼び出し時間（ms） | `2300` |
+| `cost.total_lines_added` | number | 追加行数 | `156` |
+| `cost.total_lines_removed` | number | 削除行数 | `23` |
 
-### 基本的な変数展開
+#### コンテキストウィンドウ情報
 
-```liquid
-{{ variable_name }}
+| フィールド | 型 | 説明 | 例 |
+|-----------|---|------|-----|
+| `context_window.context_window_size` | number | 最大トークン数 | `200000` |
+| `context_window.total_input_tokens` | number | 累計入力トークン | `15234` |
+| `context_window.total_output_tokens` | number | 累計出力トークン | `4521` |
+| `context_window.used_percentage` | number | 使用率（%） | `22.5` |
+| `context_window.remaining_percentage` | number | 残り率（%） | `77.5` |
+| `context_window.current_usage` | object | 現在の使用状況（`null`の可能性あり） | - |
+
+`current_usage`オブジェクト（存在する場合）:
+
+| フィールド | 型 | 説明 | 例 |
+|-----------|---|------|-----|
+| `input_tokens` | number | 現在の入力トークン | `8500` |
+| `output_tokens` | number | 現在の出力トークン | `1200` |
+| `cache_creation_input_tokens` | number | キャッシュ作成トークン | `5000` |
+| `cache_read_input_tokens` | number | キャッシュ読み取りトークン | `2000` |
+
+## スクリプト例
+
+### シンプルなステータスライン
+
+```bash
+#!/bin/bash
+# stdinからJSON入力を読み取る
+input=$(cat)
+
+# jqで値を抽出
+MODEL_DISPLAY=$(echo "$input" | jq -r '.model.display_name')
+CURRENT_DIR=$(echo "$input" | jq -r '.workspace.current_dir')
+
+echo "[$MODEL_DISPLAY] ${CURRENT_DIR##*/}"
 ```
 
-### 条件分岐
+### Git対応ステータスライン
 
-```liquid
-{% if git.branch %}
-  Branch: {{ git.branch }}
-{% else %}
-  No Git repository
-{% endif %}
+```bash
+#!/bin/bash
+input=$(cat)
+
+MODEL_DISPLAY=$(echo "$input" | jq -r '.model.display_name')
+CURRENT_DIR=$(echo "$input" | jq -r '.workspace.current_dir')
+
+# Gitリポジトリ内ならブランチ名を表示
+GIT_BRANCH=""
+if git rev-parse --git-dir > /dev/null 2>&1; then
+    BRANCH=$(git branch --show-current 2>/dev/null)
+    if [ -n "$BRANCH" ]; then
+        GIT_BRANCH=" | 🌿 $BRANCH"
+    fi
+fi
+
+echo "[$MODEL_DISPLAY] 📁 ${CURRENT_DIR##*/}$GIT_BRANCH"
 ```
 
-### フィルター
+### コンテキスト使用率表示
 
-```liquid
-{{ context_window.used_percentage | round(1) }}%
+```bash
+#!/bin/bash
+input=$(cat)
+
+MODEL=$(echo "$input" | jq -r '.model.display_name')
+CONTEXT_SIZE=$(echo "$input" | jq -r '.context_window.context_window_size')
+USAGE=$(echo "$input" | jq '.context_window.current_usage')
+
+if [ "$USAGE" != "null" ]; then
+    # current_usageフィールドからコンテキスト使用率を計算
+    CURRENT_TOKENS=$(echo "$USAGE" | jq '.input_tokens + .cache_creation_input_tokens + .cache_read_input_tokens')
+    PERCENT_USED=$((CURRENT_TOKENS * 100 / CONTEXT_SIZE))
+    echo "[$MODEL] Context: ${PERCENT_USED}%"
+else
+    echo "[$MODEL] Context: 0%"
+fi
 ```
 
-利用可能なフィルター:
+### ANSIカラー付きステータスライン
 
-- `round(n)`: 小数点以下n桁に丸める
-- `upcase`: 大文字に変換
-- `downcase`: 小文字に変換
-- `truncate(n)`: n文字に切り詰め
+```bash
+#!/bin/bash
+input=$(cat)
 
-## サンプル設定
+# ANSIカラーコード
+CYAN='\033[36m'
+YELLOW='\033[33m'
+RED='\033[31m'
+GREEN='\033[32m'
+MAGENTA='\033[35m'
+RESET='\033[0m'
 
-### シンプルなトークンカウンター
+# 値を抽出
+MODEL=$(echo "$input" | jq -r '.model.display_name // "Unknown"')
+COST=$(echo "$input" | jq -r '.cost.total_cost_usd // 0')
+COST_FORMATTED=$(printf "%.2f" "$COST")
 
-```json
-{
-  "status.line": "{{ context_window.used_tokens }}/{{ context_window.max_tokens }}"
-}
+# コンテキスト使用率
+CONTEXT_SIZE=$(echo "$input" | jq -r '.context_window.context_window_size // 200000')
+USAGE=$(echo "$input" | jq '.context_window.current_usage')
+if [ "$USAGE" != "null" ] && [ -n "$USAGE" ]; then
+    CURRENT_TOKENS=$(echo "$USAGE" | jq '.input_tokens + .cache_creation_input_tokens + .cache_read_input_tokens')
+    PERCENT_USED=$((CURRENT_TOKENS * 100 / CONTEXT_SIZE))
+else
+    PERCENT_USED=0
+fi
+
+# 使用率に応じて色を変更（70%以上で赤）
+if [ "$PERCENT_USED" -ge 70 ]; then
+    PERCENT_COLOR=$RED
+else
+    PERCENT_COLOR=$YELLOW
+fi
+
+# Gitブランチ
+GIT_BRANCH=""
+if git rev-parse --git-dir > /dev/null 2>&1; then
+    BRANCH=$(git branch --show-current 2>/dev/null)
+    if [ -n "$BRANCH" ]; then
+        GIT_BRANCH=" | ${MAGENTA}🌿 ${BRANCH}${RESET}"
+    fi
+fi
+
+echo -e "[${CYAN}${MODEL}${RESET}] ${PERCENT_COLOR}📊 ${PERCENT_USED}%${RESET} | ${GREEN}💰 \$${COST_FORMATTED}${RESET}${GIT_BRANCH}"
 ```
 
-表示例: `45000/200000`
+### Python例
 
-### パーセンテージ表示（v2.1.6以降）
+```python
+#!/usr/bin/env python3
+import json
+import sys
+import os
 
-```json
-{
-  "status.line": "Context: {{ context_window.used_percentage }}% used"
-}
+# stdinからJSONを読み取る
+data = json.load(sys.stdin)
+
+# 値を抽出
+model = data['model']['display_name']
+current_dir = os.path.basename(data['workspace']['current_dir'])
+
+# Gitブランチを確認
+git_branch = ""
+if os.path.exists('.git'):
+    try:
+        with open('.git/HEAD', 'r') as f:
+            ref = f.read().strip()
+            if ref.startswith('ref: refs/heads/'):
+                git_branch = f" | 🌿 {ref.replace('ref: refs/heads/', '')}"
+    except:
+        pass
+
+print(f"[{model}] 📁 {current_dir}{git_branch}")
 ```
 
-表示例: `Context: 22.5% used`
+### Node.js例
 
-### 残り容量表示
+```javascript
+#!/usr/bin/env node
+const { readFileSync } = require('fs');
+const path = require('path');
 
-```json
-{
-  "status.line": "{{ context_window.remaining_percentage }}% remaining"
-}
+// stdinからJSONを読み取る
+let input = '';
+process.stdin.on('data', chunk => input += chunk);
+process.stdin.on('end', () => {
+    const data = JSON.parse(input);
+
+    // 値を抽出
+    const model = data.model.display_name;
+    const currentDir = path.basename(data.workspace.current_dir);
+
+    // Gitブランチを確認
+    let gitBranch = '';
+    try {
+        const headContent = readFileSync('.git/HEAD', 'utf8').trim();
+        if (headContent.startsWith('ref: refs/heads/')) {
+            gitBranch = ` | 🌿 ${headContent.replace('ref: refs/heads/', '')}`;
+        }
+    } catch {
+        // Gitリポジトリでない
+    }
+
+    console.log(`[${model}] 📁 ${currentDir}${gitBranch}`);
+});
 ```
-
-表示例: `77.5% remaining`
-
-### プログレスバー風
-
-```json
-{
-  "status.line": "[{% for i in (1..10) %}{% if i <= (context_window.used_percentage / 10) %}█{% else %}░{% endif %}{% endfor %}] {{ context_window.used_percentage }}%"
-}
-```
-
-表示例: `[██░░░░░░░░] 22.5%`
-
-### Git情報付き
-
-```json
-{
-  "status.line": "{{ git.branch }} | {{ context_window.used_tokens }}/{{ context_window.max_tokens }} tokens"
-}
-```
-
-表示例: `main | 45000/200000 tokens`
-
-### 複合情報
-
-```json
-{
-  "status.line": "{{ project.name }} [{{ git.branch }}] | Tokens: {{ context_window.used_percentage }}% ({{ context_window.remaining_tokens }} remaining)"
-}
-```
-
-表示例: `my-project [main] | Tokens: 22.5% (155000 remaining)`
 
 ## ベストプラクティス
 
-**簡潔に**: ステータスラインは限られたスペースしかない。最も重要な情報に絞る。
+**簡潔に**: ステータスラインは1行に収まるべき。最も重要な情報に絞る。
 
-**パーセンテージを活用**: 絶対値よりも相対的な使用率の方が直感的（v2.1.6以降は`used_percentage`/`remaining_percentage`を使用）。
+**視認性**: 絵文字（ターミナルがサポートしている場合）とANSIカラーコードを使用して、情報をスキャンしやすくする。
 
-**条件分岐で柔軟に**: Gitリポジトリがない環境でも動作するよう、条件分岐を活用。
+**jqを使用**: BashでのJSON解析には`jq`コマンドを使用する。
 
-**視認性**: 絵文字やUnicode文字（█, ░等）を使用して視覚的に分かりやすく。
+**テスト**: モックJSON入力を使用して手動でスクリプトをテストする:
 
-## 注意事項
+```bash
+echo '{"model":{"display_name":"Test"},"workspace":{"current_dir":"/test"}}' | ./statusline.sh
+```
 
-- ステータスラインの更新頻度は自動的に制御される（パフォーマンス最適化のため）
-- 非常に長い文字列はターミナル幅に応じて切り詰められる
-- テンプレート構文エラーがある場合、ステータスラインは表示されない
+**パフォーマンス**: 必要に応じて、高コストの操作（gitステータスなど）をキャッシュすることを検討する。
+
+## トラブルシューティング
+
+- **ステータスラインが表示されない**: スクリプトが実行可能か確認（`chmod +x`）
+- **出力が表示されない**: スクリプトがstdoutに出力していることを確認（stderrではなく）
+- **エラーが発生する**: `jq`がインストールされているか確認
 
 ## 関連ドキュメント
 
