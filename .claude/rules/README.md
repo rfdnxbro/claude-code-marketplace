@@ -22,6 +22,7 @@
 
 | 用語 | 説明 |
 |------|------|
+| CI/CD | Continuous Integration/Continuous Delivery。継続的インテグレーション・デリバリー |
 | kebab-case | 単語をハイフンで繋ぐ命名規則。例: `my-plugin-name` |
 | フロントマター | Markdownファイル冒頭の`---`で囲まれたYAMLメタデータ領域 |
 | MCP | Model Context Protocol。Claude Codeが外部サービスと通信するためのプロトコル |
