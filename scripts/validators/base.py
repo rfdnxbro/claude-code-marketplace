@@ -52,9 +52,12 @@ def parse_frontmatter(content: str) -> tuple[dict[str, Any], str, list[str]]:
     """
     YAMLフロントマターを解析する
 
+    サポートする機能:
+    - 単純なキー: 値
+    - リスト/配列（YAML形式とカンマ区切り）
+
     制限事項（サポートしていない機能）:
     - 複数行の値（|, >）
-    - リスト/配列
     - ネストされたオブジェクト
 
     Returns:
@@ -79,7 +82,22 @@ def parse_frontmatter(content: str) -> tuple[dict[str, Any], str, list[str]]:
     body = "\n".join(lines[end_idx + 1 :])
 
     # 簡易YAMLパーサー（PyYAMLを使わない）
-    frontmatter = {}
+    frontmatter: dict[str, Any] = {}
+    current_list_key: str | None = None
+    current_list: list[str] = []
+
+    def save_current_list():
+        """現在収集中のリストを保存する"""
+        nonlocal current_list_key, current_list
+        if current_list_key:
+            if current_list:
+                frontmatter[current_list_key] = current_list
+            else:
+                # リストアイテムがなかった場合は空文字列として保存
+                frontmatter[current_list_key] = ""
+        current_list_key = None
+        current_list = []
+
     for line in frontmatter_lines:
         # 空行とコメントをスキップ
         stripped = line.strip()
@@ -89,18 +107,49 @@ def parse_frontmatter(content: str) -> tuple[dict[str, Any], str, list[str]]:
         # サポートしていない機能を検出
         if stripped in ["|", ">"] or stripped.endswith("|") or stripped.endswith(">"):
             warnings.append("複数行の値（|, >）はサポートされていません")
+            save_current_list()
             continue
-        if stripped.startswith("- "):
-            warnings.append("リスト/配列はサポートされていません")
+
+        # インデントされたリストアイテム（  - item または  -）
+        if stripped.startswith("- ") or stripped == "-":
+            if current_list_key:
+                # リストアイテムを収集
+                if stripped == "-":
+                    # 空のリストアイテム
+                    current_list.append("")
+                else:
+                    item = stripped[2:].strip()
+                    # クォートを除去
+                    if item.startswith('"') and item.endswith('"'):
+                        item = item[1:-1]
+                    elif item.startswith("'") and item.endswith("'"):
+                        item = item[1:-1]
+                    current_list.append(item)
+            else:
+                warnings.append("リスト/配列はキーの後に続く必要があります")
             continue
+
+        # ネストされたオブジェクト（値がある場合のみ警告）
         if line.startswith("  ") and ":" in line:
+            # 「  key: value」の形式はネストされたオブジェクト
+            # ただし「  - item」はリストなので除外済み
             warnings.append("ネストされたオブジェクトはサポートされていません")
+            save_current_list()
             continue
 
         if ":" in line:
+            # 前のリスト収集を保存
+            save_current_list()
+
             key, value = line.split(":", 1)
             key = key.strip()
             value = value.strip()
+
+            # 値が空の場合はリストの開始を期待
+            if not value:
+                current_list_key = key
+                current_list = []
+                continue
 
             # 文字列のクォートを除去
             if value.startswith('"') and value.endswith('"'):
@@ -117,6 +166,9 @@ def parse_frontmatter(content: str) -> tuple[dict[str, Any], str, list[str]]:
                 frontmatter[key] = int(value)
             else:
                 frontmatter[key] = value
+
+    # 最後のリストを保存
+    save_current_list()
 
     return frontmatter, body, warnings
 

@@ -76,4 +76,9 @@ def validate_lsp_json(file_path: Path, content: str) -> ValidationResult:
         if restart_on_crash is not None and not isinstance(restart_on_crash, bool):
             result.add_error(f"{file_path.name}: {server_name}: restartOnCrashはブール値が必要")
 
+        # envのバリデーション
+        env = config.get("env")
+        if env is not None and not isinstance(env, dict):
+            result.add_error(f"{file_path.name}: {server_name}: envはオブジェクトが必要")
+
     return result

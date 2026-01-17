@@ -141,8 +141,8 @@ class TestValidateOutputStyle:
         assert result.has_errors()
         assert any("本文" in e for e in result.errors)
 
-    def test_yaml_warning_list(self):
-        """YAMLのリスト構文で警告が出ることを確認"""
+    def test_yaml_list_parse(self):
+        """YAMLのリスト構文がパースされることを確認"""
         content = dedent("""
             ---
             name: test
@@ -154,4 +154,20 @@ class TestValidateOutputStyle:
             スタイル指示
         """).strip()
         result = validate_output_style(Path("test.md"), content)
-        assert any("リスト" in w or "ネスト" in w for w in result.warnings)
+        # リストがサポートされるようになったため、警告は出ない
+        assert not result.has_errors()
+
+    def test_yaml_warning_multiline(self):
+        """YAMLの複数行構文で警告が出ることを確認"""
+        content = dedent("""
+            ---
+            name: test
+            description: |
+              複数行の説明
+            ---
+            スタイル指示
+        """).strip()
+        result = validate_output_style(Path("test.md"), content)
+        assert not result.has_errors()
+        # description型エラーではなく警告が出る
+        assert any("複数行" in w for w in result.warnings)

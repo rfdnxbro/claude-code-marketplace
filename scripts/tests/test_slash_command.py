@@ -188,3 +188,96 @@ class TestValidateSlashCommand:
         result = validate_slash_command(Path("test.md"), content)
         assert not result.has_errors()
         assert not any("Bash(*)" in w for w in result.warnings)
+
+    def test_valid_context_fork(self):
+        """context: forkが有効であることを確認"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            context: fork
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+
+    def test_invalid_context(self):
+        """無効なcontext値でエラーが出ることを確認"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            context: invalid
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert result.has_errors()
+        assert any("context" in e for e in result.errors)
+
+    def test_context_main_invalid(self):
+        """context: mainは無効（forkのみサポート）"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            context: main
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert result.has_errors()
+        assert any("context" in e and "fork" in e for e in result.errors)
+
+    def test_agent_valid(self):
+        """agentが空でない文字列であることを確認"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            agent: my-agent
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+
+    def test_agent_empty_error(self):
+        """agentが空の場合エラー"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            agent:
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert result.has_errors()
+        assert any("agent" in e for e in result.errors)
+
+    def test_allowed_tools_list_format(self):
+        """allowed-toolsがリスト形式で指定できることを確認"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            allowed-tools:
+              - Read
+              - Write
+              - Bash(git:*)
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+
+    def test_allowed_tools_list_bash_wildcard_warning(self):
+        """allowed-toolsリスト形式でBash(*)警告が出ることを確認"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            allowed-tools:
+              - Read
+              - Bash(*)
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert any("Bash(*)" in w for w in result.warnings)

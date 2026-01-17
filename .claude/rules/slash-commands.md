@@ -26,7 +26,7 @@ allowed-tools: Bash(git add:*), Bash(git commit:*)
 model: haiku
 argument-hint: [message]
 disable-model-invocation: false
-context: main
+context: fork
 ---
 
 コマンドの本体プロンプト
@@ -43,7 +43,8 @@ $ARGUMENTS で引数を受け取れます
 | `model` | No | 使用するモデル（`sonnet`, `opus`, `haiku`）| 未指定時は会話のモデルを使用 |
 | `argument-hint` | No | 引数のヒント（オートコンプリート表示） | なし |
 | `disable-model-invocation` | No | SlashCommandツール経由の実行を防止 | `false` |
-| `context` | No | 実行コンテキスト（`main`, `fork`） | `main` |
+| `context` | No | 実行コンテキスト（`fork`でサブエージェント実行） | 省略時はメインコンテキスト |
+| `agent` | No | 使用するサブエージェント名 | なし |
 | `hooks` | No | フック定義（[hooks.md](hooks.md)参照） | なし |
 
 ## 引数と環境変数

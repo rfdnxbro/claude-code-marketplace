@@ -33,15 +33,38 @@ def validate_slash_command(file_path: Path, content: str) -> ValidationResult:
         else:
             result.add_error(f"{file_path.name}: descriptionが未設定で本文も空")
 
-    # allowed-toolsの確認
-    allowed_tools = frontmatter.get("allowed-tools", "")
-    if allowed_tools:
+    # allowed-toolsの確認（リスト形式対応）
+    allowed_tools = frontmatter.get("allowed-tools")
+    if allowed_tools is not None:
+        # リスト形式または文字列形式をチェック
+        tools_str = ""
+        if isinstance(allowed_tools, list):
+            tools_str = ", ".join(str(t) for t in allowed_tools)
+        else:
+            tools_str = str(allowed_tools)
+
         # Bash(*)のような広範なワイルドカードを警告
-        if "Bash(*)" in str(allowed_tools):
+        if "Bash(*)" in tools_str:
             if WARNING_BROAD_BASH_WILDCARD not in disabled_warnings:
                 result.add_warning(
                     f"{file_path.name}: allowed-toolsにBash(*)が指定。具体的なパターンを推奨"
                 )
+
+    # contextの確認（forkのみサポート、省略時はメインコンテキスト）
+    context = frontmatter.get("context")
+    if context is not None:
+        context_str = str(context) if context else ""
+        if context_str and context_str != "fork":
+            result.add_error(
+                f"{file_path.name}: contextの値が不正です: {context_str}（forkのみ有効）"
+            )
+
+    # agentの確認（空でない文字列）
+    agent = frontmatter.get("agent")
+    if agent is not None:
+        agent_str = str(agent) if agent else ""
+        if not agent_str:
+            result.add_error(f"{file_path.name}: agentは空でない文字列が必要です")
 
     # disable-model-invocationの確認
     disable_model = frontmatter.get("disable-model-invocation", False)

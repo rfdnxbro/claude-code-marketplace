@@ -143,3 +143,55 @@ class TestValidateHooksJson:
         )
         result = validate_hooks_json(Path("hooks.json"), content)
         assert not result.has_errors()
+
+    def test_once_boolean_true(self):
+        """once: trueが有効であることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PostToolUse": [
+                        {
+                            "matcher": "Edit",
+                            "hooks": [{"type": "command", "command": "echo test", "once": True}],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_once_boolean_false(self):
+        """once: falseが有効であることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PostToolUse": [
+                        {
+                            "matcher": "Edit",
+                            "hooks": [{"type": "command", "command": "echo test", "once": False}],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_once_invalid_type(self):
+        """onceがブール値でない場合エラー"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PostToolUse": [
+                        {
+                            "matcher": "Edit",
+                            "hooks": [{"type": "command", "command": "echo test", "once": "true"}],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("once" in e for e in result.errors)

@@ -79,4 +79,9 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
                 if hook_type == "agent" and not h.get("agent"):
                     result.add_error(f"{file_path.name}: agentタイプにagentフィールドがありません")
 
+                # onceの確認（boolean型）
+                once = h.get("once")
+                if once is not None and not isinstance(once, bool):
+                    result.add_error(f"{file_path.name}: onceはブール値が必要です")
+
     return result

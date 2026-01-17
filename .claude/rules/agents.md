@@ -28,9 +28,10 @@ skills: skill-name
 | `name` | Yes | 識別子（小文字・ハイフンのみ） |
 | `description` | Yes | 目的と使用タイミングを説明 |
 | `tools` | No | アクセス可能なツール（カンマ/YAML形式）。省略時は全ツール継承 |
+| `disallowedTools` | No | 使用禁止ツール（カンマ/YAML形式） |
 | `model` | No | `sonnet`, `opus`, `haiku`, `inherit`。省略時は`sonnet` |
 | `permissionMode` | No | `default`, `acceptEdits`, `bypassPermissions`, `plan`, `ignore` |
-| `skills` | No | 自動ロードするスキル名（カンマ区切り） |
+| `skills` | No | 自動ロードするスキル名（カンマ/YAML形式） |
 | `hooks` | No | フック定義（[hooks.md](hooks.md)参照） |
 
 ## description のベストプラクティス
