@@ -78,6 +78,8 @@ jobs:
           # Issue本文をファイルに保存
           gh issue view ${{ github.event.issue.number }} --json title,body --jq '.body' > issue-body.md
           gh issue view ${{ github.event.issue.number }} --json title --jq '.title' > issue-title.txt
+          # タイトルをoutputにも保存（後のステップで使用）
+          echo "title=$(cat issue-title.txt | tr -d '\n')" >> $GITHUB_OUTPUT
           echo "取得完了: Issue #${{ github.event.issue.number }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -280,7 +282,7 @@ jobs:
       - name: PRを作成
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
-          ISSUE_TITLE=$(cat issue-title.txt | tr -d '\n' | xargs)
+          ISSUE_TITLE="${{ steps.issue.outputs.title }}"
 
           # Issueタイトルが空の場合のフォールバック
           if [ -z "$ISSUE_TITLE" ]; then
