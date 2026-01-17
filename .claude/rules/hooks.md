@@ -238,6 +238,24 @@ EOF
 - `${CLAUDE_PROJECT_DIR}` - プロジェクトルートへの絶対パス
 - `$ARGUMENTS` - フック入力JSON（prompt型で使用）
 
+## フック入力JSON
+
+フック実行時、stdinにJSON形式で入力が渡されます:
+
+```json
+{
+  "tool_name": "Edit",
+  "tool_input": { "file_path": "/path/to/file", "old_string": "...", "new_string": "..." },
+  "tool_use_id": "toolu_abc123"
+}
+```
+
+| フィールド | 説明 |
+|-----------|------|
+| `tool_name` | 実行されるツール名 |
+| `tool_input` | ツールへの入力パラメータ |
+| `tool_use_id` | ツール呼び出しの一意識別子（トラッキング用） |
+
 ## イベント詳細
 
 ### Setup

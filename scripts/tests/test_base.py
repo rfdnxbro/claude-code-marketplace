@@ -113,16 +113,58 @@ class TestParseFrontmatter:
         fm, body, warnings = parse_frontmatter(content)
         assert any("複数行" in w for w in warnings)
 
-    def test_unsupported_list(self):
+    def test_yaml_list_parse(self):
+        """YAMLリスト形式がパースできることを確認"""
         content = dedent("""
             ---
             tools:
               - Read
               - Write
+              - Bash(git:*)
             ---
         """).strip()
         fm, body, warnings = parse_frontmatter(content)
-        assert any("リスト" in w or "ネスト" in w for w in warnings)
+        assert "tools" in fm
+        assert isinstance(fm["tools"], list)
+        assert fm["tools"] == ["Read", "Write", "Bash(git:*)"]
+        assert len(warnings) == 0
+
+    def test_yaml_list_with_quoted_items(self):
+        """クォート付きリストアイテムがパースできることを確認"""
+        content = dedent("""
+            ---
+            allowed-tools:
+              - "Bash(git add:*)"
+              - 'Read'
+            ---
+        """).strip()
+        fm, body, warnings = parse_frontmatter(content)
+        assert "allowed-tools" in fm
+        assert fm["allowed-tools"] == ["Bash(git add:*)", "Read"]
+
+    def test_yaml_list_empty_key_no_items(self):
+        """リスト開始後にアイテムがない場合"""
+        content = dedent("""
+            ---
+            tools:
+            name: test
+            ---
+        """).strip()
+        fm, body, warnings = parse_frontmatter(content)
+        # tools は空文字列として格納される（リストアイテムがなかったため）
+        assert fm["tools"] == ""
+        assert fm["name"] == "test"
+
+    def test_yaml_list_orphan_item(self):
+        """キーなしのリストアイテムで警告が出ることを確認"""
+        content = dedent("""
+            ---
+            - orphan-item
+            name: test
+            ---
+        """).strip()
+        fm, body, warnings = parse_frontmatter(content)
+        assert any("キーの後" in w for w in warnings)
 
     def test_comment_ignored(self):
         content = dedent("""

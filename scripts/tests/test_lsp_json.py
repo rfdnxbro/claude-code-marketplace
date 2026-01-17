@@ -34,10 +34,6 @@ class TestValidateLspJson:
                     "shutdownTimeout": 5000,
                     "restartOnCrash": True,
                     "maxRestarts": 3,
-                    "loggingConfig": {
-                        "args": ["--log-level", "4"],
-                        "env": {"LOG_FILE": "${CLAUDE_PLUGIN_LSP_LOG_FILE}"},
-                    },
                 }
             }
         )
@@ -188,3 +184,32 @@ class TestValidateLspJson:
         result = validate_lsp_json(Path(".lsp.json"), content)
         assert result.has_errors()
         assert any("ルートはオブジェクト" in e for e in result.errors)
+
+    def test_env_valid(self):
+        """envがオブジェクトで有効"""
+        content = json.dumps(
+            {
+                "go": {
+                    "command": "gopls",
+                    "extensionToLanguage": {".go": "go"},
+                    "env": {"GOPATH": "/go", "GOROOT": "/usr/local/go"},
+                }
+            }
+        )
+        result = validate_lsp_json(Path(".lsp.json"), content)
+        assert not result.has_errors()
+
+    def test_env_invalid_type(self):
+        """envがオブジェクトでない（エラー）"""
+        content = json.dumps(
+            {
+                "go": {
+                    "command": "gopls",
+                    "extensionToLanguage": {".go": "go"},
+                    "env": "invalid",
+                }
+            }
+        )
+        result = validate_lsp_json(Path(".lsp.json"), content)
+        assert result.has_errors()
+        assert any("env" in e and "オブジェクト" in e for e in result.errors)

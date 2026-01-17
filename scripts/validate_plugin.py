@@ -19,6 +19,7 @@ from validators import (
     validate_agent,
     validate_hooks_json,
     validate_lsp_json,
+    validate_marketplace_json,
     validate_mcp_json,
     validate_output_style,
     validate_plugin_json,
@@ -83,6 +84,11 @@ def validate_file(file_path: Path) -> ValidationResult:
         content = read_file_content(file_path)
         if content is not None:
             result = validate_plugin_json(file_path, content)
+    elif file_path.name == "marketplace.json" and ".claude-plugin" in path_parts:
+        # マーケットプレイス設定
+        content = read_file_content(file_path)
+        if content is not None:
+            result = validate_marketplace_json(file_path, content)
     elif "output-styles" in path_parts and file_path.suffix == ".md":
         # 出力スタイル
         content = read_file_content(file_path)

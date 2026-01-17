@@ -53,6 +53,41 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
     if permission_mode_str and permission_mode_str not in valid_modes:
         result.add_error(f"{file_path.name}: permissionModeの値が不正です: {permission_mode_str}")
 
+    # toolsの確認（リスト形式検証）
+    tools = frontmatter.get("tools")
+    if tools is not None:
+        if not isinstance(tools, (str, list)):
+            result.add_error(f"{file_path.name}: toolsは文字列またはリストが必要です")
+        elif isinstance(tools, list):
+            for t in tools:
+                if not isinstance(t, str) or not t:
+                    result.add_error(f"{file_path.name}: toolsの各要素は空でない文字列が必要です")
+                    break
+
+    # disallowedToolsの確認（リスト形式検証）
+    disallowed_tools = frontmatter.get("disallowedTools")
+    if disallowed_tools is not None:
+        if not isinstance(disallowed_tools, (str, list)):
+            result.add_error(f"{file_path.name}: disallowedToolsは文字列またはリストが必要です")
+        elif isinstance(disallowed_tools, list):
+            for t in disallowed_tools:
+                if not isinstance(t, str) or not t:
+                    result.add_error(
+                        f"{file_path.name}: disallowedToolsの各要素は空でない文字列が必要です"
+                    )
+                    break
+
+    # skillsの確認（リスト形式検証）
+    skills = frontmatter.get("skills")
+    if skills is not None:
+        if not isinstance(skills, (str, list)):
+            result.add_error(f"{file_path.name}: skillsは文字列またはリストが必要です")
+        elif isinstance(skills, list):
+            for s in skills:
+                if not isinstance(s, str) or not s:
+                    result.add_error(f"{file_path.name}: skillsの各要素は空でない文字列が必要です")
+                    break
+
     # 本文（システムプロンプト）の確認
     if not body.strip():
         result.add_warning(f"{file_path.name}: システムプロンプト（本文）が空です")

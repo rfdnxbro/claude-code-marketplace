@@ -6,6 +6,7 @@ from .agent import validate_agent
 from .base import ValidationResult, parse_frontmatter, parse_json_safe
 from .hooks_json import validate_hooks_json
 from .lsp_json import validate_lsp_json
+from .marketplace_json import validate_marketplace_json
 from .mcp_json import validate_mcp_json
 from .output_style import validate_output_style
 from .plugin_json import validate_plugin_json
@@ -23,6 +24,7 @@ __all__ = [
     "validate_hooks_json",
     "validate_mcp_json",
     "validate_lsp_json",
+    "validate_marketplace_json",
     "validate_output_style",
     "validate_plugin_json",
     "validate_readme",

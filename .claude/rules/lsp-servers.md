@@ -43,7 +43,6 @@ JSON形式で記述します。配置場所はプラグインルートの `.lsp.
 | `shutdownTimeout` | number | シャットダウン待機時間（ミリ秒） |
 | `restartOnCrash` | boolean | クラッシュ時の自動再起動 |
 | `maxRestarts` | number | 最大再起動回数 |
-| `loggingConfig` | object | LSPログ設定 |
 
 ## サンプル
 
@@ -175,3 +174,34 @@ JSON形式で記述します。配置場所はプラグインルートの `.lsp.
 ```json
 "env": { "API_KEY": "secret-key-xxx" }
 ```
+
+## トラブルシューティング
+
+### サーバーが起動しない
+
+1. **コマンドの確認**: `command`がPATHに存在するか確認
+
+   ```bash
+   which gopls  # コマンドのパスを確認
+   ```
+
+2. **手動実行テスト**: ターミナルでサーバーを直接起動
+
+   ```bash
+   gopls serve  # サーバーが正常に起動するか確認
+   ```
+
+### 診断情報が表示されない
+
+- `extensionToLanguage`のマッピングが正しいか確認
+- 言語IDがLSP仕様に準拠しているか確認
+
+### タイムアウトエラー
+
+- `startupTimeout`を増やす（デフォルトは通常十分）
+- ネットワーク遅延がある場合は値を調整
+
+### 頻繁な再起動
+
+- `maxRestarts`の値を確認
+- サーバーがクラッシュする原因を調査（ログを確認）

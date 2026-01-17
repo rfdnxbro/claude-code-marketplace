@@ -128,3 +128,171 @@ description: 説明
         """).strip()
         result = validate_skill(Path("SKILL.md"), content)
         assert any("複数行" in w for w in result.warnings)
+
+    def test_valid_context_fork(self):
+        """context: forkが有効であることを確認"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            context: fork
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+
+    def test_invalid_context(self):
+        """無効なcontext値でエラーが出ることを確認"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            context: invalid
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert result.has_errors()
+        assert any("context" in e for e in result.errors)
+
+    def test_context_main_invalid(self):
+        """context: mainは無効（forkのみサポート）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            context: main
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert result.has_errors()
+        assert any("context" in e and "fork" in e for e in result.errors)
+
+    def test_user_invocable_boolean(self):
+        """user-invocableがブール値であることを確認"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            user-invocable: true
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+
+    def test_user_invocable_invalid(self):
+        """user-invocableがブール値でない場合エラー"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            user-invocable: yes
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert result.has_errors()
+        assert any("user-invocable" in e for e in result.errors)
+
+    def test_agent_valid(self):
+        """agentが空でない文字列であることを確認"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            agent: my-agent
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+
+    def test_agent_empty_error(self):
+        """agentが空の場合エラー"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            agent:
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert result.has_errors()
+        assert any("agent" in e for e in result.errors)
+
+    def test_allowed_tools_list_format(self):
+        """allowed-toolsがリスト形式で指定できることを確認"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            allowed-tools:
+              - Read
+              - Write
+              - Bash(git:*)
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+
+    def test_allowed_tools_list_bash_wildcard_warning(self):
+        """allowed-toolsリスト形式でBash(*)警告が出ることを確認"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            allowed-tools:
+              - Read
+              - Bash(*)
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+        assert any("Bash(*)" in w for w in result.warnings)
+
+    def test_hooks_warning(self):
+        """hooksが設定されている場合に警告が出ることを確認"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            hooks: some-hooks
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+        assert any("hooks" in w for w in result.warnings)
+
+    def test_allowed_tools_string_format(self):
+        """allowed-toolsが文字列形式で指定できることを確認"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            allowed-tools: Read, Write, Grep
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+
+    def test_allowed_tools_string_bash_wildcard_warning(self):
+        """allowed-tools文字列形式でBash(*)警告が出ることを確認"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            allowed-tools: Read, Bash(*)
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+        assert any("Bash(*)" in w for w in result.warnings)

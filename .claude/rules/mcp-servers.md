@@ -54,6 +54,7 @@ JSON形式で記述します。配置場所はプラグインルートの `.mcp.
 | `type` | ✓ | `"http"` |
 | `url` | ✓ | サーバーURL |
 | `headers` | - | 認証ヘッダー等 |
+| `headersHelper` | - | ヘッダー生成コマンド |
 
 ```json
 {
@@ -65,6 +66,27 @@ JSON形式で記述します。配置場所はプラグインルートの `.mcp.
     }
   }
 }
+```
+
+#### headersHelper
+
+動的にヘッダーを生成する場合は`headersHelper`を使用:
+
+```json
+{
+  "server-name": {
+    "type": "http",
+    "url": "https://api.example.com/mcp",
+    "headersHelper": "${CLAUDE_PLUGIN_ROOT}/scripts/get-auth-headers.sh"
+  }
+}
+```
+
+ヘルパースクリプトはJSON形式でヘッダーを出力:
+
+```bash
+#!/bin/bash
+echo '{"Authorization": "Bearer '$(get-token)'"}'
 ```
 
 ### SSE（Server-Sent Events）
@@ -108,6 +130,36 @@ MCPリソースはプロンプトで参照可能：
 ```bash
 export MAX_MCP_OUTPUT_TOKENS=50000
 ```
+
+## ツール許可パターン
+
+MCPサーバーのツールは `mcp__サーバー名__ツール名` の形式で参照されます。
+
+### ワイルドカード構文
+
+```yaml
+# 特定のツールを許可
+allowed-tools: mcp__github__create_issue
+
+# 特定サーバーの全ツールを許可
+allowed-tools: mcp__github__*
+
+# 複数パターン
+allowed-tools:
+  - mcp__github__create_issue
+  - mcp__github__list_issues
+  - mcp__slack__*
+```
+
+## 動的更新通知
+
+MCPサーバーはツールやリソースの変更を通知できます（`list_changed` notifications）:
+
+- ツール一覧の変更をクライアントに通知
+- リソース一覧の変更をクライアントに通知
+- クライアントは通知を受けて一覧を再取得
+
+これにより、サーバー側でツールを動的に追加・削除できます。
 
 ## セキュリティ注意事項
 
