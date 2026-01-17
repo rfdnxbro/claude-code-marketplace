@@ -291,16 +291,31 @@ jobs:
             PR_TITLE="feat: $ISSUE_TITLE"
           fi
 
-          # ラベルに応じてPR本文を変更
+          # Claude Codeの出力から変更サマリーを取得
           if [ "${{ github.event.label.name }}" = "claude-code-update" ]; then
-            PR_BODY="## 概要
+            CLAUDE_CONCLUSION="${{ steps.claude-implement-docs.outputs.conclusion }}"
+          else
+            CLAUDE_CONCLUSION="${{ steps.claude-implement-plugin.outputs.conclusion }}"
+          fi
+
+          # 変更サマリーが空の場合のフォールバック
+          if [ -z "$CLAUDE_CONCLUSION" ]; then
+            CLAUDE_CONCLUSION="Claude Actionによって自動生成された変更です。詳細はコミット履歴を参照してください。"
+          fi
+
+          # PR本文をファイルに書き込む（シェルエスケープの問題を回避）
+          if [ "${{ github.event.label.name }}" = "claude-code-update" ]; then
+            cat > /tmp/pr-body.md << 'PREOF'
+          ## 概要
           Issue #${{ github.event.issue.number }} で報告されたClaude Codeのアップデートに対応します。
 
           ## 関連Issue
           Closes #${{ github.event.issue.number }}
 
           ## 変更内容
-          Claude Actionによって自動生成された変更です。詳細はコミット履歴を参照してください。
+          PREOF
+            echo "$CLAUDE_CONCLUSION" >> /tmp/pr-body.md
+            cat >> /tmp/pr-body.md << 'PREOF'
 
           ## 確認事項
           - [ ] ドキュメントの変更が適切か
@@ -308,28 +323,33 @@ jobs:
           - [ ] テストが通過するか
 
           ---
-          🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+          🤖 Generated with [Claude Code](https://claude.com/claude-code)
+          PREOF
           else
-            PR_BODY="## 概要
+            cat > /tmp/pr-body.md << 'PREOF'
+          ## 概要
           Issue #${{ github.event.issue.number }} のプラグイン改善提案を実装します。
 
           ## 関連Issue
           Closes #${{ github.event.issue.number }}
 
           ## 変更内容
-          Claude Actionによって自動生成された変更です。詳細はコミット履歴を参照してください。
+          PREOF
+            echo "$CLAUDE_CONCLUSION" >> /tmp/pr-body.md
+            cat >> /tmp/pr-body.md << 'PREOF'
 
           ## 確認事項
           - [ ] プラグインの変更が適切か
           - [ ] 既存の動作に影響がないか
 
           ---
-          🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+          🤖 Generated with [Claude Code](https://claude.com/claude-code)
+          PREOF
           fi
 
           gh pr create \
             --title "$PR_TITLE" \
-            --body "$PR_BODY" \
+            --body-file /tmp/pr-body.md \
             --label "${{ github.event.label.name }}" \
             --label "${{ steps.config.outputs.pr_label }}"
         env:
