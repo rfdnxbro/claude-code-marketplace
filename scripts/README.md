@@ -38,6 +38,7 @@ CI/CDとローカルhookの両方で利用可能。
 | MCP設定 | `**/.mcp.json` | サーバータイプ、必須フィールド、機密情報検出 |
 | LSP設定 | `**/.lsp.json` | command、extensionToLanguage、transport、機密情報検出 |
 | プラグイン定義 | `**/.claude-plugin/plugin.json` | name（必須・kebab-case）、version形式、パス記述 |
+| マーケットプレイス | `**/marketplace.json` | name（必須・kebab-case・予約語）、owner、plugins配列 |
 | README | `**/plugins/**/README.md` | 必須セクション、相対リンク切れ、コードブロック言語指定 |
 | 出力スタイル | `**/output-styles/**/*.md` | name、description、keep-coding-instructions、本文 |
 
@@ -175,8 +176,15 @@ class TestValidateNewFile:
 簡易YAMLパーサーを使用しているため、以下の機能はサポートされていません:
 
 - 複数行の値（`|`, `>`）
-- リスト/配列
 - ネストされたオブジェクト
+
+リスト/配列は以下の形式でサポートされています:
+
+```yaml
+allowed-tools:
+  - Bash(git add:*)
+  - Bash(git commit:*)
+```
 
 サポートされていない機能を使用した場合は警告が表示されます。
 
