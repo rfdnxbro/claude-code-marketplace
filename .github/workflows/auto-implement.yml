@@ -308,47 +308,49 @@ jobs:
           fi
 
           # PR本文をファイルに書き込む（シェルエスケープの問題を回避）
+          ISSUE_NUM="${{ github.event.issue.number }}"
+
           if [ "${{ github.event.label.name }}" = "claude-code-update" ]; then
-            cat > /tmp/pr-body.md << 'PREOF'
-          ## 概要
-          Issue #${{ github.event.issue.number }} で報告されたClaude Codeのアップデートに対応します。
-
-          ## 関連Issue
-          Closes #${{ github.event.issue.number }}
-
-          ## 変更内容
-          PREOF
-            echo "$CHANGE_SUMMARY" >> /tmp/pr-body.md
-            cat >> /tmp/pr-body.md << 'PREOF'
-
-          ## 確認事項
-          - [ ] ドキュメントの変更が適切か
-          - [ ] バリデーターが正しく動作するか
-          - [ ] テストが通過するか
-
-          ---
-          🤖 Generated with [Claude Code](https://claude.com/claude-code)
-          PREOF
+            {
+              echo "## 概要"
+              echo "Issue #${ISSUE_NUM}: ${ISSUE_TITLE}"
+              echo ""
+              echo "Claude Codeのアップデートに対応します。"
+              echo ""
+              echo "## 関連Issue"
+              echo "Closes #${ISSUE_NUM}"
+              echo ""
+              echo "## 変更内容"
+              echo "$CHANGE_SUMMARY"
+              echo ""
+              echo "## 確認事項"
+              echo "- [ ] ドキュメントの変更が適切か"
+              echo "- [ ] バリデーターが正しく動作するか"
+              echo "- [ ] テストが通過するか"
+              echo ""
+              echo "---"
+              echo "🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+            } > /tmp/pr-body.md
           else
-            cat > /tmp/pr-body.md << 'PREOF'
-          ## 概要
-          Issue #${{ github.event.issue.number }} のプラグイン改善提案を実装します。
-
-          ## 関連Issue
-          Closes #${{ github.event.issue.number }}
-
-          ## 変更内容
-          PREOF
-            echo "$CHANGE_SUMMARY" >> /tmp/pr-body.md
-            cat >> /tmp/pr-body.md << 'PREOF'
-
-          ## 確認事項
-          - [ ] プラグインの変更が適切か
-          - [ ] 既存の動作に影響がないか
-
-          ---
-          🤖 Generated with [Claude Code](https://claude.com/claude-code)
-          PREOF
+            {
+              echo "## 概要"
+              echo "Issue #${ISSUE_NUM}: ${ISSUE_TITLE}"
+              echo ""
+              echo "プラグイン改善提案を実装します。"
+              echo ""
+              echo "## 関連Issue"
+              echo "Closes #${ISSUE_NUM}"
+              echo ""
+              echo "## 変更内容"
+              echo "$CHANGE_SUMMARY"
+              echo ""
+              echo "## 確認事項"
+              echo "- [ ] プラグインの変更が適切か"
+              echo "- [ ] 既存の動作に影響がないか"
+              echo ""
+              echo "---"
+              echo "🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+            } > /tmp/pr-body.md
           fi
 
           gh pr create \
