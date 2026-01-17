@@ -27,6 +27,8 @@
 | MCP | Model Context Protocol。Claude Codeが外部サービスと通信するためのプロトコル |
 | SSE | Server-Sent Events。サーバーからクライアントへの一方向ストリーミング通信 |
 | LSP | Language Server Protocol。エディタと言語サーバー間の標準プロトコル |
+| PRFAQ | Press Release/Frequently Asked Questions。Amazonで生まれた製品企画手法 |
+| DDD | Domain-Driven Design（ドメイン駆動設計）。複雑なソフトウェア設計のアプローチ |
 
 ## 環境変数リファレンス
 
