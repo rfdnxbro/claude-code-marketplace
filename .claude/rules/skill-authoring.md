@@ -124,6 +124,32 @@ hooks:
           command: "${CLAUDE_PLUGIN_ROOT}/scripts/validate.sh"
 ```
 
+## 環境変数
+
+スキル内で使用可能な環境変数:
+
+| 変数 | 説明 | 使用例 |
+|------|------|--------|
+| `${CLAUDE_SESSION_ID}` | 現在のセッションID | セッション固有のログファイル名生成 |
+| `${CLAUDE_PLUGIN_ROOT}` | プラグインルートへの絶対パス | スクリプト実行パスの指定 |
+
+**使用例:**
+
+```yaml
+---
+name: session-logger
+description: セッション固有のログを記録する
+allowed-tools:
+  - Bash(echo:*,tee:*)
+---
+
+セッション${CLAUDE_SESSION_ID}のログを記録します。
+
+ログファイルパス: `/tmp/claude-session-${CLAUDE_SESSION_ID}.log`
+
+すべての出力をログファイルに保存してください。
+```
+
 ## ディレクトリ構造
 
 スキルはSKILL.mdを中心に、必要に応じてサポートファイルを配置:
