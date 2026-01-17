@@ -87,6 +87,7 @@ jobs:
         id: claude-implement-docs
         uses: anthropics/claude-code-action@v1
         with:
+          allowed_bots: 'claude'
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
             あなたはClaude Codeマーケットプレイスのソフトウェアエンジニアです。
@@ -139,6 +140,7 @@ jobs:
         id: claude-implement-plugin
         uses: anthropics/claude-code-action@v1
         with:
+          allowed_bots: 'claude'
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
             あなたはClaude Codeマーケットプレイスのソフトウェアエンジニアです。
