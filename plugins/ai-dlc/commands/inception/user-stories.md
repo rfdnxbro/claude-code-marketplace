@@ -2,6 +2,7 @@
 description: プロダクトマネージャーとしてユーザーストーリーを作成
 allowed-tools: Read, Write, Edit, Glob, Grep
 argument-hint: [product-description]
+context: main
 ---
 
 # ユーザーストーリー作成

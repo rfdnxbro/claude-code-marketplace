@@ -1,6 +1,7 @@
 ---
 description: 現在のAI-DLCセッション状態を確認し、次のステップを提案
 allowed-tools: Read, Glob
+context: main
 ---
 
 # AI-DLC 現在の状態確認

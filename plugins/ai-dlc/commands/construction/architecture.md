@@ -1,6 +1,7 @@
 ---
 description: クラウドアーキテクトとしてデプロイ計画を作成
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+context: main
 ---
 
 <!-- validator-disable dangerous-operation -->

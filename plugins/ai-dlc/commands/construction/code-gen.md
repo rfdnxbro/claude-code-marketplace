@@ -2,6 +2,7 @@
 description: ソフトウェアエンジニアとしてコードを生成
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 argument-hint: [component-name]
+context: main
 ---
 
 # コード生成
