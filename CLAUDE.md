@@ -103,6 +103,30 @@ Issueに特定のラベルが付与されると、Claude Codeが自動で実装�
 - `claude-code-update`: Claude Codeのアップデートに伴うドキュメント・バリデーター更新
 - `plugin-update`: プラグインの改善提案を実装
 
+### claude-code-actionでのIssue作成
+
+`claude-code-action`でIssueを作成する際は、`--body-file`オプションを使用すること。
+
+```bash
+# NG: シェルエスケープの問題で本文が欠落する可能性がある
+gh issue create --title "..." --body "複雑なマークダウン..."
+
+# OK: ファイル経由で本文を渡す
+gh issue create --title "..." --body-file /tmp/issue.md
+```
+
+**理由**: `--body`オプションで複雑なマークダウン（JSONコードブロック、バッククォート、`${}`変数参照など）を渡すと、シェルエスケープの問題で本文が空になることがある。
+
+**プロンプトでの指示例**:
+
+```markdown
+- **Issue作成時は必ず`--body-file`オプションを使用する**:
+  1. Writeツールでissue本文を`/tmp/<name>-issue.md`に書き込む
+  2. `gh issue create --title "..." --label "..." --body-file /tmp/<name>-issue.md`を実行
+```
+
+**必要な設定**: `allowed-tools`に`Write`を追加すること。
+
 ## .claude/rules/に新規定義を追加する場合
 
 ドキュメント作成だけでなく、対応するバリデーターとテストも追加すること：
