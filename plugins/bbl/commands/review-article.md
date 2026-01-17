@@ -16,11 +16,12 @@ allowed-tools: Read, Write, Edit, Glob, Grep
 
 ### 1. コンテキストの読み込み
 
-`.bbl-context.yml` を読み込み、対象記事のパスを取得。
+`.bbl-context.yml` を読み込み、対象記事のパスとセッションIDを取得。
 
 **エラーハンドリング**:
 
 - ファイルが存在しない場合: 「`.bbl-context.yml`が見つかりません。先に `/bbl:brainstorm [概念名]` を実行してください。」
+- `session_id`が存在し、現在のセッションID（`${CLAUDE_SESSION_ID}`）と異なる場合: 「このコンテキストは別のセッション（ID: xxx）で作成されました。続行しますか？」
 - `phase`が`article_created`でない場合:
   - `outline_created`: 「記事がまだ作成されていません。`/bbl:create-article` を実行してください。」
   - `completed`: 「この記事は既にレビュー済みです。」

@@ -91,6 +91,7 @@ argument-hint: [概念名]
 concept: [概念名]
 category: [ヒト/モノ/カネ/思考・志]
 subcategory: [サブカテゴリ名]
+session_id: ${CLAUDE_SESSION_ID}
 outline: |
   [作成したアウトライン]
 file_path: docs/[カテゴリ]/[サブカテゴリ]/[概念名].md
