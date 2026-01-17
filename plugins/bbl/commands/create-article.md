@@ -1,6 +1,14 @@
 ---
 description: アウトラインに基づいて記事を作成
-allowed-tools: Read, Write, Edit, Glob, Grep
+allowed-tools:
+  - Read
+  - Write
+  - Edit
+  - Glob
+  - Grep
+  - Task
+context: main
+model: sonnet
 ---
 
 # 記事作成

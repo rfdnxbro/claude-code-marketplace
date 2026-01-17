@@ -2,6 +2,8 @@
 description: 概念についてブレインストーミングを行い、記事のアウトラインを作成
 allowed-tools: Read, Write, Glob
 argument-hint: [概念名]
+context: main
+model: sonnet
 ---
 
 # ブレインストーミング

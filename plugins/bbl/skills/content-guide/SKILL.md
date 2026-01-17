@@ -2,6 +2,10 @@
 name: content-guide
 description: ビジネス基礎知識学習教材のコンテンツガイドライン。記事作成時のテンプレート、カテゴリ構成、品質基準を参照する際に使用。
 user-invocable: true
+context: main
+allowed-tools:
+  - Read
+  - Glob
 ---
 
 # ビジネス基礎知識 コンテンツガイド

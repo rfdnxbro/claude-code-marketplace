@@ -1,6 +1,14 @@
 ---
 description: 記事の品質チェックと改善提案を実施
-allowed-tools: Read, Write, Edit, Glob, Grep
+allowed-tools:
+  - Read
+  - Write
+  - Edit
+  - Glob
+  - Grep
+  - Task
+context: main
+model: sonnet
 ---
 
 # 記事レビュー
