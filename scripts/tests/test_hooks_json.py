@@ -58,6 +58,7 @@ class TestValidateHooksJson:
             "PreCompact",
             "SessionStart",
             "SessionEnd",
+            "Setup",
         ]
         for event in valid_events:
             content = json.dumps(
@@ -120,3 +121,25 @@ class TestValidateHooksJson:
         result = validate_hooks_json(Path("hooks.json"), content)
         assert not result.has_errors()
         assert any("matcher" in w for w in result.warnings)
+
+    def test_valid_setup_hook(self):
+        """Setupフックが有効であることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "Setup": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/setup.sh",
+                                    "timeout": 60,
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()

@@ -66,6 +66,7 @@ hooks:
 | `PreCompact` | コンパクト前 | ✓ |
 | `SessionStart` | セッション開始時 | ✓ |
 | `SessionEnd` | セッション終了時 | × |
+| `Setup` | セットアップ・メンテナンス時 | × |
 
 ## フックタイプ
 
@@ -178,16 +179,101 @@ hooks:
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
     "permissionDecision": "allow|deny|ask",
-    "updatedInput": { "field": "new_value" }
+    "updatedInput": { "field": "new_value" },
+    "additionalContext": "モデルに提供する追加コンテキスト（PreToolUseのみ）"
   }
 }
 ```
+
+### PreToolUseフックの追加コンテキスト
+
+`PreToolUse`フックは、`additionalContext`フィールドを使用してモデルに追加のコンテキストを提供できます（v2.1.9以降）。
+
+**使用例:**
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/context.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**scripts/context.sh:**
+
+```bash
+#!/bin/bash
+# ツール実行前にコンテキスト情報を提供
+
+cat <<EOF
+{
+  "continue": true,
+  "hookSpecificOutput": {
+    "additionalContext": "注意: 本番環境での実行です。慎重に操作してください。"
+  }
+}
+EOF
+```
+
+**ユースケース:**
+
+- 環境固有の警告や注意事項を提供
+- 実行前のチェック結果をモデルに伝達
+- 動的に変化するコンテキスト情報の追加
+- コンプライアンス要件の通知
 
 ## 環境変数
 
 - `${CLAUDE_PLUGIN_ROOT}` - プラグインルートへの絶対パス
 - `${CLAUDE_PROJECT_DIR}` - プロジェクトルートへの絶対パス
 - `$ARGUMENTS` - フック入力JSON（prompt型で使用）
+
+## イベント詳細
+
+### Setup
+
+リポジトリのセットアップとメンテナンス操作時に実行されるフック。以下のCLIフラグでトリガーされます:
+
+- `--init`: 初期セットアップ実行後にフックをトリガー
+- `--init-only`: セットアップのみ実行（会話を開始しない）
+- `--maintenance`: メンテナンス操作実行
+
+**使用例:**
+
+```json
+{
+  "hooks": {
+    "Setup": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/setup.sh",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**ユースケース:**
+
+- 依存パッケージのインストール
+- 設定ファイルの生成
+- 開発環境の初期化
+- キャッシュのクリア
 
 ## セキュリティ注意事項
 
