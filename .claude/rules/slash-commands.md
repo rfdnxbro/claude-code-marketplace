@@ -46,10 +46,11 @@ $ARGUMENTS で引数を受け取れます
 | `context` | No | 実行コンテキスト（`main`, `fork`） | `main` |
 | `hooks` | No | フック定義（[hooks.md](hooks.md)参照） | なし |
 
-## 引数
+## 引数と環境変数
 
 - `$ARGUMENTS` - 全ての引数をキャプチャ
 - `$1`, `$2`, `$3`... - 個別の位置指定引数
+- `${CLAUDE_SESSION_ID}` - 現在のセッションID（v2.1.9以降）
 
 ## allowed-tools のベストプラクティス
 
