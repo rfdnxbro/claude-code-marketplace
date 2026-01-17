@@ -44,6 +44,7 @@ aidlc-docs/
 
 ```yaml
 bolt: YYYYMMDD_<bolt-name>
+session_id: ${CLAUDE_SESSION_ID}
 type: greenfield  # または brownfield
 phase: inception
 step: user-stories
