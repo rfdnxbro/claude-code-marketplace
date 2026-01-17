@@ -114,7 +114,9 @@ jobs:
                - `pre-commit run --all-files` を実行
                - エラーがあれば内容を確認し、該当ファイルを修正
                - 再度pre-commitを実行し、すべてパスするまで繰り返す
-            8. すべてのチェックがパスしたら、変更内容のサマリーを出力
+            8. すべてのチェックがパスしたら、変更内容のサマリーを /tmp/change-summary.txt に書き出す
+               - 変更したファイル一覧と各ファイルの変更概要を箇条書きで記載
+               - 例: "- .claude/rules/README.md: 用語集にPRFAQ、DDDを追加"
 
             ## プロジェクト構造
             - CLAUDE.md: プロジェクトのガイドライン（必読）
@@ -165,7 +167,9 @@ jobs:
                - `pre-commit run --all-files` を実行
                - エラーがあれば内容を確認し、該当ファイルを修正
                - 再度pre-commitを実行し、すべてパスするまで繰り返す
-            7. すべてのチェックがパスしたら、変更内容のサマリーを出力
+            7. すべてのチェックがパスしたら、変更内容のサマリーを /tmp/change-summary.txt に書き出す
+               - 変更したファイル一覧と各ファイルの変更概要を箇条書きで記載
+               - 例: "- plugins/my-plugin/commands/review.md: レビュー観点を追加"
 
             ## プロジェクト構造
             - CLAUDE.md: プロジェクトのガイドライン（必読）
@@ -291,16 +295,16 @@ jobs:
             PR_TITLE="feat: $ISSUE_TITLE"
           fi
 
-          # Claude Codeの出力から変更サマリーを取得
-          if [ "${{ github.event.label.name }}" = "claude-code-update" ]; then
-            CLAUDE_CONCLUSION="${{ steps.claude-implement-docs.outputs.conclusion }}"
+          # Claude Codeが出力した変更サマリーファイルを読み込む
+          if [ -f "/tmp/change-summary.txt" ]; then
+            CHANGE_SUMMARY=$(cat /tmp/change-summary.txt)
           else
-            CLAUDE_CONCLUSION="${{ steps.claude-implement-plugin.outputs.conclusion }}"
+            CHANGE_SUMMARY=""
           fi
 
           # 変更サマリーが空の場合のフォールバック
-          if [ -z "$CLAUDE_CONCLUSION" ]; then
-            CLAUDE_CONCLUSION="Claude Actionによって自動生成された変更です。詳細はコミット履歴を参照してください。"
+          if [ -z "$CHANGE_SUMMARY" ]; then
+            CHANGE_SUMMARY="Claude Actionによって自動生成された変更です。詳細はコミット履歴を参照してください。"
           fi
 
           # PR本文をファイルに書き込む（シェルエスケープの問題を回避）
@@ -314,7 +318,7 @@ jobs:
 
           ## 変更内容
           PREOF
-            echo "$CLAUDE_CONCLUSION" >> /tmp/pr-body.md
+            echo "$CHANGE_SUMMARY" >> /tmp/pr-body.md
             cat >> /tmp/pr-body.md << 'PREOF'
 
           ## 確認事項
@@ -335,7 +339,7 @@ jobs:
 
           ## 変更内容
           PREOF
-            echo "$CLAUDE_CONCLUSION" >> /tmp/pr-body.md
+            echo "$CHANGE_SUMMARY" >> /tmp/pr-body.md
             cat >> /tmp/pr-body.md << 'PREOF'
 
           ## 確認事項
