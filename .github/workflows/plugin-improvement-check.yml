@@ -103,7 +103,7 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           # yamllint disable-line rule:line-length
-          claude_args: '--max-turns 50 --allowed-tools "Read,Grep,Glob,Bash(gh issue create:*),Bash(gh issue list:*)"'
+          claude_args: '--max-turns 50 --allowed-tools "Read,Write,Grep,Glob,Bash(gh issue create:*),Bash(gh issue list:*)"'
           prompt: |
             あなたはClaude Codeマーケットプレイスのメンテナーです。
 
@@ -174,6 +174,10 @@ jobs:
             - ラベル plugin-update は必ず付与
             - 改善提案がない場合はIssueを作成しない
             - 既存のIssueと重複しないよう、gh issue listで確認してから作成
+            - **Issue作成時は必ず`--body-file`オプションを使用する**:
+              1. Writeツールでissue本文を`/tmp/<plugin-name>-issue.md`に書き込む
+              2. `gh issue create --title "..." --label "..." --body-file /tmp/<plugin-name>-issue.md`を実行
+              - 理由: `--body`オプションだとシェルエスケープの問題で本文が欠落するため
 
       - name: プラグインが存在しない場合
         if: steps.plugins.outputs.count == 0

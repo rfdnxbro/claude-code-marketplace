@@ -99,7 +99,7 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           # yamllint disable-line rule:line-length
-          claude_args: '--max-turns 20 --allowed-tools "Bash(gh issue create:*),Bash(gh issue list:*),Read,Grep,Glob"'
+          claude_args: '--max-turns 20 --allowed-tools "Bash(gh issue create:*),Bash(gh issue list:*),Read,Write,Grep,Glob"'
           prompt: |
             あなたはClaude Codeマーケットプレイスのメンテナーです。
 
@@ -136,7 +136,10 @@ jobs:
             - Issueタイトルは「[CHANGELOG vX.X.X] 」で始める形式にする
             - 不明確な変更は「要確認」としてマーク
             - ラベル claude-code-update は必ず付与する（これにより自動実装CIがトリガーされる）
-            - gh issue create が失敗した場合は、エラーメッセージを確認して対処する
+            - **Issue作成時は必ず`--body-file`オプションを使用する**:
+              1. Writeツールでissue本文を`/tmp/changelog-issue.md`に書き込む
+              2. `gh issue create --title "..." --label "..." --body-file /tmp/changelog-issue.md`を実行
+              - 理由: `--body`オプションだとシェルエスケープの問題で本文が欠落するため
 
       - name: スナップショットを更新
         if: steps.claude-analysis.outcome == 'success'
