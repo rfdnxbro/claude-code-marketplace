@@ -194,6 +194,120 @@ class TestValidateMarketplaceJson:
         result = validate_marketplace_json(Path("marketplace.json"), content)
         assert not result.has_errors()
 
+    def test_plugin_source_github_with_branch(self):
+        """GitHub sourceでbranch指定（fragment構文）が有効"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {"source": "github", "repo": "owner/repo#develop"},
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_plugin_source_github_with_tag(self):
+        """GitHub sourceでtag指定（fragment構文）が有効"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {"source": "github", "repo": "owner/repo#v1.2.3"},
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_plugin_source_github_with_commit_sha(self):
+        """GitHub sourceでcommit SHA指定（fragment構文）が有効"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "github",
+                            "repo": "owner/repo#abc123def456789",
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_plugin_source_url_with_branch(self):
+        """Git URL sourceでbranch指定（fragment構文）が有効"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "url",
+                            "url": "https://gitlab.com/team/plugin.git#develop",
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_plugin_source_url_with_tag(self):
+        """Git URL sourceでtag指定（fragment構文）が有効"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "url",
+                            "url": "https://gitlab.com/team/plugin.git#v1.2.3",
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_plugin_source_url_with_commit_sha(self):
+        """Git URL sourceでcommit SHA指定（fragment構文）が有効"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "url",
+                            "url": "https://gitlab.com/team/plugin.git#abc123def456789",
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
     def test_root_not_object(self):
         """ルートがオブジェクトでない"""
         content = json.dumps(["invalid"])

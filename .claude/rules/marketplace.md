@@ -87,6 +87,40 @@ paths: .claude-plugin/marketplace.json
 }
 ```
 
+#### branch/tag/commit SHA指定
+
+GitHub sourceでは、fragment構文を使ってbranch、tag、またはcommit SHAを指定できます。
+
+```json
+{
+  "name": "github-plugin-branch",
+  "source": {
+    "source": "github",
+    "repo": "owner/plugin-repo#develop"
+  }
+}
+```
+
+```json
+{
+  "name": "github-plugin-tag",
+  "source": {
+    "source": "github",
+    "repo": "owner/plugin-repo#v1.2.3"
+  }
+}
+```
+
+```json
+{
+  "name": "github-plugin-commit",
+  "source": {
+    "source": "github",
+    "repo": "owner/plugin-repo#abc123def456789"
+  }
+}
+```
+
 ### Git URL
 
 ```json
@@ -95,6 +129,40 @@ paths: .claude-plugin/marketplace.json
   "source": {
     "source": "url",
     "url": "https://gitlab.com/team/plugin.git"
+  }
+}
+```
+
+#### branch/tag/commit SHA指定
+
+Git URL sourceでも、URL末尾にfragment構文を使ってbranch、tag、またはcommit SHAを指定できます。
+
+```json
+{
+  "name": "git-plugin-branch",
+  "source": {
+    "source": "url",
+    "url": "https://gitlab.com/team/plugin.git#develop"
+  }
+}
+```
+
+```json
+{
+  "name": "git-plugin-tag",
+  "source": {
+    "source": "url",
+    "url": "https://gitlab.com/team/plugin.git#v1.2.3"
+  }
+}
+```
+
+```json
+{
+  "name": "git-plugin-commit",
+  "source": {
+    "source": "url",
+    "url": "https://gitlab.com/team/plugin.git#abc123def456789"
   }
 }
 ```
