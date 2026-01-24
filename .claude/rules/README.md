@@ -39,7 +39,9 @@
 | `${CLAUDE_PLUGIN_ROOT}` | プラグインルートへの絶対パス | hooks, mcp-servers, lsp-servers, allowed-tools |
 | `${CLAUDE_PROJECT_DIR}` | プロジェクトルートへの絶対パス | hooks |
 | `${CLAUDE_SESSION_ID}` | 現在のセッションID | skills, slash-commands |
-| `$ARGUMENTS` | フック入力JSON / コマンド引数 | hooks, slash-commands |
-| `$1`, `$2`, `$3`... | 位置指定引数 | slash-commands |
+| `$ARGUMENTS` | フック入力JSON / コマンド引数（全体） | hooks, slash-commands |
+| `$ARGUMENTS[0]`, `$ARGUMENTS[1]`... | インデックス指定引数（ブラケット記法） | slash-commands |
+| `$0` | コマンド名自体（v2.1.19以降） | slash-commands |
+| `$1`, `$2`, `$3`... | 位置指定引数のショートハンド（v2.1.19以降） | slash-commands |
 | `${VAR}` | 任意の環境変数を展開 | mcp-servers, lsp-servers |
 | `${VAR:-default}` | デフォルト値付き環境変数 | mcp-servers, lsp-servers |

@@ -49,9 +49,36 @@ $ARGUMENTS で引数を受け取れます
 
 ## 引数と環境変数
 
-- `$ARGUMENTS` - 全ての引数をキャプチャ
-- `$1`, `$2`, `$3`... - 個別の位置指定引数
-- `${CLAUDE_SESSION_ID}` - 現在のセッションID（v2.1.9以降）
+コマンド内で以下の構文で引数にアクセスできます:
+
+| 構文 | 説明 | 例 |
+|------|------|-----|
+| `$ARGUMENTS` | 全ての引数を1つの文字列として取得 | `hello world` |
+| `$ARGUMENTS[0]` | 最初の引数を取得（ブラケット記法） | `hello` |
+| `$ARGUMENTS[1]` | 2番目の引数を取得 | `world` |
+| `$0` | コマンド名自体（v2.1.19以降） | `/mycommand` |
+| `$1`, `$2`, `$3`... | 個別の位置指定引数のショートハンド（v2.1.19以降） | `$1` = `hello` |
+| `${CLAUDE_SESSION_ID}` | 現在のセッションID（v2.1.9以降） | セッション固有ID |
+
+**使用例:**
+
+```markdown
+---
+description: 引数を処理するコマンド
+---
+
+コマンド名: $0
+全引数: $ARGUMENTS
+1番目の引数: $1（または $ARGUMENTS[0]）
+2番目の引数: $2（または $ARGUMENTS[1]）
+```
+
+`/mycommand hello world`を実行すると:
+
+- `$0` = `/mycommand`
+- `$ARGUMENTS` = `hello world`
+- `$1` または `$ARGUMENTS[0]` = `hello`
+- `$2` または `$ARGUMENTS[1]` = `world`
 
 ## 環境変数
 
