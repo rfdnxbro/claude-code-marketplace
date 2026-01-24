@@ -27,7 +27,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep
 **エラーハンドリング**:
 
 - ファイルが存在しない場合: 「`.bbl-context.yml`が見つかりません。先に `/bbl:brainstorm [概念名]` を実行してください。」
-- `session_id`が存在し、現在のセッションID（`${CLAUDE_SESSION_ID}`）と異なる場合: 「このコンテキストは別のセッション（ID: xxx）で作成されました。続行しますか？」
+- `session_id`が存在し、現在のセッションID（`${CLAUDE_SESSION_ID}`）と異なる場合: 「このコンテキストは別のセッション（ID: xxx）で作成されました。$0 を続行しますか？」
 - `phase`が`outline_created`でない場合: 現在のphaseを表示し、適切なコマンドを案内
 - 必須フィールド（concept, category, subcategory, outline, file_path）が欠けている場合: 欠けているフィールドを明示し、`/bbl:brainstorm`の再実行を促す
 
