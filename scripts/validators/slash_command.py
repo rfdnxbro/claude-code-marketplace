@@ -47,7 +47,8 @@ def validate_slash_command(file_path: Path, content: str) -> ValidationResult:
         if "Bash(*)" in tools_str:
             if WARNING_BROAD_BASH_WILDCARD not in disabled_warnings:
                 result.add_warning(
-                    f"{file_path.name}: allowed-toolsにBash(*)が指定。具体的なパターンを推奨"
+                    f"{file_path.name}: allowed-toolsにBash(*)が指定。"
+                    "v2.1.20以降Bash(*)はBashと同等に扱われますが、具体的なパターンを推奨"
                 )
 
     # contextの確認（forkのみサポート、省略時はメインコンテキスト）
