@@ -115,8 +115,8 @@ allowed-tools:
 # 良い例: 特定のコマンドパターンのみ許可
 allowed-tools: Bash(git add:*), Bash(git commit:*)
 
-# 避けるべき例: 広範なワイルドカード
-allowed-tools: Bash(*)
+# 注意: 広範なワイルドカード（Bash(*)はBashと同等に扱われる）
+allowed-tools: Bash(*)  # Bashと同じ意味
 ```
 
 YAML形式のリスト:
@@ -129,10 +129,12 @@ allowed-tools:
   - Read
   - Edit
 
-# 避けるべき例: 広範なワイルドカード
+# 注意: 広範なワイルドカード（Bash(*)はBashと同等に扱われる）
 allowed-tools:
-  - Bash(*)
+  - Bash(*)  # Bashと同じ意味
 ```
+
+**注意 (v2.1.20以降)**: `Bash(*)`は`Bash`と同等に扱われます。すべてのBashコマンドへのアクセスを許可する場合は、どちらの記法でも同じ意味になります。セキュリティ上の理由から、可能な限り具体的なパターンを指定することを推奨します。
 
 ## context
 
@@ -200,9 +202,12 @@ APIエンドポイントを作成...
 | 警告ID | 説明 |
 |--------|------|
 | `dangerous-operation` | 危険なキーワード（deploy, delete, drop, production, 本番）検出時の警告 |
-| `broad-bash-wildcard` | `Bash(*)`使用時の警告 |
+| `broad-bash-wildcard` | `Bash(*)`使用時の警告（v2.1.20以降、`Bash(*)`は`Bash`と同等に扱われますが、より具体的なパターンの使用を推奨） |
 
-**注意**: キーワード検出は大文字小文字を区別しません（`DELETE`も`delete`として検出）。
+**注意**:
+
+- キーワード検出は大文字小文字を区別しません（`DELETE`も`delete`として検出）。
+- v2.1.20以降、`Bash(*)`は`Bash`と同等に扱われます。バリデーターは依然として警告を出しますが、これはより具体的なパターンの使用を推奨するためです。
 
 ## フィールド命名規則について
 
