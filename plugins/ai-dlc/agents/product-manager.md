@@ -4,6 +4,11 @@ description: プロダクトマネージャーエージェント。ユーザー�
 tools: Read, Write, Edit, Glob, Grep
 model: sonnet
 permissionMode: default
+hooks:
+  Stop:
+    - hooks:
+        - type: prompt
+          prompt: "要件定義作業の完了報告を行ってください。含める情報: 作成したユーザーストーリー、定義した受け入れ基準、特定したリスク、次のフェーズへの推奨事項。"
 ---
 
 # プロダクトマネージャー
