@@ -5,6 +5,11 @@ tools: Read, Write, Edit, Glob, Grep
 model: sonnet
 permissionMode: default
 skills: content-guide
+hooks:
+  Stop:
+    - hooks:
+        - type: prompt
+          prompt: "作成した記事のパスと文字数を報告してください"
 ---
 
 # コンテンツライター
