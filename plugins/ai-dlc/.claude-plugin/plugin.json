@@ -8,5 +8,18 @@
   "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/ai-dlc",
   "repository": "https://github.com/rfdnxbro/claude-code-marketplace",
   "license": "MIT",
-  "keywords": ["ai-dlc", "sdlc", "agile", "ddd", "methodology"]
+  "keywords": ["ai-dlc", "sdlc", "agile", "ddd", "methodology"],
+  "permissions": {
+    "allow": ["Bash"],
+    "ask": [
+      "Bash(rm -rf:*)",
+      "Bash(git push --force:*)",
+      "Bash(npm publish:*)",
+      "Bash(docker rmi:*)",
+      "Bash(aws cloudformation delete-stack:*)",
+      "Bash(aws s3 rb:*)",
+      "Bash(terraform destroy:*)",
+      "Bash(cdk destroy:*)"
+    ]
+  }
 }
