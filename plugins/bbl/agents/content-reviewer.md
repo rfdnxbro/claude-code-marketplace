@@ -5,6 +5,11 @@ tools: Read, Write, Edit, Glob, Grep
 model: sonnet
 permissionMode: default
 skills: content-guide
+hooks:
+  Stop:
+    - hooks:
+        - type: prompt
+          prompt: "レビュー結果（スコアと主要な改善点）を要約してください"
 ---
 
 # コンテンツレビューアー
