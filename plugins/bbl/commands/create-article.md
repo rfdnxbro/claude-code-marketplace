@@ -1,6 +1,13 @@
 ---
 description: アウトラインに基づいて記事を作成。7セクション構成（導入問題、考えるポイント、解説、詳細、具体例、関連概念、参考文献）の記事を生成し、Mermaid図を含む完全な記事ファイルを出力。/bbl:brainstorm実行後に使用。
 allowed-tools: Read, Write, Edit, Glob, Grep
+allow:
+  - Read
+  - Glob
+  - Grep
+ask:
+  - Write
+  - Edit
 ---
 
 # 記事作成
