@@ -1,6 +1,8 @@
 ---
 description: ソフトウェアエンジニアとしてコードを生成
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+allow: ["Bash"]
+ask: ["Bash(rm -rf *)"]
 argument-hint: [component-name]
 ---
 

@@ -12,14 +12,14 @@
   "permissions": {
     "allow": ["Bash"],
     "ask": [
-      "Bash(rm -rf:*)",
-      "Bash(git push --force:*)",
-      "Bash(npm publish:*)",
-      "Bash(docker rmi:*)",
-      "Bash(aws cloudformation delete-stack:*)",
-      "Bash(aws s3 rb:*)",
-      "Bash(terraform destroy:*)",
-      "Bash(cdk destroy:*)"
+      "Bash(rm -rf *)",
+      "Bash(git push --force *)",
+      "Bash(npm publish *)",
+      "Bash(docker rmi *)",
+      "Bash(aws cloudformation delete-stack *)",
+      "Bash(aws s3 rb *)",
+      "Bash(terraform destroy *)",
+      "Bash(cdk destroy *)"
     ]
   }
 }
