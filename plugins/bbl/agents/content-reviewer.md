@@ -1,6 +1,6 @@
 ---
 name: content-reviewer
-description: コンテンツレビューエージェント。ビジネス基礎知識の記事を品質チェックし、改善提案を行う。記事の完成度を高める際に使用。
+description: コンテンツレビューエージェント。ビジネス基礎知識の記事を品質チェックし、改善提案を実施。構造、導入問題、内容、視覚化、参考文献の5カテゴリで100点満点評価。記事の完成度を高める際やレビューが必要な際に使用。
 tools: Read, Write, Edit, Glob, Grep
 model: sonnet
 permissionMode: default
