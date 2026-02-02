@@ -73,3 +73,49 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 - カスタムパスはデフォルトディレクトリを**置き換えない、補足する**
 - 複数パスは配列で指定可能
 - `commands/`, `agents/`, `skills/` は `.claude-plugin/` 内ではなく、プラグインルート直下に配置
+
+## パーミッション設定（v2.1.27以降）
+
+プラグインでは、ツールの実行権限を `allow` と `ask` フィールドで制御できます。これらはスキル、エージェント、スラッシュコマンドのfrontmatterで指定します。
+
+### 優先順位
+
+content-level（具体的なパターン指定）の `ask` は、tool-level（ツール全体）の `allow` より**優先されます**。
+
+```yaml
+---
+name: my-command
+allow: ["Bash"]
+ask: ["Bash(rm *)", "Bash(dd *)"]
+---
+```
+
+上記の設定では:
+
+- `Bash` ツール全体は許可されています（`allow`）
+- しかし `rm` や `dd` コマンドは確認プロンプトが表示されます（`ask` が優先）
+
+### ユースケース
+
+この仕組みにより、以下のような柔軟な権限制御が可能です:
+
+```yaml
+---
+# 例1: ファイル編集は許可、削除のみ確認
+allow: ["Edit", "Write"]
+ask: ["Bash(rm *)"]
+
+# 例2: Bashは基本許可、危険なコマンドのみ確認
+allow: ["Bash"]
+ask: ["Bash(rm *)", "Bash(dd *)", "Bash(sudo *)"]
+---
+```
+
+### 注意事項
+
+- content-levelパターンはツール名と引数パターンで指定（例: `Bash(rm *)`）
+- パターンマッチングはワイルドカード（`*`）をサポート
+- 複数のパターンを配列で指定可能
+- この優先順位は v2.1.27 で導入されました
+
+詳細は [hooks.md](hooks.md) の「パーミッション優先順位」セクションを参照してください。
