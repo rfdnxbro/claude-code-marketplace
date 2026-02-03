@@ -2,14 +2,22 @@
 name: content-writer
 description: コンテンツライターエージェント。ビジネス基礎知識の記事を執筆。アウトラインに基づいて7セクション構成（導入問題、考えるポイント、解説、詳細、具体例、関連概念、参考文献）の記事を作成する際に使用。
 tools: Read, Write, Edit, Glob, Grep
+disallowedTools: Bash, NotebookEdit
 model: sonnet
 permissionMode: default
 skills: content-guide
+allow:
+  - Read
+  - Glob
+  - Grep
+ask:
+  - Write
+  - Edit
 hooks:
   Stop:
     - hooks:
         - type: prompt
-          prompt: "作成した記事のパスと文字数を報告してください"
+          prompt: "記事作成が完了しました。以下を報告してください:\n1. 作成した記事のパス\n2. 記事の文字数\n3. 含まれるMermaid図の数"
 ---
 
 # コンテンツライター
