@@ -2,6 +2,17 @@
 name: software-engineer
 description: ソフトウェアエンジニアエージェント。コード生成、テスト作成、実装を担当。コンストラクションフェーズで使用。ドメインモデルと論理設計に基づいてコードを生成する際に呼び出す。独立したユニットの実装では複数インスタンスを並列実行可能。
 tools: Read, Write, Edit, Glob, Grep, Bash
+allow: ["Bash"]
+ask: [
+  "Bash(rm -rf *)",
+  "Bash(git push --force *)",
+  "Bash(npm publish *)",
+  "Bash(docker rmi *)",
+  "Bash(aws cloudformation delete-stack *)",
+  "Bash(aws s3 rb *)",
+  "Bash(terraform destroy *)",
+  "Bash(cdk destroy *)"
+]
 model: sonnet
 permissionMode: default
 hooks:
