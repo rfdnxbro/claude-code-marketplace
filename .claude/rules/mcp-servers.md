@@ -161,6 +161,40 @@ MCPサーバーはツールやリソースの変更を通知できます（`list
 
 これにより、サーバー側でツールを動的に追加・削除できます。
 
+## OAuth認証
+
+v2.1.30以降、MCPサーバーのOAuth認証をサポートしています。
+
+### 設定方法
+
+MCPサーバーを追加する際、`claude mcp add`コマンドで以下のオプションを使用できます:
+
+```bash
+# 事前設定されたOAuthクライアント認証情報を使用
+claude mcp add <server-name> --client-id <CLIENT_ID> --client-secret <CLIENT_SECRET>
+```
+
+### 使用例
+
+Dynamic Client Registrationをサポートしないサービス（Slackなど）の場合:
+
+```bash
+# Slack MCP サーバーを追加
+claude mcp add slack --client-id abc123 --client-secret xyz789
+```
+
+### 対象サーバー
+
+以下のようなサーバーでOAuth認証が必要な場合に使用します:
+
+- **Slack**: Dynamic Client Registrationをサポートしていないため、事前にOAuthアプリを作成してClient IDとClient Secretを取得する必要があります
+- その他のOAuth対応MCPサーバー
+
+### 注意事項
+
+- Client IDとClient Secretは機密情報のため、コマンドライン履歴に残らないよう注意
+- プラグインの `.mcp.json` には認証情報を直接記述せず、環境変数を使用すること
+
 ## セキュリティ注意事項
 
 機密情報（APIキー、トークン等）は環境変数経由で渡し、直接記述しないこと。
