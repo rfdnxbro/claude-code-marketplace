@@ -234,6 +234,7 @@ Claude Codeは`.claude/skills`ディレクトリ内のスキルを自動的に�
 - **親ディレクトリからの検出**: サブディレクトリ内のファイルで作業している場合でも、親ディレクトリの`.claude/skills`が自動的に検出される
 - **ネストされたスキル**: `.claude/skills`配下に任意の階層でスキルを配置可能（`skills/category/my-skill/SKILL.md`等）
 - **プラグイン内のスキル**: プラグインの`skills/`ディレクトリ内のスキルも同様に検出される
+- **追加ディレクトリ内のスキル（v2.1.32以降）**: `--add-dir`で追加したディレクトリ内の`.claude/skills/`も自動的にロードされる
 
 検出されるスキルの例:
 
@@ -244,11 +245,15 @@ project/
 │       ├── skill-a/SKILL.md           # 検出される
 │       └── category/
 │           └── skill-b/SKILL.md       # 検出される（ネスト）
-└── src/
-    └── feature/
-        └── .claude/
-            └── skills/
-                └── skill-c/SKILL.md   # 検出される（サブディレクトリ）
+├── src/
+│   └── feature/
+│       └── .claude/
+│           └── skills/
+│               └── skill-c/SKILL.md   # 検出される（サブディレクトリ）
+└── additional-dir/                     # --add-dir で追加
+    └── .claude/
+        └── skills/
+            └── skill-d/SKILL.md       # 検出される（v2.1.32以降）
 ```
 
 ### ファイル分割の基準
