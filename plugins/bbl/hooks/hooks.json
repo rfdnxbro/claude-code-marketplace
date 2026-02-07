@@ -3,6 +3,7 @@
     "PreToolUse": [
       {
         "matcher": "Write",
+        "once": false,
         "hooks": [
           {
             "type": "command",
@@ -13,6 +14,7 @@
     ],
     "Setup": [
       {
+        "once": false,
         "hooks": [
           {
             "type": "command",

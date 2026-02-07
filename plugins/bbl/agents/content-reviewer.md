@@ -6,6 +6,7 @@ disallowedTools: Bash, NotebookEdit
 model: sonnet
 permissionMode: default
 skills: content-guide
+memory: project
 allow:
   - Read
   - Glob
