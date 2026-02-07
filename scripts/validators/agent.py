@@ -2,9 +2,26 @@
 サブエージェントのバリデーター
 """
 
+import re
 from pathlib import Path
 
 from .base import ValidationResult, parse_frontmatter, validate_kebab_case
+
+
+def _validate_task_syntax(tools_str: str) -> bool:
+    """Task(agent_type)構文の妥当性を検証する"""
+    # Task(xxx) の形式をチェック（xxxは空でない）
+    pattern = r"Task\([^)]+\)"
+    matches = re.findall(pattern, tools_str)
+    if not matches:
+        return False
+    # すべてのマッチが有効な形式かチェック
+    for match in matches:
+        # Task() の中身が空でないことを確認
+        inner = match[5:-1]  # "Task(" と ")" を除去
+        if not inner.strip():
+            return False
+    return True
 
 
 def validate_agent(file_path: Path, content: str) -> ValidationResult:
@@ -53,6 +70,15 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
     if permission_mode_str and permission_mode_str not in valid_modes:
         result.add_error(f"{file_path.name}: permissionModeの値が不正です: {permission_mode_str}")
 
+    # memoryの値チェック（v2.1.33以降）
+    memory = frontmatter.get("memory", "")
+    memory_str = str(memory) if memory else ""
+    valid_memory_scopes = ["user", "project", "local", ""]
+    if memory_str and memory_str not in valid_memory_scopes:
+        result.add_error(
+            f"{file_path.name}: memoryの値が不正です: {memory_str}（user/project/local）"
+        )
+
     # toolsの確認（リスト形式検証）
     tools = frontmatter.get("tools")
     if tools is not None:
@@ -63,6 +89,14 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
                 if not isinstance(t, str) or not t:
                     result.add_error(f"{file_path.name}: toolsの各要素は空でない文字列が必要です")
                     break
+        # Task(agent_type) 構文の検証
+        tools_str = (
+            tools if isinstance(tools, str) else " ".join(tools) if isinstance(tools, list) else ""
+        )
+        if "Task(" in tools_str and not _validate_task_syntax(tools_str):
+            result.add_warning(
+                f"{file_path.name}: Task()構文の形式を確認してください（例: Task(agent-name)）"
+            )
 
     # disallowedToolsの確認（リスト形式検証）
     disallowed_tools = frontmatter.get("disallowedTools")

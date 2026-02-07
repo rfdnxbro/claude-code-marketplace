@@ -33,6 +33,7 @@ skills: skill-name
 | `permissionMode` | No | `default`, `acceptEdits`, `bypassPermissions`, `plan`, `ignore` |
 | `skills` | No | 自動ロードするスキル名（カンマ/YAML形式） |
 | `hooks` | No | フック定義（[hooks.md](hooks.md)参照） |
+| `memory` | No | 永続的メモリのスコープ：`user`, `project`, `local`（v2.1.33以降） |
 
 ## description のベストプラクティス
 
@@ -75,6 +76,50 @@ tools:
 
 **注意 (v2.1.20以降)**: `Bash(*)`は`Bash`と同等に扱われます。すべてのBashコマンドへのアクセスを許可する場合は、どちらの記法でも同じ意味になります。セキュリティ上の理由から、可能な限り具体的なパターンを指定することを推奨します。
 
+### サブエージェントの制限（v2.1.33以降）
+
+`Task(agent_type)` 構文を使用して、起動可能なサブエージェントを制限できます。
+
+**カンマ区切り形式:**
+
+```yaml
+tools: Read, Grep, Task(code-reviewer), Task(test-runner)
+```
+
+**YAML形式のリスト:**
+
+```yaml
+tools:
+  - Read
+  - Grep
+  - Task(code-reviewer)
+  - Task(test-runner)
+```
+
+この設定により、エージェントは `code-reviewer` と `test-runner` という名前のサブエージェントのみを起動できます。他のサブエージェントを起動しようとすると、権限エラーが発生します。
+
+**使用例:**
+
+```yaml
+---
+name: restricted-reviewer
+description: 特定のサブエージェントのみ起動可能なレビューエージェント
+tools:
+  - Read
+  - Grep
+  - Task(security-checker)
+  - Task(style-checker)
+---
+
+コードレビューを実行し、必要に応じて security-checker または style-checker のみを起動します。
+```
+
+**セキュリティのベストプラクティス:**
+
+- エージェントが必要とするサブエージェントのみを明示的に許可
+- `Task` を無制限に許可すると、任意のサブエージェントを起動できてしまうため注意
+- ワークフロー全体のツール使用を制御する場合に有効
+
 **パーミッション優先順位（v2.1.27以降）:**
 
 content-level（具体的パターン）の`ask`設定は、tool-level（ツール全体）の`allow`設定より優先されます。
@@ -92,6 +137,62 @@ content-level（具体的パターン）の`ask`設定は、tool-level（ツー�
 - `rm`コマンドは確認プロンプトが表示されます（`ask`が優先）
 
 この仕組みにより、ツール全体を許可しつつ、危険な操作のみ個別に制限できます。
+
+## memory（v2.1.33以降）
+
+エージェントに永続的なメモリを付与し、セッション間で情報を保持できます。
+
+```yaml
+---
+name: stateful-agent
+description: 状態を保持するエージェント
+memory: project
+---
+```
+
+### スコープの種類
+
+| スコープ | 説明 | 保存範囲 | 使用例 |
+|---------|------|----------|--------|
+| `user` | ユーザー全体で共有 | すべてのプロジェクト | ユーザー設定、学習した好み |
+| `project` | プロジェクト内で共有 | 現在のプロジェクト | プロジェクト固有の知識、パターン |
+| `local` | セッション固有 | 現在のセッション | 一時的な作業メモ、状態管理 |
+
+### 使用例
+
+**プロジェクト固有の知識を保持:**
+
+```yaml
+---
+name: architecture-expert
+description: プロジェクトのアーキテクチャ知識を保持する専門家
+memory: project
+tools:
+  - Read
+  - Grep
+---
+
+プロジェクトのアーキテクチャ設計を理解し、過去の決定事項を記憶します。
+```
+
+**ユーザー設定を保持:**
+
+```yaml
+---
+name: personal-assistant
+description: ユーザーの好みを学習するアシスタント
+memory: user
+---
+
+ユーザーのコーディングスタイルや好みを学習し、すべてのプロジェクトで活用します。
+```
+
+### ベストプラクティス
+
+- **userスコープ**: 個人的な設定や好みの保存に使用
+- **projectスコープ**: プロジェクト固有のパターンや決定事項の記録に使用
+- **localスコープ**: セッション内の一時的な状態管理に使用
+- メモリには必要最小限の情報のみを保存（パフォーマンスへの影響を考慮）
 
 ## hooks
 
