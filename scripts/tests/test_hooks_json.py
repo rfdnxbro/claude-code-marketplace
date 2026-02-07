@@ -59,6 +59,8 @@ class TestValidateHooksJson:
             "SessionStart",
             "SessionEnd",
             "Setup",
+            "TeammateIdle",
+            "TaskCompleted",
         ]
         for event in valid_events:
             content = json.dumps(

@@ -293,3 +293,99 @@ class TestValidateAgent:
         result = validate_agent(Path("agent.md"), content)
         assert result.has_errors()
         assert any("skills" in e and "文字列またはリスト" in e for e in result.errors)
+
+    def test_task_agent_type_syntax_string_format(self):
+        """Task(agent_type)構文が文字列形式で有効であることを確認"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            tools: Read, Grep, Task(code-reviewer)
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()
+
+    def test_task_agent_type_syntax_list_format(self):
+        """Task(agent_type)構文がリスト形式で有効であることを確認"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            tools:
+              - Read
+              - Grep
+              - Task(code-reviewer)
+              - Task(test-runner)
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()
+
+    def test_task_agent_type_syntax_empty_parentheses(self):
+        """Task()の括弧が空の場合に警告"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            tools: Read, Task()
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert any("Task()" in w for w in result.warnings)
+
+    def test_memory_valid_user_scope(self):
+        """memory: userが有効であることを確認"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            memory: user
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()
+
+    def test_memory_valid_project_scope(self):
+        """memory: projectが有効であることを確認"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            memory: project
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()
+
+    def test_memory_valid_local_scope(self):
+        """memory: localが有効であることを確認"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            memory: local
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()
+
+    def test_memory_invalid_scope(self):
+        """memory: に不正な値が指定された場合エラー"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            memory: global
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert result.has_errors()
+        assert any("memory" in e and "不正" in e for e in result.errors)
