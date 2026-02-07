@@ -4,6 +4,7 @@ description: プロダクトマネージャーエージェント。ユーザー�
 tools: Read, Write, Edit, Glob, Grep
 model: sonnet
 permissionMode: default
+memory: project
 hooks:
   Stop:
     - hooks:
