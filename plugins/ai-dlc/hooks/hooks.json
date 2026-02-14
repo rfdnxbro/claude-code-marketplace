@@ -7,7 +7,19 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-aws-env.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-aws-env.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Bash(rm *|git push --force *|npm publish *)",
+        "once": false,
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/warn-destructive.sh",
+            "timeout": 5
           }
         ]
       }
