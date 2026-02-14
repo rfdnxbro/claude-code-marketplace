@@ -1,6 +1,7 @@
 ---
 description: 概念についてブレインストーミングを実施し、記事のアウトラインを作成。カテゴリ特定、内容深掘り、7セクション構成のアウトライン生成を対話的に実施。記事作成の最初のステップとして使用。
 allowed-tools: Read, Write, Glob
+tools: Read, Write, Glob
 allow:
   - Read
   - Glob
