@@ -6,6 +6,19 @@ paths: plugins/*/agents/**/*.md, .claude/agents/**/*.md
 
 Markdown + YAML Frontmatter形式で記述します。
 
+## ファイル配置
+
+エージェント定義ファイルは以下のパスに配置します:
+
+- `plugins/*/agents/**/*.md` - プラグイン内のエージェント
+- `.claude/agents/**/*.md` - プロジェクト固有のエージェント
+
+**注意（v2.1.39以降）**:
+
+- `.claude/agents/`ディレクトリ内には、エージェント定義以外のMarkdownファイル（README.mdなど）も配置できます
+- エージェント定義として認識されるのは、frontmatterに`name`フィールドを持つMarkdownファイルのみです
+- ドキュメント用のMarkdownファイルには警告は表示されません
+
 ## 形式
 
 ```markdown
