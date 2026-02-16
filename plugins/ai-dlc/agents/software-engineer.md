@@ -14,6 +14,7 @@ ask: [
   "Bash(cdk destroy *)"
 ]
 model: sonnet
+memory: project
 permissionMode: default
 hooks:
   Stop:
