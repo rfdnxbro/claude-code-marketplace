@@ -11,17 +11,6 @@
             "timeout": 30
           }
         ]
-      },
-      {
-        "matcher": "Bash(rm *|git push --force *|npm publish *)",
-        "once": false,
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/warn-destructive.sh",
-            "timeout": 5
-          }
-        ]
       }
     ],
     "Setup": [
