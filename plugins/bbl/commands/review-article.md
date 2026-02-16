@@ -1,6 +1,6 @@
 ---
 description: 記事の品質チェックと改善提案を実施。構造、導入問題、内容、視覚化、参考文献の5カテゴリで100点満点評価し、修正箇所を特定。/bbl:create-article実行後に使用。
-allowed-tools: Read, Write, Edit, Glob, Grep
+allowed-tools: Read, Write, Edit, Glob, Grep, Task(content-reviewer)
 allow:
   - Read
   - Glob
