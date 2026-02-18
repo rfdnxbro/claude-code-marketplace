@@ -1,6 +1,11 @@
 ---
 description: AI-DLCセッションを初期化し、ボルトを作成
 allowed-tools: Bash(mkdir:*), Bash(date:*), Write, Read
+allow:
+  - Write
+  - Read
+  - "Bash(mkdir:*)"
+  - "Bash(date:*)"
 argument-hint: [bolt-name]
 ---
 
