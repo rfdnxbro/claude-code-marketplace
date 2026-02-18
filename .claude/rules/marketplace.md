@@ -177,6 +177,15 @@ Git URL sourceでも、URL末尾にfragment構文を使ってbranch、tag、ま�
 - `agent-skills`
 - `life-sciences`
 
+## `--add-dir`での設定読み込み（v2.1.45以降）
+
+v2.1.45以降、`--add-dir`で追加したディレクトリから以下の設定が読み込まれるようになりました:
+
+- `enabledPlugins`: 有効化するプラグインのリスト
+- `extraKnownMarketplaces`: 追加のマーケットプレイス定義
+
+これにより、プロジェクト固有の設定を`--add-dir`ディレクトリ内で管理できます。設定はプロジェクトルートの`.claude.json`と同様の形式で記述できます。
+
 ## 検証
 
 ```bash
