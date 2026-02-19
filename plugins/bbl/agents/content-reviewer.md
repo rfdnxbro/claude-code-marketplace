@@ -5,7 +5,7 @@ tools: Read, Write, Edit, Glob, Grep
 disallowedTools: Bash, NotebookEdit
 model: sonnet
 permissionMode: default
-skills: content-guide
+skills: bbl:content-guide
 memory: project
 allow:
   - Read
