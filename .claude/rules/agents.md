@@ -44,7 +44,7 @@ skills: skill-name
 | `disallowedTools` | No | 使用禁止ツール（カンマ/YAML形式） |
 | `model` | No | `sonnet`, `opus`, `haiku`, `inherit`。省略時は`sonnet` |
 | `permissionMode` | No | `default`, `acceptEdits`, `bypassPermissions`, `plan`, `ignore` |
-| `skills` | No | 自動ロードするスキル名（カンマ/YAML形式） |
+| `skills` | No | 自動ロードするスキル名（カンマ/YAML形式）。プラグインスキルは完全修飾名（`plugin-name:skill-name`）で指定 |
 | `hooks` | No | フック定義（[hooks.md](hooks.md)参照） |
 | `memory` | No | 永続的メモリのスコープ：`user`, `project`, `local`（v2.1.33以降） |
 
@@ -206,6 +206,37 @@ memory: user
 - **projectスコープ**: プロジェクト固有のパターンや決定事項の記録に使用
 - **localスコープ**: セッション内の一時的な状態管理に使用
 - メモリには必要最小限の情報のみを保存（パフォーマンスへの影響を考慮）
+
+## skills の完全修飾名（v2.1.47以降）
+
+プラグインエージェントでスキルを参照する場合は、ベア名（例: `my-skill`）ではなく、完全修飾プラグイン名（例: `my-plugin:my-skill`）を使用してください。
+
+**理由**: ベア名での参照は黙って失敗することがありましたが、v2.1.47以降ではこの仕様が正しく動作するようになっています。確実にスキルをロードするために、完全修飾名の使用を推奨します。
+
+**推奨（完全修飾名）:**
+
+```yaml
+---
+name: my-agent
+description: プラグインスキルを使用するエージェント
+skills:
+  - my-plugin:my-skill        # 完全修飾名（推奨）
+  - other-plugin:other-skill
+---
+```
+
+**非推奨（ベア名）:**
+
+```yaml
+---
+name: my-agent
+description: プラグインスキルを使用するエージェント
+skills:
+  - my-skill        # ベア名（ロードに失敗する可能性あり）
+---
+```
+
+**注意**: 同一プラグイン内のスキルであってもプラグイン名を明示することを推奨します。
 
 ## hooks
 

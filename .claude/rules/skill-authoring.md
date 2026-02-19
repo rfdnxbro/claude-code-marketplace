@@ -47,6 +47,17 @@ allowed-tools:
 
 ### 必須フィールド
 
+**フロントマターの型に関する注意（v2.1.47以降）**:
+
+フロントマターのフィールド値は文字列型で指定することを推奨します。数値のみの値（例: `name: 3000`）や YAML sequence 構文（例: `argument-hint: [topic: foo | bar]`）も文字列として正しく処理されるようになりましたが、明示的に引用符で囲むことでトラブルを避けられます。
+
+```yaml
+# 推奨: 明示的に文字列として指定
+name: "my-skill-3000"
+description: "処理を実行する"
+argument-hint: "topic: foo | bar"
+```
+
 **name**:
 
 - 最大64文字

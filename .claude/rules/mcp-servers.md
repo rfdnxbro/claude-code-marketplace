@@ -195,6 +195,22 @@ claude mcp add slack --client-id abc123 --client-secret xyz789
 - Client IDとClient Secretは機密情報のため、コマンドライン履歴に残らないよう注意
 - プラグインの `.mcp.json` には認証情報を直接記述せず、環境変数を使用すること
 
+## claude.ai MCP コネクター（v2.1.46以降）
+
+v2.1.46以降、claude.ai の MCP コネクターを Claude Code で利用できます。
+
+### 設定方法
+
+```bash
+# claude.ai MCPコネクターを追加
+claude mcp add --from-claude-ai <connector-name>
+```
+
+### 注意事項
+
+- claude.ai MCP コネクターを使用するには、claude.ai アカウントへのログインが必要です
+- 詳細な設定オプションは公式ドキュメントを参照してください（TODO: 要確認）
+
 ## セキュリティ注意事項
 
 機密情報（APIキー、トークン等）は環境変数経由で渡し、直接記述しないこと。
