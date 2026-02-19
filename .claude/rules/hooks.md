@@ -300,7 +300,68 @@ EOF
 | `tool_input` | ツールへの入力パラメータ |
 | `tool_use_id` | ツール呼び出しの一意識別子（トラッキング用） |
 
+### Stop / SubagentStop イベントの入力（v2.1.47以降）
+
+`Stop` および `SubagentStop` フックには、追加フィールド `last_assistant_message` が渡されます（v2.1.47以降）:
+
+```json
+{
+  "last_assistant_message": "タスクが完了しました。変更内容を確認してください。"
+}
+```
+
+| フィールド | 説明 |
+|-----------|------|
+| `last_assistant_message` | 最後のアシスタント応答テキスト |
+
+これにより、フックスクリプトがトランスクリプトファイルをパースすることなく、最後のアシスタント応答にアクセスできます。
+
+**使用例:**
+
+```bash
+#!/bin/bash
+# 最後のアシスタントメッセージを取得してログに記録
+input=$(cat)
+last_message=$(echo "$input" | jq -r '.last_assistant_message // ""')
+
+if [ -n "$last_message" ]; then
+  echo "完了メッセージ: $last_message" >> /tmp/session-log.txt
+fi
+```
+
 ## イベント詳細
+
+### SessionStart
+
+セッション開始時に実行されるフック。
+
+**注意（v2.1.47以降）**: `SessionStart` フックの実行は、起動パフォーマンス改善のため、セッション開始後に約500ms遅延して実行されます。フックが起動直後に即座に実行されることを前提としたロジックがある場合は注意が必要です。
+
+**使用例:**
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/session-init.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**ユースケース:**
+
+- セッション開始時の初期化処理
+- ウェルカムメッセージの表示
+- 環境チェック（遅延実行を考慮した設計が必要）
 
 ### Setup
 

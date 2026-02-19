@@ -71,7 +71,8 @@ Claude Codeがカスタムステータスラインの設定を支援します。
   },
   "workspace": {
     "current_dir": "/current/working/directory",
-    "project_dir": "/original/project/directory"
+    "project_dir": "/original/project/directory",
+    "added_dirs": ["/additional/directory1", "/additional/directory2"]
   },
   "version": "1.0.80",
   "output_style": {
@@ -115,6 +116,7 @@ Claude Codeがカスタムステータスラインの設定を支援します。
 |-----------|---|------|-----|
 | `workspace.current_dir` | string | 現在のディレクトリ | `/home/user/project` |
 | `workspace.project_dir` | string | プロジェクトディレクトリ | `/home/user/project` |
+| `workspace.added_dirs` | array | `/add-dir` で追加したディレクトリ一覧（v2.1.47以降） | `["/extra/dir"]` |
 | `cwd` | string | 現在のワーキングディレクトリ | `/home/user/project` |
 
 #### セッション情報
