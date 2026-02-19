@@ -16,6 +16,7 @@ ask: [
 model: sonnet
 memory: project
 permissionMode: default
+skills: ai-dlc:ai-dlc
 hooks:
   Stop:
     - hooks:
