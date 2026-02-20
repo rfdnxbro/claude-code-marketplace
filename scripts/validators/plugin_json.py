@@ -44,6 +44,7 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
         "mcpServers",
         "lspServers",
         "outputStyles",
+        "settings",
     ]
     for field in path_fields:
         value = data.get(field)

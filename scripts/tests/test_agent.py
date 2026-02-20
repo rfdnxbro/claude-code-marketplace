@@ -389,3 +389,84 @@ class TestValidateAgent:
         result = validate_agent(Path("agent.md"), content)
         assert result.has_errors()
         assert any("memory" in e and "不正" in e for e in result.errors)
+
+    def test_isolation_valid_worktree(self):
+        """isolation: worktreeが有効であることを確認"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            isolation: worktree
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()
+
+    def test_isolation_invalid_value(self):
+        """isolation: に不正な値が指定された場合エラー"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            isolation: sandbox
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert result.has_errors()
+        assert any("isolation" in e and "不正" in e for e in result.errors)
+
+    def test_background_valid_true(self):
+        """background: trueが有効であることを確認"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            background: true
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()
+
+    def test_background_valid_false(self):
+        """background: falseが有効であることを確認"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            background: false
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()
+
+    def test_background_invalid_string(self):
+        """background: にブール値以外の文字列が指定された場合エラー"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            background: yes
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert result.has_errors()
+        assert any("background" in e for e in result.errors)
+
+    def test_isolation_and_background_combined(self):
+        """isolationとbackgroundを同時に指定できることを確認"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            isolation: worktree
+            background: true
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()

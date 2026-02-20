@@ -35,6 +35,7 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
         "Setup",
         "TeammateIdle",
         "TaskCompleted",
+        "ConfigChange",
     ]
 
     for event_name, event_hooks in hooks.items():
