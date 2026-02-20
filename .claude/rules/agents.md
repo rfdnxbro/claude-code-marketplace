@@ -47,6 +47,8 @@ skills: skill-name
 | `skills` | No | 自動ロードするスキル名（カンマ/YAML形式）。プラグインスキルは完全修飾名（`plugin-name:skill-name`）で指定 |
 | `hooks` | No | フック定義（[hooks.md](hooks.md)参照） |
 | `memory` | No | 永続的メモリのスコープ：`user`, `project`, `local`（v2.1.33以降） |
+| `isolation` | No | 実行環境の分離モード：`worktree`（v2.1.49以降） |
+| `background` | No | バックグラウンドタスクとして常に実行：`true`/`false`（v2.1.49以降） |
 
 ## description のベストプラクティス
 
@@ -237,6 +239,46 @@ skills:
 ```
 
 **注意**: 同一プラグイン内のスキルであってもプラグイン名を明示することを推奨します。
+
+## isolation（v2.1.49以降）
+
+`isolation: worktree` を指定することで、エージェントが一時的なgit worktreeで動作します。これにより、メインのワーキングツリーに影響を与えずに独立した作業が可能になります。
+
+```yaml
+---
+name: isolated-agent
+description: 独立したworktreeで動作するエージェント
+isolation: worktree
+---
+
+一時的なgit worktreeで安全に変更を加えます。
+```
+
+**ユースケース:**
+
+- 実験的な変更を試す
+- メインブランチへの影響を避けたい場合
+- 並行して複数の変更を行う場合
+
+## background（v2.1.49以降）
+
+`background: true` を指定することで、エージェントが常にバックグラウンドタスクとして実行されます。
+
+```yaml
+---
+name: background-agent
+description: バックグラウンドで動作するエージェント
+background: true
+---
+
+バックグラウンドで非同期処理を実行します。
+```
+
+**ユースケース:**
+
+- 長時間かかる処理を非同期で実行する
+- メインの会話フローをブロックせずにタスクを実行する
+- 監視・ログ収集などの常駐型タスク
 
 ## hooks
 
