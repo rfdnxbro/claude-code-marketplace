@@ -47,6 +47,7 @@ skills: skill-name
 | `skills` | No | 自動ロードするスキル名（カンマ/YAML形式）。プラグインスキルは完全修飾名（`plugin-name:skill-name`）で指定 |
 | `hooks` | No | フック定義（[hooks.md](hooks.md)参照） |
 | `memory` | No | 永続的メモリのスコープ：`user`, `project`, `local`（v2.1.33以降） |
+| `isolation` | No | 実行分離モード：`worktree`（v2.1.50以降） |
 
 ## description のベストプラクティス
 
@@ -238,6 +239,51 @@ skills:
 
 **注意**: 同一プラグイン内のスキルであってもプラグイン名を明示することを推奨します。
 
+## isolation（v2.1.50以降）
+
+エージェントを隔離されたgit worktreeで実行するよう宣言的に設定できます。
+
+```yaml
+---
+name: isolated-agent
+description: 隔離されたworktreeで実行するエージェント
+isolation: worktree
+---
+
+隔離されたgit worktreeで作業するエージェントのシステムプロンプト
+```
+
+### isolation: worktree
+
+エージェントが起動すると、自動的に新しいgit worktreeが作成され、その中でエージェントが実行されます。エージェント終了後はworktreeが削除されます。
+
+**特徴:**
+
+- メインブランチへの影響を受けずに独立した作業が可能
+- 並列エージェント実行時の競合を防止
+- `WorktreeCreate` / `WorktreeRemove` フックで作成・削除時の処理をカスタマイズ可能
+
+**使用例:**
+
+```yaml
+---
+name: safe-refactoring-agent
+description: 安全なリファクタリング専門エージェント。コードの大規模変更時に使用。
+isolation: worktree
+tools:
+  - Read
+  - Edit
+  - Bash(git:*)
+---
+
+隔離されたworktreeでコードのリファクタリングを安全に実施します。
+```
+
+**関連:**
+
+- CLIフラグ `--worktree` / `-w` でも同様の動作が可能（v2.1.49以降）
+- `WorktreeCreate` / `WorktreeRemove` フックとの組み合わせで、セットアップ・クリーンアップ処理を自動化できます（[hooks.md](hooks.md)参照）
+
 ## hooks
 
 エージェント実行時のフックを定義。詳細は[hooks.md](hooks.md)を参照:
@@ -258,3 +304,15 @@ hooks:
           prompt: "レビュー結果を要約"
 ---
 ```
+
+## CLIコマンド
+
+### claude agents（v2.1.50以降）
+
+設定済みのエージェント一覧を確認するコマンド:
+
+```bash
+claude agents
+```
+
+プラグイン開発時に定義したエージェントが正しく認識されているかを確認できます。
