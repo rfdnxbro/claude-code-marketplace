@@ -79,6 +79,13 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
             f"{file_path.name}: memoryの値が不正です: {memory_str}（user/project/local）"
         )
 
+    # isolationの値チェック（v2.1.50以降）
+    isolation = frontmatter.get("isolation", "")
+    isolation_str = str(isolation) if isolation else ""
+    valid_isolation_modes = ["worktree", ""]
+    if isolation_str and isolation_str not in valid_isolation_modes:
+        result.add_error(f"{file_path.name}: isolationの値が不正です: {isolation_str}（worktree）")
+
     # toolsの確認（リスト形式検証）
     tools = frontmatter.get("tools")
     if tools is not None:
