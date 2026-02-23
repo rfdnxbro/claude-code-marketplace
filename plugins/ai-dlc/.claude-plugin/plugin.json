@@ -8,5 +8,6 @@
   "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/ai-dlc",
   "repository": "https://github.com/rfdnxbro/claude-code-marketplace",
   "license": "MIT",
-  "keywords": ["ai-dlc", "sdlc", "agile", "ddd", "methodology"]
+  "keywords": ["ai-dlc", "sdlc", "agile", "ddd", "methodology"],
+  "settings": "./settings.json"
 }
