@@ -2,7 +2,6 @@
 name: content-reviewer
 description: コンテンツレビューエージェント。ビジネス基礎知識の記事を品質チェックし、改善提案を実施。構造、導入問題、内容、視覚化、参考文献の5カテゴリで100点満点評価。記事の完成度を高める際やレビューが必要な際に使用。
 tools: Read, Write, Edit, Glob, Grep
-disallowedTools: Bash, NotebookEdit
 model: sonnet
 permissionMode: default
 skills: bbl:content-guide
@@ -18,7 +17,7 @@ hooks:
   Stop:
     - hooks:
         - type: prompt
-          prompt: "レビュー結果（スコアと主要な改善点）を要約してください"
+          prompt: "以下の最後のアシスタントメッセージを参考に、レビュー結果（スコアと主要な改善点）を要約してください: $ARGUMENTS"
 ---
 
 # コンテンツレビューアー
