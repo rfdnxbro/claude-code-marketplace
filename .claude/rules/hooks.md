@@ -69,6 +69,7 @@ hooks:
 | `Setup` | セットアップ・メンテナンス時 | × |
 | `TeammateIdle` | チームメイトエージェントがアイドル状態時 | × |
 | `TaskCompleted` | タスク完了時 | × |
+| `ConfigChange` | セッション中に設定ファイルが変更された時 | × |
 | `WorktreeCreate` | エージェントworktree分離でworktreeが作成された時 | × |
 | `WorktreeRemove` | エージェントworktree分離でworktreeが削除された時 | × |
 
@@ -486,6 +487,62 @@ fi
 - 次のタスクへの自動トリガー
 - 成果物の検証・レビュー
 - プロジェクト進捗の追跡
+
+### ConfigChange
+
+セッション中に設定ファイルが変更されたときに実行されるフック（v2.1.49以降）。エンタープライズのセキュリティ監査や設定変更のブロックに使用できます。
+
+**使用例:**
+
+```json
+{
+  "hooks": {
+    "ConfigChange": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/audit-config.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**ユースケース:**
+
+- 設定変更のセキュリティ監査ログ記録
+- 未承認の設定変更をブロック（exit code 2を返すことで）
+- 設定変更の通知・アラート
+- エンタープライズポリシーの強制適用
+
+**セキュリティ監査の例:**
+
+```bash
+#!/bin/bash
+# 設定変更を監査ログに記録
+
+input=$(cat)
+timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+echo "$timestamp ConfigChange detected: $input" >> /var/log/claude-audit.log
+
+exit 0
+```
+
+**設定変更ブロックの例:**
+
+```bash
+#!/bin/bash
+# 特定の設定変更をブロック
+
+input=$(cat)
+# 危険な設定変更を検出した場合はブロック
+echo "エラー: この設定変更はポリシーにより禁止されています。" >&2
+exit 2
+```
 
 ### WorktreeCreate
 

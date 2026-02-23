@@ -86,6 +86,13 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
     if isolation_str and isolation_str not in valid_isolation_modes:
         result.add_error(f"{file_path.name}: isolationの値が不正です: {isolation_str}（worktree）")
 
+    # backgroundの値チェック（v2.1.49以降）
+    background = frontmatter.get("background")
+    if background is not None and not isinstance(background, bool):
+        result.add_error(
+            f"{file_path.name}: backgroundはブール値（true/false）が必要です: {background}"
+        )
+
     # toolsの確認（リスト形式検証）
     tools = frontmatter.get("tools")
     if tools is not None:

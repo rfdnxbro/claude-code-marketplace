@@ -100,6 +100,7 @@ class TestValidatePluginJson:
             "mcpServers",
             "lspServers",
             "outputStyles",
+            "settings",
         ]
         for field in path_fields:
             content = json.dumps({"name": "my-plugin", field: "some/path"})
@@ -107,3 +108,15 @@ class TestValidatePluginJson:
             assert any("./" in w for w in result.warnings), (
                 f"Field {field} should trigger path warning"
             )
+
+    def test_settings_valid_path(self):
+        """settingsのパスが./で始まる場合に警告が出ないことを確認"""
+        content = json.dumps({"name": "my-plugin", "settings": "./settings.json"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not any("./" in w and "settings" in w for w in result.warnings)
+
+    def test_settings_path_without_prefix(self):
+        """settingsのパスが./で始まらない場合に警告が出ることを確認"""
+        content = json.dumps({"name": "my-plugin", "settings": "settings.json"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert any("settings" in w for w in result.warnings)

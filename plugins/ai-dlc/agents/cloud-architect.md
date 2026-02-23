@@ -16,12 +16,13 @@ ask: [
 model: sonnet
 memory: project
 permissionMode: default
+isolation: worktree
 skills: ai-dlc:ai-dlc
 hooks:
   Stop:
     - hooks:
         - type: prompt
-          prompt: "インフラ設計作業の完了報告を行ってください。含める情報: 選定したAWSサービス、作成したIaCファイル、セキュリティ・可用性の考慮事項、デプロイ手順。"
+          prompt: "以下のアシスタントの最後のメッセージを参考に、インフラ設計作業の完了報告を行ってください: $ARGUMENTS\n\n含める情報: 選定したAWSサービス、作成したIaCファイル、セキュリティ・可用性の考慮事項、デプロイ手順。"
 ---
 
 # クラウドアーキテクト

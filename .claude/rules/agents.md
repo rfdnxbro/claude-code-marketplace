@@ -48,6 +48,7 @@ skills: skill-name
 | `hooks` | No | フック定義（[hooks.md](hooks.md)参照） |
 | `memory` | No | 永続的メモリのスコープ：`user`, `project`, `local`（v2.1.33以降） |
 | `isolation` | No | 実行分離モード：`worktree`（v2.1.50以降） |
+| `background` | No | バックグラウンドタスクとして常に実行：`true`/`false`（v2.1.49以降） |
 
 ## description のベストプラクティス
 
@@ -283,6 +284,26 @@ tools:
 
 - CLIフラグ `--worktree` / `-w` でも同様の動作が可能（v2.1.49以降）
 - `WorktreeCreate` / `WorktreeRemove` フックとの組み合わせで、セットアップ・クリーンアップ処理を自動化できます（[hooks.md](hooks.md)参照）
+
+## background（v2.1.49以降）
+
+`background: true` を指定することで、エージェントが常にバックグラウンドタスクとして実行されます。
+
+```yaml
+---
+name: background-agent
+description: バックグラウンドで動作するエージェント
+background: true
+---
+
+バックグラウンドで非同期処理を実行します。
+```
+
+**ユースケース:**
+
+- 長時間かかる処理を非同期で実行する
+- メインの会話フローをブロックせずにタスクを実行する
+- 監視・ログ収集などの常駐型タスク
 
 ## hooks
 

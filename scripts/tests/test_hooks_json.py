@@ -61,6 +61,7 @@ class TestValidateHooksJson:
             "Setup",
             "TeammateIdle",
             "TaskCompleted",
+            "ConfigChange",
             "WorktreeCreate",
             "WorktreeRemove",
         ]
@@ -174,6 +175,28 @@ class TestValidateHooksJson:
                         {
                             "matcher": "Edit",
                             "hooks": [{"type": "command", "command": "echo test", "once": False}],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_valid_config_change_hook(self):
+        """ConfigChangeフックが有効であることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "ConfigChange": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/audit-config.sh",
+                                    "timeout": 30,
+                                }
+                            ]
                         }
                     ]
                 }
