@@ -167,6 +167,55 @@ Git URL sourceでも、URL末尾にfragment構文を使ってbranch、tag、ま�
 }
 ```
 
+### npm（v2.1.51以降）
+
+npmレジストリからプラグインをインストール（v2.1.51以降）:
+
+```json
+{
+  "name": "npm-plugin",
+  "source": {
+    "source": "npm",
+    "package": "my-claude-plugin"
+  }
+}
+```
+
+#### 特定バージョンのピン留め
+
+```json
+{
+  "name": "npm-plugin-pinned",
+  "source": {
+    "source": "npm",
+    "package": "my-claude-plugin",
+    "version": "1.2.3"
+  }
+}
+```
+
+#### カスタムnpmレジストリの指定
+
+プライベートレジストリや社内レジストリを使用する場合:
+
+```json
+{
+  "name": "private-npm-plugin",
+  "source": {
+    "source": "npm",
+    "package": "@company/my-claude-plugin",
+    "registry": "https://registry.company.internal"
+  }
+}
+```
+
+| フィールド | 型 | 必須 | 説明 |
+|-----------|---|:---:|------|
+| `source` | string | ✓ | `"npm"` を指定 |
+| `package` | string | ✓ | npmパッケージ名（スコープ付きも可: `@scope/package`） |
+| `version` | string | | バージョン指定（省略時は最新版） |
+| `registry` | string | | カスタムレジストリURL（省略時はデフォルトのnpmレジストリ） |
+
 ## 予約済み名前（使用不可）
 
 - `claude-code-marketplace`
@@ -176,6 +225,26 @@ Git URL sourceでも、URL末尾にfragment構文を使ってbranch、tag、ま�
 - `anthropic-plugins`
 - `agent-skills`
 - `life-sciences`
+
+## Gitタイムアウト設定（v2.1.51以降）
+
+プラグインのGitクローン時のタイムアウトが変更されました。
+
+| バージョン | デフォルトタイムアウト |
+|-----------|-----------------|
+| v2.1.50以前 | 30秒 |
+| v2.1.51以降 | **120秒** |
+
+### カスタムタイムアウトの設定
+
+`CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS` 環境変数を設定することで、タイムアウトをミリ秒単位でカスタマイズできます:
+
+```bash
+# タイムアウトを300秒（5分）に設定
+export CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS=300000
+```
+
+大規模なプラグインリポジトリや低速なネットワーク環境で使用する場合は、この値を増やすことを推奨します。
 
 ## `--add-dir`での設定読み込み（v2.1.45以降）
 

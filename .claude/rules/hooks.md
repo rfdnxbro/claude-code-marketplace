@@ -113,6 +113,82 @@ LLMを使用してプロンプトを評価:
 }
 ```
 
+### http（HTTPリクエスト）【v2.1.51以降】
+
+<!-- validator-disable dangerous-operation -->
+
+HTTPエンドポイントにリクエストを送信するフックタイプ（v2.1.51以降）:
+
+```json
+{
+  "type": "http",
+  "url": "https://api.example.com/webhook",
+  "method": "POST",
+  "headers": {
+    "Authorization": "Bearer ${API_TOKEN}",
+    "Content-Type": "application/json"
+  },
+  "allowedEnvVars": ["API_TOKEN"],
+  "timeout": 30
+}
+```
+
+> **セキュリティ変更（v2.1.51・破壊的変更）**: ヘッダー値での環境変数展開（`${VAR}` 形式）には、`allowedEnvVars` フィールドへの明示的なホワイトリスト登録が必須となりました。これはHTTPフックが任意の環境変数をヘッダーに展開できたセキュリティ問題への対応です。
+
+#### フィールド説明
+
+| フィールド | 型 | 必須 | 説明 |
+|-----------|---|:---:|------|
+| `type` | string | ✓ | `"http"` を指定 |
+| `url` | string | ✓ | リクエスト送信先URL |
+| `method` | string | | HTTPメソッド（省略時: `POST`） |
+| `headers` | object | | リクエストヘッダー |
+| `allowedEnvVars` | array | ✓* | ヘッダー値で展開を許可する環境変数名のリスト（*ヘッダーで環境変数を使用する場合は必須） |
+| `timeout` | number | | タイムアウト（秒単位、省略時: 600秒） |
+
+#### `allowedEnvVars` の使い方
+
+ヘッダー値で環境変数を使用する場合は、使用する変数名を `allowedEnvVars` に列挙する必要があります:
+
+```json
+{
+  "type": "http",
+  "url": "https://api.example.com/hook",
+  "headers": {
+    "X-Auth-Token": "${MY_SECRET_TOKEN}",
+    "X-Team-ID": "${TEAM_ID}"
+  },
+  "allowedEnvVars": ["MY_SECRET_TOKEN", "TEAM_ID"]
+}
+```
+
+`allowedEnvVars` に含まれていない環境変数は展開されず、リテラル文字列として扱われます。
+
+#### HTTPフックの制限事項（v2.1.51以降）
+
+- **`SessionStart` および `Setup` イベントでは使用不可**: HTTPフックはこれらのイベントに対応していません
+- **サンドボックスモード時のプロキシ経由ルーティング**: サンドボックスモードが有効な場合、HTTPフックはサンドボックスネットワークプロキシ経由でルーティングされ、ドメイン許可リストが適用されます
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "http",
+            "url": "https://audit.example.com/log",
+            "method": "POST",
+            "allowedEnvVars": []
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
 ## matcher の仕様
 
 | パターン | 例 | マッチ対象 |
@@ -633,6 +709,15 @@ if [[ "$path" == *".."* ]]; then
   exit 2
 fi
 ```
+
+### ワークスペーストラスト要件（v2.1.51以降）
+
+`statusLine` および `fileSuggestion` フックは、インタラクティブモードでワークスペーストラストが受け入れられていない場合は実行されません。
+
+- **`statusLine` フック**: ワークスペーストラスト受け入れ後にのみ実行
+- **`fileSuggestion` フック**: ワークスペーストラスト受け入れ後にのみ実行
+
+これはインタラクティブモードでの不正なコード実行を防ぐためのセキュリティ要件です。ワークスペーストラストが未受け入れの状態では、これらのフックはスキップされます。
 
 ### サンドボックスモードでの制限（v2.1.38以降）
 
