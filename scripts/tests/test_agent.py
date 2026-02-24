@@ -337,6 +337,19 @@ class TestValidateAgent:
         result = validate_agent(Path("agent.md"), content)
         assert any("Task()" in w for w in result.warnings)
 
+    def test_task_agent_type_syntax_whitespace_only_parentheses(self):
+        """Task( )のようにスペースのみの括弧内の場合に警告"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            tools: Read, Task(   )
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert any("Task()" in w for w in result.warnings)
+
     def test_memory_valid_user_scope(self):
         """memory: userが有効であることを確認"""
         content = dedent("""
