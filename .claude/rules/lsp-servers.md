@@ -39,7 +39,7 @@ JSON形式で記述します。配置場所はプラグインルートの `.lsp.
 | `initializationOptions` | object | サーバー初期化オプション |
 | `settings` | object | ワークスペース設定 |
 | `workspaceFolder` | string | ワークスペースフォルダパス |
-| `startupTimeout` | number | サーバー起動タイムアウト（ミリ秒） |
+| `startupTimeout` | number | サーバー起動タイムアウト（ミリ秒）（v2.1.50以降） |
 | `shutdownTimeout` | number | シャットダウン待機時間（ミリ秒） |
 | `restartOnCrash` | boolean | クラッシュ時の自動再起動 |
 | `maxRestarts` | number | 最大再起動回数 |

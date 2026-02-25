@@ -62,6 +62,8 @@ class TestValidateHooksJson:
             "TeammateIdle",
             "TaskCompleted",
             "ConfigChange",
+            "WorktreeCreate",
+            "WorktreeRemove",
         ]
         for event in valid_events:
             content = json.dumps(
@@ -220,3 +222,47 @@ class TestValidateHooksJson:
         result = validate_hooks_json(Path("hooks.json"), content)
         assert result.has_errors()
         assert any("once" in e for e in result.errors)
+
+    def test_valid_worktree_create_hook(self):
+        """WorktreeCreateフックが有効であることをテスト（v2.1.50以降）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "WorktreeCreate": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/worktree-setup.sh",
+                                    "timeout": 60,
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_valid_worktree_remove_hook(self):
+        """WorktreeRemoveフックが有効であることをテスト（v2.1.50以降）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "WorktreeRemove": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/worktree-cleanup.sh",
+                                    "timeout": 30,
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()

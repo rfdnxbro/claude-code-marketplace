@@ -70,6 +70,8 @@ hooks:
 | `TeammateIdle` | チームメイトエージェントがアイドル状態時 | × |
 | `TaskCompleted` | タスク完了時 | × |
 | `ConfigChange` | セッション中に設定ファイルが変更された時 | × |
+| `WorktreeCreate` | エージェントworktree分離でworktreeが作成された時 | × |
+| `WorktreeRemove` | エージェントworktree分離でworktreeが削除された時 | × |
 
 ## フックタイプ
 
@@ -541,6 +543,68 @@ input=$(cat)
 echo "エラー: この設定変更はポリシーにより禁止されています。" >&2
 exit 2
 ```
+
+### WorktreeCreate
+
+エージェントのworktree分離（`isolation: worktree`）で、新しいgit worktreeが作成されたときに実行されるフック（v2.1.50以降）。
+
+**使用例:**
+
+```json
+{
+  "hooks": {
+    "WorktreeCreate": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/worktree-setup.sh",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**ユースケース:**
+
+- worktree作成時の依存パッケージインストール
+- worktree固有の設定ファイル生成
+- カスタムVCSセットアップ処理
+- worktree作成通知・ログ記録
+
+### WorktreeRemove
+
+エージェントのworktree分離（`isolation: worktree`）で、git worktreeが削除されたときに実行されるフック（v2.1.50以降）。
+
+**使用例:**
+
+```json
+{
+  "hooks": {
+    "WorktreeRemove": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/worktree-cleanup.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**ユースケース:**
+
+- worktree削除時のクリーンアップ処理
+- 一時ファイルの削除
+- worktree削除通知・ログ記録
+- リソースの解放
 
 ## パーミッション優先順位（v2.1.27以降）
 
