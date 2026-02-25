@@ -45,3 +45,4 @@
 | `$1`, `$2`, `$3`... | 位置指定引数のショートハンド（v2.1.19以降） | slash-commands |
 | `${VAR}` | 任意の環境変数を展開 | mcp-servers, lsp-servers |
 | `${VAR:-default}` | デフォルト値付き環境変数 | mcp-servers, lsp-servers |
+| `CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS` | Gitクローンのタイムアウト（ミリ秒）。デフォルト120000（120秒）（v2.1.51以降） | marketplace |
