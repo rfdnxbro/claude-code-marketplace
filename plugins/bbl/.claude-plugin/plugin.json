@@ -8,5 +8,6 @@
   "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/bbl",
   "repository": "https://github.com/rfdnxbro/claude-code-marketplace",
   "license": "MIT",
-  "keywords": ["business", "learning", "education", "content", "article"]
+  "keywords": ["business", "learning", "education", "content", "article"],
+  "settings": "./settings.json"
 }

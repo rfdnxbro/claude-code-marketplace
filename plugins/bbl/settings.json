@@ -1,0 +1,9 @@
+{
+  "env": {
+    "BBL_CONTEXT_FILE": ".bbl-context.yml"
+  },
+  "permissions": {
+    "allow": ["Read", "Glob", "Grep"],
+    "ask": ["Write", "Edit"]
+  }
+}
