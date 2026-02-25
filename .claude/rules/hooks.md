@@ -70,6 +70,8 @@ hooks:
 | `TeammateIdle` | チームメイトエージェントがアイドル状態時 | × |
 | `TaskCompleted` | タスク完了時 | × |
 | `ConfigChange` | セッション中に設定ファイルが変更された時 | × |
+| `WorktreeCreate` | エージェントworktree分離でworktreeが作成された時 | × |
+| `WorktreeRemove` | エージェントworktree分離でworktreeが削除された時 | × |
 
 ## フックタイプ
 
@@ -110,6 +112,82 @@ LLMを使用してプロンプトを評価:
   "type": "agent",
   "agent": "code-reviewer",
   "timeout": 120
+}
+```
+
+### http（HTTPリクエスト）【v2.1.51以降】
+
+<!-- validator-disable dangerous-operation -->
+
+HTTPエンドポイントにリクエストを送信するフックタイプ（v2.1.51以降）:
+
+```json
+{
+  "type": "http",
+  "url": "https://api.example.com/webhook",
+  "method": "POST",
+  "headers": {
+    "Authorization": "Bearer ${API_TOKEN}",
+    "Content-Type": "application/json"
+  },
+  "allowedEnvVars": ["API_TOKEN"],
+  "timeout": 30
+}
+```
+
+> **セキュリティ変更（v2.1.51・破壊的変更）**: ヘッダー値での環境変数展開（`${VAR}` 形式）には、`allowedEnvVars` フィールドへの明示的なホワイトリスト登録が必須となりました。これはHTTPフックが任意の環境変数をヘッダーに展開できたセキュリティ問題への対応です。
+
+#### フィールド説明
+
+| フィールド | 型 | 必須 | 説明 |
+|-----------|---|:---:|------|
+| `type` | string | ✓ | `"http"` を指定 |
+| `url` | string | ✓ | リクエスト送信先URL |
+| `method` | string | | HTTPメソッド（省略時: `POST`） |
+| `headers` | object | | リクエストヘッダー |
+| `allowedEnvVars` | array | ✓* | ヘッダー値で展開を許可する環境変数名のリスト（*ヘッダーで環境変数を使用する場合は必須） |
+| `timeout` | number | | タイムアウト（秒単位、省略時: 600秒） |
+
+#### `allowedEnvVars` の使い方
+
+ヘッダー値で環境変数を使用する場合は、使用する変数名を `allowedEnvVars` に列挙する必要があります:
+
+```json
+{
+  "type": "http",
+  "url": "https://api.example.com/hook",
+  "headers": {
+    "X-Auth-Token": "${MY_SECRET_TOKEN}",
+    "X-Team-ID": "${TEAM_ID}"
+  },
+  "allowedEnvVars": ["MY_SECRET_TOKEN", "TEAM_ID"]
+}
+```
+
+`allowedEnvVars` に含まれていない環境変数は展開されず、リテラル文字列として扱われます。
+
+#### HTTPフックの制限事項（v2.1.51以降）
+
+- **`SessionStart` および `Setup` イベントでは使用不可**: HTTPフックはこれらのイベントに対応していません
+- **サンドボックスモード時のプロキシ経由ルーティング**: サンドボックスモードが有効な場合、HTTPフックはサンドボックスネットワークプロキシ経由でルーティングされ、ドメイン許可リストが適用されます
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "http",
+            "url": "https://audit.example.com/log",
+            "method": "POST",
+            "allowedEnvVars": []
+          }
+        ]
+      }
+    ]
+  }
 }
 ```
 
@@ -542,6 +620,68 @@ echo "エラー: この設定変更はポリシーにより禁止されていま
 exit 2
 ```
 
+### WorktreeCreate
+
+エージェントのworktree分離（`isolation: worktree`）で、新しいgit worktreeが作成されたときに実行されるフック（v2.1.50以降）。
+
+**使用例:**
+
+```json
+{
+  "hooks": {
+    "WorktreeCreate": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/worktree-setup.sh",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**ユースケース:**
+
+- worktree作成時の依存パッケージインストール
+- worktree固有の設定ファイル生成
+- カスタムVCSセットアップ処理
+- worktree作成通知・ログ記録
+
+### WorktreeRemove
+
+エージェントのworktree分離（`isolation: worktree`）で、git worktreeが削除されたときに実行されるフック（v2.1.50以降）。
+
+**使用例:**
+
+```json
+{
+  "hooks": {
+    "WorktreeRemove": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/worktree-cleanup.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**ユースケース:**
+
+- worktree削除時のクリーンアップ処理
+- 一時ファイルの削除
+- worktree削除通知・ログ記録
+- リソースの解放
+
 ## パーミッション優先順位（v2.1.27以降）
 
 Claude Codeのパーミッションシステムでは、より具体的な制限が優先されます。
@@ -633,6 +773,15 @@ if [[ "$path" == *".."* ]]; then
   exit 2
 fi
 ```
+
+### ワークスペーストラスト要件（v2.1.51以降）
+
+`statusLine` および `fileSuggestion` フックは、インタラクティブモードでワークスペーストラストが受け入れられていない場合は実行されません。
+
+- **`statusLine` フック**: ワークスペーストラスト受け入れ後にのみ実行
+- **`fileSuggestion` フック**: ワークスペーストラスト受け入れ後にのみ実行
+
+これはインタラクティブモードでの不正なコード実行を防ぐためのセキュリティ要件です。ワークスペーストラストが未受け入れの状態では、これらのフックはスキップされます。
 
 ### サンドボックスモードでの制限（v2.1.38以降）
 
