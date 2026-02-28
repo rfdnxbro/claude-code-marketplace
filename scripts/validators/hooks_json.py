@@ -72,9 +72,11 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
             inner_hooks = hook_config.get("hooks", [])
             for h in inner_hooks:
                 hook_type = h.get("type")
-                if hook_type not in ["command", "prompt", "agent"]:
+                valid_types = ["command", "prompt", "agent", "http"]
+                if hook_type not in valid_types:
+                    types_str = "/".join(valid_types)
                     result.add_error(
-                        f"{file_path.name}: 無効なhook type: {hook_type}（command/prompt/agent）"
+                        f"{file_path.name}: 無効なhook type: {hook_type}（{types_str}）"
                     )
 
                 if hook_type == "command" and not h.get("command"):
@@ -89,6 +91,9 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
 
                 if hook_type == "agent" and not h.get("agent"):
                     result.add_error(f"{file_path.name}: agentタイプにagentフィールドがありません")
+
+                if hook_type == "http" and not h.get("url"):
+                    result.add_error(f"{file_path.name}: httpタイプにurlフィールドがありません")
 
                 # onceの確認（boolean型）
                 once = h.get("once")
