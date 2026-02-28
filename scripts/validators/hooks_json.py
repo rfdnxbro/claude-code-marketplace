@@ -24,10 +24,12 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
     valid_events = [
         "PreToolUse",
         "PostToolUse",
+        "PostToolUseFailure",
         "PermissionRequest",
         "UserPromptSubmit",
         "Notification",
         "Stop",
+        "SubagentStart",
         "SubagentStop",
         "PreCompact",
         "SessionStart",
@@ -50,10 +52,14 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
             events_with_matcher = [
                 "PreToolUse",
                 "PostToolUse",
+                "PostToolUseFailure",
                 "PermissionRequest",
                 "Notification",
+                "SubagentStart",
+                "SubagentStop",
                 "PreCompact",
                 "SessionStart",
+                "ConfigChange",
             ]
             if event_name in events_with_matcher:
                 matcher = hook_config.get("matcher")

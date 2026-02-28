@@ -59,6 +59,13 @@ def validate_skill(file_path: Path, content: str) -> ValidationResult:
                 f"{file_path.name}: contextの値が不正です: {context_str}（forkのみ有効）"
             )
 
+    # modelの値チェック
+    model = frontmatter.get("model", "")
+    model_str = str(model) if model else ""
+    valid_models = ["sonnet", "opus", "haiku", ""]
+    if model_str and model_str not in valid_models:
+        result.add_warning(f"{file_path.name}: modelが不正: {model_str}（sonnet/opus/haiku）")
+
     # user-invocableの確認（boolean型）
     user_invocable = frontmatter.get("user-invocable")
     if user_invocable is not None and not isinstance(user_invocable, bool):
