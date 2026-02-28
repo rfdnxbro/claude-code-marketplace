@@ -12,6 +12,7 @@ Markdown + YAML Frontmatter形式で記述します。
 
 - `plugins/*/agents/**/*.md` - プラグイン内のエージェント
 - `.claude/agents/**/*.md` - プロジェクト固有のエージェント
+- `~/.claude/agents/**/*.md` - ユーザー固有のエージェント（全プロジェクトで利用可能）
 
 **注意（v2.1.39以降）**:
 
@@ -42,11 +43,13 @@ skills: skill-name
 | `description` | Yes | 目的と使用タイミングを説明 |
 | `tools` | No | アクセス可能なツール（カンマ/YAML形式）。省略時は全ツール継承 |
 | `disallowedTools` | No | 使用禁止ツール（カンマ/YAML形式） |
-| `model` | No | `sonnet`, `opus`, `haiku`, `inherit`。省略時は`sonnet` |
-| `permissionMode` | No | `default`, `acceptEdits`, `bypassPermissions`, `plan`, `ignore` |
+| `model` | No | `sonnet`, `opus`, `haiku`, `inherit`。省略時は`inherit`（親スレッドのモデルを継承） |
+| `permissionMode` | No | `default`, `acceptEdits`, `bypassPermissions`, `plan`, `dontAsk` |
 | `skills` | No | 自動ロードするスキル名（カンマ/YAML形式）。プラグインスキルは完全修飾名（`plugin-name:skill-name`）で指定 |
 | `hooks` | No | フック定義（[hooks.md](hooks.md)参照） |
 | `memory` | No | 永続的メモリのスコープ：`user`, `project`, `local`（v2.1.33以降） |
+| `maxTurns` | No | エージェントの最大ターン数。省略時は制限なし |
+| `mcpServers` | No | エージェントが利用可能なMCPサーバーを制限（カンマ/YAML形式） |
 | `isolation` | No | 実行分離モード：`worktree`（v2.1.50以降） |
 | `background` | No | バックグラウンドタスクとして常に実行：`true`/`false`（v2.1.49以降） |
 
@@ -171,7 +174,7 @@ memory: project
 |---------|------|----------|--------|
 | `user` | ユーザー全体で共有 | すべてのプロジェクト | ユーザー設定、学習した好み |
 | `project` | プロジェクト内で共有 | 現在のプロジェクト | プロジェクト固有の知識、パターン |
-| `local` | セッション固有 | 現在のセッション | 一時的な作業メモ、状態管理 |
+| `local` | プロジェクト内ローカル | `.claude/agent-memory-local/<name>/`に永続保存（gitignore推奨） | プロジェクト固有だがgit管理しない個人メモ |
 
 ### 使用例
 
@@ -206,7 +209,7 @@ memory: user
 
 - **userスコープ**: 個人的な設定や好みの保存に使用
 - **projectスコープ**: プロジェクト固有のパターンや決定事項の記録に使用
-- **localスコープ**: セッション内の一時的な状態管理に使用
+- **localスコープ**: プロジェクト固有だがgit管理しない個人メモの保存に使用
 - メモリには必要最小限の情報のみを保存（パフォーマンスへの影響を考慮）
 
 ## skills の完全修飾名（v2.1.47以降）
