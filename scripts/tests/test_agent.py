@@ -483,3 +483,30 @@ class TestValidateAgent:
         """).strip()
         result = validate_agent(Path("agent.md"), content)
         assert not result.has_errors()
+
+    def test_valid_permission_mode_dont_ask(self):
+        """permissionMode: dontAskが有効であることを確認"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            permissionMode: dontAsk
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()
+
+    def test_invalid_permission_mode_ignore(self):
+        """permissionMode: ignoreは廃止されエラーになることを確認"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            permissionMode: ignore
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert result.has_errors()
+        assert any("permissionMode" in e for e in result.errors)

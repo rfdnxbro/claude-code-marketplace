@@ -50,10 +50,12 @@ class TestValidateHooksJson:
         valid_events = [
             "PreToolUse",
             "PostToolUse",
+            "PostToolUseFailure",
             "PermissionRequest",
             "UserPromptSubmit",
             "Notification",
             "Stop",
+            "SubagentStart",
             "SubagentStop",
             "PreCompact",
             "SessionStart",
@@ -266,3 +268,125 @@ class TestValidateHooksJson:
         )
         result = validate_hooks_json(Path("hooks.json"), content)
         assert not result.has_errors()
+
+    def test_valid_post_tool_use_failure_hook(self):
+        """PostToolUseFailureフックが有効であることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PostToolUseFailure": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "echo tool failed",
+                                    "timeout": 10,
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_valid_subagent_start_hook(self):
+        """SubagentStartフックが有効であることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "SubagentStart": [
+                        {
+                            "matcher": "code-reviewer",
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "echo subagent starting",
+                                    "timeout": 10,
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_config_change_missing_matcher_warning(self):
+        """ConfigChangeでmatcher未設定時に警告が出ることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "ConfigChange": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "echo config changed",
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+        assert any("matcher" in w for w in result.warnings)
+
+    def test_valid_http_type(self):
+        """httpタイプのフックが有効であることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PreToolUse": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [
+                                {
+                                    "type": "http",
+                                    "url": "https://api.example.com/webhook",
+                                    "timeout": 30,
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_missing_url_field(self):
+        """httpタイプでurlフィールドが無い場合のテスト"""
+        content = json.dumps(
+            {"hooks": {"PreToolUse": [{"matcher": "Bash", "hooks": [{"type": "http"}]}]}}
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("url" in e for e in result.errors)
+
+    def test_subagent_stop_missing_matcher_warning(self):
+        """SubagentStopでmatcher未設定時に警告が出ることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "SubagentStop": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "echo subagent stopped",
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+        assert any("matcher" in w for w in result.warnings)

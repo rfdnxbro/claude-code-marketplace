@@ -89,7 +89,9 @@ JSON形式で記述します。配置場所はプラグインルートの `.mcp.
 echo '{"Authorization": "Bearer '$(get-token)'"}'
 ```
 
-### SSE（Server-Sent Events）
+### SSE（Server-Sent Events）【非推奨】
+
+> **注意**: SSEトランスポートは非推奨（deprecated）です。新規実装ではHTTPトランスポートの使用を推奨します。
 
 | フィールド | 必須 | 説明 |
 |-----------|:---:|------|
@@ -120,6 +122,14 @@ MCPリソースはプロンプトで参照可能：
 ```
 
 例: `@github:issue://123`
+
+## プロンプト参照
+
+MCPサーバーが提供するプロンプトはスラッシュコマンドとして使用可能:
+
+```text
+/mcp__servername__promptname
+```
 
 ## 出力制限
 
@@ -209,7 +219,23 @@ claude mcp add --from-claude-ai <connector-name>
 ### 注意事項
 
 - claude.ai MCP コネクターを使用するには、claude.ai アカウントへのログインが必要です
+- `ENABLE_CLAUDEAI_MCP_SERVERS=false`環境変数を設定することで、claude.ai MCPサーバーの利用をオプトアウトできます（v2.1.63以降）
 - 詳細な設定オプションは公式ドキュメントを参照してください（TODO: 要確認）
+
+## ツール検索（Tool Search）
+
+MCPサーバーのツール数が多い場合、ツール説明がコンテキストウィンドウを圧迫します。ツール検索機能を使用すると、必要なときだけツール説明をロードできます。
+
+### 設定
+
+`ENABLE_TOOL_SEARCH`環境変数で制御:
+
+| 値 | 説明 |
+|---|------|
+| `auto`（デフォルト） | ツール説明がコンテキストの10%を超える場合に自動有効化 |
+| `auto:N` | ツール説明がコンテキストのN%を超える場合に自動有効化 |
+| `true` | 常に有効 |
+| `false` | 無効 |
 
 ## セキュリティ注意事項
 

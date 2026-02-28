@@ -66,7 +66,7 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
     # permissionModeの値チェック
     permission_mode = frontmatter.get("permissionMode", "")
     permission_mode_str = str(permission_mode) if permission_mode else ""
-    valid_modes = ["default", "acceptEdits", "bypassPermissions", "plan", "ignore", ""]
+    valid_modes = ["default", "acceptEdits", "bypassPermissions", "plan", "dontAsk", ""]
     if permission_mode_str and permission_mode_str not in valid_modes:
         result.add_error(f"{file_path.name}: permissionModeの値が不正です: {permission_mode_str}")
 

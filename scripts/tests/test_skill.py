@@ -296,3 +296,58 @@ description: 説明
         result = validate_skill(Path("SKILL.md"), content)
         assert not result.has_errors()
         assert any("Bash(*)" in w for w in result.warnings)
+
+    def test_valid_model_sonnet(self):
+        """model: sonnetが有効であることを確認"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            model: sonnet
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+        assert not any("model" in w for w in result.warnings)
+
+    def test_valid_model_opus(self):
+        """model: opusが有効であることを確認"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            model: opus
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+        assert not any("model" in w for w in result.warnings)
+
+    def test_valid_model_haiku(self):
+        """model: haikuが有効であることを確認"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            model: haiku
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+        assert not any("model" in w for w in result.warnings)
+
+    def test_invalid_model(self):
+        """無効なmodel値で警告が出ることを確認"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            model: gpt-4
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert any("model" in w for w in result.warnings)

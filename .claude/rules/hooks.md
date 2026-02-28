@@ -58,22 +58,32 @@ hooks:
 |---------|------|:---:|
 | `PreToolUse` | ツール呼び出し前 | ✓ |
 | `PostToolUse` | ツール呼び出し成功後 | ✓ |
+| `PostToolUseFailure` | ツール呼び出し失敗後 | ✓ |
 | `PermissionRequest` | 権限ダイアログ表示時 | ✓ |
 | `UserPromptSubmit` | ユーザープロンプト送信時 | × |
 | `Notification` | 通知発行時 | ✓ |
 | `Stop` | Claude終了時 | × |
-| `SubagentStop` | サブエージェント終了時 | × |
+| `SubagentStart` | サブエージェント起動時 | ✓ |
+| `SubagentStop` | サブエージェント終了時 | ✓ |
 | `PreCompact` | コンパクト前 | ✓ |
 | `SessionStart` | セッション開始時 | ✓ |
 | `SessionEnd` | セッション終了時 | × |
 | `Setup` | セットアップ・メンテナンス時 | × |
 | `TeammateIdle` | チームメイトエージェントがアイドル状態時 | × |
 | `TaskCompleted` | タスク完了時 | × |
-| `ConfigChange` | セッション中に設定ファイルが変更された時 | × |
+| `ConfigChange` | セッション中に設定ファイルが変更された時 | ✓ |
 | `WorktreeCreate` | エージェントworktree分離でworktreeが作成された時 | × |
 | `WorktreeRemove` | エージェントworktree分離でworktreeが削除された時 | × |
 
 ## フックタイプ
+
+### 共通オプション
+
+全フックタイプで以下のオプションが使用可能:
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `statusMessage` | string | フック実行中にスピナーに表示するカスタムメッセージ |
 
 ### command（Bashコマンド）
 
@@ -89,6 +99,8 @@ Bashコマンドを実行:
 
 `timeout`は秒単位で指定。省略時のデフォルトは600秒（10分）。
 
+`async`（オプション）: `true`を指定するとフックを非同期で実行し、結果を待たずにツール実行を続行します。
+
 ### prompt（LLM評価）
 
 LLMを使用してプロンプトを評価:
@@ -100,6 +112,8 @@ LLMを使用してプロンプトを評価:
   "timeout": 30
 }
 ```
+
+`timeout`は秒単位で指定。省略時のデフォルトは30秒。
 
 **注**: プラグインからは`prompt`と`agent`タイプもサポートされます（v2.1.0以降）。
 
@@ -114,6 +128,8 @@ LLMを使用してプロンプトを評価:
   "timeout": 120
 }
 ```
+
+`timeout`は秒単位で指定。省略時のデフォルトは60秒。
 
 ### http（HTTPリクエスト）【v2.1.51以降】
 
@@ -367,6 +383,11 @@ EOF
 
 ```json
 {
+  "session_id": "セッションID",
+  "transcript_path": "/path/to/transcript.json",
+  "cwd": "/current/working/directory",
+  "permission_mode": "default",
+  "hook_event_name": "PreToolUse",
   "tool_name": "Edit",
   "tool_input": { "file_path": "/path/to/file", "old_string": "...", "new_string": "..." },
   "tool_use_id": "toolu_abc123"
@@ -375,6 +396,11 @@ EOF
 
 | フィールド | 説明 |
 |-----------|------|
+| `session_id` | セッションID |
+| `transcript_path` | トランスクリプトファイルのパス |
+| `cwd` | 現在の作業ディレクトリ |
+| `permission_mode` | 現在のパーミッションモード（`default`, `plan`, `acceptEdits`, `dontAsk`, `bypassPermissions`） |
+| `hook_event_name` | フックイベント名 |
 | `tool_name` | 実行されるツール名 |
 | `tool_input` | ツールへの入力パラメータ |
 | `tool_use_id` | ツール呼び出しの一意識別子（トラッキング用） |
@@ -435,6 +461,10 @@ fi
   }
 }
 ```
+
+**`agent_type`入力**: `--agent`フラグでセッションを開始した場合、SessionStartフックのJSON入力に`agent_type`フィールドが含まれます。
+
+**`CLAUDE_ENV_FILE`**: SessionStartフックでは`CLAUDE_ENV_FILE`環境変数にファイルパスが設定されます。このファイルに`export KEY=VALUE`形式で環境変数を書き込むと、セッション全体で利用可能になります。
 
 **ユースケース:**
 
