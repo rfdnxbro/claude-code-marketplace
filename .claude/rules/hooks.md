@@ -135,7 +135,7 @@ LLMを使用してプロンプトを評価:
 
 <!-- validator-disable dangerous-operation -->
 
-HTTPエンドポイントにリクエストを送信するフックタイプ（v2.1.51以降）:
+HTTPエンドポイントにJSONをPOSTし、サーバーからのJSONレスポンスを受信・処理するフックタイプ（v2.1.51以降、JSONレスポンス処理はv2.1.63以降）:
 
 ```json
 {
@@ -181,6 +181,39 @@ HTTPエンドポイントにリクエストを送信するフックタイプ（v
 ```
 
 `allowedEnvVars` に含まれていない環境変数は展開されず、リテラル文字列として扱われます。
+
+#### HTTPフックのJSONレスポンス処理
+
+HTTPフックはサーバーからのJSONレスポンスを受信・処理できます。レスポンスのJSONスキーマは `command` フックの stdout JSON と同様です（[JSON出力スキーマ](#json出力スキーマ)を参照）:
+
+```json
+{
+  "continue": true,
+  "stopReason": "停止メッセージ",
+  "systemMessage": "警告メッセージ",
+  "hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "allow|deny|ask",
+    "updatedInput": { "field": "new_value" }
+  }
+}
+```
+
+**サーバー側の実装例（Node.js）:**
+
+```javascript
+// Expressサーバーの例
+app.post('/webhook', (req, res) => {
+  const hookData = req.body;
+  // フックデータを処理...
+  res.json({
+    continue: true,
+    systemMessage: "監査ログを記録しました"
+  });
+});
+```
+
+HTTPフックのレスポンスでJSONを返さない場合（200以外のステータスコードや空のボディ）、フックは警告として扱われ処理が継続されます。
 
 #### HTTPフックの制限事項（v2.1.51以降）
 
