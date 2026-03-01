@@ -131,11 +131,11 @@ LLMを使用してプロンプトを評価:
 
 `timeout`は秒単位で指定。省略時のデフォルトは60秒。
 
-### http（HTTPリクエスト）【v2.1.51以降】
+### http（HTTPリクエスト）【v2.1.63以降】
 
 <!-- validator-disable dangerous-operation -->
 
-HTTPエンドポイントにリクエストを送信するフックタイプ（v2.1.51以降）:
+HTTPエンドポイントにJSONをPOSTし、サーバーからのJSONレスポンスを受信・処理するフックタイプ（v2.1.63以降）:
 
 ```json
 {
@@ -151,7 +151,7 @@ HTTPエンドポイントにリクエストを送信するフックタイプ（v
 }
 ```
 
-> **セキュリティ変更（v2.1.51・破壊的変更）**: ヘッダー値での環境変数展開（`${VAR}` 形式）には、`allowedEnvVars` フィールドへの明示的なホワイトリスト登録が必須となりました。これはHTTPフックが任意の環境変数をヘッダーに展開できたセキュリティ問題への対応です。
+> **セキュリティ変更（v2.1.63・破壊的変更）**: ヘッダー値での環境変数展開（`${VAR}` 形式）には、`allowedEnvVars` フィールドへの明示的なホワイトリスト登録が必須となりました。これはHTTPフックが任意の環境変数をヘッダーに展開できたセキュリティ問題への対応です。
 
 #### フィールド説明
 
@@ -182,7 +182,40 @@ HTTPエンドポイントにリクエストを送信するフックタイプ（v
 
 `allowedEnvVars` に含まれていない環境変数は展開されず、リテラル文字列として扱われます。
 
-#### HTTPフックの制限事項（v2.1.51以降）
+#### HTTPフックのJSONレスポンス処理
+
+HTTPフックはサーバーからのJSONレスポンスを受信・処理できます。レスポンスのJSONスキーマは `command` フックの stdout JSON と同様です（[JSON出力スキーマ](#json出力スキーマ)を参照）:
+
+```json
+{
+  "continue": true,
+  "stopReason": "停止メッセージ",
+  "systemMessage": "警告メッセージ",
+  "hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "allow|deny|ask",
+    "updatedInput": { "field": "new_value" }
+  }
+}
+```
+
+**サーバー側の実装例（Node.js）:**
+
+```javascript
+// Expressサーバーの例
+app.post('/webhook', (req, res) => {
+  const hookData = req.body;
+  // フックデータを処理...
+  res.json({
+    continue: true,
+    systemMessage: "監査ログを記録しました"
+  });
+});
+```
+
+HTTPフックのレスポンスでJSONを返さない場合（200以外のステータスコードや空のボディ）、フックは警告として扱われ処理が継続されます。
+
+#### HTTPフックの制限事項（v2.1.63以降）
 
 - **`SessionStart` および `Setup` イベントでは使用不可**: HTTPフックはこれらのイベントに対応していません
 - **サンドボックスモード時のプロキシ経由ルーティング**: サンドボックスモードが有効な場合、HTTPフックはサンドボックスネットワークプロキシ経由でルーティングされ、ドメイン許可リストが適用されます
