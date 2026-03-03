@@ -3,11 +3,11 @@
 [![テスト](https://github.com/rfdnxbro/claude-code-marketplace/actions/workflows/test-scripts.yml/badge.svg)](https://github.com/rfdnxbro/claude-code-marketplace/actions/workflows/test-scripts.yml)
 ![カバレッジ](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/rfdnxbro/584b9ff17fd95a2c4aa38dcf30c5a391/raw/coverage.json)
 
-Claude Codeの機能を拡張するプラグイン（スラッシュコマンド、MCPサーバー、フック、サブエージェント）を共有・発見できるマーケットプレイスです。
+Claude Codeの機能を拡張するプラグイン（スラッシュコマンド、MCPサーバー、フック、サブエージェント）を管理・配布するための個人プロジェクトです。
 
 ## 概要
 
-このリポジトリは、Claude Codeユーザーが作成したカスタムプラグインを集約し、コミュニティで共有するためのプラットフォームです。
+このリポジトリは、Claude Code向けのカスタムプラグインを開発・管理するためのプラットフォームです。
 
 ### 対応プラグインタイプ
 
@@ -19,12 +19,14 @@ Claude Codeの機能を拡張するプラグイン（スラッシュコマンド
 | **フック** | Claude Codeのイベントに応じて実行されるスクリプト |
 | **MCPサーバー** | Model Context Protocolを使用した外部ツール連携 |
 | **LSPサーバー** | Language Server Protocolを使用したコード補完・診断 |
+| **出力スタイル** | Claudeの応答フォーマットをカスタマイズするスタイル定義 |
 
 ## 公開プラグイン
 
 | プラグイン | 説明 | 状態 |
 |-----------|------|------|
-| [ai-dlc](plugins/ai-dlc/) | AI駆動開発ライフサイクル（AI-DLC）のスラッシュコマンド、サブエージェント、スキルを提供 | 🚧 設計中 |
+| [ai-dlc](plugins/ai-dlc/) | AI駆動開発ライフサイクル（AI-DLC）のスラッシュコマンド、サブエージェント、スキルを提供 | 🔧 開発中 |
+| [bbl](plugins/bbl/) | ビジネス基礎知識学習教材の記事作成を支援 | 🔧 開発中 |
 
 ## ディレクトリ構成
 
@@ -36,9 +38,11 @@ claude-code-marketplace/
 │   │   └── create-plugin/
 │   │       └── SKILL.md
 │   └── settings.json       # プラグイン検証hookの設定
+├── .claude-plugin/
+│   └── marketplace.json    # マーケットプレイス設定（プラグイン一覧）
 ├── .github/
 │   └── workflows/          # CI/CDワークフロー
-├── plugins/                # 公開プラグイン（コントリビューション先）
+├── plugins/                # プラグイン
 │   └── [plugin-name]/
 │       ├── .claude-plugin/
 │       │   └── plugin.json # プラグインマニフェスト（必須）
@@ -51,8 +55,9 @@ claude-code-marketplace/
 │       │       └── SKILL.md
 │       ├── hooks/          # フック
 │       │   └── hooks.json
-│       ├── .mcp.json       # MCPサーバー設定
-│       ├── .lsp.json       # LSPサーバー設定
+│       ├── settings.json   # デフォルト設定
+│       ├── docs/           # ドキュメント（オプション）
+│       ├── scripts/        # スクリプト（オプション）
 │       └── README.md
 ├── scripts/                # プラグイン検証スクリプト
 │   ├── validators/         # 検証ロジック
@@ -98,27 +103,9 @@ claude --plugin-dir ./plugins/my-plugin
 | フック (`hooks.json`) | `.claude/settings.json` に統合 |
 | MCP (`.mcp.json`) | プロジェクトルートの `.mcp.json` に統合 |
 | LSP (`.lsp.json`) | プロジェクトルートの `.lsp.json` に統合 |
+| 出力スタイル (`.md`) | `.claude/output-styles/` または `~/.claude/output-styles/` |
 
-## コントリビューション
-
-プラグインの追加・改善は大歓迎です！
-
-### プラグインの追加方法
-
-1. このリポジトリをフォーク
-2. `plugins/` に新しいプラグインディレクトリを作成
-3. `.claude-plugin/plugin.json` を作成（必須）
-4. 必要なコンポーネント（commands/, agents/, skills/, hooks/, .mcp.json）を追加
-5. README.mdを含めてドキュメントを整備
-6. プルリクエストを作成
-
-### プラグイン作成ガイドライン
-
-- `.claude-plugin/plugin.json` に `name` を必ず記載（kebab-case）
-- 各プラグインには `README.md` を含める
-- スラッシュコマンドとエージェントには `description` を必ず記載
-- 使用方法、設定例、依存関係を明記する
-- ライセンスを明記する（デフォルト: MIT）
+## 開発
 
 ### プラグインの検証
 
@@ -164,6 +151,10 @@ PRおよびpush時に以下のワークフローが実行されます:
 | スクリプトテスト | `scripts/**`変更時 | pytest実行、カバレッジ測定 |
 | Lint | 各種ファイル変更時 | ruff、markdownlint、yamllint |
 | セキュリティスキャン | PR/push時 | gitleaksで機密情報検出 |
+| Claude Code Review | PR作成/更新時 | Claude Codeによるコードレビュー |
+| Claude Code | Issueコメント時 | Claude Codeによるタスク実行 |
+| 自動実装 | Issue labeling時 | Claude Codeによるドキュメント・プラグイン更新 |
+| プラグイン改善チェック | PR close時 | プラグイン改善提案の検出 |
 | CHANGELOG監視 | 日次 | Claude Code公式の変更検出 |
 
 #### プラグイン検証の対象
@@ -236,4 +227,4 @@ MIT License
 
 ---
 
-**注意**: このリポジトリはコミュニティ主導のプロジェクトであり、Anthropic社の公式プロジェクトではありません。
+**注意**: このリポジトリは個人プロジェクトであり、Anthropic社の公式プロジェクトではありません。
