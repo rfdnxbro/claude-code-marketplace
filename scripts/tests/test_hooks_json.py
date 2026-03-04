@@ -66,6 +66,7 @@ class TestValidateHooksJson:
             "ConfigChange",
             "WorktreeCreate",
             "WorktreeRemove",
+            "InstructionsLoaded",
         ]
         for event in valid_events:
             content = json.dumps(
@@ -368,6 +369,28 @@ class TestValidateHooksJson:
         result = validate_hooks_json(Path("hooks.json"), content)
         assert result.has_errors()
         assert any("url" in e for e in result.errors)
+
+    def test_valid_instructions_loaded_hook(self):
+        """InstructionsLoadedフックが有効であることをテスト（v2.1.64以降）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "InstructionsLoaded": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on-instructions.sh",
+                                    "timeout": 10,
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
 
     def test_subagent_stop_missing_matcher_warning(self):
         """SubagentStopでmatcher未設定時に警告が出ることをテスト"""

@@ -39,6 +39,7 @@
 | `${CLAUDE_PLUGIN_ROOT}` | プラグインルートへの絶対パス | hooks, mcp-servers, lsp-servers, allowed-tools |
 | `${CLAUDE_PROJECT_DIR}` | プロジェクトルートへの絶対パス | hooks |
 | `${CLAUDE_SESSION_ID}` | 現在のセッションID | skills, slash-commands |
+| `${CLAUDE_SKILL_DIR}` | スキル自身のディレクトリへの絶対パス（v2.1.64以降） | skills |
 | `$ARGUMENTS` | フック入力JSON / コマンド引数（全体） | hooks, slash-commands |
 | `$ARGUMENTS[0]`, `$ARGUMENTS[1]`... | インデックス指定引数（ブラケット記法） | slash-commands |
 | `$0` | コマンド名自体（v2.1.19以降） | slash-commands |
