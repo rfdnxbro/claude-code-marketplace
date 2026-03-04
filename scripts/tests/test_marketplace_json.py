@@ -437,6 +437,42 @@ class TestValidateMarketplaceJson:
         result = validate_marketplace_json(Path("marketplace.json"), content)
         assert not result.has_errors()
 
+    def test_plugin_source_missing_source_field(self):
+        """sourceオブジェクトにsourceフィールドがない（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {"url": "https://example.com"},
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.source" in e and "必須" in e for e in result.errors)
+
+    def test_plugin_source_empty_source_field(self):
+        """sourceオブジェクトのsourceフィールドが空文字列（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {"source": "", "url": "https://example.com"},
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.source" in e and "必須" in e for e in result.errors)
+
     def test_plugin_source_invalid_source_type(self):
         """無効なソースタイプ（エラー）"""
         content = json.dumps(
