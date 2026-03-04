@@ -394,3 +394,63 @@ class TestValidateMarketplaceJson:
         assert any(
             "plugins[0].source" in e and "文字列またはオブジェクト" in e for e in result.errors
         )
+
+    def test_plugin_source_git_subdir(self):
+        """git-subdirソースタイプが有効であることをテスト（v2.1.64以降）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "git-subdir",
+                            "url": "https://github.com/owner/monorepo.git",
+                            "path": "packages/my-plugin",
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_plugin_source_git_subdir_with_branch(self):
+        """git-subdirソースタイプでbranch指定が有効であることをテスト"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "git-subdir",
+                            "url": "https://github.com/owner/monorepo.git#develop",
+                            "path": "packages/my-plugin",
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_plugin_source_invalid_source_type(self):
+        """無効なソースタイプ（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {"source": "invalid-type", "url": "https://example.com"},
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("無効な値" in e for e in result.errors)

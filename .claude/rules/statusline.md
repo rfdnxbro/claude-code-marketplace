@@ -74,6 +74,12 @@ Claude Codeがカスタムステータスラインの設定を支援します。
     "project_dir": "/original/project/directory",
     "added_dirs": ["/additional/directory1", "/additional/directory2"]
   },
+  "worktree": {
+    "name": "my-worktree",
+    "path": "/path/to/worktree",
+    "branch": "feature/my-feature",
+    "originalRepoDir": "/path/to/original/repo"
+  },
   "version": "1.0.80",
   "output_style": {
     "name": "default"
@@ -118,6 +124,17 @@ Claude Codeがカスタムステータスラインの設定を支援します。
 | `workspace.project_dir` | string | プロジェクトディレクトリ | `/home/user/project` |
 | `workspace.added_dirs` | array | `/add-dir` で追加したディレクトリ一覧（v2.1.47以降） | `["/extra/dir"]` |
 | `cwd` | string | 現在のワーキングディレクトリ | `/home/user/project` |
+
+#### Worktree情報（v2.1.64以降）
+
+`--worktree` セッションで実行中の場合のみ存在するフィールドです。それ以外の場合は `worktree` フィールド自体が存在しません。
+
+| フィールド | 型 | 説明 | 例 |
+|-----------|---|------|-----|
+| `worktree.name` | string | Worktree名 | `my-worktree` |
+| `worktree.path` | string | Worktreeのパス | `/path/to/worktree` |
+| `worktree.branch` | string | Worktreeのブランチ名 | `feature/my-feature` |
+| `worktree.originalRepoDir` | string | 元のリポジトリディレクトリ | `/path/to/original/repo` |
 
 #### セッション情報
 

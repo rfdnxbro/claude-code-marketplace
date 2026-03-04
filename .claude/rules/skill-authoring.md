@@ -72,6 +72,7 @@ argument-hint: "topic: foo | bar"
 - 何をするか AND いつ使うかを含める
 - 発見性のため具体的なキーワードを含める
 - **プラグイン名は自動表示されます**（v2.1.33以降）: スキルの説明と `/skills` メニューにプラグイン名が自動的に追加表示されるため、description内にプラグイン名を含める必要はありません
+- **注意（v2.1.64バグ修正）**: `description` フィールドがないプロジェクトスキルは利用可能なスキルリストに表示されない問題が修正されました。ただし、発見性向上のため `description` は常に記載することを推奨します。
 
 ### オプションフィールド
 
@@ -246,6 +247,7 @@ allowed-tools:
 |------|------|--------|
 | `${CLAUDE_SESSION_ID}` | 現在のセッションID | セッション固有のログファイル名生成 |
 | `${CLAUDE_PLUGIN_ROOT}` | プラグインルートへの絶対パス | スクリプト実行パスの指定 |
+| `${CLAUDE_SKILL_DIR}` | スキル自身のディレクトリへの絶対パス（v2.1.64以降） | スキルに隣接するリソースファイルの参照 |
 
 **使用例:**
 
@@ -262,6 +264,25 @@ allowed-tools:
 ログファイルパス: `/tmp/claude-session-${CLAUDE_SESSION_ID}.log`
 
 すべての出力をログファイルに保存してください。
+```
+
+`${CLAUDE_SKILL_DIR}` を使用すると、SKILL.mdと同じディレクトリにあるファイルを参照できます（v2.1.64以降）:
+
+```yaml
+---
+name: data-processor
+description: データを処理する
+allowed-tools:
+  - Bash(python3:*)
+---
+
+設定ファイル: `${CLAUDE_SKILL_DIR}/config.json`
+スクリプト: `${CLAUDE_SKILL_DIR}/scripts/process.py`
+
+以下のコマンドでデータを処理してください:
+\`\`\`bash
+python3 ${CLAUDE_SKILL_DIR}/scripts/process.py
+\`\`\`
 ```
 
 ## 動的コンテキスト注入

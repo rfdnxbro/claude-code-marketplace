@@ -74,6 +74,7 @@ hooks:
 | `ConfigChange` | セッション中に設定ファイルが変更された時 | ✓ |
 | `WorktreeCreate` | エージェントworktree分離でworktreeが作成された時 | × |
 | `WorktreeRemove` | エージェントworktree分離でworktreeが削除された時 | × |
+| `InstructionsLoaded` | CLAUDE.mdまたは`.claude/rules/*.md`がコンテキストに読み込まれた時（v2.1.64以降） | × |
 
 ## フックタイプ
 
@@ -437,6 +438,8 @@ EOF
 | `tool_name` | 実行されるツール名 |
 | `tool_input` | ツールへの入力パラメータ |
 | `tool_use_id` | ツール呼び出しの一意識別子（トラッキング用） |
+| `agent_id` | サブエージェントから実行された場合のエージェントID（v2.1.64以降） |
+| `agent_type` | `--agent`フラグで起動された場合のエージェントタイプ（v2.1.64以降） |
 
 ### Stop / SubagentStop イベントの入力（v2.1.47以降）
 
@@ -589,6 +592,15 @@ fi
 }
 ```
 
+**停止サポート（v2.1.64以降）:**
+
+`TeammateIdle` フックで `{"continue": false, "stopReason": "..."}` を返すことで、チームメイトエージェントを停止できます（`Stop` フックと同様の動作）:
+
+```bash
+#!/bin/bash
+echo '{"continue": false, "stopReason": "タスクは完了しました。これ以上の処理は不要です。"}'
+```
+
 **ユースケース:**
 
 - アイドル状態のエージェントへのタスク割り当て
@@ -618,6 +630,15 @@ fi
     ]
   }
 }
+```
+
+**停止サポート（v2.1.64以降）:**
+
+`TaskCompleted` フックで `{"continue": false, "stopReason": "..."}` を返すことで、チームメイトエージェントを停止できます（`Stop` フックと同様の動作）:
+
+```bash
+#!/bin/bash
+echo '{"continue": false, "stopReason": "タスクが完了しました。後続処理は不要です。"}'
 ```
 
 **ユースケース:**
@@ -744,6 +765,36 @@ exit 2
 - 一時ファイルの削除
 - worktree削除通知・ログ記録
 - リソースの解放
+
+### InstructionsLoaded
+
+CLAUDE.mdまたは`.claude/rules/*.md`ファイルがコンテキストに読み込まれたときに実行されるフック（v2.1.64以降）。
+
+**使用例:**
+
+```json
+{
+  "hooks": {
+    "InstructionsLoaded": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on-instructions-loaded.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**ユースケース:**
+
+- 指示ファイルの読み込みをログに記録
+- 読み込まれた指示の検証
+- 追加コンテキストのセットアップ
 
 ## パーミッション優先順位（v2.1.27以降）
 
