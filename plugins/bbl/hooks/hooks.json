@@ -8,7 +8,8 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/context-check.sh",
-            "timeout": 5
+            "timeout": 5,
+            "statusMessage": "記事コンテキストを確認中..."
           }
         ]
       }
@@ -19,7 +20,8 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/setup.sh",
-            "timeout": 30
+            "timeout": 30,
+            "statusMessage": "BBLプラグインをセットアップ中..."
           }
         ]
       }
@@ -30,7 +32,8 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-end.sh",
-            "timeout": 10
+            "timeout": 10,
+            "statusMessage": "セッションログを記録中..."
           }
         ]
       }

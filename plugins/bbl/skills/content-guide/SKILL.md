@@ -2,6 +2,8 @@
 name: content-guide
 description: ビジネス基礎知識学習教材のコンテンツガイドライン。4カテゴリ8サブカテゴリ構成、7セクション記事テンプレート、Mermaid図活用、品質チェックリストを提供。記事作成やレビュー時に参照。
 user-invocable: true
+allowed-tools:
+  - Read
 ---
 
 # ビジネス基礎知識 コンテンツガイド
@@ -160,3 +162,9 @@ docs/<カテゴリ>/<サブカテゴリ>/<概念名>.md
 - `docs/ヒト/組織行動・リーダーシップ/心理的安全性.md`
 - `docs/カネ/ファイナンス/NPV.md`
 - `docs/モノ/マーケティング/STP分析.md`
+
+## テンプレートファイル
+
+記事作成時は以下のテンプレートを参照:
+
+- 記事テンプレート: `${CLAUDE_SKILL_DIR}/templates/article-template.md`
