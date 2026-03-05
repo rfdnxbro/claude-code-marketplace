@@ -21,52 +21,37 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Issue作成者の権限チェック
-        id: author-check
+      - name: ラベル付与者の権限チェック
         run: |
-          ISSUE_AUTHOR="${{ github.event.issue.user.login }}"
-          LABEL_SENDER="${{ github.event.sender.login }}"
-          AUTHOR_ASSOCIATION="${{ github.event.issue.author_association }}"
+          SENDER="${{ github.event.sender.login }}"
+          SENDER_ASSOC="${{ github.event.sender.type }}"
 
-          echo "Issue作成者: ${ISSUE_AUTHOR}"
-          echo "ラベル付与者: ${LABEL_SENDER}"
-          echo "作成者の関連: ${AUTHOR_ASSOCIATION}"
+          echo "ラベル付与者: ${SENDER}"
 
-          # 信頼できる作成者かチェック（OWNER, MEMBER, COLLABORATOR、またはBot）
-          TRUSTED_ASSOCIATIONS="OWNER MEMBER COLLABORATOR"
-          # GitHub Actionsボット（自動生成Issue）も許可
+          # OWNERまたは信頼できるボットのみ許可
           TRUSTED_BOTS="github-actions[bot] dependabot[bot] claude[bot]"
 
-          IS_TRUSTED=false
-
-          # 関連度による判定
-          for ASSOC in ${TRUSTED_ASSOCIATIONS}; do
-            if [ "${AUTHOR_ASSOCIATION}" = "${ASSOC}" ]; then
-              IS_TRUSTED=true
-              echo "✓ 信頼できる関連度: ${AUTHOR_ASSOCIATION}"
-              break
+          # ボット判定
+          for BOT in ${TRUSTED_BOTS}; do
+            if [ "${SENDER}" = "${BOT}" ]; then
+              echo "✓ 信頼できるボット: ${SENDER}"
+              exit 0
             fi
           done
 
-          # ボットによる判定
-          if [ "${IS_TRUSTED}" = "false" ]; then
-            for BOT in ${TRUSTED_BOTS}; do
-              if [ "${ISSUE_AUTHOR}" = "${BOT}" ]; then
-                IS_TRUSTED=true
-                echo "✓ 信頼できるボット: ${ISSUE_AUTHOR}"
-                break
-              fi
-            done
+          # リポジトリオーナー判定（GitHub APIで確認）
+          PERMISSION=$(gh api "repos/${{ github.repository }}/collaborators/${SENDER}/permission" --jq '.permission' 2>/dev/null || echo "none")
+          echo "権限レベル: ${PERMISSION}"
+
+          if [ "${PERMISSION}" = "admin" ]; then
+            echo "✓ リポジトリオーナー: ${SENDER}"
+            exit 0
           fi
 
-          if [ "${IS_TRUSTED}" = "false" ]; then
-            echo "::error::信頼できないIssue作成者です: ${ISSUE_AUTHOR} (${AUTHOR_ASSOCIATION})"
-            echo "::error::外部ユーザーが作成したIssueに対する自動実装はセキュリティ上の理由でブロックされました。"
-            echo "::error::手動で内容を確認した上で、信頼できるメンバーがIssueを再作成してください。"
-            exit 1
-          fi
-
-          echo "is_trusted=${IS_TRUSTED}" >> $GITHUB_OUTPUT
+          echo "::error::ラベル付与者 ${SENDER} にはオーナー権限がありません（権限: ${PERMISSION}）"
+          exit 1
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v6
