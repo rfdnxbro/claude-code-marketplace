@@ -64,33 +64,35 @@ jobs:
 
       - name: シークレット検証
         run: |
-          if [ -z "${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}" ]; then
+          if [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
             echo "::error::CLAUDE_CODE_OAUTH_TOKEN が設定されていません"
             exit 1
           fi
           echo "✓ 必要なシークレットが設定されています"
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
       - name: ラベルに基づく設定を決定
         id: config
         run: |
-          LABEL="${{ github.event.label.name }}"
-
-          if [ "$LABEL" = "claude-code-update" ]; then
+          if [ "$LABEL_NAME" = "claude-code-update" ]; then
             echo "branch_prefix=auto/claude-code-update" >> $GITHUB_OUTPUT
             echo "pr_label=documentation" >> $GITHUB_OUTPUT
             echo "target_type=docs" >> $GITHUB_OUTPUT
-          elif [ "$LABEL" = "plugin-update" ]; then
+          elif [ "$LABEL_NAME" = "plugin-update" ]; then
             echo "branch_prefix=auto/plugin-update" >> $GITHUB_OUTPUT
             echo "pr_label=plugin" >> $GITHUB_OUTPUT
             echo "target_type=plugin" >> $GITHUB_OUTPUT
           fi
 
-          echo "ラベル: $LABEL"
+          echo "ラベル: $LABEL_NAME"
+        env:
+          LABEL_NAME: ${{ github.event.label.name }}
 
       - name: 作業ブランチを作成
         id: branch
         run: |
-          BRANCH_NAME="${{ steps.config.outputs.branch_prefix }}-issue-${{ github.event.issue.number }}"
+          BRANCH_NAME="${BRANCH_PREFIX}-issue-${ISSUE_NUM}"
           echo "name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
 
           # ローカルブランチが既に存在する場合は削除
@@ -101,18 +103,22 @@ jobs:
 
           git checkout -b "${BRANCH_NAME}"
           echo "作業ブランチを作成しました: ${BRANCH_NAME}"
+        env:
+          BRANCH_PREFIX: ${{ steps.config.outputs.branch_prefix }}
+          ISSUE_NUM: ${{ github.event.issue.number }}
 
       - name: Issueの内容を取得
         id: issue
         run: |
           # Issue本文をファイルに保存
-          gh issue view ${{ github.event.issue.number }} --json title,body --jq '.body' > issue-body.md
-          gh issue view ${{ github.event.issue.number }} --json title --jq '.title' > issue-title.txt
+          gh issue view "${ISSUE_NUM}" --json title,body --jq '.body' > issue-body.md
+          gh issue view "${ISSUE_NUM}" --json title --jq '.title' > issue-title.txt
           # タイトルをoutputにも保存（後のステップで使用）
           echo "title=$(cat issue-title.txt | tr -d '\n')" >> $GITHUB_OUTPUT
-          echo "取得完了: Issue #${{ github.event.issue.number }}"
+          echo "取得完了: Issue #${ISSUE_NUM}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUM: ${{ github.event.issue.number }}
 
       - name: Claudeで実装を実行（claude-code-update）
         if: github.event.label.name == 'claude-code-update'
@@ -263,13 +269,13 @@ jobs:
           git add -A
 
           # ラベルに応じてコミットメッセージを変更
-          if [ "${{ github.event.label.name }}" = "claude-code-update" ]; then
+          if [ "$LABEL_NAME" = "claude-code-update" ]; then
             COMMIT_DESC="Claude Codeのアップデートに伴うドキュメント・バリデーター更新"
           else
             COMMIT_DESC="ルール更新に伴うプラグイン改善"
           fi
 
-          git commit -m "feat: Issue #${{ github.event.issue.number }} の自動実装
+          git commit -m "feat: Issue #${ISSUE_NUM} の自動実装
 
           ${COMMIT_DESC}
 
@@ -279,26 +285,29 @@ jobs:
 
           # デバッグ情報を出力
           echo "=== デバッグ情報 ==="
-          echo "ブランチ名: ${{ steps.branch.outputs.name }}"
+          echo "ブランチ名: ${BRANCH_NAME}"
           git remote -v
           echo "==================="
 
           # 明示的にトークンを使用してリモートURLを設定
-          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git"
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
 
           # 前回の実行でブランチが残っている場合があるためforce push
-          if ! git push -u --force origin ${{ steps.branch.outputs.name }}; then
+          if ! git push -u --force origin "${BRANCH_NAME}"; then
             echo "::error::git push に失敗しました"
             exit 1
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: ${{ steps.branch.outputs.name }}
+          LABEL_NAME: ${{ github.event.label.name }}
+          ISSUE_NUM: ${{ github.event.issue.number }}
 
       - name: ラベルが存在しない場合は作成
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
           # PRに付与するラベルが存在するか確認し、なければ作成
-          for LABEL in "${{ github.event.label.name }}" "${{ steps.config.outputs.pr_label }}"; do
+          for LABEL in "$LABEL_NAME" "$PR_LABEL"; do
             if ! gh label list --json name --jq '.[].name' | grep -q "^${LABEL}$"; then
               echo "ラベル '${LABEL}' が存在しないため作成します"
               gh label create "${LABEL}" --description "自動生成されたラベル" || true
@@ -308,15 +317,16 @@ jobs:
           done
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LABEL_NAME: ${{ github.event.label.name }}
+          PR_LABEL: ${{ steps.config.outputs.pr_label }}
 
       - name: PRを作成
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
-          ISSUE_TITLE="${{ steps.issue.outputs.title }}"
-
+          # ISSUE_TITLEはenv経由で安全に渡される
           # Issueタイトルが空の場合のフォールバック
           if [ -z "$ISSUE_TITLE" ]; then
-            PR_TITLE="feat: Issue #${{ github.event.issue.number }} の自動実装"
+            PR_TITLE="feat: Issue #${ISSUE_NUM} の自動実装"
           # [CHANGELOG vX.X.X] 形式の場合はそのまま使用
           elif [[ "$ISSUE_TITLE" =~ ^\[CHANGELOG\ v[0-9]+\.[0-9]+\.[0-9]+\] ]]; then
             PR_TITLE="$ISSUE_TITLE"
@@ -340,9 +350,7 @@ jobs:
           fi
 
           # PR本文をファイルに書き込む（シェルエスケープの問題を回避）
-          ISSUE_NUM="${{ github.event.issue.number }}"
-
-          if [ "${{ github.event.label.name }}" = "claude-code-update" ]; then
+          if [ "$LABEL_NAME" = "claude-code-update" ]; then
             {
               echo "## 概要"
               echo "Issue #${ISSUE_NUM}: ${ISSUE_TITLE}"
@@ -388,16 +396,20 @@ jobs:
           gh pr create \
             --title "$PR_TITLE" \
             --body-file /tmp/pr-body.md \
-            --label "${{ github.event.label.name }}" \
-            --label "${{ steps.config.outputs.pr_label }}"
+            --label "$LABEL_NAME" \
+            --label "$PR_LABEL"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_TITLE: ${{ steps.issue.outputs.title }}
+          ISSUE_NUM: ${{ github.event.issue.number }}
+          LABEL_NAME: ${{ github.event.label.name }}
+          PR_LABEL: ${{ steps.config.outputs.pr_label }}
 
       - name: Issueにコメントを追加（変更あり）
         if: steps.check-changes.outputs.has_changes == 'true'
         continue-on-error: true
         run: |
-          gh issue comment ${{ github.event.issue.number }} --body "🤖 **自動実装完了**
+          gh issue comment "${ISSUE_NUM}" --body "🤖 **自動実装完了**
 
           PRを作成しました。レビューをお願いします。
 
@@ -405,12 +417,13 @@ jobs:
           *このコメントはClaude Code自動更新対応ワークフローによって生成されました*"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUM: ${{ github.event.issue.number }}
 
       - name: Issueにコメントを追加（変更なし）
         if: steps.check-changes.outputs.has_changes == 'false'
         continue-on-error: true
         run: |
-          gh issue comment ${{ github.event.issue.number }} --body "🤖 **自動実装結果**
+          gh issue comment "${ISSUE_NUM}" --body "🤖 **自動実装結果**
 
           Issueの内容を分析しましたが、自動で実装可能な変更は見つかりませんでした。
           手動での対応が必要な可能性があります。
@@ -419,3 +432,4 @@ jobs:
           *このコメントはClaude Code自動更新対応ワークフローによって生成されました*"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUM: ${{ github.event.issue.number }}
