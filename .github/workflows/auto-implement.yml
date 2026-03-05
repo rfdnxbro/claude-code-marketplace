@@ -312,11 +312,12 @@ jobs:
       - name: PRを作成
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
-          ISSUE_TITLE="${{ steps.issue.outputs.title }}"
+          # ISSUE_TITLEはユーザー制御可能なため、env経由で安全に渡す
+          ISSUE_NUM="${{ github.event.issue.number }}"
 
           # Issueタイトルが空の場合のフォールバック
           if [ -z "$ISSUE_TITLE" ]; then
-            PR_TITLE="feat: Issue #${{ github.event.issue.number }} の自動実装"
+            PR_TITLE="feat: Issue #${ISSUE_NUM} の自動実装"
           # [CHANGELOG vX.X.X] 形式の場合はそのまま使用
           elif [[ "$ISSUE_TITLE" =~ ^\[CHANGELOG\ v[0-9]+\.[0-9]+\.[0-9]+\] ]]; then
             PR_TITLE="$ISSUE_TITLE"
@@ -340,8 +341,6 @@ jobs:
           fi
 
           # PR本文をファイルに書き込む（シェルエスケープの問題を回避）
-          ISSUE_NUM="${{ github.event.issue.number }}"
-
           if [ "${{ github.event.label.name }}" = "claude-code-update" ]; then
             {
               echo "## 概要"
@@ -392,6 +391,7 @@ jobs:
             --label "${{ steps.config.outputs.pr_label }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_TITLE: ${{ steps.issue.outputs.title }}
 
       - name: Issueにコメントを追加（変更あり）
         if: steps.check-changes.outputs.has_changes == 'true'
