@@ -24,24 +24,20 @@ jobs:
       - name: 変更されたプラグインファイルを取得
         id: changed-files
         run: |
-          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             # 手動実行: 全ファイルを対象
             FILES=$(find plugins -type f \( -name '*.md' -o -name '*.json' \) 2>/dev/null | tr '\n' ' ')
           else
             # PR: baseブランチとの差分
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
             FILES=$(git diff --name-only --diff-filter=d "$BASE_SHA" "$HEAD_SHA" -- 'plugins/**' \
               | grep -E '\.(md|json)$' | tr '\n' ' ')
           fi
           echo "files=$FILES" >> $GITHUB_OUTPUT
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 
       - name: プラグインを検証
         if: steps.changed-files.outputs.files != ''
         run: |
-          echo "検証対象ファイル: ${CHANGED_FILES}"
-          python scripts/validate_plugin.py ${CHANGED_FILES}
-        env:
-          CHANGED_FILES: ${{ steps.changed-files.outputs.files }}
+          echo "検証対象ファイル: ${{ steps.changed-files.outputs.files }}"
+          python scripts/validate_plugin.py ${{ steps.changed-files.outputs.files }}
