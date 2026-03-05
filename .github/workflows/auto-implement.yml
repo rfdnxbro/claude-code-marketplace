@@ -23,16 +23,13 @@ jobs:
     steps:
       - name: ラベル付与者の権限チェック
         run: |
-          SENDER="${{ github.event.sender.login }}"
-          SENDER_ASSOC="${{ github.event.sender.type }}"
-
           echo "ラベル付与者: ${SENDER}"
 
           # OWNERまたは信頼できるボットのみ許可
-          TRUSTED_BOTS="github-actions[bot] dependabot[bot] claude[bot]"
+          TRUSTED_BOTS=("github-actions[bot]" "dependabot[bot]" "claude[bot]")
 
           # ボット判定
-          for BOT in ${TRUSTED_BOTS}; do
+          for BOT in "${TRUSTED_BOTS[@]}"; do
             if [ "${SENDER}" = "${BOT}" ]; then
               echo "✓ 信頼できるボット: ${SENDER}"
               exit 0
@@ -40,7 +37,7 @@ jobs:
           done
 
           # リポジトリオーナー判定（GitHub APIで確認）
-          PERMISSION=$(gh api "repos/${{ github.repository }}/collaborators/${SENDER}/permission" --jq '.permission' 2>/dev/null || echo "none")
+          PERMISSION=$(gh api "repos/${GITHUB_REPOSITORY}/collaborators/${SENDER}/permission" --jq '.permission' 2>/dev/null || echo "none")
           echo "権限レベル: ${PERMISSION}"
 
           if [ "${PERMISSION}" = "admin" ]; then
@@ -52,6 +49,7 @@ jobs:
           exit 1
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SENDER: ${{ github.event.sender.login }}
 
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v6
