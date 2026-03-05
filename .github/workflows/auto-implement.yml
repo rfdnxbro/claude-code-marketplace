@@ -21,6 +21,36 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - name: ラベル付与者の権限チェック
+        run: |
+          echo "ラベル付与者: ${SENDER}"
+
+          # OWNERまたは信頼できるボットのみ許可
+          TRUSTED_BOTS=("github-actions[bot]" "dependabot[bot]" "claude[bot]")
+
+          # ボット判定
+          for BOT in "${TRUSTED_BOTS[@]}"; do
+            if [ "${SENDER}" = "${BOT}" ]; then
+              echo "✓ 信頼できるボット: ${SENDER}"
+              exit 0
+            fi
+          done
+
+          # リポジトリオーナー判定（GitHub APIで確認）
+          PERMISSION=$(gh api "repos/${GITHUB_REPOSITORY}/collaborators/${SENDER}/permission" --jq '.permission' 2>/dev/null || echo "none")
+          echo "権限レベル: ${PERMISSION}"
+
+          if [ "${PERMISSION}" = "admin" ]; then
+            echo "✓ リポジトリオーナー: ${SENDER}"
+            exit 0
+          fi
+
+          echo "::error::ラベル付与者 ${SENDER} にはオーナー権限がありません（権限: ${PERMISSION}）"
+          exit 1
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SENDER: ${{ github.event.sender.login }}
+
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v6
         with:
