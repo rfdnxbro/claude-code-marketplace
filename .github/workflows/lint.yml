@@ -59,7 +59,7 @@ jobs:
 
       - name: markdownlint
         run: |
-          npx markdownlint-cli --config .markdownlint.json \
+          npx markdownlint-cli@0.47.0 --config .markdownlint.json \
             README.md \
             CLAUDE.md \
             scripts/README.md \
