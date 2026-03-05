@@ -6,7 +6,7 @@ allow:
   - Glob
 ask:
   - Write
-argument-hint: [概念名]
+argument-hint: "[概念名]"
 ---
 
 # ブレインストーミング
