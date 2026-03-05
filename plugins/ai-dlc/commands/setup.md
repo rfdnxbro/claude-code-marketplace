@@ -1,12 +1,7 @@
 ---
-description: AI-DLCセッションを初期化し、ボルトを作成
+description: AI-DLCセッションを初期化してボルトを作成する。新しい開発タスクを開始する際に最初に実行するコマンド。
 allowed-tools: Bash(mkdir:*), Bash(date:*), Write, Read
-allow:
-  - Write
-  - Read
-  - "Bash(mkdir:*)"
-  - "Bash(date:*)"
-argument-hint: [bolt-name]
+argument-hint: "[bolt-name]"
 ---
 
 # AI-DLCセッション初期化
