@@ -330,6 +330,41 @@ macOS plistまたはWindows Registryで設定します:
 
 このメッセージはプラグインのデフォルト信頼警告に追記されて表示されます。組織固有のポリシー案内やサポート連絡先の追加に活用できます。
 
+## コマンドライン操作
+
+### `/plugin marketplace add` コマンド
+
+マーケットプレイスからプラグインを追加するコマンド:
+
+```bash
+# リポジトリのデフォルトブランチからインストール
+/plugin marketplace add owner/repo
+
+# @セパレータでref（branch/tag/commit）を指定（v2.1.71以降）
+/plugin marketplace add owner/repo@main
+/plugin marketplace add owner/repo@v1.2.3
+/plugin marketplace add owner/repo@abc123def456
+
+# #セパレータでrefを指定（従来形式）
+/plugin marketplace add owner/repo#main
+```
+
+> **注意**: v2.1.71以前は `#` セパレータのみサポートされていました。`@` セパレータはv2.1.71でのバグ修正により正式にサポートされました。`strictKnownMarketplaces`環境での `@` 指定は以前は診断不能なエラーを引き起こしていましたが、v2.1.71以降は正常に動作します。
+
+### `/plugin uninstall` コマンド
+
+プロジェクトスコープのプラグインをアンインストールするコマンド（v2.1.71以降の動作）:
+
+```bash
+/plugin uninstall plugin-name
+```
+
+**v2.1.71以降の動作変更:**
+
+- プロジェクトスコープのプラグインをアンインストールする際、`.claude/settings.json` ではなく `.claude/settings.local.json` に変更が書き込まれます
+- `.claude/settings.local.json` はチームメンバーと共有されないため、アンインストール操作が他のチームメンバーに影響を与えません
+- `.claude/settings.json` はチームで共有するバージョン管理対象ファイルのため、個人のアンインストール操作による変更を防ぐための仕様変更です
+
 ## 検証
 
 ```bash
