@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "agent",
+            "agent": "doc-checker",
+            "timeout": 120,
+            "statusMessage": "ドキュメント整合性チェック中..."
+          }
+        ]
+      }
+    ]
+  }
+}
