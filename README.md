@@ -20,6 +20,7 @@ Claude Codeの機能を拡張するプラグイン（スラッシュコマンド
 | **MCPサーバー** | Model Context Protocolを使用した外部ツール連携 |
 | **LSPサーバー** | Language Server Protocolを使用したコード補完・診断 |
 | **出力スタイル** | Claudeの応答フォーマットをカスタマイズするスタイル定義 |
+| **ステータスライン** | ターミナル下部の情報バーをカスタマイズするスクリプト |
 
 ## 公開プラグイン
 
@@ -27,6 +28,7 @@ Claude Codeの機能を拡張するプラグイン（スラッシュコマンド
 |-----------|------|------|
 | [ai-dlc](plugins/ai-dlc/) | AI駆動開発ライフサイクル（AI-DLC）のスラッシュコマンド、サブエージェント、スキルを提供 | 🔧 開発中 |
 | [bbl](plugins/bbl/) | ビジネス基礎知識学習教材の記事作成を支援 | 🔧 開発中 |
+| [doc-check](plugins/doc-check/) | 変更に関連するドキュメントの整合性を自動チェック | 🔧 開発中 |
 
 ## ディレクトリ構成
 
@@ -55,6 +57,9 @@ claude-code-marketplace/
 │       │       └── SKILL.md
 │       ├── hooks/          # フック
 │       │   └── hooks.json
+│       ├── .claude/
+│       │   └── output-styles/ # 出力スタイル
+│       │       └── [style].md
 │       ├── settings.json   # デフォルト設定
 │       ├── docs/           # ドキュメント（オプション）
 │       ├── scripts/        # スクリプト（オプション）
@@ -103,6 +108,7 @@ claude --plugin-dir ./plugins/my-plugin
 | フック (`hooks.json`) | `.claude/settings.json` に統合 |
 | MCP (`.mcp.json`) | プロジェクトルートの `.mcp.json` に統合 |
 | LSP (`.lsp.json`) | プロジェクトルートの `.lsp.json` に統合 |
+| ステータスライン | `.claude/settings.json` または `.claude/settings.local.json` に設定 |
 | 出力スタイル (`.md`) | `.claude/output-styles/` または `~/.claude/output-styles/` |
 
 ## 開発
@@ -152,7 +158,7 @@ PRおよびpush時に以下のワークフローが実行されます:
 | Lint | 各種ファイル変更時 | ruff、markdownlint、yamllint |
 | セキュリティスキャン | PR/push時 | gitleaksで機密情報検出 |
 | Claude Code Review | PR作成/更新時 | Claude Codeによるコードレビュー |
-| Claude Code | Issueコメント時 | Claude Codeによるタスク実行 |
+| Claude Code | Issueコメント/PR reviewコメント/Issue assign時 | Claude Codeによるタスク実行 |
 | 自動実装 | Issue labeling時 | Claude Codeによるドキュメント・プラグイン更新 |
 | プラグイン改善チェック | PR close時 | プラグイン改善提案の検出 |
 | CHANGELOG監視 | 日次 | Claude Code公式の変更検出 |
@@ -168,6 +174,7 @@ PRおよびpush時に以下のワークフローが実行されます:
 - `.lsp.json` - LSPサーバー設定
 - `README.md` - プラグインREADME
 - `output-styles/*.md` - 出力スタイル
+- `settings.json` / `settings.local.json` - ステータスライン設定
 
 #### カバレッジバッジのセットアップ
 
