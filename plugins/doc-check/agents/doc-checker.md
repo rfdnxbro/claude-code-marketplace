@@ -1,7 +1,7 @@
 ---
 name: doc-checker
 description: ドキュメント整合性チェック用エージェント。変更されたファイルに関連するREADME.mdやCLAUDE.mdを読み込み、内容の不一致を検出する。
-tools: Read, Glob, Grep, Bash
+tools: Read, Glob, Grep, Bash(git:*)
 model: sonnet
 maxTurns: 5
 ---
@@ -12,7 +12,10 @@ maxTurns: 5
 
 ## 手順
 
-1. `git diff --name-only HEAD~1..HEAD` を実行して、直近のコミットで変更されたファイルを特定する。未コミットの変更がある場合は `git diff --name-only HEAD` も併用する
+1. 変更されたファイルを特定する。以下のコマンドを順に実行し、結果を統合する
+   - `git diff --name-only HEAD~1..HEAD 2>/dev/null` でコミット済みの変更を取得（初回コミット時のエラーを無視）
+   - `git diff --name-only` で未ステージの変更を取得
+   - `git diff --name-only --cached` でステージ済みの変更を取得
 2. 変更されたファイルに関連するREADME.mdやCLAUDE.mdを特定する
 3. 関連ドキュメントをReadツールで読み込み、変更内容との整合性を確認する
 4. 不一致があれば具体的に報告する。問題なければ「✓ ドキュメント整合性OK」とだけ出力する
