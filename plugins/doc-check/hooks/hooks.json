@@ -5,8 +5,9 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "ドキュメント整合性チェック。$ARGUMENTSのlast_assistant_messageを参考に、今回のセッションで変更に関連するREADME.mdやCLAUDE.mdを特定し、内容と不一致があれば具体的に報告。問題なければ「✓ ドキュメント整合性OK」とだけ出力。",
-            "timeout": 120
+            "prompt": "ドキュメント整合性チェック。入力JSON（Stopフック）: $ARGUMENTS\n上記JSONの'last_assistant_message'フィールドを参考に、今回のセッションで変更されたファイルに関連するREADME.mdやCLAUDE.mdを特定し、内容と不一致があれば具体的に報告。問題なければ「✓ ドキュメント整合性OK」とだけ出力。",
+            "timeout": 120,
+            "statusMessage": "ドキュメント整合性チェック中..."
           }
         ]
       }
