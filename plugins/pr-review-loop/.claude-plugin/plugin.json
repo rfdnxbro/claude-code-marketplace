@@ -1,0 +1,10 @@
+{
+  "name": "pr-review-loop",
+  "version": "1.0.0",
+  "description": "PRのbotレビューコメントを定期的に確認し、妥当な指摘を自動修正するループコマンド",
+  "author": {
+    "name": "ryu"
+  },
+  "license": "MIT",
+  "keywords": ["pr", "review", "bot", "loop", "ci"]
+}
