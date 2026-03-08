@@ -126,11 +126,17 @@ LLMを使用してプロンプトを評価:
 {
   "type": "agent",
   "agent": "code-reviewer",
+  "prompt": "コードの品質・セキュリティ・保守性をレビューしてください: $ARGUMENTS",
   "timeout": 120
 }
 ```
 
-`timeout`は秒単位で指定。省略時のデフォルトは60秒。
+| フィールド | 型 | 必須 | 説明 |
+|-----------|---|:---:|------|
+| `type` | string | ✓ | `"agent"` を指定 |
+| `agent` | string | ✓ | 起動するエージェント名 |
+| `prompt` | string | ✓ | エージェントに渡すタスク記述 |
+| `timeout` | number | | タイムアウト（秒単位、省略時: 60秒） |
 
 ### http（HTTPリクエスト）【v2.1.51以降】
 

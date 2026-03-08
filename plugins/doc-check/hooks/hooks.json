@@ -6,6 +6,7 @@
           {
             "type": "agent",
             "agent": "doc-checker",
+            "prompt": "変更されたファイルに関連するREADME.mdやCLAUDE.mdの整合性をチェックしてください: $ARGUMENTS",
             "timeout": 120,
             "statusMessage": "ドキュメント整合性チェック中..."
           }
