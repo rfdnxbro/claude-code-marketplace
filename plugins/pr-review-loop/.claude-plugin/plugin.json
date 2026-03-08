@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "description": "PRのbotレビューコメントを定期的に確認し、妥当な指摘を自動修正するループコマンド",
   "author": {
-    "name": "ryu"
+    "name": "rfdnxbro"
   },
+  "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/pr-review-loop",
+  "repository": "https://github.com/rfdnxbro/claude-code-marketplace",
   "license": "MIT",
   "keywords": ["pr", "review", "bot", "loop", "ci"]
 }
