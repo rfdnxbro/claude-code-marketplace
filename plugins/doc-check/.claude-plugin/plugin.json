@@ -1,0 +1,10 @@
+{
+  "name": "doc-check",
+  "version": "0.1.0",
+  "description": "変更に関連するドキュメントの整合性を自動チェックするプラグイン",
+  "author": { "name": "rfdnxbro" },
+  "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/doc-check",
+  "repository": "https://github.com/rfdnxbro/claude-code-marketplace",
+  "license": "MIT",
+  "keywords": ["documentation", "consistency", "check"]
+}
