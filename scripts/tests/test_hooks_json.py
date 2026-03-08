@@ -156,7 +156,7 @@ class TestValidateHooksJson:
         )
         result = validate_hooks_json(Path("hooks.json"), content)
         assert result.has_errors()
-        assert any("prompt" in e for e in result.errors)
+        assert any("agentタイプにprompt" in e for e in result.errors)
 
     def test_missing_matcher_warning(self):
         content = json.dumps(
