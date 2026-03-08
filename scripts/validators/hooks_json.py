@@ -90,8 +90,15 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
                         f"{file_path.name}: promptタイプにpromptフィールドがありません"
                     )
 
-                if hook_type == "agent" and not h.get("agent"):
-                    result.add_error(f"{file_path.name}: agentタイプにagentフィールドがありません")
+                if hook_type == "agent":
+                    if not h.get("agent"):
+                        result.add_error(
+                            f"{file_path.name}: agentタイプにagentフィールドがありません"
+                        )
+                    if not h.get("prompt"):
+                        result.add_error(
+                            f"{file_path.name}: agentタイプにpromptフィールドがありません"
+                        )
 
                 if hook_type == "http" and not h.get("url"):
                     result.add_error(f"{file_path.name}: httpタイプにurlフィールドがありません")
