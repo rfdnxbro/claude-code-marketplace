@@ -59,7 +59,7 @@ git push
 
 ```bash
 gh api repos/{owner}/{repo}/pulls/$1/comments/{comment_id}/replies \
-  -X POST -f body='対応内容'
+  --method POST -f body='対応内容'
 ```
 
 **PRレベルのコメント（レビューサマリー等）への対応:**
