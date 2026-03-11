@@ -7,6 +7,7 @@ permissionMode: default
 skills: bbl:content-guide
 memory: project
 isolation: worktree
+maxTurns: 30
 allow:
   - Read
   - Glob
