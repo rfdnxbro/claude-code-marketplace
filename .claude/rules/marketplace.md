@@ -133,9 +133,31 @@ GitHub sourceでは、fragment構文を使ってbranch、tag、またはcommit S
 }
 ```
 
+**`.git` サフィックスは省略可能（v2.1.72以降）**: Azure DevOps や AWS CodeCommit など、`.git` サフィックスなしの URL も正式サポートされています。
+
+```json
+{
+  "name": "azure-devops-plugin",
+  "source": {
+    "source": "url",
+    "url": "https://dev.azure.com/myorg/myproject/_git/my-plugin"
+  }
+}
+```
+
+```json
+{
+  "name": "codecommit-plugin",
+  "source": {
+    "source": "url",
+    "url": "https://git-codecommit.ap-northeast-1.amazonaws.com/v1/repos/my-plugin"
+  }
+}
+```
+
 #### branch/tag/commit SHA指定
 
-Git URL sourceでも、URL末尾にfragment構文を使ってbranch、tag、またはcommit SHAを指定できます。
+Git URL sourceでも、URL末尾にfragment構文を使ってbranch、tag、またはcommit SHAを指定できます。`.git` サフィックスの有無にかかわらず、fragment構文を使用できます。
 
 ```json
 {
