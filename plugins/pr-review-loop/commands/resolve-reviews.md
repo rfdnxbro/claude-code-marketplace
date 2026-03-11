@@ -2,6 +2,8 @@
 description: PRのbotレビューコメントを確認し、妥当な指摘を修正する。/loop と組み合わせて定期実行に最適。
 allowed-tools: Bash(gh api:*), Bash(gh pr view:*), Bash(gh pr comment:*), Bash(gh repo view:*), Bash(git add:*), Bash(git commit:*), Bash(git push:*), Bash(git diff:*), Read, Edit, Glob, Grep
 argument-hint: "[PR番号]"
+context: fork
+model: sonnet
 ---
 
 # PRレビューコメント対応

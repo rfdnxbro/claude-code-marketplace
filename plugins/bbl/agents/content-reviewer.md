@@ -6,6 +6,7 @@ model: sonnet
 permissionMode: default
 skills: bbl:content-guide
 memory: project
+maxTurns: 20
 allow:
   - Read
   - Glob
