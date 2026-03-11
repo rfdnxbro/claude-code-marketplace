@@ -1,6 +1,15 @@
 #!/bin/bash
 # AWS環境を検出して追加コンテキストを提供
 
+# stdinからフック入力JSONを受け取る
+input=$(cat)
+command=$(echo "$input" | jq -r '.tool_input.command // ""')
+
+# aws コマンド以外はスキップ
+if ! echo "$command" | grep -qE '^aws '; then
+  exit 0
+fi
+
 # アカウントIDから環境を判定
 ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text 2>/dev/null)
 
