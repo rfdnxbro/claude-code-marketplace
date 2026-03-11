@@ -43,7 +43,7 @@ skills: skill-name
 | `description` | Yes | 目的と使用タイミングを説明 |
 | `tools` | No | アクセス可能なツール（カンマ/YAML形式）。省略時は全ツール継承 |
 | `disallowedTools` | No | 使用禁止ツール（カンマ/YAML形式） |
-| `model` | No | `sonnet`, `opus`, `haiku`, `inherit`。省略時は`inherit`（親スレッドのモデルを継承） |
+| `model` | No | `sonnet`, `opus`, `haiku`, `inherit`。省略時は`inherit`（親スレッドのモデルを継承）。Agent ツール呼び出し時に `model` パラメータで上書き可能（v2.1.72以降、[per-invocation オーバーライド](#model-per-invocation-オーバーライドv2172以降)参照） |
 | `permissionMode` | No | `default`, `acceptEdits`, `bypassPermissions`, `plan`, `dontAsk` |
 | `skills` | No | 自動ロードするスキル名（カンマ/YAML形式）。プラグインスキルは完全修飾名（`plugin-name:skill-name`）で指定 |
 | `hooks` | No | フック定義（[hooks.md](hooks.md)参照） |
@@ -283,6 +283,15 @@ tools:
 隔離されたworktreeでコードのリファクタリングを安全に実施します。
 ```
 
+**EnterWorktree / ExitWorktree ツール（v2.1.72以降）:**
+
+worktreeセッションを手動で制御するためのツールが利用可能です:
+
+- `EnterWorktree`: worktreeセッションを開始し、隔離された作業環境に入る
+- `ExitWorktree`: `EnterWorktree` で開始したworktreeセッションを終了し、元の作業環境に戻る
+
+`isolation: worktree` を使用したエージェントでは、worktreeの作成・終了は自動的に管理されます。手動で `EnterWorktree` / `ExitWorktree` を使用するケースは、エージェント定義外でworktreeセッションを制御する場合に有用です。
+
 **関連:**
 
 - CLIフラグ `--worktree` / `-w` でも同様の動作が可能（v2.1.49以降）
@@ -328,6 +337,33 @@ hooks:
           prompt: "レビュー結果を要約"
 ---
 ```
+
+## model per-invocation オーバーライド（v2.1.72以降）
+
+Agent ツールを呼び出す際に、エージェント定義の `model` フィールドで設定したデフォルトモデルを、呼び出しごとに上書きできます。
+
+**使用例:**
+
+エージェント定義でデフォルトモデルを `sonnet` に設定していても、特定の呼び出しのみ `opus` を使用したい場合:
+
+```markdown
+# エージェント定義（agents/code-reviewer.md）
+---
+name: code-reviewer
+description: コードレビュー専門家
+model: sonnet
+---
+```
+
+このエージェントを呼び出す際に、特定の呼び出しのみモデルを変更できます。
+
+**優先順位:**
+
+1. Agent ツール呼び出し時の `model` パラメータ（最優先）
+2. エージェント定義 frontmatter の `model` フィールド
+3. `inherit`（親スレッドのモデルを継承）
+
+この機能により、通常は軽量なモデルを使いながら、複雑なタスクのみ高性能なモデルに切り替えるといったコスト最適化が可能です。
 
 ## CLIコマンド
 
