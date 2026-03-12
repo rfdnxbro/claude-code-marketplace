@@ -516,6 +516,46 @@ fi
 - ウェルカムメッセージの表示
 - 環境チェック（遅延実行を考慮した設計が必要）
 
+### SessionEnd
+
+セッション終了時に実行されるフック。
+
+**タイムアウト設定（v2.1.74で修正・追加）:**
+
+v2.1.74より前のバージョンでは、`SessionEnd` フックは `hook.timeout` の設定に関わらず終了時に1.5秒でkillされていましたが、このバグが修正されました。また、環境変数 `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` を設定することで、セッション終了フックのタイムアウト時間をミリ秒単位でカスタマイズできます。
+
+```bash
+# セッション終了フックのタイムアウトを5秒に設定
+export CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS=5000
+```
+
+**使用例:**
+
+```json
+{
+  "hooks": {
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/session-cleanup.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**ユースケース:**
+
+- セッション終了時のクリーンアップ処理
+- セッションサマリーの記録
+- 一時ファイルの削除
+- 通知の送信
+
 ### Setup
 
 リポジトリのセットアップとメンテナンス操作時に実行されるフック。以下のCLIフラグでトリガーされます:

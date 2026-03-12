@@ -54,13 +54,20 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
             f"{file_path.name}: descriptionが短すぎます。いつ使うべきかを明確に記述してください"
         )
 
-    # modelの値チェック
+    # modelの値チェック（v2.1.74以降: フルモデルIDも使用可能）
     model = frontmatter.get("model", "")
     model_str = str(model) if model else ""
-    valid_models = ["sonnet", "opus", "haiku", "inherit", ""]
-    if model_str and model_str not in valid_models:
+    valid_shorthand_models = ["sonnet", "opus", "haiku", "inherit"]
+    # フルモデルID（例: claude-opus-4-5, claude-sonnet-4-6, claude-haiku-4-5-20251001）のパターン
+    full_model_id_pattern = re.compile(r"^claude-[a-z]+-[0-9][a-z0-9-]*$")
+    if (
+        model_str
+        and model_str not in valid_shorthand_models
+        and not full_model_id_pattern.match(model_str)
+    ):
         result.add_warning(
-            f"{file_path.name}: modelが不正: {model_str}（sonnet/opus/haiku/inherit）"
+            f"{file_path.name}: modelが不正: {model_str}"
+            f"（sonnet/opus/haiku/inherit またはフルモデルID例: claude-sonnet-4-6）"
         )
 
     # permissionModeの値チェック

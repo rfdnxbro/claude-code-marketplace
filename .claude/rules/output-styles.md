@@ -74,15 +74,24 @@ keep-coding-instructions: false
 
 ## 使用方法
 
+> **非推奨（v2.1.73以降）**: `/output-style` コマンドは非推奨になりました。代わりに `/config` コマンドを使用してください。
+
 ```bash
-# メニューから選択
+# 非推奨: /output-style コマンド（v2.1.73以降）
 /output-style
 
-# 直接指定
-/output-style explanatory
-/output-style learning
-/output-style [custom-style-name]
+# 推奨: /config コマンドを使用
+/config
 ```
+
+出力スタイルを直接指定する場合は `/config` から設定してください。
+
+## セッション開始時のスタイル固定（v2.1.73以降）
+
+v2.1.73以降、出力スタイルはセッション開始時に固定されます。これはプロンプトキャッシングの効率を最適化するための変更です。
+
+- セッション開始後に `/output-style`（または `/config`）でスタイルを変更しても、現在のセッションには反映されません
+- 変更は次回のセッション開始時に有効になります
 
 ## 設定ファイル
 
@@ -97,6 +106,7 @@ keep-coding-instructions: false
 ## 動作の仕組み
 
 - 出力スタイルはシステムプロンプトを直接変更する
+- スタイルはセッション開始時に固定される（v2.1.73以降）
 - すべてのスタイルで効率的な出力用の指示が除外される
 - カスタムスタイルではコーディング関連の指示も除外される（`keep-coding-instructions: true` で保持可能）
 
