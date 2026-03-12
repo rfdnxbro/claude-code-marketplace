@@ -43,7 +43,7 @@ skills: skill-name
 | `description` | Yes | 目的と使用タイミングを説明 |
 | `tools` | No | アクセス可能なツール（カンマ/YAML形式）。省略時は全ツール継承 |
 | `disallowedTools` | No | 使用禁止ツール（カンマ/YAML形式） |
-| `model` | No | `sonnet`, `opus`, `haiku`, `inherit`。省略時は`inherit`（親スレッドのモデルを継承）。Agent ツール呼び出し時に `model` パラメータで上書き可能（v2.1.72以降、[per-invocation オーバーライド](#model-per-invocation-オーバーライドv2172以降)参照） |
+| `model` | No | `sonnet`, `opus`, `haiku`, `inherit`、またはフルモデルID（例: `claude-opus-4-5`, `claude-sonnet-4-6`）。省略時は`inherit`（親スレッドのモデルを継承）。Agent ツール呼び出し時に `model` パラメータで上書き可能（v2.1.72以降、[per-invocation オーバーライド](#model-per-invocation-オーバーライドv2172以降)参照）。フルモデルIDは v2.1.74 以降で対応（`--model` と同じ値が使用可能） |
 | `permissionMode` | No | `default`, `acceptEdits`, `bypassPermissions`, `plan`, `dontAsk` |
 | `skills` | No | 自動ロードするスキル名（カンマ/YAML形式）。プラグインスキルは完全修飾名（`plugin-name:skill-name`）で指定 |
 | `hooks` | No | フック定義（[hooks.md](hooks.md)参照） |

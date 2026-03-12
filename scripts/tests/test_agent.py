@@ -82,6 +82,48 @@ class TestValidateAgent:
         result = validate_agent(Path("agent.md"), content)
         assert any("model" in w for w in result.warnings)
 
+    def test_full_model_id_opus(self):
+        """フルモデルID（claude-opus-4-5）が有効であることを確認（v2.1.74以降）"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            model: claude-opus-4-5
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()
+        assert not any("model" in w for w in result.warnings)
+
+    def test_full_model_id_sonnet(self):
+        """フルモデルID（claude-sonnet-4-6）が有効であることを確認（v2.1.74以降）"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            model: claude-sonnet-4-6
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()
+        assert not any("model" in w for w in result.warnings)
+
+    def test_full_model_id_haiku(self):
+        """フルモデルID（claude-haiku-4-5-20251001）が有効であることを確認（v2.1.74以降）"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            model: claude-haiku-4-5-20251001
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()
+        assert not any("model" in w for w in result.warnings)
+
     def test_invalid_permission_mode(self):
         content = dedent("""
             ---
