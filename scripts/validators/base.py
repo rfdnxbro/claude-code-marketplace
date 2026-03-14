@@ -33,7 +33,7 @@ class ValidationResult:
         self.warnings.append(message)
 
     def has_errors(self) -> bool:
-        return len(self.errors) > 0
+        return bool(self.errors)
 
     def to_message(self) -> str:
         lines = []
@@ -46,6 +46,101 @@ class ValidationResult:
             for w in self.warnings:
                 lines.append(f"  - {w}")
         return "\n".join(lines)
+
+
+def _strip_quotes(value: str) -> str:
+    """文字列からクォート（'または"）を除去する"""
+    if len(value) >= 2:
+        if (value[0] == '"' and value[-1] == '"') or (value[0] == "'" and value[-1] == "'"):
+            return value[1:-1]
+    return value
+
+
+def _convert_yaml_value(value: str) -> Any:
+    """YAML値を適切なPython型に変換する"""
+    unquoted = _strip_quotes(value)
+    if unquoted != value:
+        return unquoted
+    if value.lower() == "true":
+        return True
+    if value.lower() == "false":
+        return False
+    if value.isdigit():
+        return int(value)
+    return value
+
+
+def _find_frontmatter_boundary(lines: list[str]) -> int:
+    """フロントマターの終了行インデックスを返す。見つからなければ-1"""
+    for i, line in enumerate(lines[1:], 1):
+        if line.strip() == "---":
+            return i
+    return -1
+
+
+class _FrontmatterParser:
+    """簡易YAMLフロントマターパーサー（PyYAMLを使わない）"""
+
+    def __init__(self):
+        self.frontmatter: dict[str, Any] = {}
+        self.warnings: list[str] = []
+        self._list_key: str | None = None
+        self._list_items: list[str] = []
+
+    def _save_pending_list(self):
+        """収集中のリストを保存する"""
+        if self._list_key:
+            self.frontmatter[self._list_key] = self._list_items if self._list_items else ""
+            self._list_key = None
+            self._list_items = []
+
+    def _handle_list_item(self, stripped: str):
+        """リストアイテムを処理する"""
+        if not self._list_key:
+            self.warnings.append("リスト/配列はキーの後に続く必要があります")
+            return
+        item = "" if stripped == "-" else _strip_quotes(stripped[2:].strip())
+        self._list_items.append(item)
+
+    def _handle_key_value(self, line: str):
+        """キー: 値の行を処理する"""
+        self._save_pending_list()
+        key, value = line.split(":", 1)
+        key = key.strip()
+        value = value.strip()
+
+        if not value:
+            self._list_key = key
+            self._list_items = []
+        else:
+            self.frontmatter[key] = _convert_yaml_value(value)
+
+    def parse_line(self, line: str):
+        """1行を解析する"""
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            return
+
+        if stripped in ("|", ">") or stripped.endswith("|") or stripped.endswith(">"):
+            self.warnings.append("複数行の値（|, >）はサポートされていません")
+            self._save_pending_list()
+            return
+
+        if stripped.startswith("- ") or stripped == "-":
+            self._handle_list_item(stripped)
+            return
+
+        if line.startswith("  ") and ":" in line:
+            self.warnings.append("ネストされたオブジェクトはサポートされていません")
+            self._save_pending_list()
+            return
+
+        if ":" in line:
+            self._handle_key_value(line)
+
+    def finalize(self):
+        """解析を完了し、残りのリストを保存する"""
+        self._save_pending_list()
 
 
 def parse_frontmatter(content: str) -> tuple[dict[str, Any], str, list[str]]:
@@ -63,114 +158,21 @@ def parse_frontmatter(content: str) -> tuple[dict[str, Any], str, list[str]]:
     Returns:
         tuple: (frontmatter辞書, 本文, 警告リスト)
     """
-    warnings: list[str] = []
-
     if not content.startswith("---"):
-        return {}, content, warnings
+        return {}, content, []
 
     lines = content.split("\n")
-    end_idx = -1
-    for i, line in enumerate(lines[1:], 1):
-        if line.strip() == "---":
-            end_idx = i
-            break
-
+    end_idx = _find_frontmatter_boundary(lines)
     if end_idx == -1:
-        return {}, content, warnings
+        return {}, content, []
 
-    frontmatter_lines = lines[1:end_idx]
     body = "\n".join(lines[end_idx + 1 :])
+    parser = _FrontmatterParser()
+    for line in lines[1:end_idx]:
+        parser.parse_line(line)
+    parser.finalize()
 
-    # 簡易YAMLパーサー（PyYAMLを使わない）
-    frontmatter: dict[str, Any] = {}
-    current_list_key: str | None = None
-    current_list: list[str] = []
-
-    def save_current_list():
-        """現在収集中のリストを保存する"""
-        nonlocal current_list_key, current_list
-        if current_list_key:
-            if current_list:
-                frontmatter[current_list_key] = current_list
-            else:
-                # リストアイテムがなかった場合は空文字列として保存
-                frontmatter[current_list_key] = ""
-        current_list_key = None
-        current_list = []
-
-    for line in frontmatter_lines:
-        # 空行とコメントをスキップ
-        stripped = line.strip()
-        if not stripped or stripped.startswith("#"):
-            continue
-
-        # サポートしていない機能を検出
-        if stripped in ["|", ">"] or stripped.endswith("|") or stripped.endswith(">"):
-            warnings.append("複数行の値（|, >）はサポートされていません")
-            save_current_list()
-            continue
-
-        # インデントされたリストアイテム（  - item または  -）
-        if stripped.startswith("- ") or stripped == "-":
-            if current_list_key:
-                # リストアイテムを収集
-                if stripped == "-":
-                    # 空のリストアイテム
-                    current_list.append("")
-                else:
-                    item = stripped[2:].strip()
-                    # クォートを除去
-                    if item.startswith('"') and item.endswith('"'):
-                        item = item[1:-1]
-                    elif item.startswith("'") and item.endswith("'"):
-                        item = item[1:-1]
-                    current_list.append(item)
-            else:
-                warnings.append("リスト/配列はキーの後に続く必要があります")
-            continue
-
-        # ネストされたオブジェクト（値がある場合のみ警告）
-        if line.startswith("  ") and ":" in line:
-            # 「  key: value」の形式はネストされたオブジェクト
-            # ただし「  - item」はリストなので除外済み
-            warnings.append("ネストされたオブジェクトはサポートされていません")
-            save_current_list()
-            continue
-
-        if ":" in line:
-            # 前のリスト収集を保存
-            save_current_list()
-
-            key, value = line.split(":", 1)
-            key = key.strip()
-            value = value.strip()
-
-            # 値が空の場合はリストの開始を期待
-            if not value:
-                current_list_key = key
-                current_list = []
-                continue
-
-            # 文字列のクォートを除去
-            if value.startswith('"') and value.endswith('"'):
-                value = value[1:-1]
-            elif value.startswith("'") and value.endswith("'"):
-                value = value[1:-1]
-
-            # 型変換
-            if value.lower() == "true":
-                frontmatter[key] = True
-            elif value.lower() == "false":
-                frontmatter[key] = False
-            elif value.isdigit():
-                frontmatter[key] = int(value)
-            else:
-                frontmatter[key] = value
-
-    # 最後のリストを保存
-    save_current_list()
-
-    return frontmatter, body, warnings
+    return parser.frontmatter, body, parser.warnings
 
 
 def validate_kebab_case(name: str) -> str | None:
