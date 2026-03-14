@@ -8,5 +8,7 @@
   "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/pr-review-loop",
   "repository": "https://github.com/rfdnxbro/claude-code-marketplace",
   "license": "MIT",
-  "keywords": ["pr", "review", "bot", "loop", "ci"]
+  "keywords": ["pr", "review", "bot", "loop", "ci"],
+  "hooks": "./hooks/hooks.json",
+  "settings": "./settings.json"
 }
