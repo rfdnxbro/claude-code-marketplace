@@ -207,6 +207,24 @@ def parse_json_safe(content: str, file_path: Path, result: ValidationResult) -> 
         return None
 
 
+def normalize_path(path: str) -> str:
+    """
+    プラグインパスを正規化する
+
+    先頭・末尾のスラッシュを除去し、連続スラッシュを単一にする。
+
+    Args:
+        path: 正規化するパス文字列
+
+    Returns:
+        正規化されたパス
+    """
+    # 連続スラッシュを単一に
+    normalized = re.sub(r"/+", "/", path)
+    # 先頭・末尾のスラッシュを除去
+    return normalized.strip("/")
+
+
 def get_disabled_warnings(content: str) -> set[str]:
     """
     ファイル内容から無効化された警告IDを取得する
