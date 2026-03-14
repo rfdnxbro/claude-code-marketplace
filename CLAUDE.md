@@ -1,20 +1,45 @@
 # CLAUDE.md
 
-このファイルはClaude Codeがこのリポジトリで作業する際のガイダンスを提供します。
+Claude Codeがこのリポジトリで作業する際のガイダンスを提供します。
+
+## 目次
+
+- [プロジェクト概要](#プロジェクト概要)
+- [クイックスタート](#クイックスタート)
+- [開発ガイドライン](#開発ガイドライン)
+- [コマンドリファレンス](#コマンドリファレンス)
+- [プロジェクト構造](#プロジェクト構造)
+- [開発ワークフロー](#開発ワークフロー)
+- [注意事項](#注意事項)
 
 ## プロジェクト概要
 
 Claude Codeのマーケットプレイスプラグイン。Claude Codeの拡張機能やプラグインを管理・配布するためのプラットフォームを提供します。
 
+## クイックスタート
+
+よく使うコマンド:
+
+```bash
+# プラグイン検証
+python3 scripts/validate_plugin.py plugins/my-plugin/**/*.md plugins/my-plugin/**/*.json
+
+# テスト実行
+uvx pytest scripts/tests/ -v
+
+# 品質チェック（pre-commit）
+pre-commit run --all-files
+```
+
 ## 開発ガイドライン
 
-- すべてのコミュニケーションは日本語で行う
-- コード内のコメントは日本語で記述する
-- コミットメッセージは日本語で記述する
-- 複数の選択肢を提示する場合は `AskUserQuestion` ツールを使用する
-- 並列実行しても副作用がない調査・検証タスクはサブエージェント（Taskツール）で並列実行する
+| ルール | 説明 |
+|--------|------|
+| 言語 | すべてのコミュニケーション、コメント、コミットメッセージは日本語 |
+| 選択肢提示 | 複数の選択肢がある場合は `AskUserQuestion` ツールを使用 |
+| 並列処理 | 副作用のない調査・検証タスクはサブエージェントで並列実行 |
 
-## コマンド
+## コマンドリファレンス
 
 ### プラグイン検証
 
@@ -26,9 +51,9 @@ python3 scripts/validate_plugin.py plugins/my-plugin/commands/review.md
 python3 scripts/validate_plugin.py plugins/my-plugin/**/*.md plugins/my-plugin/**/*.json
 ```
 
-#### 警告のスキップ
+#### バリデーター警告のスキップ
 
-バリデーターの警告を意図的にスキップするには、ファイル内にHTMLコメントを追加:
+ファイル内にHTMLコメントを追加:
 
 ```markdown
 <!-- validator-disable dangerous-operation -->
@@ -44,10 +69,10 @@ python3 scripts/validate_plugin.py plugins/my-plugin/**/*.md plugins/my-plugin/*
 ### テスト実行
 
 ```bash
-# テストを実行（uvを使用）
+# 基本実行
 uvx pytest scripts/tests/ -v
 
-# カバレッジ付きでテストを実行
+# カバレッジ付き
 uvx --with pytest-cov pytest scripts/tests/ -v --cov=scripts/validators --cov-report=term
 ```
 
@@ -64,60 +89,88 @@ pre-commit install
 pre-commit run --all-files
 ```
 
-pre-commitで実行されるチェック:
+**pre-commitで実行されるチェック:**
 
-- gitleaks: 機密情報検出（自動ダウンロード）
-- ruff: Python lint/format
-- markdownlint: Markdown lint
-- yamllint: YAML lint
-- validate-plugin: プラグインファイル検証
-- pytest: テスト実行（push時のみ）
+| ツール | 対象 |
+|--------|------|
+| gitleaks | 機密情報検出 |
+| ruff | Python lint/format |
+| markdownlint | Markdown lint |
+| yamllint | YAML lint |
+| validate-plugin | プラグインファイル検証 |
+| pytest | テスト実行（push時のみ） |
 
-個別に手動実行する場合:
+**個別実行:**
 
 ```bash
-# Pythonファイルのチェック
+# Python
 uvx ruff check scripts/
-
-# Pythonファイルのフォーマット（CIでは --check で検証）
 uvx ruff format scripts/
 
-# Markdownのチェック
+# Markdown
 npx markdownlint-cli --config .markdownlint.json README.md CLAUDE.md scripts/README.md '.claude/rules/*.md' '.claude/skills/**/SKILL.md'
 
-# YAMLのチェック
+# YAML
 uvx yamllint -c .yamllint.yml .github/workflows/
 ```
 
 ## プロジェクト構造
 
-- `.claude/rules/` - Claude Code機能の仕様ドキュメント
-- `scripts/validators/` - 各定義ファイルのバリデーター
-- `scripts/tests/` - バリデーターのテスト
-- `.github/workflows/` - GitHub Actionsワークフロー
+| ディレクトリ | 説明 |
+|-------------|------|
+| `.claude/rules/` | Claude Code機能の仕様ドキュメント（[索引](.claude/rules/README.md)） |
+| `.claude/skills/` | カスタムスキル定義 |
+| `scripts/validators/` | 各定義ファイルのバリデーター |
+| `scripts/tests/` | バリデーターのテスト |
+| `.github/workflows/` | GitHub Actionsワークフロー |
 
-## GitHub Actionsワークフロー
+## 開発ワークフロー
 
-### 自動実装ワークフロー（auto-implement.yml）
+### .claude/rules/の変更
 
-Issueに特定のラベルが付与されると、Claude Codeが自動で実装を行う。
+#### 新規定義を追加する場合
 
-- `claude-code-update`: Claude Codeのアップデートに伴うドキュメント・バリデーター更新
-- `plugin-update`: プラグインの改善提案を実装
+1. `.claude/rules/xxx.md` - 仕様ドキュメント作成
+2. `scripts/validators/xxx.py` - バリデーター作成
+3. `scripts/tests/test_xxx.py` - テスト作成
+4. `scripts/validators/__init__.py` - エクスポート追加
+5. `scripts/validate_plugin.py` - パス検出ロジック追加
+6. 関連する既存ドキュメントからのリンク追加
 
-### claude-code-actionでのIssue作成
+詳細は `scripts/README.md` の「新しいバリデーターの追加方法」を参照。
 
-`claude-code-action`でIssueを作成する際は、`--body-file`オプションを使用すること。
+#### 既存定義を更新する場合
+
+ドキュメントの変更に合わせて、バリデーターとテストも同期:
+
+- フィールドの有効値を変更 → バリデーターの許可リストを更新
+- 新しいフィールドを追加 → バリデーターに検証ロジックを追加
+- 新しいイベント/オプションを追加 → バリデーターの許可リストに追加
+
+### GitHub Actions
+
+#### 自動実装ワークフロー（auto-implement.yml）
+
+Issueに特定のラベルが付与されると、Claude Codeが自動で実装を行う:
+
+| ラベル | 動作 |
+|--------|------|
+| `claude-code-update` | Claude Codeのアップデートに伴うドキュメント・バリデーター更新 |
+| `plugin-update` | プラグインの改善提案を実装 |
+
+#### claude-code-actionでのIssue作成
+
+`--body-file`オプションを使用すること:
 
 ```bash
-# NG: シェルエスケープの問題で本文が欠落する可能性がある
+# NG: シェルエスケープの問題で本文が欠落する可能性
 gh issue create --title "..." --body "複雑なマークダウン..."
 
 # OK: ファイル経由で本文を渡す
 gh issue create --title "..." --body-file /tmp/issue.md
 ```
 
-**理由**: `--body`オプションで複雑なマークダウン（JSONコードブロック、バッククォート、`${}`変数参照など）を渡すと、シェルエスケープの問題で本文が空になることがある。
+**理由**: 複雑なマークダウン（JSONコードブロック、バッククォート、`${}`変数参照など）はシェルエスケープの問題で本文が空になることがある。
 
 **プロンプトでの指示例**:
 
@@ -129,31 +182,7 @@ gh issue create --title "..." --body-file /tmp/issue.md
 
 **必要な設定**: `allowed-tools`に`Write`を追加すること。
 
-## .claude/rules/の変更ガイドライン
-
-### 新規定義を追加する場合
-
-ドキュメント作成だけでなく、対応するバリデーターとテストも追加すること：
-
-1. `.claude/rules/xxx.md` - 仕様ドキュメント作成
-2. `scripts/validators/xxx.py` - バリデーター作成
-3. `scripts/tests/test_xxx.py` - テスト作成
-4. `scripts/validators/__init__.py` - エクスポート追加
-5. `scripts/validate_plugin.py` - パス検出ロジック追加
-6. 関連する既存ドキュメントからのリンク追加（例: `plugin-manifest.md`）
-
-詳細は `scripts/README.md` の「新しいバリデーターの追加方法」を参照。
-
-### 既存定義を更新する場合
-
-ドキュメントの変更に合わせて、対応するバリデーターとテストも必ず同期すること：
-
-- フィールドの有効値を変更 → バリデーターの許可リストを更新
-- 新しいフィールドを追加 → バリデーターに検証ロジックを追加
-- 新しいイベント/オプションを追加 → バリデーターの許可リストに追加
-- 上記すべてに対応するテストを追加・更新
-
 ## 注意事項
 
-- セキュリティに関わる機密情報（APIキー、認証情報など）はコミットしない
-- `.env`ファイルや`credentials.json`などはgitignoreに追加すること
+- **機密情報**: APIキー、認証情報などはコミットしない
+- **gitignore**: `.env`ファイルや`credentials.json`などは必ず除外
