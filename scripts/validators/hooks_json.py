@@ -62,8 +62,11 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
                 "SubagentStart",
                 "SubagentStop",
                 "PreCompact",
+                "PostCompact",
                 "SessionStart",
                 "ConfigChange",
+                "Elicitation",
+                "ElicitationResult",
             ]
             if event_name in events_with_matcher:
                 matcher = hook_config.get("matcher")
