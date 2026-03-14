@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh api repos/*/pulls/*/comments:*)",
+      "Bash(gh api repos/*/pulls/*/reviews:*)",
+      "Bash(gh api repos/*/pulls/*/comments/*/replies:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr comment:*)",
+      "Bash(gh repo view:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Read",
+      "Edit",
+      "Glob",
+      "Grep"
+    ]
+  }
+}

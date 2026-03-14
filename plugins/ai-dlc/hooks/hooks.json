@@ -19,7 +19,8 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/agent-completion.sh",
-            "timeout": 10
+            "timeout": 10,
+            "statusMessage": "エージェント完了を記録中..."
           }
         ]
       }
@@ -36,13 +37,14 @@
         ]
       }
     ],
-    "Stop": [
+    "SessionEnd": [
       {
         "hooks": [
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/session-log.sh",
-            "timeout": 10
+            "timeout": 10,
+            "statusMessage": "セッションログを記録中..."
           }
         ]
       }

@@ -3,15 +3,27 @@ name: テスト（scripts）
 on:
   push:
     branches: [main]
-    paths:
-      - 'scripts/**'
   pull_request:
-    paths:
-      - 'scripts/**'
   workflow_dispatch:
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      scripts: ${{ steps.filter.outputs.scripts }}
+    steps:
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            scripts:
+              - 'scripts/**'
+
   test:
+    needs: changes
+    if: needs.changes.outputs.scripts == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -27,6 +39,7 @@ jobs:
       - name: テストを実行（カバレッジ計測）
         working-directory: scripts
         run: |
+          set -o pipefail
           uvx --with pytest-cov pytest tests/ -v \
             --cov=validators \
             --cov-report=term \

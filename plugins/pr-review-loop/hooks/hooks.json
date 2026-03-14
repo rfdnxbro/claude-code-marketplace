@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "SubagentStop": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-log.sh",
+            "timeout": 10,
+            "statusMessage": "PRレビュー対応ログを記録中..."
+          }
+        ]
+      }
+    ]
+  }
+}
