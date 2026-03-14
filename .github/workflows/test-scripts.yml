@@ -27,6 +27,7 @@ jobs:
       - name: テストを実行（カバレッジ計測）
         working-directory: scripts
         run: |
+          set -o pipefail
           uvx --with pytest-cov pytest tests/ -v \
             --cov=validators \
             --cov-report=term \
