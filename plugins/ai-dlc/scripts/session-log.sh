@@ -1,12 +1,10 @@
 #!/bin/bash
-# セッション終了時のログ記録（last_assistant_message を活用）
+# セッション終了時のログ記録
 
 input=$(cat)
-last_message=$(echo "$input" | jq -r '.last_assistant_message // ""')
+session_id=$(echo "$input" | jq -r '.session_id // "unknown"')
 timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-if [ -n "$last_message" ]; then
-  echo "$timestamp [Stop] $last_message" >> "${CLAUDE_PROJECT_DIR}/.ai-dlc-session.log"
-fi
+echo "$timestamp [SessionEnd] session_id=$session_id" >> "${CLAUDE_PROJECT_DIR}/.ai-dlc-session.log"
 
 exit 0
