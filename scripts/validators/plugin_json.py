@@ -51,4 +51,22 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
         if value and isinstance(value, str) and not value.startswith("./"):
             result.add_warning(f"{file_path.name}: {field}のパスは./で始めることを推奨: {value}")
 
+    # デフォルトパスと同一のコンポーネント参照は冗長
+    default_paths = {
+        "commands": ["./commands/", "./commands"],
+        "agents": ["./agents/", "./agents"],
+        "skills": ["./skills/", "./skills"],
+        "hooks": ["./hooks/hooks.json"],
+        "mcpServers": ["./.mcp.json"],
+        "lspServers": ["./.lsp.json"],
+        "settings": ["./settings.json"],
+    }
+    for field, defaults in default_paths.items():
+        value = data.get(field)
+        if isinstance(value, str) and value in defaults:
+            result.add_warning(
+                f"{file_path.name}: {field}はデフォルトパス（{value}）と同一のため"
+                f"指定不要です。削除してください"
+            )
+
     return result
