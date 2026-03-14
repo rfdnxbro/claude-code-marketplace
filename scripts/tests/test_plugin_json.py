@@ -151,3 +151,15 @@ class TestValidatePluginJson:
         )
         result = validate_plugin_json(Path("plugin.json"), content)
         assert not any("デフォルトパス" in w for w in result.warnings)
+
+    def test_redundant_default_path_lsp_servers(self):
+        """lspServersにデフォルトパスを指定した場合に警告が出ることを確認"""
+        content = json.dumps({"name": "my-plugin", "lspServers": "./.lsp.json"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert any("デフォルトパス" in w for w in result.warnings)
+
+    def test_redundant_default_path_mcp_servers(self):
+        """mcpServersにデフォルトパスを指定した場合に警告が出ることを確認"""
+        content = json.dumps({"name": "my-plugin", "mcpServers": "./.mcp.json"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert any("デフォルトパス" in w for w in result.warnings)

@@ -10,6 +10,7 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(git diff:*)",
+      "Bash(git log:*)",
       "Read",
       "Edit",
       "Glob",
