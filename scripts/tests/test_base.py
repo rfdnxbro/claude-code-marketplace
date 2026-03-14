@@ -4,7 +4,7 @@ base.py のテスト
 
 from textwrap import dedent
 
-from scripts.validators.base import ValidationResult, parse_frontmatter
+from scripts.validators.base import ValidationResult, normalize_path, parse_frontmatter
 
 
 class TestValidationResult:
@@ -187,3 +187,16 @@ class TestParseFrontmatter:
         """).strip()
         fm, body, warnings = parse_frontmatter(content)
         assert any("ネスト" in w for w in warnings)
+
+
+class TestNormalizePath:
+    """normalize_pathのテスト"""
+
+    def test_strips_leading_and_trailing_slashes(self):
+        assert normalize_path("/path/to/plugin/") == "path/to/plugin"
+
+    def test_collapses_consecutive_slashes(self):
+        assert normalize_path("path//to///plugin") == "path/to/plugin"
+
+    def test_simple_path_unchanged(self):
+        assert normalize_path("path/to/plugin") == "path/to/plugin"
