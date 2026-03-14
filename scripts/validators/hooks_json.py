@@ -86,6 +86,16 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
                         f"{file_path.name}: 無効なhook type: {hook_type}（{types_str}）"
                     )
 
+                # PostCompactはcommandタイプのみ対応
+                if (
+                    event_name == "PostCompact"
+                    and hook_type != "command"
+                    and hook_type in valid_types
+                ):
+                    result.add_error(
+                        f"{file_path.name}: PostCompactイベントはcommandタイプのみ対応しています"
+                    )
+
                 if hook_type == "command" and not h.get("command"):
                     result.add_error(
                         f"{file_path.name}: commandタイプにcommandフィールドがありません"

@@ -518,6 +518,76 @@ class TestValidateHooksJson:
         assert not result.has_errors()
         assert any("PostCompact" in w for w in result.warnings)
 
+    def test_post_compact_rejects_prompt_type(self):
+        """PostCompactフックでpromptタイプがエラーになることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PostCompact": [
+                        {
+                            "matcher": "auto",
+                            "hooks": [
+                                {
+                                    "type": "prompt",
+                                    "prompt": "テスト",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("PostCompact" in e and "command" in e for e in result.errors)
+
+    def test_post_compact_rejects_agent_type(self):
+        """PostCompactフックでagentタイプがエラーになることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PostCompact": [
+                        {
+                            "matcher": "manual",
+                            "hooks": [
+                                {
+                                    "type": "agent",
+                                    "agent": "test-agent",
+                                    "prompt": "テスト",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("PostCompact" in e and "command" in e for e in result.errors)
+
+    def test_post_compact_rejects_http_type(self):
+        """PostCompactフックでhttpタイプがエラーになることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PostCompact": [
+                        {
+                            "matcher": "auto",
+                            "hooks": [
+                                {
+                                    "type": "http",
+                                    "url": "https://example.com/hook",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("PostCompact" in e and "command" in e for e in result.errors)
+
     def test_valid_elicitation_hook(self):
         """Elicitationフックが有効であることをテスト（v2.1.76以降）"""
         content = json.dumps(
