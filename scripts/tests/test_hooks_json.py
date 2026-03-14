@@ -58,6 +58,7 @@ class TestValidateHooksJson:
             "SubagentStart",
             "SubagentStop",
             "PreCompact",
+            "PostCompact",
             "SessionStart",
             "SessionEnd",
             "Setup",
@@ -67,6 +68,8 @@ class TestValidateHooksJson:
             "WorktreeCreate",
             "WorktreeRemove",
             "InstructionsLoaded",
+            "Elicitation",
+            "ElicitationResult",
         ]
         for event in valid_events:
             content = json.dumps(
@@ -468,3 +471,211 @@ class TestValidateHooksJson:
         result = validate_hooks_json(Path("hooks.json"), content)
         assert not result.has_errors()
         assert any("matcher" in w for w in result.warnings)
+
+    def test_valid_post_compact_hook(self):
+        """PostCompactフックが有効であることをテスト（v2.1.76以降）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PostCompact": [
+                        {
+                            "matcher": "auto",
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/post-compact.sh",
+                                    "timeout": 10,
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+        assert not result.warnings
+
+    def test_post_compact_without_matcher_warns(self):
+        """PostCompactフックでmatcher未設定時に警告が出ることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PostCompact": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/post-compact.sh",
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+        assert any("PostCompact" in w for w in result.warnings)
+
+    def test_post_compact_rejects_prompt_type(self):
+        """PostCompactフックでpromptタイプがエラーになることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PostCompact": [
+                        {
+                            "matcher": "auto",
+                            "hooks": [
+                                {
+                                    "type": "prompt",
+                                    "prompt": "テスト",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("PostCompact" in e and "command" in e for e in result.errors)
+
+    def test_post_compact_rejects_agent_type(self):
+        """PostCompactフックでagentタイプがエラーになることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PostCompact": [
+                        {
+                            "matcher": "manual",
+                            "hooks": [
+                                {
+                                    "type": "agent",
+                                    "agent": "test-agent",
+                                    "prompt": "テスト",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("PostCompact" in e and "command" in e for e in result.errors)
+
+    def test_post_compact_rejects_http_type(self):
+        """PostCompactフックでhttpタイプがエラーになることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PostCompact": [
+                        {
+                            "matcher": "auto",
+                            "hooks": [
+                                {
+                                    "type": "http",
+                                    "url": "https://example.com/hook",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("PostCompact" in e and "command" in e for e in result.errors)
+
+    def test_valid_elicitation_hook(self):
+        """Elicitationフックが有効であることをテスト（v2.1.76以降）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "Elicitation": [
+                        {
+                            "matcher": "my-auth-server",
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/elicitation.sh",
+                                    "timeout": 30,
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+        assert not result.warnings
+
+    def test_elicitation_without_matcher_warns(self):
+        """Elicitationフックでmatcher未設定時に警告が出ることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "Elicitation": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/elicitation.sh",
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+        assert any("Elicitation" in w for w in result.warnings)
+
+    def test_valid_elicitation_result_hook(self):
+        """ElicitationResultフックが有効であることをテスト（v2.1.76以降）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "ElicitationResult": [
+                        {
+                            "matcher": "my-auth-server",
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/elicit-result.sh",
+                                    "timeout": 30,
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+        assert not result.warnings
+
+    def test_elicitation_result_without_matcher_warns(self):
+        """ElicitationResultフックでmatcher未設定時に警告が出ることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "ElicitationResult": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/elicit-result.sh",
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+        assert any("ElicitationResult" in w for w in result.warnings)

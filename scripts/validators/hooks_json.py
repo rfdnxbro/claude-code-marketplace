@@ -41,6 +41,9 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
         "WorktreeCreate",
         "WorktreeRemove",
         "InstructionsLoaded",
+        "PostCompact",
+        "Elicitation",
+        "ElicitationResult",
     ]
 
     for event_name, event_hooks in hooks.items():
@@ -59,8 +62,11 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
                 "SubagentStart",
                 "SubagentStop",
                 "PreCompact",
+                "PostCompact",
                 "SessionStart",
                 "ConfigChange",
+                "Elicitation",
+                "ElicitationResult",
             ]
             if event_name in events_with_matcher:
                 matcher = hook_config.get("matcher")
@@ -78,6 +84,16 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
                     types_str = "/".join(valid_types)
                     result.add_error(
                         f"{file_path.name}: 無効なhook type: {hook_type}（{types_str}）"
+                    )
+
+                # PostCompactはcommandタイプのみ対応
+                if (
+                    event_name == "PostCompact"
+                    and hook_type != "command"
+                    and hook_type in valid_types
+                ):
+                    result.add_error(
+                        f"{file_path.name}: PostCompactイベントはcommandタイプのみ対応しています"
                     )
 
                 if hook_type == "command" and not h.get("command"):
