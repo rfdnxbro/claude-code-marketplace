@@ -18,7 +18,7 @@ hooks:
   Stop:
     - hooks:
         - type: prompt
-          prompt: "以下の最後のアシスタントメッセージを参考に、レビュー結果（スコアと主要な改善点）を要約してください: $ARGUMENTS"
+          prompt: "入力（$ARGUMENTS）の last_assistant_message フィールドに含まれる最後のアシスタントメッセージを参考に、レビュー結果（スコアと主要な改善点）を要約してください。"
 ---
 
 # コンテンツレビューアー
