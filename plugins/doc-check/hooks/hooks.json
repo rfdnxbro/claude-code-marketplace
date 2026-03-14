@@ -2,7 +2,7 @@
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "Write|Edit",
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit",
         "hooks": [
           {
             "type": "agent",
@@ -10,6 +10,18 @@
             "prompt": "変更されたファイルに関連するREADME.mdやCLAUDE.mdの整合性をチェックしてください: $ARGUMENTS",
             "timeout": 120,
             "statusMessage": "ドキュメント整合性チェック中..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-summary.sh",
+            "timeout": 10,
+            "statusMessage": "ドキュメントチェックセッションサマリーを記録中..."
           }
         ]
       }
