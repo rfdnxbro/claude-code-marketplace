@@ -66,6 +66,7 @@ hooks:
 | `SubagentStart` | サブエージェント起動時 | ✓ |
 | `SubagentStop` | サブエージェント終了時 | ✓ |
 | `PreCompact` | コンパクト前 | ✓ |
+| `PostCompact` | コンパクション完了後（v2.1.76以降） | ✓ |
 | `SessionStart` | セッション開始時 | ✓ |
 | `SessionEnd` | セッション終了時 | × |
 | `Setup` | セットアップ・メンテナンス時 | × |
@@ -75,6 +76,10 @@ hooks:
 | `WorktreeCreate` | エージェントworktree分離でworktreeが作成された時 | × |
 | `WorktreeRemove` | エージェントworktree分離でworktreeが削除された時 | × |
 | `InstructionsLoaded` | CLAUDE.mdまたは`.claude/rules/*.md`がコンテキストに読み込まれた時（v2.1.64以降） | × |
+| `Elicitation` | MCPエリシテーションのレスポンス送信前（v2.1.76以降） | ✓ |
+| `ElicitationResult` | MCPエリシテーションのレスポンス結果（v2.1.76以降） | ✓ |
+
+> **v2.1.75 フックソース表示**: パーミッションプロンプトでフックの確認が必要な場合、フックのソース（`settings` / `plugin` / `skill`）が表示されるようになりました。
 
 ## フックタイプ
 
@@ -843,6 +848,179 @@ CLAUDE.mdまたは`.claude/rules/*.md`ファイルがコンテキストに読み
 - 指示ファイルの読み込みをログに記録
 - 読み込まれた指示の検証
 - 追加コンテキストのセットアップ
+
+### PostCompact
+
+コンパクション完了後に実行されるフック（v2.1.76以降）。コンパクション結果のブロックや変更はできません（ログ・通知用途）。
+
+**マッチャー**: `trigger`フィールドでマッチ（`manual` = `/compact`コマンド実行後、`auto` = コンテキストウィンドウ超過時の自動コンパクト後）
+
+**対応フックタイプ**: `command` のみ
+
+**使用例:**
+
+```json
+{
+  "hooks": {
+    "PostCompact": [
+      {
+        "matcher": "auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/post-compact.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**入力JSON（固有フィールド）:**
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `trigger` | string | `"manual"`（`/compact`コマンド実行時）または `"auto"`（自動コンパクト時） |
+| `compact_summary` | string | コンパクト操作で生成された会話サマリー |
+
+**出力JSON:**
+
+```json
+{
+  "hookSpecificOutput": {
+    "hookEventName": "PostCompact",
+    "additionalContext": "Claudeへ追加コンテキスト"
+  }
+}
+```
+
+**ユースケース:**
+
+- コンパクション後の状態確認・ログ記録
+- コンパクション完了通知の送信
+- コンパクション後のクリーンアップ処理
+
+### Elicitation
+
+MCPサーバーが構造化入力（フォームフィールドまたはブラウザURL）をリクエストした際、レスポンス送信前に実行されるフック（v2.1.76以降）。
+MCPエリシテーション機能のレスポンスをインターセプト・オーバーライドできます。
+
+**マッチャー**: `mcp_server_name`（MCPサーバー名）でマッチ
+
+**使用例:**
+
+```json
+{
+  "hooks": {
+    "Elicitation": [
+      {
+        "matcher": "my-auth-server",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/handle-elicitation.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**入力JSON（固有フィールド）:**
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `mcp_server_name` | string | 入力を要求しているMCPサーバー名（matcher対象） |
+| `message` | string | ユーザーに表示されるメッセージ |
+| `mode` | string | `"form"`（フォーム入力）または `"url"`（ブラウザ認証） |
+| `requested_schema` | object | フォームモード時のフィールドのJSONスキーマ（optional） |
+| `url` | string | URLモード時の認証URL（optional） |
+| `elicitation_id` | string | エリシテーションの一意識別子（optional） |
+
+**出力JSON:**
+
+```json
+{
+  "hookSpecificOutput": {
+    "hookEventName": "Elicitation",
+    "action": "accept|decline|cancel",
+    "content": { "username": "alice" }
+  }
+}
+```
+
+- `action`: `accept`（承認しフォーム値を送信）、`decline`（拒否）、`cancel`（キャンセル）
+- `content`: `action`が`accept`の場合のみ有効。フォームフィールドの値
+- exit code 2でエリシテーションを拒否可能
+
+**ユースケース:**
+
+- MCPエリシテーションリクエストのログ記録
+- エリシテーションレスポンスの自動入力・オーバーライド
+- セキュリティポリシーに基づくエリシテーションのブロック
+
+### ElicitationResult
+
+MCPエリシテーションのレスポンス結果を受け取るフック（v2.1.76以降）。
+ユーザーがMCPエリシテーションに応答した後、応答をサーバーに返す前に発火します。応答の観察・修正・ブロックが可能です。
+
+**マッチャー**: `mcp_server_name`（MCPサーバー名）でマッチ
+
+**使用例:**
+
+```json
+{
+  "hooks": {
+    "ElicitationResult": [
+      {
+        "matcher": "my-auth-server",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/elicitation-result.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**入力JSON（固有フィールド）:**
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `mcp_server_name` | string | MCPサーバー名（matcher対象） |
+| `action` | string | ユーザーのアクション: `"accept"` / `"decline"` / `"cancel"` |
+| `mode` | string | `"form"` または `"url"` |
+| `content` | object | ユーザーが送信したフォーム値（`action`が`accept`の場合のみ、optional） |
+| `elicitation_id` | string | 対応するElicitationイベントのID（optional） |
+
+**出力JSON:**
+
+```json
+{
+  "hookSpecificOutput": {
+    "hookEventName": "ElicitationResult",
+    "action": "accept|decline|cancel",
+    "content": { "username": "modified_value" }
+  }
+}
+```
+
+- `action`/`content`でユーザーの応答をオーバーライド可能
+- exit code 2で応答をブロック（actionが`decline`に変更される）
+
+**ユースケース:**
+
+- エリシテーション結果の監査ログ記録
+- エリシテーション結果に基づく後続処理のトリガー
+- セキュリティポリシーに基づく応答のブロック・修正
 
 ## パーミッション優先順位（v2.1.27以降）
 
