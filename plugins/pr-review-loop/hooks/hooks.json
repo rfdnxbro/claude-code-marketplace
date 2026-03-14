@@ -12,6 +12,18 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/review-summary.sh",
+            "timeout": 10,
+            "statusMessage": "PRレビューセッションの最終サマリーを記録中..."
+          }
+        ]
+      }
     ]
   }
 }
