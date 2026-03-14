@@ -41,6 +41,9 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
         "WorktreeCreate",
         "WorktreeRemove",
         "InstructionsLoaded",
+        "PostCompact",
+        "Elicitation",
+        "ElicitationResult",
     ]
 
     for event_name, event_hooks in hooks.items():

@@ -58,6 +58,7 @@ class TestValidateHooksJson:
             "SubagentStart",
             "SubagentStop",
             "PreCompact",
+            "PostCompact",
             "SessionStart",
             "SessionEnd",
             "Setup",
@@ -67,6 +68,8 @@ class TestValidateHooksJson:
             "WorktreeCreate",
             "WorktreeRemove",
             "InstructionsLoaded",
+            "Elicitation",
+            "ElicitationResult",
         ]
         for event in valid_events:
             content = json.dumps(
@@ -468,3 +471,69 @@ class TestValidateHooksJson:
         result = validate_hooks_json(Path("hooks.json"), content)
         assert not result.has_errors()
         assert any("matcher" in w for w in result.warnings)
+
+    def test_valid_post_compact_hook(self):
+        """PostCompactフックが有効であることをテスト（v2.1.76以降）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PostCompact": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/post-compact.sh",
+                                    "timeout": 10,
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_valid_elicitation_hook(self):
+        """Elicitationフックが有効であることをテスト（v2.1.76以降）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "Elicitation": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/elicitation.sh",
+                                    "timeout": 30,
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_valid_elicitation_result_hook(self):
+        """ElicitationResultフックが有効であることをテスト（v2.1.76以降）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "ElicitationResult": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/elicit-result.sh",
+                                    "timeout": 30,
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
