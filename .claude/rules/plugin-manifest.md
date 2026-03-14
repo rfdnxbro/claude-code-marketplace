@@ -44,6 +44,7 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 - デフォルトディレクトリ（`commands/`, `agents/`, `skills/`等）が存在すれば自動的に読み込まれる
 - plugin.jsonでの明示的な指定は不要
 - カスタムパスを指定した場合、デフォルトディレクトリと**両方が読み込まれる**（置き換えではなく補足）
+- **デフォルトパスと同じパスの明示指定は禁止**: 冗長な指定を避けるため、デフォルトパスと一致するコンポーネント参照は記述しないこと（例: `"hooks": "./hooks/hooks.json"` や `"settings": "./settings.json"` はデフォルトと同一のため不要）
 
 ## 完全な例
 
@@ -59,13 +60,19 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
   "homepage": "https://docs.example.com",
   "repository": "https://github.com/author/plugin",
   "license": "MIT",
-  "keywords": ["keyword1", "keyword2"],
-  "commands": "./commands/",
-  "agents": "./agents/",
-  "skills": "./skills/",
-  "hooks": "./hooks/hooks.json",
-  "mcpServers": "./.mcp.json",
-  "settings": "./settings.json"
+  "keywords": ["keyword1", "keyword2"]
+}
+```
+
+上記の例では `commands/`, `agents/`, `skills/`, `hooks/hooks.json`, `.mcp.json`, `settings.json` はデフォルトパスに配置されているため、明示的な指定は不要です。
+
+**カスタムパスを使用する場合のみ指定**:
+
+```json
+{
+  "name": "my-plugin",
+  "hooks": "./custom-hooks/config.json",
+  "mcpServers": "./config/mcp.json"
 }
 ```
 
