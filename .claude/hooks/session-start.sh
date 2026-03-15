@@ -8,7 +8,12 @@ fi
 
 # pre-commitのインストール（--userフラグで権限問題を回避）
 if ! command -v pre-commit &> /dev/null; then
-  pip install --user pre-commit
+  # pip3を優先し、なければpipにフォールバック
+  PIP_CMD="pip3"
+  if ! command -v pip3 &> /dev/null; then
+    PIP_CMD="pip"
+  fi
+  "$PIP_CMD" install --user -q pre-commit
   # --userインストール先をPATHに追加
   export PATH="$HOME/.local/bin:$PATH"
 fi
