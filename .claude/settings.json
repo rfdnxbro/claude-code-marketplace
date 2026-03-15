@@ -23,7 +23,6 @@
       }
     ]
   },
-  "language": "関西弁",
   "enabledPlugins": {
     "code-review@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": true
