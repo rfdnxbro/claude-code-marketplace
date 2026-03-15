@@ -13,8 +13,8 @@ if command -v jq &> /dev/null; then
   tool_name=$(echo "$input" | jq -r '.tool_name // ""')
   session_id=$(echo "$input" | jq -r '.session_id // ""' | head -c 8)
 else
-  hook_event=$(echo "$input" | grep -o '"hook_event_name":"[^"]*"' | cut -d'"' -f4)
-  tool_name=$(echo "$input" | grep -o '"tool_name":"[^"]*"' | cut -d'"' -f4)
+  hook_event=$(echo "$input" | grep -oE '"hook_event_name"\s*:\s*"[^"]*"' | cut -d'"' -f4)
+  tool_name=$(echo "$input" | grep -oE '"tool_name"\s*:\s*"[^"]*"' | cut -d'"' -f4)
   session_id="n/a"
 fi
 
