@@ -1094,6 +1094,13 @@ ask: [
 - `ask` で確認が必要なツールのみ `PermissionRequest` イベントが発火します
 - content-levelの `ask` が tool-levelの `allow` より優先されるため、危険な操作のみフックで処理できます
 
+### `PreToolUse` フックの `permissionDecision` と `deny` ルールの優先順位
+
+`PreToolUse` フックが `permissionDecision: "allow"` を返しても、設定の `deny` ルールが常に優先されます。
+
+- `deny` ルールはフックの `allow` 判断より常に優先される
+- エンタープライズのマネージド設定による制限はフックによって回避できない
+
 ### 関連ドキュメント
 
 パーミッション設定の詳細は [plugin-manifest.md](plugin-manifest.md) を参照してください。
