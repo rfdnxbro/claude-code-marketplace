@@ -44,6 +44,7 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
         "PostCompact",
         "Elicitation",
         "ElicitationResult",
+        "StopFailure",
     ]
 
     for event_name, event_hooks in hooks.items():

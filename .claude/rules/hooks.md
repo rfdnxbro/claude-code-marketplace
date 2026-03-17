@@ -63,6 +63,7 @@ hooks:
 | `UserPromptSubmit` | ユーザープロンプト送信時 | × |
 | `Notification` | 通知発行時 | ✓ |
 | `Stop` | Claude終了時 | × |
+| `StopFailure` | APIエラー（レート制限・認証失敗など）でターンが終了した時（v2.1.78以降） | × |
 | `SubagentStart` | サブエージェント起動時 | ✓ |
 | `SubagentStop` | サブエージェント終了時 | ✓ |
 | `PreCompact` | コンパクト前 | ✓ |
@@ -422,6 +423,7 @@ EOF
 
 - `${CLAUDE_PLUGIN_ROOT}` - プラグインルートへの絶対パス
 - `${CLAUDE_PROJECT_DIR}` - プロジェクトルートへの絶対パス
+- `${CLAUDE_PLUGIN_DATA}` - プラグインの永続データディレクトリへの絶対パス。プラグインのアップデートを超えて永続化される（v2.1.78以降）。`/plugin uninstall` 実行時は削除前に確認プロンプトが表示される
 - `$ARGUMENTS` - フック入力JSON（prompt型で使用）
 
 ## フック入力JSON

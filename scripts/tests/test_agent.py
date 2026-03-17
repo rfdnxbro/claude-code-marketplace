@@ -552,3 +552,56 @@ class TestValidateAgent:
         result = validate_agent(Path("agent.md"), content)
         assert result.has_errors()
         assert any("permissionMode" in e for e in result.errors)
+
+    def test_effort_valid_low(self):
+        """effort: lowが有効であることを確認（v2.1.78以降）"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            effort: low
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()
+
+    def test_effort_valid_medium(self):
+        """effort: mediumが有効であることを確認（v2.1.78以降）"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            effort: medium
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()
+
+    def test_effort_valid_high(self):
+        """effort: highが有効であることを確認（v2.1.78以降）"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            effort: high
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()
+
+    def test_effort_invalid_value(self):
+        """effort: に不正な値が指定された場合エラー（v2.1.78以降）"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            effort: ultra
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert result.has_errors()
+        assert any("effort" in e and "不正" in e for e in result.errors)
