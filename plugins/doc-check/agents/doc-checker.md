@@ -5,6 +5,8 @@ tools: Read, Glob, Grep, Bash(git:*)
 model: sonnet
 maxTurns: 5
 memory: project
+effort: low
+background: true
 ---
 
 # ドキュメント整合性チェック
