@@ -1,5 +1,18 @@
 {
   "hooks": {
+    "PostCompact": [
+      {
+        "matcher": "auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/post-compact.sh",
+            "timeout": 10,
+            "statusMessage": "コンパクション後にPRレビューコンテキストを復元中..."
+          }
+        ]
+      }
+    ],
     "SubagentStop": [
       {
         "matcher": ".*",
