@@ -35,7 +35,7 @@ python3 scripts/validate_plugin.py plugins/my-plugin/commands/review.md
 python3 scripts/validate_plugin.py plugins/my-plugin/**/*.md plugins/my-plugin/**/*.json
 ```
 
-#### `claude plugin validate` コマンド（v2.1.77で強化）
+#### `claude plugin validate` コマンド
 
 `claude plugin validate` コマンドは以下を検証します:
 
@@ -125,7 +125,7 @@ pre-commit run --all-files
 - `hooks.json` のスキーマ変更（新イベント、新フックタイプ、新フィールド）
 - プラグインのフックスクリプトが出力するJSON（`permissionDecision` 等）の挙動変更
 - `marketplace.json` / `plugin.json` のソース指定やフィールド変更
-- プラグイン開発に影響するバグ修正（キャッシュ競合、バリデーション等）
+- プラグイン定義の書き方に影響するバグ修正（バリデーション挙動の変更等）
 
 **追跡しない（ドキュメントに反映不要）:**
 
