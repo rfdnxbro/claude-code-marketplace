@@ -48,6 +48,19 @@
           }
         ]
       }
+    ],
+    "PostCompact": [
+      {
+        "matcher": "auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/post-compact.sh",
+            "timeout": 10,
+            "statusMessage": "コンパクション後にDLCコンテキストを復元中..."
+          }
+        ]
+      }
     ]
   }
 }
