@@ -24,6 +24,18 @@
           }
         ]
       }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/review-summary.sh",
+            "timeout": 10,
+            "statusMessage": "エラー発生時のPRレビューログを記録中..."
+          }
+        ]
+      }
     ]
   }
 }
