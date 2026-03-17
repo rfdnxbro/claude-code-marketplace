@@ -93,6 +93,13 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
     if isolation_str and isolation_str not in valid_isolation_modes:
         result.add_error(f"{file_path.name}: isolationの値が不正です: {isolation_str}（worktree）")
 
+    # effortの値チェック（v2.1.78以降）
+    effort = frontmatter.get("effort", "")
+    effort_str = str(effort) if effort else ""
+    valid_efforts = ["low", "medium", "high", ""]
+    if effort_str and effort_str not in valid_efforts:
+        result.add_error(f"{file_path.name}: effortの値が不正です: {effort_str}（low/medium/high）")
+
     # backgroundの値チェック（v2.1.49以降）
     background = frontmatter.get("background")
     if background is not None and not isinstance(background, bool):

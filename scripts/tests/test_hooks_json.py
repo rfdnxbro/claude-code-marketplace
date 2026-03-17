@@ -70,6 +70,7 @@ class TestValidateHooksJson:
             "InstructionsLoaded",
             "Elicitation",
             "ElicitationResult",
+            "StopFailure",
         ]
         for event in valid_events:
             content = json.dumps(
