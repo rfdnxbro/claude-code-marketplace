@@ -8,6 +8,7 @@ skills: bbl:content-guide
 memory: project
 isolation: worktree
 maxTurns: 30
+effort: high
 allow:
   - Read
   - Glob
