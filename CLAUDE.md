@@ -35,6 +35,22 @@ python3 scripts/validate_plugin.py plugins/my-plugin/commands/review.md
 python3 scripts/validate_plugin.py plugins/my-plugin/**/*.md plugins/my-plugin/**/*.json
 ```
 
+#### `claude plugin validate` コマンド（v2.1.77で強化）
+
+`claude plugin validate` コマンドは以下を検証します:
+
+- スキルのfrontmatter（フィールド形式・必須項目）
+- エージェントのfrontmatter（フィールド形式・必須項目）
+- コマンドのfrontmatter（フィールド形式・必須項目）
+- `hooks/hooks.json`（JSONスキーマ・イベント名・フックタイプ）
+- YAMLパースエラー（frontmatter構文の妥当性）
+- スキーマ違反（未知フィールドや不正な値）
+
+```bash
+# プラグインディレクトリを検証
+claude plugin validate .
+```
+
 #### 警告のスキップ
 
 ファイル内にHTMLコメントを追加してバリデーター警告をスキップ:

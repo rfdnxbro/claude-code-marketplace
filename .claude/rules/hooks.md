@@ -1079,6 +1079,16 @@ ask: [
 - `ask` で確認が必要なツールのみ `PermissionRequest` イベントが発火します
 - content-levelの `ask` が tool-levelの `allow` より優先されるため、危険な操作のみフックで処理できます
 
+### `PreToolUse` フックの `permissionDecision: "allow"` に関する注意（v2.1.77で修正）
+
+> **バグ修正（v2.1.77）**: `PreToolUse` フックが `permissionDecision: "allow"` を返した場合に、`deny` パーミッションルール（エンタープライズのマネージド設定を含む）がバイパスされていたバグが修正されました。
+
+v2.1.77以降の正しい挙動:
+
+- フックが `permissionDecision: "allow"` を返しても、設定の `deny` ルールや企業管理設定が優先されます
+- `deny` ルールはフックの `allow` 判断よりも常に優先されます
+- エンタープライズのマネージド設定による制限はフックによって回避できません
+
 ### 関連ドキュメント
 
 パーミッション設定の詳細は [plugin-manifest.md](plugin-manifest.md) を参照してください。
