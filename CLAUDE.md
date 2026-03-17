@@ -35,6 +35,18 @@ python3 scripts/validate_plugin.py plugins/my-plugin/commands/review.md
 python3 scripts/validate_plugin.py plugins/my-plugin/**/*.md plugins/my-plugin/**/*.json
 ```
 
+#### claude plugin validate（v2.1.77以降）
+
+`claude plugin validate` コマンドの検証範囲が拡張されました:
+
+- スキル・エージェント・コマンドのfrontmatter（YAMLパースエラー・スキーマ違反を検出）
+- `hooks/hooks.json`（YAMLパースエラー・スキーマ違反を検出）
+
+```bash
+# Claude Code CLIによるプラグイン検証（v2.1.77以降）
+claude plugin validate
+```
+
 #### 警告のスキップ
 
 ファイル内にHTMLコメントを追加してバリデーター警告をスキップ:
