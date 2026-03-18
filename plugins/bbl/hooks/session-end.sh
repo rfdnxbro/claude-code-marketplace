@@ -1,6 +1,6 @@
 #!/bin/bash
 # セッション終了時にセッション情報をログに記録
-# 注意: SessionEndイベントではlast_assistant_messageは利用不可（Stop/SubagentStop専用）
+# 注意: SessionEnd/StopFailureイベントではlast_assistant_messageは利用不可（Stop/SubagentStop専用）
 # 代わりにsession_idとtranscript_pathを記録する
 
 input=$(cat)
