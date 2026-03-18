@@ -48,6 +48,18 @@
           }
         ]
       }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/session-log.sh",
+            "timeout": 10,
+            "statusMessage": "エラー発生時のセッションログを記録中..."
+          }
+        ]
+      }
     ]
   }
 }

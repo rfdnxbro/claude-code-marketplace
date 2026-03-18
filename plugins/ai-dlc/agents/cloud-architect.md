@@ -17,6 +17,7 @@ model: sonnet
 memory: project
 permissionMode: default
 isolation: worktree
+effort: high
 skills: ai-dlc:ai-dlc
 hooks:
   Stop:
