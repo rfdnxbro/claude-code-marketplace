@@ -5,6 +5,7 @@ tools: Read, Write, Edit, Glob, Grep
 model: sonnet
 permissionMode: default
 memory: project
+effort: medium
 maxTurns: 30
 skills: ai-dlc:ai-dlc
 hooks:
