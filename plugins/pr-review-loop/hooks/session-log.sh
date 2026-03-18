@@ -1,4 +1,8 @@
 #!/bin/bash
+if [ -z "${CLAUDE_PLUGIN_DATA}" ]; then
+  exit 0
+fi
+mkdir -p "${CLAUDE_PLUGIN_DATA}"
 LOG_FILE="${CLAUDE_PLUGIN_DATA}/pr-review-loop.log"
 if ! command -v jq &>/dev/null; then
   echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") [pr-review-loop] SubagentStop: (jq not found)" >> "$LOG_FILE"
