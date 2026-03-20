@@ -96,6 +96,14 @@ def validate_skill(file_path: Path, content: str) -> ValidationResult:
                     "v2.1.20以降Bash(*)はBashと同等に扱われますが、具体的なパターンを推奨"
                 )
 
+    # effortの確認（v2.1.80以降）
+    effort = frontmatter.get("effort")
+    if effort is not None:
+        effort_str = str(effort) if effort else ""
+        valid_efforts = ["low", "normal", "high"]
+        if effort_str and effort_str not in valid_efforts:
+            result.add_warning(f"{file_path.name}: effortが不正: {effort_str}（low/normal/high）")
+
     # hooksの確認（形式警告のみ）
     hooks = frontmatter.get("hooks")
     if hooks is not None:
