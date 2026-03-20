@@ -2,6 +2,7 @@
 name: ai-dlc
 description: AI駆動開発ライフサイクル（AI-DLC）の概念、原則、ベストプラクティスを説明する。AIネイティブな開発方法論について質問されたとき、またはAI-DLCの実践方法を知りたいときに使用。
 user-invocable: true
+effort: low
 ---
 
 # AI-DLC方法論ガイド
