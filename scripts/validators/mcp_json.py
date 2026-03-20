@@ -28,7 +28,7 @@ def validate_mcp_json(file_path: Path, content: str) -> ValidationResult:
                 result.add_error(
                     f"{file_path.name}: {server_name}: stdioタイプにはcommandが必須です"
                 )
-        elif server_type in ["http", "sse"]:
+        elif server_type in ["http", "sse", "ws"]:
             if not config.get("url"):
                 result.add_error(
                     f"{file_path.name}: {server_name}: {server_type}タイプにはurlが必須です"

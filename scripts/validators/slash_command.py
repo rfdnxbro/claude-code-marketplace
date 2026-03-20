@@ -33,6 +33,12 @@ def validate_slash_command(file_path: Path, content: str) -> ValidationResult:
         else:
             result.add_error(f"{file_path.name}: descriptionが未設定で本文も空")
 
+    # argument-hintの確認（文字列型）
+    argument_hint = frontmatter.get("argument-hint")
+    if argument_hint is not None:
+        if not isinstance(argument_hint, str) or not argument_hint.strip():
+            result.add_warning(f"{file_path.name}: argument-hintは空でない文字列が必要です")
+
     # allowed-toolsの確認（リスト形式対応）
     allowed_tools = frontmatter.get("allowed-tools")
     if allowed_tools is not None:

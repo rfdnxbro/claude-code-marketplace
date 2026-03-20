@@ -89,6 +89,22 @@ JSON形式で記述します。配置場所はプラグインルートの `.mcp.
 echo '{"Authorization": "Bearer '$(get-token)'"}'
 ```
 
+### WebSocket
+
+| フィールド | 必須 | 説明 |
+|-----------|:---:|------|
+| `type` | ✓ | `"ws"` |
+| `url` | ✓ | WebSocketサーバーURL |
+
+```json
+{
+  "server-name": {
+    "type": "ws",
+    "url": "wss://api.example.com/mcp"
+  }
+}
+```
+
 ### SSE（Server-Sent Events）【非推奨】
 
 > **注意**: SSEトランスポートは非推奨（deprecated）です。新規実装ではHTTPトランスポートの使用を推奨します。
