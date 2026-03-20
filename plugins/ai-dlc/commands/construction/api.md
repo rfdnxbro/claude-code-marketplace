@@ -1,8 +1,7 @@
 ---
 description: ソフトウェアエンジニアとしてREST APIを作成
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
-allow: ["Bash"]
-ask: ["Bash(rm -rf *)"]
+effort: high
 ---
 
 # REST API作成

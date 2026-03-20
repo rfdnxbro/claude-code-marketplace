@@ -2,17 +2,6 @@
 name: cloud-architect
 description: クラウドアーキテクトエージェント。クラウドアーキテクチャ設計、デプロイ計画、IaCを担当。コンストラクションフェーズで使用。AWSへのデプロイやインフラ設計を行う際に呼び出す。
 tools: Read, Write, Edit, Glob, Grep, Bash
-allow: ["Bash"]
-ask: [
-  "Bash(rm -rf *)",
-  "Bash(git push --force *)",
-  "Bash(npm publish *)",
-  "Bash(docker rmi *)",
-  "Bash(aws cloudformation delete-stack *)",
-  "Bash(aws s3 rb *)",
-  "Bash(terraform destroy *)",
-  "Bash(cdk destroy *)"
-]
 model: sonnet
 memory: project
 permissionMode: default

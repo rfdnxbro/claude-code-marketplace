@@ -1,14 +1,7 @@
 ---
 description: クラウドアーキテクトとしてデプロイ計画を作成
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
-allow: ["Bash"]
-ask: [
-  "Bash(rm -rf *)",
-  "Bash(terraform destroy *)",
-  "Bash(cdk destroy *)",
-  "Bash(aws cloudformation delete-stack *)",
-  "Bash(aws s3 rb *)"
-]
+effort: high
 ---
 
 # アーキテクチャ設計

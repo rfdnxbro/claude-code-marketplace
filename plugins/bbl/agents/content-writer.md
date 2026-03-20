@@ -9,13 +9,6 @@ memory: project
 isolation: worktree
 maxTurns: 30
 effort: high
-allow:
-  - Read
-  - Glob
-  - Grep
-ask:
-  - Write
-  - Edit
 hooks:
   Stop:
     - hooks:

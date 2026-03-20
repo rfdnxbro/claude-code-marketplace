@@ -1,6 +1,7 @@
 ---
 description: ソフトウェアアーキテクトとしてユーザーストーリーをユニットにグループ化
 allowed-tools: Read, Write, Edit, Glob, Grep
+effort: normal
 ---
 
 # ユニット分解

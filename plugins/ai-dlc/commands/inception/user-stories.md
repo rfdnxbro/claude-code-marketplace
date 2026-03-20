@@ -2,6 +2,7 @@
 description: プロダクトマネージャーとしてユーザーストーリーを作成する。AI-DLCのインセプションフェーズでインテントをユーザーストーリーに分解する際に使用。/ai-dlc:setup 実行後に使用。
 allowed-tools: Read, Write, Edit, Glob, Grep
 argument-hint: "[product-description]"
+effort: high
 ---
 
 # ユーザーストーリー作成
