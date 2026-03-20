@@ -8,13 +8,6 @@ skills: bbl:content-guide
 memory: project
 maxTurns: 20
 effort: medium
-allow:
-  - Read
-  - Glob
-  - Grep
-ask:
-  - Write
-  - Edit
 hooks:
   Stop:
     - hooks:

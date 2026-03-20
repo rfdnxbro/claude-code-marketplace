@@ -1,7 +1,8 @@
 ---
 description: ソフトウェアエンジニアとしてドメイン（コンポーネント）モデルを設計
 allowed-tools: Read, Write, Edit, Glob, Grep
-argument-hint: [unit-name]
+argument-hint: "[unit-name]"
+effort: high
 ---
 
 # ドメインモデル設計

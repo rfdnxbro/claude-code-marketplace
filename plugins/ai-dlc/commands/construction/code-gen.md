@@ -1,9 +1,8 @@
 ---
 description: ソフトウェアエンジニアとしてコードを生成
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Task(software-engineer)
-allow: ["Bash"]
-ask: ["Bash(rm -rf *)"]
-argument-hint: [component-name]
+argument-hint: "[component-name]"
+effort: high
 ---
 
 # コード生成
