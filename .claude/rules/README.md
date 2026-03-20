@@ -49,3 +49,4 @@
 | `CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS` | Gitクローンのタイムアウト（ミリ秒）。デフォルト120000（120秒）（v2.1.51以降） | marketplace |
 | `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` | `SessionEnd` フックのタイムアウト（ミリ秒）。デフォルトは `hook.timeout` の設定値（v2.1.74以降） | hooks |
 | `${CLAUDE_PLUGIN_DATA}` | プラグインの永続データディレクトリへの絶対パス。アップデートを超えて永続化される（v2.1.78以降） | hooks |
+| `CLAUDE_CODE_PLUGIN_SEED_DIR` | プラグインのシードディレクトリ。v2.1.79以降は複数ディレクトリをパス区切り文字（Unix: `:`, Windows: `;`）で区切って指定可能 | marketplace |
