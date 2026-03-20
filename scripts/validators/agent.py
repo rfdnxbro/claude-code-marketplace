@@ -96,9 +96,11 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
     # effortの値チェック（v2.1.78以降）
     effort = frontmatter.get("effort", "")
     effort_str = str(effort) if effort else ""
-    valid_efforts = ["low", "medium", "high", ""]
+    valid_efforts = ["low", "medium", "high", "max", ""]
     if effort_str and effort_str not in valid_efforts:
-        result.add_error(f"{file_path.name}: effortの値が不正です: {effort_str}（low/medium/high）")
+        result.add_error(
+            f"{file_path.name}: effortの値が不正です: {effort_str}（low/medium/high/max）"
+        )
 
     # backgroundの値チェック（v2.1.49以降）
     background = frontmatter.get("background")

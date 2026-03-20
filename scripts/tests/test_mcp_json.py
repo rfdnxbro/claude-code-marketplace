@@ -92,6 +92,28 @@ class TestValidateMcpJson:
         result = validate_mcp_json(Path(".mcp.json"), content)
         assert any("不明なサーバータイプ" in w for w in result.warnings)
 
+    def test_valid_ws(self):
+        """WebSocketタイプが有効であることを確認"""
+        content = json.dumps(
+            {
+                "mcpServers": {
+                    "ws-server": {
+                        "type": "ws",
+                        "url": "wss://api.example.com/mcp",
+                    }
+                }
+            }
+        )
+        result = validate_mcp_json(Path(".mcp.json"), content)
+        assert not result.has_errors()
+
+    def test_ws_missing_url(self):
+        """WebSocketタイプでurl未指定はエラー"""
+        content = json.dumps({"mcpServers": {"test-server": {"type": "ws"}}})
+        result = validate_mcp_json(Path(".mcp.json"), content)
+        assert result.has_errors()
+        assert any("url" in e for e in result.errors)
+
     def test_default_type_is_stdio(self):
         """typeを省略した場合はstdioとして扱われる"""
         content = json.dumps({"mcpServers": {"test-server": {"command": "node"}}})

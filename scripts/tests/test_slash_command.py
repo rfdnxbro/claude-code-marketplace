@@ -321,6 +321,31 @@ class TestValidateSlashCommand:
         assert not result.has_errors()
         assert not any("effort" in w for w in result.warnings)
 
+    def test_valid_argument_hint(self):
+        """argument-hintが文字列で指定できることを確認"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            argument-hint: "[message]"
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert not any("argument-hint" in w for w in result.warnings)
+
+    def test_argument_hint_empty_warning(self):
+        """argument-hintが空の場合に警告"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            argument-hint:
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert any("argument-hint" in w for w in result.warnings)
+
     def test_invalid_effort(self):
         """無効なeffort値で警告が出ることを確認（v2.1.80以降）"""
         content = dedent("""
