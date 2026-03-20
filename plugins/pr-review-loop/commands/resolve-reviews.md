@@ -4,6 +4,7 @@ allowed-tools: Bash(gh api:*), Bash(gh pr view:*), Bash(gh pr comment:*), Bash(g
 argument-hint: "[PR番号]"
 context: fork
 model: sonnet
+effort: high
 ---
 
 # PRレビューコメント対応
