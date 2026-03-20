@@ -87,4 +87,12 @@ def validate_slash_command(file_path: Path, content: str) -> ValidationResult:
     if model_str and model_str not in valid_models:
         result.add_warning(f"{file_path.name}: modelが不正: {model_str}（sonnet/opus/haiku）")
 
+    # effortの確認（v2.1.80以降）
+    effort = frontmatter.get("effort")
+    if effort is not None:
+        effort_str = str(effort) if effort else ""
+        valid_efforts = ["low", "normal", "high"]
+        if effort_str and effort_str not in valid_efforts:
+            result.add_warning(f"{file_path.name}: effortが不正: {effort_str}（low/normal/high）")
+
     return result

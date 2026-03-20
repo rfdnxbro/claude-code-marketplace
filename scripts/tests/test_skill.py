@@ -351,3 +351,58 @@ description: 説明
         """).strip()
         result = validate_skill(Path("SKILL.md"), content)
         assert any("model" in w for w in result.warnings)
+
+    def test_valid_effort_low(self):
+        """effort: lowが有効であることを確認（v2.1.80以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            effort: low
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+        assert not any("effort" in w for w in result.warnings)
+
+    def test_valid_effort_normal(self):
+        """effort: normalが有効であることを確認（v2.1.80以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            effort: normal
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+        assert not any("effort" in w for w in result.warnings)
+
+    def test_valid_effort_high(self):
+        """effort: highが有効であることを確認（v2.1.80以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            effort: high
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+        assert not any("effort" in w for w in result.warnings)
+
+    def test_invalid_effort(self):
+        """無効なeffort値で警告が出ることを確認（v2.1.80以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            effort: ultra
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert any("effort" in w for w in result.warnings)

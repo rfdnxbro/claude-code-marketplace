@@ -103,6 +103,16 @@ Claude Codeがカスタムステータスラインの設定を支援します。
       "cache_creation_input_tokens": 5000,
       "cache_read_input_tokens": 2000
     }
+  },
+  "rate_limits": {
+    "5h": {
+      "used_percentage": 42.5,
+      "resets_at": "2026-03-20T15:30:00Z"
+    },
+    "7d": {
+      "used_percentage": 18.0,
+      "resets_at": "2026-03-27T00:00:00Z"
+    }
   }
 }
 ```
@@ -173,6 +183,17 @@ Claude Codeがカスタムステータスラインの設定を支援します。
 | `output_tokens` | number | 現在の出力トークン | `1200` |
 | `cache_creation_input_tokens` | number | キャッシュ作成トークン | `5000` |
 | `cache_read_input_tokens` | number | キャッシュ読み取りトークン | `2000` |
+
+#### レート制限情報（v2.1.80以降）
+
+Claude.ai のレート制限使用状況を表示します。存在しない場合は `rate_limits` フィールド自体が省略されます。
+
+| フィールド | 型 | 説明 | 例 |
+|-----------|---|------|-----|
+| `rate_limits.5h.used_percentage` | number | 5時間ウィンドウの使用率（%） | `42.5` |
+| `rate_limits.5h.resets_at` | string | 5時間ウィンドウのリセット日時（ISO 8601） | `"2026-03-20T15:30:00Z"` |
+| `rate_limits.7d.used_percentage` | number | 7日間ウィンドウの使用率（%） | `18.0` |
+| `rate_limits.7d.resets_at` | string | 7日間ウィンドウのリセット日時（ISO 8601） | `"2026-03-27T00:00:00Z"` |
 
 ## スクリプト例
 

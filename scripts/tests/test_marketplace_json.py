@@ -490,3 +490,20 @@ class TestValidateMarketplaceJson:
         result = validate_marketplace_json(Path("marketplace.json"), content)
         assert result.has_errors()
         assert any("無効な値" in e for e in result.errors)
+
+    def test_plugin_source_settings(self):
+        """settingsソースタイプが有効であることをテスト（v2.1.80以降）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {"source": "settings"},
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()

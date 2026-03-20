@@ -95,7 +95,7 @@ def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult
             elif isinstance(source, dict):
                 # オブジェクト形式のsourceタイプを検証
                 source_type = source.get("source")
-                valid_source_types = ["github", "url", "npm", "git-subdir"]
+                valid_source_types = ["github", "url", "npm", "git-subdir", "settings"]
                 if not source_type:
                     result.add_error(f"{file_path.name}: plugins[{i}].source.sourceは必須です")
                 elif source_type not in valid_source_types:
