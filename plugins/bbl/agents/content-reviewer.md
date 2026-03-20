@@ -6,6 +6,7 @@ model: sonnet
 permissionMode: default
 skills: bbl:content-guide
 memory: project
+isolation: worktree
 maxTurns: 20
 effort: medium
 hooks:
