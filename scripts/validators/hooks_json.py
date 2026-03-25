@@ -38,6 +38,8 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
         "TeammateIdle",
         "TaskCompleted",
         "ConfigChange",
+        "CwdChanged",
+        "FileChanged",
         "WorktreeCreate",
         "WorktreeRemove",
         "InstructionsLoaded",
@@ -66,6 +68,8 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
                 "PostCompact",
                 "SessionStart",
                 "ConfigChange",
+                "CwdChanged",
+                "FileChanged",
                 "Elicitation",
                 "ElicitationResult",
             ]

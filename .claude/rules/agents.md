@@ -49,6 +49,7 @@ skills: skill-name
 | `hooks` | No | フック定義（[hooks.md](hooks.md)参照） |
 | `memory` | No | 永続的メモリのスコープ：`user`, `project`, `local`（v2.1.33以降） |
 | `effort` | No | 思考努力レベル：`low`, `medium`, `high`, `max`（`max`はOpus 4.6のみ）（v2.1.78以降） |
+| `initialPrompt` | No | エージェント起動時に自動送信される最初のプロンプト（v2.1.83以降） |
 | `maxTurns` | No | エージェントの最大ターン数。省略時は制限なし |
 | `mcpServers` | No | エージェントが利用可能なMCPサーバーを制限（カンマ/YAML形式） |
 | `isolation` | No | 実行分離モード：`worktree`（v2.1.50以降） |

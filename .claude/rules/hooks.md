@@ -74,6 +74,8 @@ hooks:
 | `TeammateIdle` | チームメイトエージェントがアイドル状態時 | × |
 | `TaskCompleted` | タスク完了時 | × |
 | `ConfigChange` | セッション中に設定ファイルが変更された時 | ✓ |
+| `CwdChanged` | カレントディレクトリが変更された時（direnvなどのリアクティブ環境管理用）（v2.1.83以降） | ✓ |
+| `FileChanged` | ファイルが変更された時（direnvなどのリアクティブ環境管理用）（v2.1.83以降） | ✓ |
 | `WorktreeCreate` | エージェントworktree分離でworktreeが作成された時 | × |
 | `WorktreeRemove` | エージェントworktree分離でworktreeが削除された時 | × |
 | `InstructionsLoaded` | CLAUDE.mdまたは`.claude/rules/*.md`がコンテキストに読み込まれた時（v2.1.64以降） | × |

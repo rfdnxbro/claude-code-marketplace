@@ -618,3 +618,30 @@ class TestValidateAgent:
         result = validate_agent(Path("agent.md"), content)
         assert result.has_errors()
         assert any("effort" in e and "不正" in e for e in result.errors)
+
+    def test_initial_prompt_valid_string(self):
+        """initialPrompt: 文字列が有効であることを確認（v2.1.83以降）"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            initialPrompt: 現在のコードベースを分析して改善点を提案してください
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()
+
+    def test_initial_prompt_invalid_non_string(self):
+        """initialPrompt: に文字列以外の値が指定された場合エラー（v2.1.83以降）"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            initialPrompt: 123
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert result.has_errors()
+        assert any("initialPrompt" in e for e in result.errors)
