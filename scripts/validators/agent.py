@@ -109,6 +109,11 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
             f"{file_path.name}: backgroundはブール値（true/false）が必要です: {background}"
         )
 
+    # initialPromptの値チェック（v2.1.83以降）
+    initial_prompt = frontmatter.get("initialPrompt")
+    if initial_prompt is not None and not isinstance(initial_prompt, str):
+        result.add_error(f"{file_path.name}: initialPromptは文字列が必要です: {initial_prompt}")
+
     # toolsの確認（リスト形式検証）
     tools = frontmatter.get("tools")
     if tools is not None:

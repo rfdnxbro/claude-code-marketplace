@@ -35,6 +35,28 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
             f"{file_path.name}: versionはセマンティックバージョニング（x.y.z）を推奨: {version}"
         )
 
+    # userConfigの確認（v2.1.83以降）
+    user_config = data.get("userConfig")
+    if user_config is not None:
+        if not isinstance(user_config, dict):
+            result.add_error(
+                f"{file_path.name}: userConfigはオブジェクト（キーと設定項目のマッピング）"
+                "が必要です"
+            )
+        else:
+            for config_key, config_value in user_config.items():
+                if not isinstance(config_value, dict):
+                    result.add_error(
+                        f"{file_path.name}: userConfig.{config_key}はオブジェクトが必要です"
+                    )
+                    continue
+                # sensitiveはブール値のみ
+                sensitive = config_value.get("sensitive")
+                if sensitive is not None and not isinstance(sensitive, bool):
+                    result.add_error(
+                        f"{file_path.name}: userConfig.{config_key}.sensitiveはブール値が必要です"
+                    )
+
     # パスの確認
     path_fields = [
         "commands",

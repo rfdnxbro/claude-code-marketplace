@@ -163,3 +163,68 @@ class TestValidatePluginJson:
         content = json.dumps({"name": "my-plugin", "mcpServers": "./.mcp.json"})
         result = validate_plugin_json(Path("plugin.json"), content)
         assert any("デフォルトパス" in w for w in result.warnings)
+
+    def test_user_config_valid(self):
+        """userConfigが有効なオブジェクトの場合はエラーなし（v2.1.83以降）"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "userConfig": {
+                    "apiKey": {"description": "API認証キー", "sensitive": True},
+                    "serverUrl": {
+                        "description": "サーバーURL",
+                        "default": "https://api.example.com",
+                    },
+                },
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+
+    def test_user_config_not_object(self):
+        """userConfigがオブジェクト以外の場合エラー（v2.1.83以降）"""
+        content = json.dumps({"name": "my-plugin", "userConfig": "invalid"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("userConfig" in e for e in result.errors)
+
+    def test_user_config_item_not_object(self):
+        """userConfigの設定項目がオブジェクト以外の場合エラー（v2.1.83以降）"""
+        content = json.dumps({"name": "my-plugin", "userConfig": {"apiKey": "invalid"}})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("userConfig.apiKey" in e for e in result.errors)
+
+    def test_user_config_sensitive_non_boolean(self):
+        """userConfigのsensitiveがブール値以外の場合エラー（v2.1.83以降）"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "userConfig": {"apiKey": {"description": "API Key", "sensitive": "true"}},
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("sensitive" in e for e in result.errors)
+
+    def test_user_config_sensitive_valid_true(self):
+        """userConfigのsensitive: trueが有効であることを確認（v2.1.83以降）"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "userConfig": {"apiKey": {"description": "API Key", "sensitive": True}},
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+
+    def test_user_config_sensitive_valid_false(self):
+        """userConfigのsensitive: falseが有効であることを確認（v2.1.83以降）"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "userConfig": {"serverUrl": {"description": "Server URL", "sensitive": False}},
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()

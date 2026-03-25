@@ -65,6 +65,8 @@ class TestValidateHooksJson:
             "TeammateIdle",
             "TaskCompleted",
             "ConfigChange",
+            "CwdChanged",
+            "FileChanged",
             "WorktreeCreate",
             "WorktreeRemove",
             "InstructionsLoaded",
@@ -680,3 +682,95 @@ class TestValidateHooksJson:
         result = validate_hooks_json(Path("hooks.json"), content)
         assert not result.has_errors()
         assert any("ElicitationResult" in w for w in result.warnings)
+
+    def test_valid_cwd_changed_hook(self):
+        """CwdChangedフックが有効であることをテスト（v2.1.83以降）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "CwdChanged": [
+                        {
+                            "matcher": "/path/to/project",
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on-cwd-change.sh",
+                                    "timeout": 10,
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+        assert not result.warnings
+
+    def test_cwd_changed_without_matcher_warns(self):
+        """CwdChangedフックでmatcher未設定時に警告が出ることをテスト（v2.1.83以降）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "CwdChanged": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on-cwd-change.sh",
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+        assert any("CwdChanged" in w for w in result.warnings)
+
+    def test_valid_file_changed_hook(self):
+        """FileChangedフックが有効であることをテスト（v2.1.83以降）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "FileChanged": [
+                        {
+                            "matcher": ".envrc",
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on-file-change.sh",
+                                    "timeout": 10,
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+        assert not result.warnings
+
+    def test_file_changed_without_matcher_warns(self):
+        """FileChangedフックでmatcher未設定時に警告が出ることをテスト（v2.1.83以降）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "FileChanged": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on-file-change.sh",
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+        assert any("FileChanged" in w for w in result.warnings)
