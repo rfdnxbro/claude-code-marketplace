@@ -510,6 +510,30 @@ bash scripts/validate.sh
 
 **注意**: サンドボックスモードは実行時のセキュリティを強化するための機能です。プラグインの設計時には、この制限を考慮してください。
 
+## paths: フィールドのフォーマット（v2.1.84以降）
+
+`.claude/rules/*.md` や CLAUDE.md などのルールファイルの frontmatter で使用する `paths:` フィールドは、カンマ区切り文字列またはYAMLリスト形式で指定できます。
+
+**カンマ区切り形式（従来）:**
+
+```yaml
+---
+paths: plugins/*/skills/**/SKILL.md, .claude/skills/**/SKILL.md
+---
+```
+
+**YAMLリスト形式（v2.1.84以降）:**
+
+```yaml
+---
+paths:
+  - plugins/*/skills/**/SKILL.md
+  - .claude/skills/**/SKILL.md
+---
+```
+
+どちらの形式でも同じ動作をします。YAMLリスト形式はパスが多い場合に可読性が高くなります。
+
 ## 避けるべきこと
 
 - 時間依存の情報（"2025年8月以前は..."）

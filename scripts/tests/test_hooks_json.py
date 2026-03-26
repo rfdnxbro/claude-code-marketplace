@@ -64,6 +64,7 @@ class TestValidateHooksJson:
             "Setup",
             "TeammateIdle",
             "TaskCompleted",
+            "TaskCreated",
             "ConfigChange",
             "CwdChanged",
             "FileChanged",

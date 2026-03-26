@@ -245,3 +245,26 @@ v2.1.51以降、macOS plistまたはWindows Registryを通じてManaged Settings
 3. プラグインの `settings.json`（デフォルト設定）
 
 エンタープライズ環境では、組織の管理者がプラグインのデフォルト設定を上書きできます。プラグインの動作がエンタープライズポリシーによって制限される場合があることを念頭に置いて設計してください。
+
+### allowedChannelPlugins（v2.1.84以降）
+
+チーム/エンタープライズ管理者がチャンネルプラグインの許可リストを定義するための managed setting です。
+
+macOS plist または Windows Registry で設定します:
+
+```xml
+<!-- macOS plist の例 -->
+<key>allowedChannelPlugins</key>
+<array>
+  <string>my-approved-plugin</string>
+  <string>another-plugin</string>
+</array>
+```
+
+この設定により、ユーザーがインストールできるチャンネルプラグインを組織のポリシーに基づいて制限できます。`allowedChannelPlugins` に含まれていないプラグインはチャンネル経由でのインストールがブロックされます。
+
+**ユースケース:**
+
+- 組織承認済みプラグインのみを許可するセキュリティポリシーの適用
+- 未検証のプラグインによるリスクの軽減
+- エンタープライズ環境でのプラグイン管理の一元化
