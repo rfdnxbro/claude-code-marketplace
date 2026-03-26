@@ -730,10 +730,31 @@ echo '{"continue": false, "stopReason": "タスクが完了しました。後続
 }
 ```
 
+**入力JSON（固有フィールド）:**
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `task_id` | string | 作成されるタスクのID |
+| `task_subject` | string | タスクのタイトル |
+| `task_description` | string | タスクの詳細説明（省略される場合あり） |
+| `teammate_name` | string | タスクを作成するチームメイト名（省略される場合あり） |
+| `team_name` | string | チーム名（省略される場合あり） |
+
+共通フィールド（`session_id`, `transcript_path`, `cwd`, `permission_mode`, `hook_event_name`）も含まれます。`TaskCompleted` と同一の構造で、`hook_event_name` のみ異なります。
+
+**終了コードによる制御:**
+
+| 終了コード | 動作 |
+|-----------|------|
+| 0 | 成功（タスク作成を続行） |
+| 2 | stderrの内容がモデルにフィードバックされ、タスク作成がブロックされる |
+| その他 | stderrはユーザーにのみ表示（タスク作成はブロックしない） |
+
 **ユースケース:**
 
 - タスク作成のログ記録
 - タスク作成の通知
+- タスク作成時のバリデーション（終了コード2でブロック可能）
 - タスク作成時の初期化処理
 
 ### ConfigChange
@@ -837,6 +858,8 @@ exit 2
   }
 }
 ```
+
+**注意:** `worktreePath` は絶対パスで指定する必要があります。`hookSpecificOutput.worktreePath` を省略した場合やフックが失敗した場合、デフォルトパスへのフォールバックは行われず、worktree作成自体が失敗します。
 
 **ユースケース:**
 
