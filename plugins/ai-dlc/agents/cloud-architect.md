@@ -7,6 +7,7 @@ memory: project
 permissionMode: default
 isolation: worktree
 effort: high
+maxTurns: 40
 skills: ai-dlc:ai-dlc
 hooks:
   Stop:
