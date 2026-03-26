@@ -367,30 +367,6 @@ model: sonnet
 
 この機能により、通常は軽量なモデルを使いながら、複雑なタスクのみ高性能なモデルに切り替えるといったコスト最適化が可能です。
 
-## paths: フィールドのフォーマット（v2.1.84以降）
-
-`.claude/rules/*.md` や CLAUDE.md などのルールファイルの frontmatter で使用する `paths:` フィールドは、カンマ区切り文字列またはYAMLリスト形式で指定できます。
-
-**カンマ区切り形式（従来）:**
-
-```yaml
----
-paths: plugins/*/agents/**/*.md, .claude/agents/**/*.md
----
-```
-
-**YAMLリスト形式（v2.1.84以降）:**
-
-```yaml
----
-paths:
-  - plugins/*/agents/**/*.md
-  - .claude/agents/**/*.md
----
-```
-
-どちらの形式でも同じ動作をします。YAMLリスト形式はパスが多い場合に可読性が高くなります。
-
 ## CLIコマンド
 
 ### claude agents（v2.1.50以降）

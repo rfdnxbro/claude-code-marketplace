@@ -263,30 +263,6 @@ v2.1.72以降、CLAUDE.md が Claude に自動注入される際、`<!-- ... -->
 
 Claude Codeには組み込みのバンドルコマンド（`/clear`, `/model`, `/memory`, `/simplify`, `/batch` 等）が存在します。バンドルコマンドとユーザー定義コマンドで名前が衝突した場合の動作は保証されないため、これらと同名のコマンドをプラグインで定義することは避けてください。
 
-## paths: フィールドのフォーマット（v2.1.84以降）
-
-`.claude/rules/*.md` や CLAUDE.md などのルールファイルの frontmatter で使用する `paths:` フィールドは、カンマ区切り文字列またはYAMLリスト形式で指定できます。
-
-**カンマ区切り形式（従来）:**
-
-```yaml
----
-paths: plugins/*/commands/**/*.md, .claude/commands/**/*.md
----
-```
-
-**YAMLリスト形式（v2.1.84以降）:**
-
-```yaml
----
-paths:
-  - plugins/*/commands/**/*.md
-  - .claude/commands/**/*.md
----
-```
-
-どちらの形式でも同じ動作をします。YAMLリスト形式はパスが多い場合に可読性が高くなります。
-
 ## フィールド命名規則について
 
 フロントマターのフィールド名は**Claude Code本体の仕様**に従っています。
