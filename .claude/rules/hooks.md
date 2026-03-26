@@ -73,6 +73,7 @@ hooks:
 | `Setup` | セットアップ・メンテナンス時 | × |
 | `TeammateIdle` | チームメイトエージェントがアイドル状態時 | × |
 | `TaskCompleted` | タスク完了時 | × |
+| `TaskCreated` | `TaskCreate` でタスクが作成された時（v2.1.84以降） | × |
 | `ConfigChange` | セッション中に設定ファイルが変更された時 | ✓ |
 | `CwdChanged` | カレントディレクトリが変更された時（direnvなどのリアクティブ環境管理用）（v2.1.83以降） | ✓ |
 | `FileChanged` | ファイルが変更された時（direnvなどのリアクティブ環境管理用）（v2.1.83以降） | ✓ |
@@ -705,6 +706,57 @@ echo '{"continue": false, "stopReason": "タスクが完了しました。後続
 - 成果物の検証・レビュー
 - プロジェクト進捗の追跡
 
+### TaskCreated
+
+`TaskCreate` でタスクが作成された時に実行されるフック（v2.1.84以降）。
+
+**使用例:**
+
+```json
+{
+  "hooks": {
+    "TaskCreated": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on-task-created.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**入力JSON（固有フィールド）:**
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `task_id` | string | 作成されるタスクのID |
+| `task_subject` | string | タスクのタイトル |
+| `task_description` | string | タスクの詳細説明（省略される場合あり） |
+| `teammate_name` | string | タスクを作成するチームメイト名（省略される場合あり） |
+| `team_name` | string | チーム名（省略される場合あり） |
+
+共通フィールド（`session_id`, `transcript_path`, `cwd`, `permission_mode`, `hook_event_name`）も含まれます。`TaskCompleted` と同一の構造で、`hook_event_name` のみ異なります。
+
+**終了コードによる制御:**
+
+| 終了コード | 動作 |
+|-----------|------|
+| 0 | 成功（タスク作成を続行） |
+| 2 | stderrの内容がモデルにフィードバックされ、タスク作成がブロックされる |
+| その他 | stderrはユーザーにのみ表示（タスク作成はブロックしない） |
+
+**ユースケース:**
+
+- タスク作成のログ記録
+- タスク作成の通知
+- タスク作成時のバリデーション（終了コード2でブロック可能）
+- タスク作成時の初期化処理
+
 ### ConfigChange
 
 セッション中に設定ファイルが変更されたときに実行されるフック（v2.1.49以降）。エンタープライズのセキュリティ監査や設定変更のブロックに使用できます。
@@ -785,12 +837,37 @@ exit 2
 }
 ```
 
+**HTTPタイプのサポート（v2.1.84以降）:**
+
+`WorktreeCreate` フックは `type: "command"` に加えて `type: "http"` もサポートしています。HTTPフックのレスポンスJSONで `hookSpecificOutput.worktreePath` を返すことで、作成するworktreeのパスをカスタマイズできます:
+
+```json
+{
+  "type": "http",
+  "url": "https://api.example.com/worktree-setup",
+  "timeout": 30
+}
+```
+
+**HTTPレスポンスの例（worktreePathを指定する場合）:**
+
+```json
+{
+  "hookSpecificOutput": {
+    "worktreePath": "/custom/path/to/worktree"
+  }
+}
+```
+
+**注意:** `worktreePath` は絶対パスで指定する必要があります。`hookSpecificOutput.worktreePath` を省略した場合やフックが失敗した場合、デフォルトパスへのフォールバックは行われず、worktree作成自体が失敗します。
+
 **ユースケース:**
 
 - worktree作成時の依存パッケージインストール
 - worktree固有の設定ファイル生成
 - カスタムVCSセットアップ処理
 - worktree作成通知・ログ記録
+- 外部サービスとの連携によるworktreeパスのカスタマイズ
 
 ### WorktreeRemove
 

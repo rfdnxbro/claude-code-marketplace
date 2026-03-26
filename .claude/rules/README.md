@@ -50,3 +50,31 @@
 | `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` | `SessionEnd` フックのタイムアウト（ミリ秒）。デフォルトは `hook.timeout` の設定値（v2.1.74以降） | hooks |
 | `${CLAUDE_PLUGIN_DATA}` | プラグインの永続データディレクトリへの絶対パス。アップデートを超えて永続化される（v2.1.78以降） | hooks |
 | `CLAUDE_CODE_PLUGIN_SEED_DIR` | プラグインのシードディレクトリ。v2.1.79以降は複数ディレクトリをパス区切り文字（Unix: `:`, Windows: `;`）で区切って指定可能 | marketplace |
+
+## Frontmatterリファレンス
+
+### paths: フィールドのフォーマット（v2.1.84以降）
+
+`.claude/rules/*.md` や CLAUDE.md などのルールファイルの frontmatter で使用する `paths:` フィールドは、カンマ区切り文字列またはYAMLリスト形式で指定できます。`paths:` はルールファイルをスコープ指定するためのフィールドであり、スキルやエージェント等の定義ファイルのfrontmatterとは異なります。
+
+**カンマ区切り形式（従来）:**
+
+```yaml
+---
+paths: src/**/*.ts, lib/**/*.js
+---
+```
+
+**YAMLリスト形式（v2.1.84以降）:**
+
+```yaml
+---
+paths:
+  - src/**/*.ts
+  - lib/**/*.js
+---
+```
+
+どちらの形式でも同じ動作をします。YAMLリスト形式はパスが多い場合に可読性が高くなります。
+
+**注意:** 現時点では `paths:` フィールドのバリデーターは `scripts/validators/` に実装されていません。将来的にフロントマターのバリデーションを追加する際は、YAMLリスト形式にも対応が必要です。
