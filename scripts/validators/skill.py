@@ -6,10 +6,15 @@ import re
 from pathlib import Path
 
 from .base import (
-    WARNING_BROAD_BASH_WILDCARD,
     ValidationResult,
+    add_yaml_warnings,
     get_disabled_warnings,
     parse_frontmatter,
+    to_str,
+    validate_agent_field,
+    validate_allowed_tools,
+    validate_context_field,
+    validate_effort_field,
 )
 
 
@@ -19,13 +24,11 @@ def validate_skill(file_path: Path, content: str) -> ValidationResult:
     frontmatter, body, yaml_warnings = parse_frontmatter(content)
     disabled_warnings = get_disabled_warnings(content)
 
-    # YAML警告を追加
-    for w in yaml_warnings:
-        result.add_warning(f"{file_path.name}: {w}")
+    add_yaml_warnings(result, file_path, yaml_warnings)
 
     # nameの確認
     name = frontmatter.get("name", "")
-    name_str = str(name) if name else ""
+    name_str = to_str(name)
     if not name_str:
         result.add_error(f"{file_path.name}: nameが必須です")
     else:
@@ -42,7 +45,7 @@ def validate_skill(file_path: Path, content: str) -> ValidationResult:
 
     # descriptionの確認
     description = frontmatter.get("description", "")
-    description_str = str(description) if description else ""
+    description_str = to_str(description)
     if not description_str:
         result.add_error(f"{file_path.name}: descriptionが必須です")
     elif len(description_str) > 1024:
@@ -51,17 +54,11 @@ def validate_skill(file_path: Path, content: str) -> ValidationResult:
         )
 
     # contextの確認（forkのみサポート、省略時はメインコンテキスト）
-    context = frontmatter.get("context")
-    if context is not None:
-        context_str = str(context) if context else ""
-        if context_str and context_str != "fork":
-            result.add_error(
-                f"{file_path.name}: contextの値が不正です: {context_str}（forkのみ有効）"
-            )
+    validate_context_field(result, file_path, frontmatter)
 
     # modelの値チェック
     model = frontmatter.get("model", "")
-    model_str = str(model) if model else ""
+    model_str = to_str(model)
     valid_models = ["sonnet", "opus", "haiku", ""]
     if model_str and model_str not in valid_models:
         result.add_warning(f"{file_path.name}: modelが不正: {model_str}（sonnet/opus/haiku）")
@@ -72,37 +69,15 @@ def validate_skill(file_path: Path, content: str) -> ValidationResult:
         result.add_error(f"{file_path.name}: user-invocableはブール値が必要です")
 
     # agentの確認（空でない文字列）
-    agent = frontmatter.get("agent")
-    if agent is not None:
-        agent_str = str(agent) if agent else ""
-        if not agent_str:
-            result.add_error(f"{file_path.name}: agentは空でない文字列が必要です")
+    validate_agent_field(result, file_path, frontmatter)
 
     # allowed-toolsの確認（リスト形式対応）
-    allowed_tools = frontmatter.get("allowed-tools")
-    if allowed_tools is not None:
-        # リスト形式または文字列形式をチェック
-        tools_str = ""
-        if isinstance(allowed_tools, list):
-            tools_str = ", ".join(str(t) for t in allowed_tools)
-        else:
-            tools_str = str(allowed_tools)
-
-        # Bash(*)のような広範なワイルドカードを警告
-        if "Bash(*)" in tools_str:
-            if WARNING_BROAD_BASH_WILDCARD not in disabled_warnings:
-                result.add_warning(
-                    f"{file_path.name}: allowed-toolsにBash(*)が指定。"
-                    "v2.1.20以降Bash(*)はBashと同等に扱われますが、具体的なパターンを推奨"
-                )
+    validate_allowed_tools(result, file_path, frontmatter, disabled_warnings)
 
     # effortの確認（v2.1.80以降）
-    effort = frontmatter.get("effort")
-    if effort is not None:
-        effort_str = str(effort) if effort else ""
-        valid_efforts = ["low", "normal", "high"]
-        if effort_str and effort_str not in valid_efforts:
-            result.add_warning(f"{file_path.name}: effortが不正: {effort_str}（low/normal/high）")
+    validate_effort_field(
+        result, file_path, frontmatter, ["low", "normal", "high"], hint="low/normal/high"
+    )
 
     # hooksの確認（形式警告のみ）
     hooks = frontmatter.get("hooks")
