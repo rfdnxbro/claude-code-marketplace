@@ -5,7 +5,15 @@
 import re
 from pathlib import Path
 
-from .base import ValidationResult, parse_frontmatter, validate_kebab_case
+from .base import (
+    MarkdownValidationContext,
+    ValidationResult,
+    coerce_str,
+    validate_bool_field,
+    validate_enum_field,
+    validate_kebab_case,
+    validate_string_list_field,
+)
 
 
 def _validate_task_syntax(tools_str: str) -> bool:
@@ -26,16 +34,12 @@ def _validate_task_syntax(tools_str: str) -> bool:
 
 def validate_agent(file_path: Path, content: str) -> ValidationResult:
     """サブエージェントを検証する"""
-    result = ValidationResult()
-    frontmatter, body, yaml_warnings = parse_frontmatter(content)
-
-    # YAML警告を追加
-    for w in yaml_warnings:
-        result.add_warning(f"{file_path.name}: {w}")
+    ctx = MarkdownValidationContext(file_path, content)
+    result = ctx.result
+    frontmatter = ctx.frontmatter
 
     # 必須フィールドの確認
-    name = frontmatter.get("name", "")
-    name_str = str(name) if name else ""
+    name_str = coerce_str(frontmatter.get("name", ""))
     if not name_str:
         result.add_error(f"{file_path.name}: nameが必須です")
     else:
@@ -45,8 +49,7 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
             result.add_error(f"{file_path.name}: {kebab_error}")
 
     # descriptionの確認
-    description = frontmatter.get("description", "")
-    description_str = str(description) if description else ""
+    description_str = coerce_str(frontmatter.get("description", ""))
     if not description_str:
         result.add_error(f"{file_path.name}: descriptionが必須です")
     elif len(description_str) < 20:
@@ -55,8 +58,7 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
         )
 
     # modelの値チェック（v2.1.74以降: フルモデルIDも使用可能）
-    model = frontmatter.get("model", "")
-    model_str = str(model) if model else ""
+    model_str = coerce_str(frontmatter.get("model", ""))
     valid_shorthand_models = ["sonnet", "opus", "haiku", "inherit"]
     # フルモデルID（例: claude-opus-4-5, claude-sonnet-4-6, claude-haiku-4-5-20251001）のパターン
     full_model_id_pattern = re.compile(r"^claude-[a-z]+-[0-9][a-z0-9-]*$")
@@ -71,43 +73,52 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
         )
 
     # permissionModeの値チェック
-    permission_mode = frontmatter.get("permissionMode", "")
-    permission_mode_str = str(permission_mode) if permission_mode else ""
-    valid_modes = ["default", "acceptEdits", "bypassPermissions", "plan", "dontAsk", ""]
-    if permission_mode_str and permission_mode_str not in valid_modes:
-        result.add_error(f"{file_path.name}: permissionModeの値が不正です: {permission_mode_str}")
+    validate_enum_field(
+        frontmatter,
+        "permissionMode",
+        ["default", "acceptEdits", "bypassPermissions", "plan", "dontAsk"],
+        file_path,
+        result,
+    )
 
     # memoryの値チェック（v2.1.33以降）
-    memory = frontmatter.get("memory", "")
-    memory_str = str(memory) if memory else ""
-    valid_memory_scopes = ["user", "project", "local", ""]
-    if memory_str and memory_str not in valid_memory_scopes:
-        result.add_error(
-            f"{file_path.name}: memoryの値が不正です: {memory_str}（user/project/local）"
-        )
+    validate_enum_field(
+        frontmatter,
+        "memory",
+        ["user", "project", "local"],
+        file_path,
+        result,
+        label="user/project/local",
+    )
 
     # isolationの値チェック（v2.1.50以降）
-    isolation = frontmatter.get("isolation", "")
-    isolation_str = str(isolation) if isolation else ""
-    valid_isolation_modes = ["worktree", ""]
-    if isolation_str and isolation_str not in valid_isolation_modes:
-        result.add_error(f"{file_path.name}: isolationの値が不正です: {isolation_str}（worktree）")
+    validate_enum_field(
+        frontmatter,
+        "isolation",
+        ["worktree"],
+        file_path,
+        result,
+        label="worktree",
+    )
 
     # effortの値チェック（v2.1.78以降）
-    effort = frontmatter.get("effort", "")
-    effort_str = str(effort) if effort else ""
-    valid_efforts = ["low", "medium", "high", "max", ""]
-    if effort_str and effort_str not in valid_efforts:
-        result.add_error(
-            f"{file_path.name}: effortの値が不正です: {effort_str}（low/medium/high/max）"
-        )
+    validate_enum_field(
+        frontmatter,
+        "effort",
+        ["low", "medium", "high", "max"],
+        file_path,
+        result,
+        label="low/medium/high/max",
+    )
 
     # backgroundの値チェック（v2.1.49以降）
-    background = frontmatter.get("background")
-    if background is not None and not isinstance(background, bool):
-        result.add_error(
-            f"{file_path.name}: backgroundはブール値（true/false）が必要です: {background}"
-        )
+    validate_bool_field(
+        frontmatter,
+        "background",
+        file_path,
+        result,
+        message_suffix=f"ブール値（true/false）が必要です: {frontmatter.get('background')}",
+    )
 
     # initialPromptの値チェック（v2.1.83以降）
     initial_prompt = frontmatter.get("initialPrompt")
@@ -115,15 +126,8 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
         result.add_error(f"{file_path.name}: initialPromptは文字列が必要です: {initial_prompt}")
 
     # toolsの確認（リスト形式検証）
-    tools = frontmatter.get("tools")
+    tools = validate_string_list_field(frontmatter, "tools", file_path, result)
     if tools is not None:
-        if not isinstance(tools, (str, list)):
-            result.add_error(f"{file_path.name}: toolsは文字列またはリストが必要です")
-        elif isinstance(tools, list):
-            for t in tools:
-                if not isinstance(t, str) or not t:
-                    result.add_error(f"{file_path.name}: toolsの各要素は空でない文字列が必要です")
-                    break
         # Task(agent_type) 構文の検証
         tools_str = (
             tools if isinstance(tools, str) else " ".join(tools) if isinstance(tools, list) else ""
@@ -134,31 +138,13 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
             )
 
     # disallowedToolsの確認（リスト形式検証）
-    disallowed_tools = frontmatter.get("disallowedTools")
-    if disallowed_tools is not None:
-        if not isinstance(disallowed_tools, (str, list)):
-            result.add_error(f"{file_path.name}: disallowedToolsは文字列またはリストが必要です")
-        elif isinstance(disallowed_tools, list):
-            for t in disallowed_tools:
-                if not isinstance(t, str) or not t:
-                    result.add_error(
-                        f"{file_path.name}: disallowedToolsの各要素は空でない文字列が必要です"
-                    )
-                    break
+    validate_string_list_field(frontmatter, "disallowedTools", file_path, result)
 
     # skillsの確認（リスト形式検証）
-    skills = frontmatter.get("skills")
-    if skills is not None:
-        if not isinstance(skills, (str, list)):
-            result.add_error(f"{file_path.name}: skillsは文字列またはリストが必要です")
-        elif isinstance(skills, list):
-            for s in skills:
-                if not isinstance(s, str) or not s:
-                    result.add_error(f"{file_path.name}: skillsの各要素は空でない文字列が必要です")
-                    break
+    validate_string_list_field(frontmatter, "skills", file_path, result)
 
     # 本文（システムプロンプト）の確認
-    if not body.strip():
+    if not ctx.body.strip():
         result.add_warning(f"{file_path.name}: システムプロンプト（本文）が空です")
 
     return result

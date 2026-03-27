@@ -12,6 +12,7 @@
 import argparse
 import json
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 from validators import (
@@ -28,77 +29,55 @@ from validators import (
     validate_slash_command,
 )
 
+# バリデータレジストリ: (判定関数, バリデータ関数) のリスト
+# 上から順に評価され、最初にマッチしたバリデータが使用される
+_VALIDATOR_REGISTRY: list[
+    tuple[Callable[[Path], bool], Callable[[Path, str], ValidationResult]]
+] = [
+    (lambda p: p.name == "SKILL.md", validate_skill),
+    (lambda p: "commands" in p.parts and p.suffix == ".md", validate_slash_command),
+    (lambda p: "agents" in p.parts and p.suffix == ".md", validate_agent),
+    (lambda p: p.name == "hooks.json", validate_hooks_json),
+    (lambda p: p.name == ".mcp.json", validate_mcp_json),
+    (lambda p: p.name == ".lsp.json", validate_lsp_json),
+    (
+        lambda p: p.name == "plugin.json" and ".claude-plugin" in p.parts,
+        validate_plugin_json,
+    ),
+    (
+        lambda p: p.name == "marketplace.json" and ".claude-plugin" in p.parts,
+        validate_marketplace_json,
+    ),
+    (lambda p: "output-styles" in p.parts and p.suffix == ".md", validate_output_style),
+    (lambda p: p.name == "README.md" and "plugins" in p.parts, validate_readme),
+]
+
+
+def _read_file_content(file_path: Path, result: ValidationResult) -> str | None:
+    """ファイルをUTF-8で読み込む。エラー時はNoneを返す"""
+    try:
+        return file_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        result.add_error(f"{file_path.name}: ファイルがUTF-8でエンコードされていません")
+        return None
+    except FileNotFoundError:
+        result.add_error(f"{file_path.name}: ファイルが見つかりません")
+        return None
+    except Exception as e:
+        result.add_error(f"{file_path.name}: ファイル読み込みエラー: {e}")
+        return None
+
 
 def validate_file(file_path: Path) -> ValidationResult:
     """単一ファイルを検証し、結果を返す"""
     result = ValidationResult()
 
-    def read_file_content(path: Path) -> str | None:
-        """ファイルをUTF-8で読み込む。エラー時はNoneを返す"""
-        try:
-            return path.read_text(encoding="utf-8")
-        except UnicodeDecodeError:
-            result.add_error(f"{path.name}: ファイルがUTF-8でエンコードされていません")
-            return None
-        except FileNotFoundError:
-            result.add_error(f"{path.name}: ファイルが見つかりません")
-            return None
-        except Exception as e:
-            result.add_error(f"{path.name}: ファイル読み込みエラー: {e}")
-            return None
-
-    path_parts = file_path.parts
-
-    if file_path.name == "SKILL.md":
-        # スキルファイル
-        content = read_file_content(file_path)
-        if content is not None:
-            result = validate_skill(file_path, content)
-    elif "commands" in path_parts and file_path.suffix == ".md":
-        # スラッシュコマンド
-        content = read_file_content(file_path)
-        if content is not None:
-            result = validate_slash_command(file_path, content)
-    elif "agents" in path_parts and file_path.suffix == ".md":
-        # サブエージェント
-        content = read_file_content(file_path)
-        if content is not None:
-            result = validate_agent(file_path, content)
-    elif file_path.name == "hooks.json":
-        # hooks設定
-        content = read_file_content(file_path)
-        if content is not None:
-            result = validate_hooks_json(file_path, content)
-    elif file_path.name == ".mcp.json":
-        # MCP設定
-        content = read_file_content(file_path)
-        if content is not None:
-            result = validate_mcp_json(file_path, content)
-    elif file_path.name == ".lsp.json":
-        # LSP設定
-        content = read_file_content(file_path)
-        if content is not None:
-            result = validate_lsp_json(file_path, content)
-    elif file_path.name == "plugin.json" and ".claude-plugin" in path_parts:
-        # プラグインマニフェスト
-        content = read_file_content(file_path)
-        if content is not None:
-            result = validate_plugin_json(file_path, content)
-    elif file_path.name == "marketplace.json" and ".claude-plugin" in path_parts:
-        # マーケットプレイス設定
-        content = read_file_content(file_path)
-        if content is not None:
-            result = validate_marketplace_json(file_path, content)
-    elif "output-styles" in path_parts and file_path.suffix == ".md":
-        # 出力スタイル
-        content = read_file_content(file_path)
-        if content is not None:
-            result = validate_output_style(file_path, content)
-    elif file_path.name == "README.md" and "plugins" in path_parts:
-        # プラグインREADME
-        content = read_file_content(file_path)
-        if content is not None:
-            result = validate_readme(file_path, content)
+    for matcher, validator in _VALIDATOR_REGISTRY:
+        if matcher(file_path):
+            content = _read_file_content(file_path, result)
+            if content is not None:
+                result = validator(file_path, content)
+            return result
 
     return result
 

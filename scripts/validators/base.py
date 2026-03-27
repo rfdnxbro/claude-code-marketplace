@@ -240,3 +240,187 @@ def get_disabled_warnings(content: str) -> set[str]:
         無効化されている警告IDのset
     """
     return set(DISABLE_PATTERN.findall(content))
+
+
+# --- 共通ヘルパー関数 ---
+
+
+def coerce_str(value: Any) -> str:
+    """frontmatter値を安全に文字列に変換する"""
+    return str(value) if value else ""
+
+
+class MarkdownValidationContext:
+    """frontmatterベースのMarkdownファイル検証の共通セットアップ
+
+    frontmatter解析、YAML警告の自動追加、disabled_warningsの取得を一括で行う。
+    """
+
+    def __init__(self, file_path: Path, content: str):
+        self.file_path = file_path
+        self.content = content
+        self.result = ValidationResult()
+        self.frontmatter, self.body, yaml_warnings = parse_frontmatter(content)
+        self.disabled_warnings = get_disabled_warnings(content)
+        for w in yaml_warnings:
+            self.result.add_warning(f"{file_path.name}: {w}")
+
+
+def validate_enum_field(
+    frontmatter: dict[str, Any],
+    field: str,
+    valid_values: list[str],
+    file_path: Path,
+    result: ValidationResult,
+    *,
+    level: str = "error",
+    label: str | None = None,
+) -> str:
+    """列挙値フィールドを検証する
+
+    Args:
+        frontmatter: フロントマター辞書
+        field: フィールド名
+        valid_values: 許可される値のリスト
+        file_path: エラーメッセージ用のファイルパス
+        result: 検証結果オブジェクト
+        level: "error" または "warning"
+        label: エラーメッセージに表示する値リスト（省略時はvalid_valuesから生成）
+
+    Returns:
+        変換後の文字列値
+    """
+    value = frontmatter.get(field, "")
+    value_str = coerce_str(value)
+    if value_str and value_str not in valid_values:
+        display_label = label or "/".join(v for v in valid_values if v)
+        message = f"{file_path.name}: {field}の値が不正です: {value_str}（{display_label}）"
+        if level == "warning":
+            result.add_warning(message)
+        else:
+            result.add_error(message)
+    return value_str
+
+
+def validate_bool_field(
+    frontmatter: dict[str, Any],
+    field: str,
+    file_path: Path,
+    result: ValidationResult,
+    *,
+    message_suffix: str = "ブール値が必要です",
+) -> bool | None:
+    """booleanフィールドを検証する
+
+    Returns:
+        フィールドの値。未設定ならNone
+    """
+    value = frontmatter.get(field)
+    if value is not None and not isinstance(value, bool):
+        result.add_error(f"{file_path.name}: {field}は{message_suffix}")
+    return value
+
+
+def validate_string_list_field(
+    frontmatter: dict[str, Any],
+    field: str,
+    file_path: Path,
+    result: ValidationResult,
+) -> str | list | None:
+    """文字列またはリスト型フィールドを検証する
+
+    Returns:
+        フィールドの値。未設定ならNone
+    """
+    value = frontmatter.get(field)
+    if value is None:
+        return None
+    if not isinstance(value, (str, list)):
+        result.add_error(f"{file_path.name}: {field}は文字列またはリストが必要です")
+    elif isinstance(value, list):
+        for item in value:
+            if not isinstance(item, str) or not item:
+                result.add_error(f"{file_path.name}: {field}の各要素は空でない文字列が必要です")
+                break
+    return value
+
+
+def validate_context_field(
+    frontmatter: dict[str, Any],
+    file_path: Path,
+    result: ValidationResult,
+) -> None:
+    """contextフィールドを検証する（forkのみ有効）"""
+    context = frontmatter.get("context")
+    if context is not None:
+        context_str = coerce_str(context)
+        if context_str and context_str != "fork":
+            result.add_error(
+                f"{file_path.name}: contextの値が不正です: {context_str}（forkのみ有効）"
+            )
+
+
+def validate_allowed_tools_field(
+    frontmatter: dict[str, Any],
+    file_path: Path,
+    result: ValidationResult,
+    disabled_warnings: set[str],
+) -> None:
+    """allowed-toolsフィールドを検証する（Bash(*)警告を含む）"""
+    allowed_tools = frontmatter.get("allowed-tools")
+    if allowed_tools is None:
+        return
+    # リスト形式または文字列形式をチェック
+    if isinstance(allowed_tools, list):
+        tools_str = ", ".join(str(t) for t in allowed_tools)
+    else:
+        tools_str = str(allowed_tools)
+
+    # Bash(*)のような広範なワイルドカードを警告
+    if "Bash(*)" in tools_str:
+        if WARNING_BROAD_BASH_WILDCARD not in disabled_warnings:
+            result.add_warning(
+                f"{file_path.name}: allowed-toolsにBash(*)が指定。"
+                "v2.1.20以降Bash(*)はBashと同等に扱われますが、具体的なパターンを推奨"
+            )
+
+
+def validate_agent_ref_field(
+    frontmatter: dict[str, Any],
+    file_path: Path,
+    result: ValidationResult,
+) -> None:
+    """agentフィールドを検証する（空でない文字列が必要）"""
+    agent = frontmatter.get("agent")
+    if agent is not None:
+        agent_str = coerce_str(agent)
+        if not agent_str:
+            result.add_error(f"{file_path.name}: agentは空でない文字列が必要です")
+
+
+def validate_effort_field(
+    frontmatter: dict[str, Any],
+    file_path: Path,
+    result: ValidationResult,
+    *,
+    valid_values: list[str] | None = None,
+    level: str = "warning",
+) -> None:
+    """effortフィールドを検証する
+
+    Args:
+        valid_values: 許可される値のリスト。省略時は["low", "normal", "high"]
+        level: "error" または "warning"
+    """
+    effort = frontmatter.get("effort")
+    if effort is None:
+        return
+    effort_str = coerce_str(effort)
+    values = valid_values or ["low", "normal", "high"]
+    if effort_str and effort_str not in values:
+        display = "/".join(values)
+        message = f"{file_path.name}: effortが不正: {effort_str}（{display}）"
+        if level == "warning":
+            result.add_warning(message)
+        else:
+            result.add_error(message)

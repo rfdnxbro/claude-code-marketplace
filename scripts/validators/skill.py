@@ -6,26 +6,26 @@ import re
 from pathlib import Path
 
 from .base import (
-    WARNING_BROAD_BASH_WILDCARD,
+    MarkdownValidationContext,
     ValidationResult,
-    get_disabled_warnings,
-    parse_frontmatter,
+    coerce_str,
+    validate_agent_ref_field,
+    validate_allowed_tools_field,
+    validate_bool_field,
+    validate_context_field,
+    validate_effort_field,
+    validate_enum_field,
 )
 
 
 def validate_skill(file_path: Path, content: str) -> ValidationResult:
     """スキルを検証する"""
-    result = ValidationResult()
-    frontmatter, body, yaml_warnings = parse_frontmatter(content)
-    disabled_warnings = get_disabled_warnings(content)
-
-    # YAML警告を追加
-    for w in yaml_warnings:
-        result.add_warning(f"{file_path.name}: {w}")
+    ctx = MarkdownValidationContext(file_path, content)
+    result = ctx.result
+    frontmatter = ctx.frontmatter
 
     # nameの確認
-    name = frontmatter.get("name", "")
-    name_str = str(name) if name else ""
+    name_str = coerce_str(frontmatter.get("name", ""))
     if not name_str:
         result.add_error(f"{file_path.name}: nameが必須です")
     else:
@@ -41,8 +41,7 @@ def validate_skill(file_path: Path, content: str) -> ValidationResult:
             result.add_error(f"{file_path.name}: nameに予約語（anthropic, claude）は使用できません")
 
     # descriptionの確認
-    description = frontmatter.get("description", "")
-    description_str = str(description) if description else ""
+    description_str = coerce_str(frontmatter.get("description", ""))
     if not description_str:
         result.add_error(f"{file_path.name}: descriptionが必須です")
     elif len(description_str) > 1024:
@@ -50,59 +49,37 @@ def validate_skill(file_path: Path, content: str) -> ValidationResult:
             f"{file_path.name}: descriptionは1024文字以内にしてください: {len(description_str)}文字"
         )
 
-    # contextの確認（forkのみサポート、省略時はメインコンテキスト）
-    context = frontmatter.get("context")
-    if context is not None:
-        context_str = str(context) if context else ""
-        if context_str and context_str != "fork":
-            result.add_error(
-                f"{file_path.name}: contextの値が不正です: {context_str}（forkのみ有効）"
-            )
+    # contextの確認
+    validate_context_field(frontmatter, file_path, result)
 
     # modelの値チェック
-    model = frontmatter.get("model", "")
-    model_str = str(model) if model else ""
-    valid_models = ["sonnet", "opus", "haiku", ""]
-    if model_str and model_str not in valid_models:
-        result.add_warning(f"{file_path.name}: modelが不正: {model_str}（sonnet/opus/haiku）")
+    validate_enum_field(
+        frontmatter,
+        "model",
+        ["sonnet", "opus", "haiku"],
+        file_path,
+        result,
+        level="warning",
+        label="sonnet/opus/haiku",
+    )
 
     # user-invocableの確認（boolean型）
-    user_invocable = frontmatter.get("user-invocable")
-    if user_invocable is not None and not isinstance(user_invocable, bool):
-        result.add_error(f"{file_path.name}: user-invocableはブール値が必要です")
+    validate_bool_field(
+        frontmatter,
+        "user-invocable",
+        file_path,
+        result,
+        message_suffix="ブール値が必要です",
+    )
 
-    # agentの確認（空でない文字列）
-    agent = frontmatter.get("agent")
-    if agent is not None:
-        agent_str = str(agent) if agent else ""
-        if not agent_str:
-            result.add_error(f"{file_path.name}: agentは空でない文字列が必要です")
+    # agentの確認
+    validate_agent_ref_field(frontmatter, file_path, result)
 
-    # allowed-toolsの確認（リスト形式対応）
-    allowed_tools = frontmatter.get("allowed-tools")
-    if allowed_tools is not None:
-        # リスト形式または文字列形式をチェック
-        tools_str = ""
-        if isinstance(allowed_tools, list):
-            tools_str = ", ".join(str(t) for t in allowed_tools)
-        else:
-            tools_str = str(allowed_tools)
+    # allowed-toolsの確認
+    validate_allowed_tools_field(frontmatter, file_path, result, ctx.disabled_warnings)
 
-        # Bash(*)のような広範なワイルドカードを警告
-        if "Bash(*)" in tools_str:
-            if WARNING_BROAD_BASH_WILDCARD not in disabled_warnings:
-                result.add_warning(
-                    f"{file_path.name}: allowed-toolsにBash(*)が指定。"
-                    "v2.1.20以降Bash(*)はBashと同等に扱われますが、具体的なパターンを推奨"
-                )
-
-    # effortの確認（v2.1.80以降）
-    effort = frontmatter.get("effort")
-    if effort is not None:
-        effort_str = str(effort) if effort else ""
-        valid_efforts = ["low", "normal", "high"]
-        if effort_str and effort_str not in valid_efforts:
-            result.add_warning(f"{file_path.name}: effortが不正: {effort_str}（low/normal/high）")
+    # effortの確認
+    validate_effort_field(frontmatter, file_path, result)
 
     # hooksの確認（形式警告のみ）
     hooks = frontmatter.get("hooks")
@@ -111,7 +88,7 @@ def validate_skill(file_path: Path, content: str) -> ValidationResult:
         result.add_warning(f"{file_path.name}: hooksはhooks.jsonでの定義を推奨します")
 
     # 本文の行数チェック
-    body_lines = body.strip().split("\n")
+    body_lines = ctx.body.strip().split("\n")
     if len(body_lines) > 500:
         result.add_warning(f"{file_path.name}: 本文が500行超（{len(body_lines)}行）。分割を検討")
 
