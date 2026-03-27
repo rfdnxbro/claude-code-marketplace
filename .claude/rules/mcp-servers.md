@@ -89,6 +89,30 @@ JSON形式で記述します。配置場所はプラグインルートの `.mcp.
 echo '{"Authorization": "Bearer '$(get-token)'"}'
 ```
 
+#### headersHelper 内で利用可能な環境変数（v2.1.85以降）
+
+`headersHelper` スクリプト内では以下の環境変数が利用可能です:
+
+| 変数 | 説明 |
+|------|------|
+| `CLAUDE_CODE_MCP_SERVER_NAME` | 呼び出し元の MCP サーバー名 |
+| `CLAUDE_CODE_MCP_SERVER_URL` | 呼び出し元の MCP サーバー URL |
+
+1つのヘルパースクリプトで複数のサーバーに対応できます:
+
+```bash
+#!/bin/bash
+# CLAUDE_CODE_MCP_SERVER_NAME を使って認証情報を切り替える
+case "$CLAUDE_CODE_MCP_SERVER_NAME" in
+  "server-a")
+    echo '{"Authorization": "Bearer '$(get-token-a)'"}'
+    ;;
+  "server-b")
+    echo '{"Authorization": "Bearer '$(get-token-b)'"}'
+    ;;
+esac
+```
+
 ### WebSocket
 
 | フィールド | 必須 | 説明 |
