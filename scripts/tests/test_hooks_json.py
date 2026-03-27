@@ -775,3 +775,40 @@ class TestValidateHooksJson:
         result = validate_hooks_json(Path("hooks.json"), content)
         assert not result.has_errors()
         assert any("FileChanged" in w for w in result.warnings)
+
+    def test_valid_if_field(self):
+        """`if`フィールドが文字列の場合は有効（v2.1.85以降）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PreToolUse": [
+                        {
+                            "matcher": "Bash",
+                            "if": "Bash(git *)",
+                            "hooks": [{"type": "command", "command": "echo test"}],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_if_field_invalid_type(self):
+        """`if`フィールドが文字列でない場合はエラー（v2.1.85以降）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PreToolUse": [
+                        {
+                            "matcher": "Bash",
+                            "if": 123,
+                            "hooks": [{"type": "command", "command": "echo test"}],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("if" in e for e in result.errors)

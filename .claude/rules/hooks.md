@@ -309,6 +309,47 @@ hooks:
 - `true`: フックは最初のマッチ時のみ実行
 - `false`（デフォルト）: マッチするたびに実行
 
+## if フィールド（v2.1.85以降）
+
+フックエントリにパーミッションルール構文（例: `Bash(git *)`）で条件を指定し、条件が一致する場合のみフックを実行します。プロセス生成のオーバーヘッドを削減するために使用します。
+
+**hooks.json形式:**
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "if": "Bash(git *)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/git-check.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Frontmatter形式:**
+
+```yaml
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      if: "Bash(git *)"
+      hooks:
+        - type: command
+          command: "${CLAUDE_PLUGIN_ROOT}/scripts/git-check.sh"
+```
+
+- `if` フィールドはパーミッションルール構文（`ToolName(pattern)`）を使用
+- 条件が一致する場合のみフックが実行される
+- `matcher` との違い: `matcher` はフックを紐付けるツールを指定し、`if` は実際に実行する条件を絞り込む
+
 ## Exit Code
 
 フックスクリプトの終了コードによって、Claude Codeの動作が変わります:
@@ -421,6 +462,28 @@ EOF
 - 実行前のチェック結果をモデルに伝達
 - 動的に変化するコンテキスト情報の追加
 - コンプライアンス要件の通知
+
+### AskUserQuestion の回答をフックで提供（v2.1.85以降）
+
+ヘッドレス統合において、`PreToolUse` フックが `updatedInput` を `permissionDecision: "allow"` と組み合わせて返すことで、`AskUserQuestion` ツールの回答をフックが代わりに提供できます:
+
+```json
+{
+  "continue": true,
+  "hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "allow",
+    "updatedInput": {
+      "answer": "yes"
+    }
+  }
+}
+```
+
+**ユースケース:**
+
+- CI/CD パイプラインなどのヘッドレス環境で `AskUserQuestion` の確認を自動化
+- ユーザーの代わりにフックが回答を事前に決定して提供
 
 ## 環境変数
 

@@ -81,6 +81,13 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
                         f"{file_path.name}: {event_name}のmatcherが未設定（全ツールにマッチ）"
                     )
 
+            # ifフィールドの確認（v2.1.85以降）
+            if_field = hook_config.get("if")
+            if if_field is not None and not isinstance(if_field, str):
+                result.add_error(
+                    f"{file_path.name}: ifフィールドは文字列が必要です（パーミッションルール構文）"
+                )
+
             # hooksの確認
             inner_hooks = hook_config.get("hooks", [])
             for h in inner_hooks:
