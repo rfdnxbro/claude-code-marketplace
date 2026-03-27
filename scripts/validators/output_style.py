@@ -4,7 +4,7 @@
 
 from pathlib import Path
 
-from .base import ValidationResult, parse_frontmatter
+from .base import ValidationResult, add_yaml_warnings, parse_frontmatter
 
 
 def validate_output_style(file_path: Path, content: str) -> ValidationResult:
@@ -12,9 +12,7 @@ def validate_output_style(file_path: Path, content: str) -> ValidationResult:
     result = ValidationResult()
     frontmatter, body, yaml_warnings = parse_frontmatter(content)
 
-    # YAML警告を追加
-    for w in yaml_warnings:
-        result.add_warning(f"{file_path.name}: {w}")
+    add_yaml_warnings(result, file_path, yaml_warnings)
 
     # nameフィールドの検証（オプション、指定時はファイル名と一致推奨）
     name = frontmatter.get("name", "")

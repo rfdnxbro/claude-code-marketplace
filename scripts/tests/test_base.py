@@ -2,9 +2,22 @@
 base.py のテスト
 """
 
+from pathlib import Path
 from textwrap import dedent
 
-from scripts.validators.base import ValidationResult, normalize_path, parse_frontmatter
+from scripts.validators.base import (
+    WARNING_BROAD_BASH_WILDCARD,
+    ValidationResult,
+    add_yaml_warnings,
+    normalize_path,
+    parse_frontmatter,
+    to_str,
+    validate_agent_field,
+    validate_allowed_tools,
+    validate_context_field,
+    validate_effort_field,
+    validate_string_or_list_field,
+)
 
 
 class TestValidationResult:
@@ -187,6 +200,181 @@ class TestParseFrontmatter:
         """).strip()
         fm, body, warnings = parse_frontmatter(content)
         assert any("ネスト" in w for w in warnings)
+
+
+class TestToStr:
+    """to_strのテスト"""
+
+    def test_none(self):
+        assert to_str(None) == ""
+
+    def test_empty_string(self):
+        assert to_str("") == ""
+
+    def test_zero(self):
+        assert to_str(0) == ""
+
+    def test_false(self):
+        assert to_str(False) == ""
+
+    def test_normal_string(self):
+        assert to_str("hello") == "hello"
+
+    def test_integer(self):
+        assert to_str(42) == "42"
+
+    def test_true(self):
+        assert to_str(True) == "True"
+
+
+class TestAddYamlWarnings:
+    """add_yaml_warningsのテスト"""
+
+    def test_empty_warnings(self):
+        result = ValidationResult()
+        add_yaml_warnings(result, Path("test.md"), [])
+        assert result.warnings == []
+
+    def test_multiple_warnings(self):
+        result = ValidationResult()
+        add_yaml_warnings(result, Path("test.md"), ["警告1", "警告2"])
+        assert len(result.warnings) == 2
+        assert "test.md: 警告1" in result.warnings[0]
+        assert "test.md: 警告2" in result.warnings[1]
+
+
+class TestValidateContextField:
+    """validate_context_fieldのテスト"""
+
+    def test_not_specified(self):
+        result = ValidationResult()
+        validate_context_field(result, Path("test.md"), {})
+        assert not result.has_errors()
+
+    def test_fork_valid(self):
+        result = ValidationResult()
+        validate_context_field(result, Path("test.md"), {"context": "fork"})
+        assert not result.has_errors()
+
+    def test_invalid_value(self):
+        result = ValidationResult()
+        validate_context_field(result, Path("test.md"), {"context": "invalid"})
+        assert result.has_errors()
+        assert any("context" in e for e in result.errors)
+
+
+class TestValidateAgentField:
+    """validate_agent_fieldのテスト"""
+
+    def test_not_specified(self):
+        result = ValidationResult()
+        validate_agent_field(result, Path("test.md"), {})
+        assert not result.has_errors()
+
+    def test_valid_agent(self):
+        result = ValidationResult()
+        validate_agent_field(result, Path("test.md"), {"agent": "my-agent"})
+        assert not result.has_errors()
+
+    def test_empty_agent(self):
+        result = ValidationResult()
+        validate_agent_field(result, Path("test.md"), {"agent": ""})
+        assert result.has_errors()
+        assert any("agent" in e for e in result.errors)
+
+
+class TestValidateAllowedTools:
+    """validate_allowed_toolsのテスト"""
+
+    def test_not_specified(self):
+        result = ValidationResult()
+        validate_allowed_tools(result, Path("test.md"), {}, set())
+        assert not result.has_errors()
+        assert len(result.warnings) == 0
+
+    def test_list_format(self):
+        result = ValidationResult()
+        fm = {"allowed-tools": ["Read", "Write"]}
+        validate_allowed_tools(result, Path("test.md"), fm, set())
+        assert len(result.warnings) == 0
+
+    def test_bash_wildcard_warning(self):
+        result = ValidationResult()
+        fm = {"allowed-tools": "Bash(*)"}
+        validate_allowed_tools(result, Path("test.md"), fm, set())
+        assert any("Bash(*)" in w for w in result.warnings)
+
+    def test_bash_wildcard_disabled(self):
+        result = ValidationResult()
+        fm = {"allowed-tools": "Bash(*)"}
+        validate_allowed_tools(result, Path("test.md"), fm, {WARNING_BROAD_BASH_WILDCARD})
+        assert len(result.warnings) == 0
+
+
+class TestValidateEffortField:
+    """validate_effort_fieldのテスト"""
+
+    def test_not_specified(self):
+        result = ValidationResult()
+        validate_effort_field(result, Path("test.md"), {}, ["low", "normal", "high"])
+        assert not result.has_errors()
+        assert len(result.warnings) == 0
+
+    def test_valid_value(self):
+        result = ValidationResult()
+        validate_effort_field(result, Path("test.md"), {"effort": "low"}, ["low", "normal", "high"])
+        assert not result.has_errors()
+        assert len(result.warnings) == 0
+
+    def test_invalid_value_warning(self):
+        result = ValidationResult()
+        validate_effort_field(
+            result, Path("test.md"), {"effort": "ultra"}, ["low", "normal", "high"]
+        )
+        assert any("effort" in w for w in result.warnings)
+
+    def test_invalid_value_error(self):
+        result = ValidationResult()
+        validate_effort_field(
+            result,
+            Path("test.md"),
+            {"effort": "ultra"},
+            ["low", "medium", "high", "max"],
+            level="error",
+        )
+        assert result.has_errors()
+        assert any("effort" in e for e in result.errors)
+
+
+class TestValidateStringOrListField:
+    """validate_string_or_list_fieldのテスト"""
+
+    def test_none_value(self):
+        result = ValidationResult()
+        validate_string_or_list_field(result, Path("test.md"), "tools", None)
+        assert not result.has_errors()
+
+    def test_string_value(self):
+        result = ValidationResult()
+        validate_string_or_list_field(result, Path("test.md"), "tools", "Read, Write")
+        assert not result.has_errors()
+
+    def test_valid_list(self):
+        result = ValidationResult()
+        validate_string_or_list_field(result, Path("test.md"), "tools", ["Read", "Write"])
+        assert not result.has_errors()
+
+    def test_list_with_empty_item(self):
+        result = ValidationResult()
+        validate_string_or_list_field(result, Path("test.md"), "tools", ["Read", ""])
+        assert result.has_errors()
+        assert any("tools" in e for e in result.errors)
+
+    def test_invalid_type(self):
+        result = ValidationResult()
+        validate_string_or_list_field(result, Path("test.md"), "tools", 123)
+        assert result.has_errors()
+        assert any("文字列またはリスト" in e for e in result.errors)
 
 
 class TestNormalizePath:

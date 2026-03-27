@@ -240,3 +240,105 @@ def get_disabled_warnings(content: str) -> set[str]:
         無効化されている警告IDのset
     """
     return set(DISABLE_PATTERN.findall(content))
+
+
+# ---------------------------------------------------------------------------
+# 共通バリデーションヘルパー
+# ---------------------------------------------------------------------------
+
+
+def to_str(value: Any) -> str:
+    """フロントマター値を安全に文字列化する"""
+    return str(value) if value else ""
+
+
+def add_yaml_warnings(result: ValidationResult, file_path: Path, yaml_warnings: list[str]) -> None:
+    """YAML警告をValidationResultに追加する"""
+    for w in yaml_warnings:
+        result.add_warning(f"{file_path.name}: {w}")
+
+
+def validate_context_field(
+    result: ValidationResult, file_path: Path, frontmatter: dict[str, Any]
+) -> None:
+    """contextフィールドを検証する（forkのみ有効）"""
+    context = frontmatter.get("context")
+    if context is not None:
+        context_str = to_str(context)
+        if context_str and context_str != "fork":
+            result.add_error(
+                f"{file_path.name}: contextの値が不正です: {context_str}（forkのみ有効）"
+            )
+
+
+def validate_agent_field(
+    result: ValidationResult, file_path: Path, frontmatter: dict[str, Any]
+) -> None:
+    """agentフィールドを検証する（空でない文字列が必要）"""
+    agent = frontmatter.get("agent")
+    if agent is not None:
+        if not to_str(agent):
+            result.add_error(f"{file_path.name}: agentは空でない文字列が必要です")
+
+
+def validate_allowed_tools(
+    result: ValidationResult,
+    file_path: Path,
+    frontmatter: dict[str, Any],
+    disabled_warnings: set[str],
+) -> None:
+    """allowed-toolsフィールドを検証する（Bash(*)の広範なワイルドカードを警告）"""
+    allowed_tools = frontmatter.get("allowed-tools")
+    if allowed_tools is not None:
+        tools_str = ""
+        if isinstance(allowed_tools, list):
+            tools_str = ", ".join(str(t) for t in allowed_tools)
+        else:
+            tools_str = str(allowed_tools)
+
+        if "Bash(*)" in tools_str:
+            if WARNING_BROAD_BASH_WILDCARD not in disabled_warnings:
+                result.add_warning(
+                    f"{file_path.name}: allowed-toolsにBash(*)が指定。"
+                    "v2.1.20以降Bash(*)はBashと同等に扱われますが、具体的なパターンを推奨"
+                )
+
+
+def validate_effort_field(
+    result: ValidationResult,
+    file_path: Path,
+    frontmatter: dict[str, Any],
+    valid_values: list[str],
+    *,
+    level: str = "warning",
+    hint: str = "",
+) -> None:
+    """effortフィールドを検証する"""
+    effort = frontmatter.get("effort")
+    if effort is not None:
+        effort_str = to_str(effort)
+        display = hint or "/".join(valid_values)
+        if effort_str and effort_str not in valid_values:
+            if level == "error":
+                result.add_error(
+                    f"{file_path.name}: effortの値が不正です: {effort_str}（{display}）"
+                )
+            else:
+                result.add_warning(f"{file_path.name}: effortが不正: {effort_str}（{display}）")
+
+
+def validate_string_or_list_field(
+    result: ValidationResult, file_path: Path, field_name: str, value: Any
+) -> None:
+    """文字列またはリスト形式のフィールドを検証する"""
+    if value is None:
+        return
+    if not isinstance(value, (str, list)):
+        result.add_error(f"{file_path.name}: {field_name}は文字列またはリストが必要です")
+    elif isinstance(value, list):
+        for item in value:
+            if not isinstance(item, str) or not item:
+                result.add_error(
+                    f"{file_path.name}: {field_name}の各要素は空でない文字列が必要です"
+                )
+                break
