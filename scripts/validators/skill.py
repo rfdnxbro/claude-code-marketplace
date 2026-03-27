@@ -17,6 +17,8 @@ from .base import (
     validate_enum_field,
 )
 
+_SKILL_NAME_PATTERN = re.compile(r"^[a-z0-9-]+$")
+
 
 def validate_skill(file_path: Path, content: str) -> ValidationResult:
     """スキルを検証する"""
@@ -34,7 +36,7 @@ def validate_skill(file_path: Path, content: str) -> ValidationResult:
             result.add_error(
                 f"{file_path.name}: nameは64文字以内にしてください: {len(name_str)}文字"
             )
-        if not re.match(r"^[a-z0-9-]+$", name_str):
+        if not _SKILL_NAME_PATTERN.match(name_str):
             result.add_error(f"{file_path.name}: nameは小文字、数字、ハイフンのみ使用可能です")
         # 予約語チェック
         if "anthropic" in name_str.lower() or "claude" in name_str.lower():

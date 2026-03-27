@@ -7,6 +7,8 @@ from pathlib import Path
 
 from .base import ValidationResult, parse_json_safe, validate_kebab_case
 
+_SEMVER_PATTERN = re.compile(r"^\d+\.\d+\.\d+")
+
 
 def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
     """plugin.jsonを検証する"""
@@ -30,7 +32,7 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
 
     # バージョン形式
     version = data.get("version", "")
-    if version and not re.match(r"^\d+\.\d+\.\d+", version):
+    if version and not _SEMVER_PATTERN.match(version):
         result.add_warning(
             f"{file_path.name}: versionはセマンティックバージョニング（x.y.z）を推奨: {version}"
         )

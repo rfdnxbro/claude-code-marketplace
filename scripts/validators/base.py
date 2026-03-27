@@ -221,9 +221,7 @@ def normalize_path(path: str) -> str:
     Returns:
         正規化されたパス
     """
-    # 連続スラッシュを単一に
     normalized = re.sub(r"/+", "/", path)
-    # 先頭・末尾のスラッシュを除去
     return normalized.strip("/")
 
 
@@ -370,13 +368,11 @@ def validate_allowed_tools_field(
     allowed_tools = frontmatter.get("allowed-tools")
     if allowed_tools is None:
         return
-    # リスト形式または文字列形式をチェック
     if isinstance(allowed_tools, list):
         tools_str = ", ".join(str(t) for t in allowed_tools)
     else:
         tools_str = str(allowed_tools)
 
-    # Bash(*)のような広範なワイルドカードを警告
     if "Bash(*)" in tools_str:
         if WARNING_BROAD_BASH_WILDCARD not in disabled_warnings:
             result.add_warning(

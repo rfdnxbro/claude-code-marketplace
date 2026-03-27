@@ -17,6 +17,9 @@ RESERVED_NAMES = {
     "life-sciences",
 }
 
+VALID_SOURCE_TYPES = {"github", "url", "npm", "git-subdir", "settings"}
+_VALID_SOURCE_TYPES_STR = "/".join(sorted(VALID_SOURCE_TYPES))
+
 
 def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult:
     """marketplace.jsonを検証する"""
@@ -95,14 +98,12 @@ def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult
             elif isinstance(source, dict):
                 # オブジェクト形式のsourceタイプを検証
                 source_type = source.get("source")
-                valid_source_types = ["github", "url", "npm", "git-subdir", "settings"]
                 if not source_type:
                     result.add_error(f"{file_path.name}: plugins[{i}].source.sourceは必須です")
-                elif source_type not in valid_source_types:
-                    types_str = "/".join(valid_source_types)
+                elif source_type not in VALID_SOURCE_TYPES:
                     result.add_error(
                         f"{file_path.name}: plugins[{i}].source.sourceは無効な値です: "
-                        f"{source_type}（{types_str}）"
+                        f"{source_type}（{_VALID_SOURCE_TYPES_STR}）"
                     )
 
     return result
