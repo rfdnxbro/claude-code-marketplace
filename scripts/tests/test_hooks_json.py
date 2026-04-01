@@ -74,6 +74,7 @@ class TestValidateHooksJson:
             "Elicitation",
             "ElicitationResult",
             "StopFailure",
+            "PermissionDenied",
         ]
         for event in valid_events:
             content = json.dumps(
@@ -812,3 +813,49 @@ class TestValidateHooksJson:
         result = validate_hooks_json(Path("hooks.json"), content)
         assert result.has_errors()
         assert any("if" in e for e in result.errors)
+
+    def test_valid_permission_denied_hook(self):
+        """PermissionDeniedフックが有効であることをテスト（v2.1.89以降）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PermissionDenied": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": (
+                                        "${CLAUDE_PLUGIN_ROOT}/scripts/on-permission-denied.sh"
+                                    ),
+                                    "timeout": 10,
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_permission_denied_no_matcher_no_warning(self):
+        """PermissionDeniedフックはmatcher非対応なので未設定でも警告なし（v2.1.89以降）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PermissionDenied": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "echo permission denied",
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+        assert not any("matcher" in w for w in result.warnings)
