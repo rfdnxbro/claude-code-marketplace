@@ -46,6 +46,23 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 - カスタムパスを指定した場合、デフォルトディレクトリと**両方が読み込まれる**（置き換えではなく補足）
 - **デフォルトパスと同じパスの明示指定は禁止**: 冗長な指定を避けるため、デフォルトパスと一致するコンポーネント参照は記述しないこと（例: `"hooks": "./hooks/hooks.json"` や `"settings": "./settings.json"` はデフォルトと同一のため不要）
 
+**`bin/` ディレクトリ（v2.1.91以降）**:
+
+プラグインルート直下に `bin/` ディレクトリを作成し、実行可能ファイルを配置することで、Bash ツールからフルパスなしのベアコマンドとして呼び出せます。
+
+```text
+my-plugin/
+├── .claude-plugin/
+│   └── plugin.json
+├── bin/
+│   ├── my-tool        # フルパス不要で実行可能
+│   └── helper-script  # フルパス不要で実行可能
+└── commands/
+    └── use-tool.md
+```
+
+`bin/` ディレクトリは plugin.json での指定不要で自動的に PATH に追加されます。
+
 ## 完全な例
 
 ```json
