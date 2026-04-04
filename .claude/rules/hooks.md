@@ -129,6 +129,24 @@ LLMを使用してプロンプトを評価:
 
 **注**: プラグインからは`prompt`と`agent`タイプもサポートされます（v2.1.0以降）。
 
+#### prompt型フックの出力スキーマ
+
+`prompt` 型フックはLLMが評価した結果をJSON形式で出力できます。非Stopイベント（`PreToolUse` など）では、`preventContinuation: true` を返すことでツール実行や処理の継続を防ぐことができます（v2.1.92でセマンティクス回復）:
+
+```json
+{
+  "preventContinuation": true,
+  "stopReason": "処理を中断した理由"
+}
+```
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `preventContinuation` | boolean | `true` の場合、現在の処理（ツール実行など）の継続を防ぐ。非Stopイベントの `prompt` 型フックで有効 |
+| `stopReason` | string | `preventContinuation: true` 時にユーザーへ表示するメッセージ |
+
+**注意（v2.1.92）**: `Stop` イベントの `prompt` 型フックにおいて、小型高速モデルが `ok:false` を返した場合に誤ってフックが失敗するバグが修正されました。また、非Stopイベントの `prompt` 型フックに対する `preventContinuation:true` のセマンティクスが回復されました。
+
 ### agent（エージェント起動）
 
 特定のエージェントを起動:
