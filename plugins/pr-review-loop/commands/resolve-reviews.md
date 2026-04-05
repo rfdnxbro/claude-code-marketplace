@@ -36,10 +36,10 @@ if [ -z "$TARGET_BOTS" ]; then
   gh api repos/$REPO/pulls/$1/comments --jq '.[] | select(.user.type == "Bot") | {id, user: .user.login, body, path, line: .original_line, in_reply_to_id, created_at, html_url}'
 else
   # カンマ区切りのbot名リストをjqの条件式に変換して絞り込む
-  gh api repos/$REPO/pulls/$1/comments --jq --arg bots "$TARGET_BOTS" '
+  gh api repos/$REPO/pulls/$1/comments | jq --arg bots "$TARGET_BOTS" '
     ($bots | split(",") | map(ltrimstr(" ") | rtrimstr(" "))) as $bot_list |
-    .[] | select(.user.type == "Bot" and (.user.login | IN($bot_list[]))) |
-    {id, user: .user.login, body, path, line: .original_line, in_reply_to_id, created_at, html_url}
+    [.[] | select(.user.type == "Bot" and (.user.login | IN($bot_list[]))) |
+    {id, user: .user.login, body, path, line: .original_line, in_reply_to_id, created_at, html_url}]
   '
 fi
 
@@ -47,10 +47,10 @@ fi
 if [ -z "$TARGET_BOTS" ]; then
   gh api repos/$REPO/pulls/$1/reviews --jq '.[] | select(.user.type == "Bot") | {id, user: .user.login, state, body}'
 else
-  gh api repos/$REPO/pulls/$1/reviews --jq --arg bots "$TARGET_BOTS" '
+  gh api repos/$REPO/pulls/$1/reviews | jq --arg bots "$TARGET_BOTS" '
     ($bots | split(",") | map(ltrimstr(" ") | rtrimstr(" "))) as $bot_list |
-    .[] | select(.user.type == "Bot" and (.user.login | IN($bot_list[]))) |
-    {id, user: .user.login, state, body}
+    [.[] | select(.user.type == "Bot" and (.user.login | IN($bot_list[]))) |
+    {id, user: .user.login, state, body}]
   '
 fi
 ```
