@@ -44,7 +44,7 @@ jobs:
           else
             # push: 前回チェックポイントからの累積差分を検出
             if [ -f .plugin-check-sha ]; then
-              LAST_SHA=$(cat .plugin-check-sha | tr -d '[:space:]')
+              LAST_SHA=$(tr -d '[:space:]' < .plugin-check-sha)
               if git cat-file -e "${LAST_SHA}" 2>/dev/null; then
                 echo "前回チェックポイント: ${LAST_SHA}"
               else
@@ -200,7 +200,8 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git add .plugin-check-sha
           git diff --staged --quiet || git commit -m "chore: プラグイン改善チェックポイントを更新"
-          git push
+          git pull --rebase origin main
+          git push origin HEAD:main
 
       - name: 変更がない場合
         if: steps.changed-files.outputs.has_changes == 'false'
