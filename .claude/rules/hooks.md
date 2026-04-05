@@ -129,23 +129,23 @@ LLMを使用してプロンプトを評価:
 
 **注**: プラグインからは`prompt`と`agent`タイプもサポートされます（v2.1.0以降）。
 
-#### prompt型フックの出力スキーマ
+#### prompt型フックの出力と継続制御
 
-`prompt` 型フックはLLMが評価した結果をJSON形式で出力できます。非Stopイベント（`PreToolUse` など）では、`preventContinuation: true` を返すことでツール実行や処理の継続を防ぐことができます（v2.1.92でセマンティクス回復）:
+`prompt` 型フックはLLMが評価した結果を `{ok: boolean, reason: string}` のJSON形式で出力します。非Stopイベント（`PreToolUse` など）で `ok: false` が返された場合、ツール実行や処理の継続がブロックされます（v2.1.92でセマンティクス回復）。`reason` フィールドの内容がユーザーへのブロック理由として表示されます。
 
 ```json
 {
-  "preventContinuation": true,
-  "stopReason": "処理を中断した理由"
+  "ok": false,
+  "reason": "処理を中断した理由"
 }
 ```
 
 | フィールド | 型 | 説明 |
 |-----------|---|------|
-| `preventContinuation` | boolean | `true` の場合、現在の処理（ツール実行など）の継続を防ぐ。非Stopイベントの `prompt` 型フックで有効 |
-| `stopReason` | string | `preventContinuation: true` 時にユーザーへ表示するメッセージ |
+| `ok` | boolean | 条件が満たされたかどうか。`false` の場合、非Stopイベントではツール実行等の継続がブロックされる |
+| `reason` | string | 判定理由。`ok: false` 時にユーザーへブロック理由として表示される |
 
-**注意（v2.1.92）**: `Stop` イベントの `prompt` 型フックにおいて、小型高速モデルが `ok:false` を返した場合に誤ってフックが失敗するバグが修正されました。また、非Stopイベントの `prompt` 型フックに対する `preventContinuation:true` のセマンティクスが回復されました。
+**注意（v2.1.92）**: 非Stopイベントの `prompt` 型フックに対する `ok: false` による継続ブロックのセマンティクスが回復されました。
 
 ### agent（エージェント起動）
 
