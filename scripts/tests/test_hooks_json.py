@@ -835,32 +835,8 @@ class TestValidateHooksJson:
         assert result.has_errors()
         assert any("if" in e for e in result.errors)
 
-    def test_valid_permission_denied_hook(self):
-        """PermissionDeniedフックが有効であることをテスト（v2.1.89以降）"""
-        content = json.dumps(
-            {
-                "hooks": {
-                    "PermissionDenied": [
-                        {
-                            "hooks": [
-                                {
-                                    "type": "command",
-                                    "command": (
-                                        "${CLAUDE_PLUGIN_ROOT}/scripts/on-permission-denied.sh"
-                                    ),
-                                    "timeout": 10,
-                                }
-                            ]
-                        }
-                    ]
-                }
-            }
-        )
-        result = validate_hooks_json(Path("hooks.json"), content)
-        assert not result.has_errors()
-
     def test_permission_denied_no_matcher_warning(self):
-        """PermissionDeniedフックはmatcher対応なので未設定時は警告が出る"""
+        """PermissionDeniedフックはmatcher対応なので未設定時は警告が出る（v2.1.88以降）"""
         content = json.dumps(
             {
                 "hooks": {
