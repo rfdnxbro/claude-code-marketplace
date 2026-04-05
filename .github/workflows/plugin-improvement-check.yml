@@ -192,7 +192,7 @@ jobs:
           echo "plugins/配下にプラグインが存在しません。スキップします。"
 
       - name: チェックポイントを更新
-        if: steps.changed-files.outputs.has_changes == 'true' && github.event_name != 'workflow_dispatch'
+        if: steps.changed-files.outputs.has_changes == 'true' && steps.plugins.outputs.count > 0 && github.event_name != 'workflow_dispatch'
         run: |
           set -e
           git rev-parse HEAD > .plugin-check-sha
