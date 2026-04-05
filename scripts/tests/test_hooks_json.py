@@ -74,6 +74,7 @@ class TestValidateHooksJson:
             "Elicitation",
             "ElicitationResult",
             "StopFailure",
+            "PermissionDenied",
         ]
         for event in valid_events:
             content = json.dumps(
@@ -81,6 +82,27 @@ class TestValidateHooksJson:
             )
             result = validate_hooks_json(Path("hooks.json"), content)
             assert not result.has_errors(), f"Event {event} should be valid"
+
+    def test_permission_denied_event(self):
+        """PermissionDeniedイベント（v2.1.88以降）が有効であることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PermissionDenied": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/handle-denied.sh",
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
 
     def test_invalid_hook_type(self):
         content = json.dumps(
