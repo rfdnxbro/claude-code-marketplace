@@ -83,6 +83,27 @@ class TestValidateHooksJson:
             result = validate_hooks_json(Path("hooks.json"), content)
             assert not result.has_errors(), f"Event {event} should be valid"
 
+    def test_permission_denied_event(self):
+        """PermissionDeniedイベント（v2.1.88以降）が有効であることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PermissionDenied": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/handle-denied.sh",
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
     def test_invalid_hook_type(self):
         content = json.dumps(
             {"hooks": {"PostToolUse": [{"matcher": "*", "hooks": [{"type": "invalid"}]}]}}
@@ -838,8 +859,8 @@ class TestValidateHooksJson:
         result = validate_hooks_json(Path("hooks.json"), content)
         assert not result.has_errors()
 
-    def test_permission_denied_no_matcher_no_warning(self):
-        """PermissionDeniedフックはmatcher非対応なので未設定でも警告なし（v2.1.89以降）"""
+    def test_permission_denied_no_matcher_warning(self):
+        """PermissionDeniedフックはmatcher対応なので未設定時は警告が出る"""
         content = json.dumps(
             {
                 "hooks": {
@@ -858,4 +879,4 @@ class TestValidateHooksJson:
         )
         result = validate_hooks_json(Path("hooks.json"), content)
         assert not result.has_errors()
-        assert not any("matcher" in w for w in result.warnings)
+        assert any("matcher" in w for w in result.warnings)

@@ -60,6 +60,7 @@ hooks:
 | `PostToolUse` | ツール呼び出し成功後 | ✓ |
 | `PostToolUseFailure` | ツール呼び出し失敗後 | ✓ |
 | `PermissionRequest` | 権限ダイアログ表示時 | ✓ |
+| `PermissionDenied` | autoモードクラシファイアーによる拒否後（v2.1.88以降） | ✓ |
 | `UserPromptSubmit` | ユーザープロンプト送信時 | × |
 | `Notification` | 通知発行時 | ✓ |
 | `Stop` | Claude終了時 | × |
@@ -82,7 +83,6 @@ hooks:
 | `InstructionsLoaded` | CLAUDE.mdまたは`.claude/rules/*.md`がコンテキストに読み込まれた時（v2.1.64以降） | × |
 | `Elicitation` | MCPエリシテーションのレスポンス送信前（v2.1.76以降） | ✓ |
 | `ElicitationResult` | MCPエリシテーションのレスポンス結果（v2.1.76以降） | ✓ |
-| `PermissionDenied` | オートモードのclassifierによる拒否後（v2.1.89以降） | × |
 
 > **v2.1.75 フックソース表示**: パーミッションプロンプトでフックの確認が必要な場合、フックのソース（`settings` / `plugin` / `skill`）が表示されるようになりました。
 
@@ -1190,7 +1190,8 @@ MCPエリシテーションのレスポンス結果を受け取るフック（v2
 
 ### PermissionDenied
 
-オートモードのclassifierによってツール実行が拒否された後に発火するフック（v2.1.89以降）。`{retry: true}` を返すことでモデルにリトライを指示できます。
+autoモード（自動モード）のクラシファイアーがツール実行を拒否した後に発火するフック（v2.1.88以降）。
+フックから `{retry: true}` を返すと、モデルにリトライを促すことができます。
 
 **使用例:**
 
@@ -1202,8 +1203,8 @@ MCPエリシテーションのレスポンス結果を受け取るフック（v2
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on-permission-denied.sh",
-            "timeout": 10
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/handle-denied.sh",
+            "timeout": 30
           }
         ]
       }
@@ -1212,22 +1213,16 @@ MCPエリシテーションのレスポンス結果を受け取るフック（v2
 }
 ```
 
-**出力JSON:**
+**返却値:**
 
-```json
-{
-  "retry": true
-}
-```
-
-- `retry: true` を返すと、モデルに操作のリトライを指示できます
-- マッチャーはサポートされていません（すべての拒否イベントで発火）
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `retry` | boolean | `retry: true` を返すとモデルにリトライを促す |
 
 **ユースケース:**
 
-- 拒否された操作のログ記録・監査
-- 一時的な拒否の場合にリトライを促す
-- 拒否イベントに基づいた通知・アラート
+- 拒否されたコマンドの監査ログ記録
+- 条件によってリトライを許可する（例: 特定のパターンのみ）
 
 ## パーミッション優先順位（v2.1.27以降）
 
