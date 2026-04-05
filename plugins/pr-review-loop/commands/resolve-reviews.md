@@ -24,12 +24,35 @@ gh pr view $1 --json number,title,state,headRefName
 
 次にbotのレビューコメントを取得:
 
+`targetBots` 設定が空の場合は全Botを対象にし、設定されている場合は指定したbotのみを対象にする。
+
 ```bash
+# targetBots設定を確認（カンマ区切りのbot名リスト、空の場合は全Bot対象）
+TARGET_BOTS="${CLAUDE_USER_CONFIG_targetBots:-}"
+
 # インラインコメント（diff上のコメント）
-gh api repos/$REPO/pulls/$1/comments --jq '.[] | select(.user.type == "Bot") | {id, user: .user.login, body, path, line: .original_line, in_reply_to_id, created_at, html_url}'
+# targetBotsが設定されている場合は指定botのみ、未設定の場合は全Botを対象
+if [ -z "$TARGET_BOTS" ]; then
+  gh api repos/$REPO/pulls/$1/comments --jq '[.[] | select(.user.type == "Bot") | {id, user: .user.login, body, path, line: .original_line, in_reply_to_id, created_at, html_url}]'
+else
+  # カンマ区切りのbot名リストをjqの条件式に変換して絞り込む
+  gh api repos/$REPO/pulls/$1/comments | jq --arg bots "$TARGET_BOTS" '
+    ($bots | split(",") | map(ltrimstr(" ") | rtrimstr(" "))) as $bot_list |
+    [.[] | select(.user.type == "Bot" and (.user.login | IN($bot_list[]))) |
+    {id, user: .user.login, body, path, line: .original_line, in_reply_to_id, created_at, html_url}]
+  '
+fi
 
 # レビューサマリー
-gh api repos/$REPO/pulls/$1/reviews --jq '.[] | select(.user.type == "Bot") | {id, user: .user.login, state, body}'
+if [ -z "$TARGET_BOTS" ]; then
+  gh api repos/$REPO/pulls/$1/reviews --jq '[.[] | select(.user.type == "Bot") | {id, user: .user.login, state, body}]'
+else
+  gh api repos/$REPO/pulls/$1/reviews | jq --arg bots "$TARGET_BOTS" '
+    ($bots | split(",") | map(ltrimstr(" ") | rtrimstr(" "))) as $bot_list |
+    [.[] | select(.user.type == "Bot" and (.user.login | IN($bot_list[]))) |
+    {id, user: .user.login, state, body}]
+  '
+fi
 ```
 
 ### 2. 未対応コメントの特定
@@ -39,6 +62,8 @@ gh api repos/$REPO/pulls/$1/reviews --jq '.[] | select(.user.type == "Bot") | {i
 - **修正が必要**: コードの品質・バグ・セキュリティに関する妥当な指摘
 - **対応不要（スキップ）**: 誤検知、スタイル上の好み、プロジェクト方針と合わない指摘
 - **判断保留**: 修正の妥当性が判断できない指摘
+
+`autoSkipStyleIssues` 設定が `true` の場合、スタイル・フォーマット・命名規則などに関する指摘は自動的に「対応不要（スキップ）」に分類する。スキップ理由は「スタイル系の指摘のため自動スキップ（autoSkipStyleIssues=true）」と記録する。
 
 **重複処理の防止**: 既に返信済みのコメントはスキップすること。以下の条件で判定する:
 
