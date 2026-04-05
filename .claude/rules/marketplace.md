@@ -331,6 +331,16 @@ export CLAUDE_CODE_PLUGIN_SEED_DIR="/opt/company/plugins:/home/user/my-plugins"
 
 v2.1.78以前は単一ディレクトリのみ指定可能でした。複数のプラグインソースを管理する場合はこの機能を活用してください。
 
+## オフライン環境でのマーケットプレイス（v2.1.90以降）
+
+`CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE` 環境変数を設定すると、`git pull` が失敗した場合でも既存のマーケットプレイスキャッシュを保持します。
+
+```bash
+export CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE=1
+```
+
+ネットワーク接続が不安定な環境や、オフラインでの使用時に有用です。未設定の場合、`git pull` 失敗時はマーケットプレイスが利用できなくなります。
+
 ## Gitタイムアウト設定（v2.1.51以降）
 
 プラグインのGitクローン時のタイムアウトが変更されました。
