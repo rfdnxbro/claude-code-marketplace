@@ -63,6 +63,7 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
                 "PostToolUse",
                 "PostToolUseFailure",
                 "PermissionRequest",
+                "PermissionDenied",
                 "Notification",
                 "SubagentStart",
                 "SubagentStop",
