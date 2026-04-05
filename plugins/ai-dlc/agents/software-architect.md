@@ -9,11 +9,6 @@ isolation: worktree
 effort: high
 maxTurns: 40
 skills: ai-dlc:ai-dlc
-hooks:
-  Stop:
-    - hooks:
-        - type: prompt
-          prompt: "設計作業の完了報告を行ってください。含める情報: 作成した成果物、設計したコンポーネント、アーキテクチャ上の決定事項、次のステップへの推奨事項。"
 ---
 
 # ソフトウェアアーキテクト

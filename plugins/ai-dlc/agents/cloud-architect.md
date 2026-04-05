@@ -9,11 +9,6 @@ isolation: worktree
 effort: high
 maxTurns: 40
 skills: ai-dlc:ai-dlc
-hooks:
-  Stop:
-    - hooks:
-        - type: prompt
-          prompt: "入力JSON（$ARGUMENTS）の last_assistant_message フィールドを参考に、インフラ設計作業の完了報告を行ってください。含める情報: 選定したAWSサービス、作成したIaCファイル、セキュリティ・可用性の考慮事項、デプロイ手順。"
 ---
 
 # クラウドアーキテクト
