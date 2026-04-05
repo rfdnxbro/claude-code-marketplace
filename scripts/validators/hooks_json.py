@@ -48,6 +48,7 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
         "Elicitation",
         "ElicitationResult",
         "StopFailure",
+        "PermissionDenied",
     ]
 
     for event_name, event_hooks in hooks.items():
@@ -62,6 +63,7 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
                 "PostToolUse",
                 "PostToolUseFailure",
                 "PermissionRequest",
+                "PermissionDenied",
                 "Notification",
                 "SubagentStart",
                 "SubagentStop",
