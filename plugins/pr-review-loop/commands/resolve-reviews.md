@@ -33,7 +33,7 @@ TARGET_BOTS="${CLAUDE_USER_CONFIG_targetBots:-}"
 # インラインコメント（diff上のコメント）
 # targetBotsが設定されている場合は指定botのみ、未設定の場合は全Botを対象
 if [ -z "$TARGET_BOTS" ]; then
-  gh api repos/$REPO/pulls/$1/comments --jq '.[] | select(.user.type == "Bot") | {id, user: .user.login, body, path, line: .original_line, in_reply_to_id, created_at, html_url}'
+  gh api repos/$REPO/pulls/$1/comments --jq '[.[] | select(.user.type == "Bot") | {id, user: .user.login, body, path, line: .original_line, in_reply_to_id, created_at, html_url}]'
 else
   # カンマ区切りのbot名リストをjqの条件式に変換して絞り込む
   gh api repos/$REPO/pulls/$1/comments | jq --arg bots "$TARGET_BOTS" '
@@ -45,7 +45,7 @@ fi
 
 # レビューサマリー
 if [ -z "$TARGET_BOTS" ]; then
-  gh api repos/$REPO/pulls/$1/reviews --jq '.[] | select(.user.type == "Bot") | {id, user: .user.login, state, body}'
+  gh api repos/$REPO/pulls/$1/reviews --jq '[.[] | select(.user.type == "Bot") | {id, user: .user.login, state, body}]'
 else
   gh api repos/$REPO/pulls/$1/reviews | jq --arg bots "$TARGET_BOTS" '
     ($bots | split(",") | map(ltrimstr(" ") | rtrimstr(" "))) as $bot_list |
