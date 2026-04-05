@@ -9,11 +9,6 @@ isolation: worktree
 effort: high
 maxTurns: 50
 skills: ai-dlc:ai-dlc
-hooks:
-  Stop:
-    - hooks:
-        - type: prompt
-          prompt: "以下のアシスタントの最後のメッセージを参考に、実装結果を要約してください: $ARGUMENTS\n\n含める情報: 作成/変更したファイル、実装した機能、テスト実行結果、発生した問題とその解決策。"
 ---
 
 # ソフトウェアエンジニア
