@@ -7,7 +7,7 @@
           {
             "type": "agent",
             "agent": "doc-checker",
-            "prompt": "変更されたファイルに関連するドキュメント（docPatternsで指定されたパターン）の整合性をチェックしてください: $ARGUMENTS",
+            "prompt": "変更されたファイルに関連するドキュメントの整合性をチェックしてください: $ARGUMENTS",
             "timeout": 120,
             "statusMessage": "ドキュメント整合性チェック中..."
           }
