@@ -8,11 +8,6 @@ skills: bbl:content-guide
 memory: project
 maxTurns: 20
 effort: medium
-hooks:
-  Stop:
-    - hooks:
-        - type: prompt
-          prompt: "入力（$ARGUMENTS）の last_assistant_message フィールドに含まれる最後のアシスタントメッセージを参考に、レビュー結果（スコアと主要な改善点）を要約してください。"
 ---
 
 # コンテンツレビューアー
