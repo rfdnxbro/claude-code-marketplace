@@ -2,7 +2,7 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Write|Edit",
+        "matcher": "Write|Edit|MultiEdit",
         "hooks": [
           {
             "type": "command",
@@ -45,6 +45,26 @@
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-end.sh",
             "timeout": 10,
             "statusMessage": "エラー発生時のセッションログを記録中..."
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "content-writer",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "以下の最後のアシスタントメッセージを参考に、記事作成結果を報告してください: $ARGUMENTS\n\n含める情報: 作成した記事のパス、記事の文字数、含まれるMermaid図の数。"
+          }
+        ]
+      },
+      {
+        "matcher": "content-reviewer",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "入力（$ARGUMENTS）の last_assistant_message フィールドに含まれる最後のアシスタントメッセージを参考に、レビュー結果（スコアと主要な改善点）を要約してください。"
           }
         ]
       }

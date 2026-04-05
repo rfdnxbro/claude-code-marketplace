@@ -8,11 +8,6 @@ skills: bbl:content-guide
 memory: project
 maxTurns: 30
 effort: high
-hooks:
-  Stop:
-    - hooks:
-        - type: prompt
-          prompt: "以下の最後のアシスタントメッセージを参考に、記事作成結果を報告してください: $ARGUMENTS\n\n含める情報: 作成した記事のパス、記事の文字数、含まれるMermaid図の数。"
 ---
 
 # コンテンツライター
