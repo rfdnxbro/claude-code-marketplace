@@ -212,7 +212,7 @@ HTTPフックはサーバーからのJSONレスポンスを受信・処理でき
   "systemMessage": "警告メッセージ",
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
-    "permissionDecision": "allow|deny|ask",
+    "permissionDecision": "allow|deny|ask|defer",
     "updatedInput": { "field": "new_value" }
   }
 }
@@ -410,12 +410,14 @@ exit 2  # ユーザーには理由が伝わらない
   "systemMessage": "警告メッセージ",
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
-    "permissionDecision": "allow|deny|ask",
+    "permissionDecision": "allow|deny|ask|defer",
     "updatedInput": { "field": "new_value" },
     "additionalContext": "モデルに提供する追加コンテキスト（PreToolUseのみ）"
   }
 }
 ```
+
+> **注意（v2.1.89以降）**: フックスクリプトが **50K文字を超える出力** を返した場合、コンテキストに直接注入される代わりに **ディスクに保存** され、ファイルパスとプレビューのみが提供されます。大量の出力を返すフックの動作に注意してください。
 
 ### PreToolUseフックの追加コンテキスト
 
@@ -463,6 +465,25 @@ EOF
 - 実行前のチェック結果をモデルに伝達
 - 動的に変化するコンテキスト情報の追加
 - コンプライアンス要件の通知
+
+### PreToolUseフックの "defer" パーミッション決定値（v2.1.89以降）
+
+`PreToolUse` フックで `permissionDecision: "defer"` を返すと、ヘッドレスセッションでツール呼び出しを一時停止できます。その後 `-p --resume` で再開すると、フックが再評価されます。
+
+```json
+{
+  "continue": true,
+  "hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "defer"
+  }
+}
+```
+
+**ユースケース:**
+
+- ヘッドレスパイプラインで人間のレビューが必要な操作を一時停止する
+- 外部承認フローが完了するまでツール実行を保留する
 
 ### AskUserQuestion の回答をフックで提供（v2.1.85以降）
 
