@@ -22,11 +22,16 @@ skills: ai-dlc:ai-dlc
 作業開始前に、以下の環境変数を確認してください:
 
 - `CLAUDE_USER_CONFIG_cloudProvider`: 対象クラウドプロバイダー（デフォルト: AWS）
-- `CLAUDE_USER_CONFIG_preferredRegion`: 優先リージョン（デフォルト: ap-northeast-1）
+- `CLAUDE_USER_CONFIG_preferredRegion`: 優先リージョン（デフォルト: プロバイダーに依存。AWS: ap-northeast-1、GCP: asia-northeast1、Azure: japaneast）
 
 ```bash
 CLOUD_PROVIDER="${CLAUDE_USER_CONFIG_cloudProvider:-AWS}"
-PREFERRED_REGION="${CLAUDE_USER_CONFIG_preferredRegion:-ap-northeast-1}"
+case "$CLOUD_PROVIDER" in
+  GCP)   DEFAULT_REGION="asia-northeast1" ;;
+  Azure) DEFAULT_REGION="japaneast" ;;
+  *)     DEFAULT_REGION="ap-northeast-1" ;;
+esac
+PREFERRED_REGION="${CLAUDE_USER_CONFIG_preferredRegion:-$DEFAULT_REGION}"
 ```
 
 設定されたプロバイダーに応じてサービス選定・IaC・CLIコマンドを使い分けてください。
