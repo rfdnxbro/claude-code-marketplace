@@ -15,8 +15,7 @@
       "default": "AWS"
     },
     "preferredRegion": {
-      "description": "デフォルトのクラウドリージョン（例: ap-northeast-1）",
-      "default": "ap-northeast-1"
+      "description": "デフォルトのクラウドリージョン（例: ap-northeast-1, asia-northeast1, japaneast）。未設定の場合はcloudProviderに応じたデフォルトが使用される"
     },
     "projectLanguage": {
       "description": "優先プログラミング言語（例: TypeScript, Python, Java）",
