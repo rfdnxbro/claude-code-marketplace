@@ -1,7 +1,16 @@
 #!/bin/bash
 # AI-DLC実行に必要なツールのチェック
 
-REQUIRED_TOOLS=("aws" "terraform" "cdk")
+CLOUD_PROVIDER="${CLAUDE_USER_CONFIG_cloudProvider:-AWS}"
+
+case "$CLOUD_PROVIDER" in
+  AWS)   REQUIRED_TOOLS=("aws") ;;
+  GCP)   REQUIRED_TOOLS=("gcloud") ;;
+  Azure) REQUIRED_TOOLS=("az") ;;
+  *)     REQUIRED_TOOLS=() ;;
+esac
+REQUIRED_TOOLS+=("terraform")
+
 MISSING_TOOLS=()
 
 for tool in "${REQUIRED_TOOLS[@]}"; do
