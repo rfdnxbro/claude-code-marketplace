@@ -37,6 +37,7 @@ jobs:
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v6
         with:
+          ref: main
           fetch-depth: 0
 
       - name: 変更されたルール/バリデーターを特定
