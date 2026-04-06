@@ -1,10 +1,20 @@
 {
   "name": "doc-check",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "変更に関連するドキュメントの整合性を自動チェックするプラグイン",
   "author": { "name": "rfdnxbro" },
   "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/doc-check",
   "repository": "https://github.com/rfdnxbro/claude-code-marketplace",
   "license": "MIT",
-  "keywords": ["documentation", "consistency", "check"]
+  "keywords": ["documentation", "consistency", "check"],
+  "userConfig": {
+    "docPatterns": {
+      "description": "チェック対象のドキュメントファイルパターン（カンマ区切り）",
+      "default": "README.md,CLAUDE.md"
+    },
+    "skipPatterns": {
+      "description": "チェックをスキップするファイルパターン（カンマ区切り、例: *.test.ts,*.spec.ts）",
+      "default": ""
+    }
+  }
 }
