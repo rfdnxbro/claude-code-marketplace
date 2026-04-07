@@ -26,9 +26,10 @@ skills: ai-dlc:ai-dlc
 
 ```bash
 CLOUD_PROVIDER="${CLAUDE_USER_CONFIG_cloudProvider:-AWS}"
+CLOUD_PROVIDER=$(echo "$CLOUD_PROVIDER" | tr '[:lower:]' '[:upper:]')
 case "$CLOUD_PROVIDER" in
   GCP)   DEFAULT_REGION="asia-northeast1" ;;
-  Azure) DEFAULT_REGION="japaneast" ;;
+  AZURE) DEFAULT_REGION="japaneast" ;;
   *)     DEFAULT_REGION="ap-northeast-1" ;;
 esac
 PREFERRED_REGION="${CLAUDE_USER_CONFIG_preferredRegion:-$DEFAULT_REGION}"
