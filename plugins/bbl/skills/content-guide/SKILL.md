@@ -153,16 +153,16 @@ effort: low
 
 ## ファイル配置
 
-記事ファイルは以下のパスに配置：
+記事ファイルは以下のパスに配置（`ARTICLES_DIR` は `$CLAUDE_USER_CONFIG_articlesDir` の値、未設定時は `content`）：
 
 ```
-docs/<カテゴリ>/<サブカテゴリ>/<概念名>.md
+<ARTICLES_DIR>/<カテゴリ>/<サブカテゴリ>/<概念名>.md
 ```
 
-例:
-- `docs/ヒト/組織行動・リーダーシップ/心理的安全性.md`
-- `docs/カネ/ファイナンス/NPV.md`
-- `docs/モノ/マーケティング/STP分析.md`
+例（デフォルト設定の場合）:
+- `content/ヒト/組織行動・リーダーシップ/心理的安全性.md`
+- `content/カネ/ファイナンス/NPV.md`
+- `content/モノ/マーケティング/STP分析.md`
 
 ## テンプレートファイル
 

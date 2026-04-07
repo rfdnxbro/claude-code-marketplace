@@ -95,10 +95,12 @@ subcategory: [サブカテゴリ名]
 session_id: ${CLAUDE_SESSION_ID}
 outline: |
   [作成したアウトライン]
-file_path: docs/[カテゴリ]/[サブカテゴリ]/[概念名].md
+file_path: $CLAUDE_USER_CONFIG_articlesDir/[カテゴリ]/[サブカテゴリ]/[概念名].md
 phase: outline_created
 updated: [現在時刻]
 ```
+
+※ `$CLAUDE_USER_CONFIG_articlesDir` が未設定の場合は `content` をデフォルト値として使用すること。
 
 ### 6. 次のステップの案内
 
