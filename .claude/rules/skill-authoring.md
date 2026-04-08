@@ -64,6 +64,7 @@ argument-hint: "topic: foo | bar"
 - 小文字、数字、ハイフンのみ
 - 動名詞形を推奨（`processing-pdfs`）、名詞形も可（`pdf-processing`）
 - 予約語禁止: `anthropic`, `claude`
+- **呼び出し名として使用される（v2.1.94以降）**: `plugin.json` で `"skills": ["./"]` を使ってスキルを宣言した場合、スキルの呼び出し名には常にこの `name` フィールドが使用されます。以前はディレクトリ名が使われていましたが、v2.1.94以降はインストール方法を問わず `name` フィールドが優先されます。
 
 **description**:
 
