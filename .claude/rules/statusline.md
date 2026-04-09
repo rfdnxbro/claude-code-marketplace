@@ -31,7 +31,8 @@ Claude Codeがカスタムステータスラインの設定を支援します。
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline.sh",
-    "padding": 0
+    "padding": 0,
+    "refreshInterval": 5
   }
 }
 ```
@@ -41,6 +42,7 @@ Claude Codeがカスタムステータスラインの設定を支援します。
 | `type` | Yes | `"command"` を指定 |
 | `command` | Yes | 実行するスクリプトのパス（`~` 展開対応） |
 | `padding` | No | 左側のパディング（`0` で端まで表示） |
+| `refreshInterval` | No | N秒ごとにステータスラインコマンドを再実行する間隔（秒）（v2.1.97以降） |
 
 **ファイルの使い分け**:
 
@@ -51,6 +53,7 @@ Claude Codeがカスタムステータスラインの設定を支援します。
 
 - ステータスラインは会話メッセージが更新されるときに更新される
 - 更新は最大300msごとに実行される
+- `refreshInterval` を設定した場合、指定した秒数ごとにコマンドが再実行される（v2.1.97以降）
 - コマンドのstdoutの最初の行がステータスラインテキストになる
 - ANSIカラーコードがサポートされている
 - Claude Codeは現在のセッションに関するコンテキスト情報をJSON形式でstdin経由でスクリプトに渡す
@@ -72,7 +75,8 @@ Claude Codeがカスタムステータスラインの設定を支援します。
   "workspace": {
     "current_dir": "/current/working/directory",
     "project_dir": "/original/project/directory",
-    "added_dirs": ["/additional/directory1", "/additional/directory2"]
+    "added_dirs": ["/additional/directory1", "/additional/directory2"],
+    "git_worktree": "/path/to/linked/worktree"
   },
   "worktree": {
     "name": "my-worktree",
@@ -133,11 +137,14 @@ Claude Codeがカスタムステータスラインの設定を支援します。
 | `workspace.current_dir` | string | 現在のディレクトリ | `/home/user/project` |
 | `workspace.project_dir` | string | プロジェクトディレクトリ | `/home/user/project` |
 | `workspace.added_dirs` | array | `/add-dir` で追加したディレクトリ一覧（v2.1.47以降） | `["/extra/dir"]` |
+| `workspace.git_worktree` | string | 現在のディレクトリがリンクされたgit worktree内にある場合に設定される（v2.1.97以降）。それ以外は存在しない | `/path/to/linked/worktree` |
 | `cwd` | string | 現在のワーキングディレクトリ | `/home/user/project` |
 
 #### Worktree情報（v2.1.64以降）
 
 `--worktree` セッションで実行中の場合のみ存在するフィールドです。それ以外の場合は `worktree` フィールド自体が存在しません。
+
+> **注意**: `workspace.git_worktree`（v2.1.97以降）とは異なります。`worktree` は `--worktree` フラグで起動したセッション専用のフィールドで、セッション管理情報を含みます。`workspace.git_worktree` は通常セッションでも現在のディレクトリがリンクされたgit worktree内にある場合に設定されます。
 
 | フィールド | 型 | 説明 | 例 |
 |-----------|---|------|-----|
