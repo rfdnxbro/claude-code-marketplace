@@ -72,7 +72,8 @@ Claude Codeがカスタムステータスラインの設定を支援します。
   "workspace": {
     "current_dir": "/current/working/directory",
     "project_dir": "/original/project/directory",
-    "added_dirs": ["/additional/directory1", "/additional/directory2"]
+    "added_dirs": ["/additional/directory1", "/additional/directory2"],
+    "git_worktree": "/path/to/linked/worktree"
   },
   "worktree": {
     "name": "my-worktree",
@@ -133,6 +134,7 @@ Claude Codeがカスタムステータスラインの設定を支援します。
 | `workspace.current_dir` | string | 現在のディレクトリ | `/home/user/project` |
 | `workspace.project_dir` | string | プロジェクトディレクトリ | `/home/user/project` |
 | `workspace.added_dirs` | array | `/add-dir` で追加したディレクトリ一覧（v2.1.47以降） | `["/extra/dir"]` |
+| `workspace.git_worktree` | string \| null | リンクされたgit worktree内にある場合のworktreeパス。それ以外の場合は`null`（v2.1.97以降） | `"/path/to/linked/worktree"` |
 | `cwd` | string | 現在のワーキングディレクトリ | `/home/user/project` |
 
 #### Worktree情報（v2.1.64以降）

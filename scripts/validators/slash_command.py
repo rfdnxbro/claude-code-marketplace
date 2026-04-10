@@ -2,6 +2,7 @@
 スラッシュコマンドのバリデーター
 """
 
+import re
 from pathlib import Path
 
 from .base import (
@@ -17,6 +18,29 @@ from .base import (
     validate_effort_field,
 )
 
+# 引用符なしのYAMLブール値キーワードを検出するパターン
+# 文字列フィールド（description, name）で引用符なしのブール値キーワードを検出する
+_UNQUOTED_BOOL_PATTERN = re.compile(
+    r"^(description|name)\s*:\s*(?![\"'])(true|false|on|off|yes|no|y|n)\s*$",
+    re.IGNORECASE | re.MULTILINE,
+)
+
+
+def _find_unquoted_bool_fields(content: str) -> list[tuple[str, str]]:
+    """frontmatterで引用符なしのYAMLブール値キーワードを持つフィールドを検出する"""
+    if not content.startswith("---"):
+        return []
+    lines = content.split("\n")
+    end_idx = -1
+    for i, line in enumerate(lines[1:], 1):
+        if line.strip() == "---":
+            end_idx = i
+            break
+    if end_idx == -1:
+        return []
+    frontmatter_text = "\n".join(lines[1:end_idx])
+    return _UNQUOTED_BOOL_PATTERN.findall(frontmatter_text)
+
 
 def validate_slash_command(file_path: Path, content: str) -> ValidationResult:
     """スラッシュコマンドを検証する"""
@@ -26,8 +50,18 @@ def validate_slash_command(file_path: Path, content: str) -> ValidationResult:
 
     add_yaml_warnings(result, file_path, yaml_warnings)
 
+    # description / name フィールドに引用符なしのYAMLブール値キーワードが使われていないか確認
+    bool_fields = _find_unquoted_bool_fields(content)
+    bool_field_names = {field for field, _ in bool_fields}
+    for field, keyword in bool_fields:
+        result.add_warning(
+            f"{file_path.name}: {field}にYAMLブール値キーワードが使用されています。"
+            f'引用符で囲んでください（例: {field}: "{keyword}"）'
+        )
+
     # descriptionの確認
-    if not frontmatter.get("description"):
+    description_raw = frontmatter.get("description")
+    if "description" not in bool_field_names and not description_raw:
         # 本文の最初の行がデフォルトになるが、明示的に設定することを推奨
         if body.strip():
             result.add_warning(
