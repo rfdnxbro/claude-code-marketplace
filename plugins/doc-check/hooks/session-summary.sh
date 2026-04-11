@@ -16,7 +16,7 @@ fi
 input=$(cat)
 session_id=$(echo "$input" | jq -r '.session_id // ""')
 transcript_path=$(echo "$input" | jq -r '.transcript_path // ""')
-event_name=$(echo "$input" | jq -r '.hook_event_name // "session_end"')
+event_name=$(echo "$input" | jq -r '.hook_event_name // "SessionEnd"')
 
 if [ -n "$session_id" ]; then
   echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") [DOC_CHECK_SESSION] $event_name session_id=$session_id transcript=$transcript_path" >> "$LOG_FILE"
