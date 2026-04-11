@@ -1,18 +1,5 @@
 {
   "hooks": {
-    "SubagentStop": [
-      {
-        "matcher": ".*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-log.sh",
-            "timeout": 10,
-            "statusMessage": "PRレビュー対応ログを記録中..."
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
         "hooks": [
@@ -33,6 +20,18 @@
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/review-summary.sh",
             "timeout": 10,
             "statusMessage": "エラー発生時のPRレビューログを記録中..."
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/review-summary.sh",
+            "timeout": 10,
+            "statusMessage": "PRレビューセッションのセッション終了ログを記録中..."
           }
         ]
       }
