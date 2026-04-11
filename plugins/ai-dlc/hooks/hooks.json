@@ -50,13 +50,25 @@
         ]
       },
       {
-        "matcher": ".*",
+        "matcher": "^(?!cloud-architect$|software-architect$|product-manager$|software-engineer$).*$",
         "hooks": [
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/agent-completion.sh",
             "timeout": 10,
             "statusMessage": "エージェント完了を記録中..."
+          }
+        ]
+      }
+    ],
+    "TaskCreated": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/task-completion.sh",
+            "timeout": 10,
+            "statusMessage": "タスク作成をログに記録中..."
           }
         ]
       }
