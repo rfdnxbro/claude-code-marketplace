@@ -17,6 +17,7 @@
 | [plugin-readme.md](plugin-readme.md) | プラグインREADMEの作成ガイドライン |
 | [output-styles.md](output-styles.md) | 出力スタイルの定義方法 |
 | [statusline.md](statusline.md) | ステータスラインのカスタマイズ方法 |
+| [contribution-guide.md](contribution-guide.md) | ドキュメント変更ガイドライン・追跡方針 |
 
 ## 用語集
 
