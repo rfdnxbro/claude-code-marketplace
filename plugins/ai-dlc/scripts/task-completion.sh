@@ -4,7 +4,7 @@
 input=$(cat)
 timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 hook_event=$(echo "$input" | jq -r '.hook_event_name // "TaskCompleted"')
-task_subject=$(echo "$input" | jq -r '.task_subject // ""')
+task_subject=$(echo "$input" | jq -r '.task_subject // "(不明)"')
 
 LOG_DIR="${CLAUDE_PLUGIN_DATA}/logs"
 mkdir -p "$LOG_DIR"
