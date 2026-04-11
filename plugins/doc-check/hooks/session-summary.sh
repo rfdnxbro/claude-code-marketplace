@@ -1,4 +1,8 @@
 #!/bin/bash
+# セッション終了時にセッション情報をログに記録
+# 注意: SessionEnd/StopFailureイベントではlast_assistant_messageは利用不可（Stop/SubagentStop専用）
+# 代わりにsession_idとtranscript_pathを記録する
+
 if [ -z "${CLAUDE_PLUGIN_DATA}" ]; then
   exit 0
 fi
@@ -10,8 +14,10 @@ if ! command -v jq &>/dev/null; then
   exit 0
 fi
 input=$(cat)
-last_message=$(echo "$input" | jq -r '.last_assistant_message // ""' | tr '\n' ' ')
+session_id=$(echo "$input" | jq -r '.session_id // ""')
+transcript_path=$(echo "$input" | jq -r '.transcript_path // ""')
+event_name=$(echo "$input" | jq -r '.hook_event_name // "SessionEnd"')
 
-if [ -n "$last_message" ]; then
-  echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") [DOC_CHECK_SESSION] $last_message" >> "$LOG_FILE"
+if [ -n "$session_id" ]; then
+  echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") [DOC_CHECK_SESSION] $event_name session_id=$session_id transcript=$transcript_path" >> "$LOG_FILE"
 fi
