@@ -357,3 +357,82 @@ class TestValidateSlashCommand:
         """).strip()
         result = validate_slash_command(Path("test.md"), content)
         assert any("effort" in w for w in result.warnings)
+
+    def test_description_yaml_bool_keyword_on(self):
+        """descriptionに'on'がYAMLブール値キーワードとして警告される"""
+        content = dedent("""
+            ---
+            description: on
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert any("YAML" in w or "ブール" in w for w in result.warnings)
+
+    def test_description_yaml_bool_keyword_off(self):
+        """descriptionに'off'がYAMLブール値キーワードとして警告される"""
+        content = dedent("""
+            ---
+            description: off
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert any("YAML" in w or "ブール" in w for w in result.warnings)
+
+    def test_description_yaml_bool_keyword_yes(self):
+        """descriptionに'yes'がYAMLブール値キーワードとして警告される"""
+        content = dedent("""
+            ---
+            description: yes
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert any("YAML" in w or "ブール" in w for w in result.warnings)
+
+    def test_description_yaml_bool_keyword_quoted(self):
+        """descriptionに'on'を引用符で囲めば警告されない"""
+        content = dedent("""
+            ---
+            description: "on"
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not any("ブール" in w for w in result.warnings)
+
+    def test_description_yaml_bool_true_warns(self):
+        """descriptionにtrue（引用符なし）が使われた場合に警告される"""
+        content = dedent("""
+            ---
+            description: true
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert any("YAML" in w or "ブール" in w for w in result.warnings)
+
+    def test_name_yaml_bool_keyword_warns(self):
+        """nameにYAMLブール値キーワードが使われた場合に警告される"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            name: on
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert any("name" in w and "ブール" in w for w in result.warnings)
+
+    def test_name_yaml_bool_keyword_quoted_no_warn(self):
+        """nameに引用符付きYAMLブール値キーワードが使われた場合は警告されない"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            name: "on"
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not any("name" in w and "ブール" in w for w in result.warnings)
