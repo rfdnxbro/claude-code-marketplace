@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/review-summary.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/review-summary.sh",
             "timeout": 10,
             "statusMessage": "PRレビューセッションの最終サマリーを記録中..."
           }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/review-summary.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/review-summary.sh",
             "timeout": 10,
             "statusMessage": "エラー発生時のPRレビューログを記録中..."
           }
@@ -29,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/review-summary.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/review-summary.sh",
             "timeout": 10,
             "statusMessage": "PRレビューセッションのセッション終了ログを記録中..."
           }
