@@ -2,7 +2,32 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Write|Edit|MultiEdit",
+        "matcher": "Write",
+        "if": "Write(content/**)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/context-check.sh",
+            "timeout": 5,
+            "statusMessage": "記事コンテキストを確認中..."
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "if": "Edit(content/**)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/context-check.sh",
+            "timeout": 5,
+            "statusMessage": "記事コンテキストを確認中..."
+          }
+        ]
+      },
+      {
+        "matcher": "MultiEdit",
+        "if": "MultiEdit(content/**)",
         "hooks": [
           {
             "type": "command",
