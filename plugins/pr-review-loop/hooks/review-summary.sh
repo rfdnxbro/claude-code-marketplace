@@ -15,6 +15,6 @@ last_message=$(echo "$input" | jq -r '.last_assistant_message // ""' | tr '\n' '
 
 if [ -n "$last_message" ]; then
   echo "$timestamp [pr-review-loop] $event_name: $last_message" >> "$LOG_FILE"
-elif [ "$event_name" = "StopFailure" ]; then
+elif [ "$event_name" = "StopFailure" ] || [ "$event_name" = "SessionEnd" ]; then
   echo "$timestamp [pr-review-loop] $event_name: (no assistant message)" >> "$LOG_FILE"
 fi
