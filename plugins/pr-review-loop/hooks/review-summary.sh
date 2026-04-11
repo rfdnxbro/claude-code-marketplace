@@ -5,7 +5,7 @@ fi
 mkdir -p "${CLAUDE_PLUGIN_DATA}"
 LOG_FILE="${CLAUDE_PLUGIN_DATA}/pr-review-loop.log"
 if ! command -v jq &>/dev/null; then
-  echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") [pr-review-loop] Stop: (jq not found)" >> "$LOG_FILE"
+  echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") [pr-review-loop] unknown: (jq not found)" >> "$LOG_FILE"
   exit 0
 fi
 input=$(cat)
