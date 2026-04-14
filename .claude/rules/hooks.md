@@ -67,7 +67,7 @@ hooks:
 | `StopFailure` | APIエラー（レート制限・認証失敗など）でターンが終了した時（v2.1.78以降） | × |
 | `SubagentStart` | サブエージェント起動時 | ✓ |
 | `SubagentStop` | サブエージェント終了時 | ✓ |
-| `PreCompact` | コンパクト前 | ✓ |
+| `PreCompact` | コンパクト前（exit code 2または`{"decision":"block"}`でブロック可能・v2.1.105以降） | ✓ |
 | `PostCompact` | コンパクション完了後（v2.1.76以降） | ✓ |
 | `SessionStart` | セッション開始時 | ✓ |
 | `SessionEnd` | セッション終了時 | × |
@@ -1034,6 +1034,73 @@ CLAUDE.mdまたは`.claude/rules/*.md`ファイルがコンテキストに読み
 - 指示ファイルの読み込みをログに記録
 - 読み込まれた指示の検証
 - 追加コンテキストのセットアップ
+
+### PreCompact
+
+コンパクション実行前に発火するフック。exit code 2または`{"decision":"block"}`を返すことでコンパクションをブロックできます（v2.1.105以降）。
+
+**マッチャー**: `trigger`フィールドでマッチ（`manual` = `/compact`コマンド実行時、`auto` = コンテキストウィンドウ超過時の自動コンパクト時）
+
+**使用例:**
+
+```json
+{
+  "hooks": {
+    "PreCompact": [
+      {
+        "matcher": "auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/pre-compact.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**入力JSON（固有フィールド）:**
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `trigger` | string | `"manual"`（`/compact`コマンド実行時）または `"auto"`（自動コンパクト時） |
+
+**コンパクションのブロック（v2.1.105以降）:**
+
+以下のいずれかの方法でコンパクションをブロックできます:
+
+1. exit code `2` で終了（stderrの内容がユーザーに表示される）
+2. 以下のJSONをstdoutに出力:
+
+```json
+{"decision":"block"}
+```
+
+**使用例（コンパクションブロック）:**
+
+```bash
+#!/bin/bash
+# 自動コンパクションをブロックする例
+
+input=$(cat)
+trigger=$(echo "$input" | jq -r '.trigger')
+
+if [[ "$trigger" == "auto" ]]; then
+  echo "自動コンパクションをブロックしました" >&2
+  exit 2
+fi
+
+exit 0
+```
+
+**ユースケース:**
+
+- コンパクション実行前のログ記録・通知
+- 特定の条件下でのコンパクションのブロック
+- コンパクションのタイミング制御
 
 ### PostCompact
 
