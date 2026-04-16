@@ -264,7 +264,9 @@ class TestValidatePluginJson:
         """dependenciesの要素がkebab-caseでない場合に警告（v2.1.110以降）"""
         content = json.dumps({"name": "my-plugin", "dependencies": ["MyPlugin"]})
         result = validate_plugin_json(Path("plugin.json"), content)
-        assert any("dependencies" in w for w in result.warnings)
+        dep_warnings = [w for w in result.warnings if "dependencies" in w]
+        assert dep_warnings
+        assert not any("name" in w for w in dep_warnings)
 
     def test_dependencies_item_empty_string(self):
         """dependenciesの要素が空文字列の場合エラー（v2.1.110以降）"""

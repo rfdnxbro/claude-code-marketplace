@@ -71,7 +71,8 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
                 else:
                     dep_error = validate_kebab_case(dep)
                     if dep_error:
-                        result.add_warning(f"{file_path.name}: dependencies[{i}]: {dep_error}")
+                        msg = f"dependencies[{i}]はkebab-case（小文字とハイフン）のみ: {dep}"
+                        result.add_warning(f"{file_path.name}: {msg}")
 
     # パスの確認
     path_fields = [
