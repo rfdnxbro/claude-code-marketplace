@@ -2,7 +2,8 @@
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "Write|Edit|MultiEdit|NotebookEdit",
+        "matcher": "Write",
+        "if": "Write(*.ts)",
         "hooks": [
           {
             "type": "agent",
@@ -10,6 +11,252 @@
             "prompt": "変更されたファイルに関連するドキュメントの整合性をチェックしてください: $ARGUMENTS",
             "timeout": 120,
             "statusMessage": "ドキュメント整合性チェック中..."
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "if": "Write(*.js)",
+        "hooks": [
+          {
+            "type": "agent",
+            "agent": "doc-checker",
+            "prompt": "変更されたファイルに関連するドキュメントの整合性をチェックしてください: $ARGUMENTS",
+            "timeout": 120,
+            "statusMessage": "ドキュメント整合性チェック中..."
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "if": "Write(*.py)",
+        "hooks": [
+          {
+            "type": "agent",
+            "agent": "doc-checker",
+            "prompt": "変更されたファイルに関連するドキュメントの整合性をチェックしてください: $ARGUMENTS",
+            "timeout": 120,
+            "statusMessage": "ドキュメント整合性チェック中..."
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "if": "Write(*.go)",
+        "hooks": [
+          {
+            "type": "agent",
+            "agent": "doc-checker",
+            "prompt": "変更されたファイルに関連するドキュメントの整合性をチェックしてください: $ARGUMENTS",
+            "timeout": 120,
+            "statusMessage": "ドキュメント整合性チェック中..."
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "if": "Write(*.rs)",
+        "hooks": [
+          {
+            "type": "agent",
+            "agent": "doc-checker",
+            "prompt": "変更されたファイルに関連するドキュメントの整合性をチェックしてください: $ARGUMENTS",
+            "timeout": 120,
+            "statusMessage": "ドキュメント整合性チェック中..."
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "if": "Write(*.md)",
+        "hooks": [
+          {
+            "type": "agent",
+            "agent": "doc-checker",
+            "prompt": "変更されたファイルに関連するドキュメントの整合性をチェックしてください: $ARGUMENTS",
+            "timeout": 120,
+            "statusMessage": "ドキュメント整合性チェック中..."
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "if": "Edit(*.ts)",
+        "hooks": [
+          {
+            "type": "agent",
+            "agent": "doc-checker",
+            "prompt": "変更されたファイルに関連するドキュメントの整合性をチェックしてください: $ARGUMENTS",
+            "timeout": 120,
+            "statusMessage": "ドキュメント整合性チェック中..."
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "if": "Edit(*.js)",
+        "hooks": [
+          {
+            "type": "agent",
+            "agent": "doc-checker",
+            "prompt": "変更されたファイルに関連するドキュメントの整合性をチェックしてください: $ARGUMENTS",
+            "timeout": 120,
+            "statusMessage": "ドキュメント整合性チェック中..."
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "if": "Edit(*.py)",
+        "hooks": [
+          {
+            "type": "agent",
+            "agent": "doc-checker",
+            "prompt": "変更されたファイルに関連するドキュメントの整合性をチェックしてください: $ARGUMENTS",
+            "timeout": 120,
+            "statusMessage": "ドキュメント整合性チェック中..."
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "if": "Edit(*.go)",
+        "hooks": [
+          {
+            "type": "agent",
+            "agent": "doc-checker",
+            "prompt": "変更されたファイルに関連するドキュメントの整合性をチェックしてください: $ARGUMENTS",
+            "timeout": 120,
+            "statusMessage": "ドキュメント整合性チェック中..."
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "if": "Edit(*.rs)",
+        "hooks": [
+          {
+            "type": "agent",
+            "agent": "doc-checker",
+            "prompt": "変更されたファイルに関連するドキュメントの整合性をチェックしてください: $ARGUMENTS",
+            "timeout": 120,
+            "statusMessage": "ドキュメント整合性チェック中..."
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "if": "Edit(*.md)",
+        "hooks": [
+          {
+            "type": "agent",
+            "agent": "doc-checker",
+            "prompt": "変更されたファイルに関連するドキュメントの整合性をチェックしてください: $ARGUMENTS",
+            "timeout": 120,
+            "statusMessage": "ドキュメント整合性チェック中..."
+          }
+        ]
+      },
+      {
+        "matcher": "MultiEdit",
+        "if": "MultiEdit(*.ts)",
+        "hooks": [
+          {
+            "type": "agent",
+            "agent": "doc-checker",
+            "prompt": "変更されたファイルに関連するドキュメントの整合性をチェックしてください: $ARGUMENTS",
+            "timeout": 120,
+            "statusMessage": "ドキュメント整合性チェック中..."
+          }
+        ]
+      },
+      {
+        "matcher": "MultiEdit",
+        "if": "MultiEdit(*.js)",
+        "hooks": [
+          {
+            "type": "agent",
+            "agent": "doc-checker",
+            "prompt": "変更されたファイルに関連するドキュメントの整合性をチェックしてください: $ARGUMENTS",
+            "timeout": 120,
+            "statusMessage": "ドキュメント整合性チェック中..."
+          }
+        ]
+      },
+      {
+        "matcher": "MultiEdit",
+        "if": "MultiEdit(*.py)",
+        "hooks": [
+          {
+            "type": "agent",
+            "agent": "doc-checker",
+            "prompt": "変更されたファイルに関連するドキュメントの整合性をチェックしてください: $ARGUMENTS",
+            "timeout": 120,
+            "statusMessage": "ドキュメント整合性チェック中..."
+          }
+        ]
+      },
+      {
+        "matcher": "MultiEdit",
+        "if": "MultiEdit(*.go)",
+        "hooks": [
+          {
+            "type": "agent",
+            "agent": "doc-checker",
+            "prompt": "変更されたファイルに関連するドキュメントの整合性をチェックしてください: $ARGUMENTS",
+            "timeout": 120,
+            "statusMessage": "ドキュメント整合性チェック中..."
+          }
+        ]
+      },
+      {
+        "matcher": "MultiEdit",
+        "if": "MultiEdit(*.rs)",
+        "hooks": [
+          {
+            "type": "agent",
+            "agent": "doc-checker",
+            "prompt": "変更されたファイルに関連するドキュメントの整合性をチェックしてください: $ARGUMENTS",
+            "timeout": 120,
+            "statusMessage": "ドキュメント整合性チェック中..."
+          }
+        ]
+      },
+      {
+        "matcher": "MultiEdit",
+        "if": "MultiEdit(*.md)",
+        "hooks": [
+          {
+            "type": "agent",
+            "agent": "doc-checker",
+            "prompt": "変更されたファイルに関連するドキュメントの整合性をチェックしてください: $ARGUMENTS",
+            "timeout": 120,
+            "statusMessage": "ドキュメント整合性チェック中..."
+          }
+        ]
+      },
+      {
+        "matcher": "NotebookEdit",
+        "if": "NotebookEdit(*.ipynb)",
+        "hooks": [
+          {
+            "type": "agent",
+            "agent": "doc-checker",
+            "prompt": "変更されたファイルに関連するドキュメントの整合性をチェックしてください: $ARGUMENTS",
+            "timeout": 120,
+            "statusMessage": "ドキュメント整合性チェック中..."
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre-compact.sh",
+            "timeout": 10,
+            "statusMessage": "コンパクション前のドキュメントチェック状態を記録中..."
           }
         ]
       }
