@@ -97,39 +97,37 @@ class TestValidateSkill:
         content = dedent(f"""
             ---
             name: test-skill
-            description: {"あ" * 1025}
+            description: {"あ" * 1537}
             ---
             本文
         """).strip()
         result = validate_skill(Path("SKILL.md"), content)
         assert result.has_errors()
-        assert any("1024文字" in e for e in result.errors)
+        assert any("1536文字" in e for e in result.errors)
 
-    def test_description_over_250_warning(self):
-        """descriptionが251文字以上の場合に警告が出ることを確認（v2.1.86以降）"""
+    def test_description_exactly_1536_no_error(self):
+        """descriptionがちょうど1536文字の場合はエラーが出ないことを確認（v2.1.105以降）"""
         content = dedent(f"""
             ---
             name: test-skill
-            description: {"あ" * 251}
+            description: {"あ" * 1536}
             ---
             本文
         """).strip()
         result = validate_skill(Path("SKILL.md"), content)
         assert not result.has_errors()
-        assert any("250文字" in w for w in result.warnings)
 
-    def test_description_exactly_250_no_warning(self):
-        """descriptionがちょうど250文字の場合は警告が出ないことを確認"""
+    def test_description_over_1024_no_error(self):
+        """descriptionが1025文字（旧上限超）でもエラーが出ないことを確認（v2.1.105以降）"""
         content = dedent(f"""
             ---
             name: test-skill
-            description: {"あ" * 250}
+            description: {"あ" * 1025}
             ---
             本文
         """).strip()
         result = validate_skill(Path("SKILL.md"), content)
         assert not result.has_errors()
-        assert not any("250文字" in w for w in result.warnings)
 
     def test_body_too_long(self):
         long_body = "\n".join([f"行 {i}" for i in range(501)])

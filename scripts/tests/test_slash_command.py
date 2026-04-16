@@ -436,3 +436,20 @@ class TestValidateSlashCommand:
         """).strip()
         result = validate_slash_command(Path("test.md"), content)
         assert not any("name" in w and "ブール" in w for w in result.warnings)
+
+    def test_no_frontmatter_no_bool_warning(self):
+        """frontmatterがない（`---`で始まらない）場合はブール値警告が出ないことを確認"""
+        content = "description: on\n本文のみ"
+        result = validate_slash_command(Path("test.md"), content)
+        assert not any("ブール" in w for w in result.warnings)
+
+    def test_unclosed_frontmatter_no_bool_warning(self):
+        """frontmatterの閉じ`---`がない場合はブール値警告が出ないことを確認"""
+        content = dedent("""
+            ---
+            description: on
+            name: off
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not any("ブール" in w for w in result.warnings)

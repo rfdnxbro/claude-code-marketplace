@@ -33,7 +33,7 @@ CI/CDとローカルhookの両方で利用可能。
 |------------|------|----------|
 | スラッシュコマンド | `**/commands/**/*.md` | description、allowed-tools、disable-model-invocation、model |
 | サブエージェント | `**/agents/**/*.md` | name（必須・kebab-case）、description、model、permissionMode |
-| スキル | `**/SKILL.md` | name（64文字・形式・予約語）、description（1024文字）、本文500行 |
+| スキル | `**/SKILL.md` | name（64文字・形式・予約語）、description（1536文字）、本文500行 |
 | hooks.json | `**/hooks.json` | イベント名、hookタイプ、必須フィールド |
 | MCP設定 | `**/.mcp.json` | サーバータイプ、必須フィールド、機密情報検出 |
 | LSP設定 | `**/.lsp.json` | command、extensionToLanguage、transport、機密情報検出 |

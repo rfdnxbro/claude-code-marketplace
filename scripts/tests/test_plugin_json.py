@@ -102,6 +102,7 @@ class TestValidatePluginJson:
             "lspServers",
             "outputStyles",
             "settings",
+            "monitors",
         ]
         for field in path_fields:
             content = json.dumps({"name": "my-plugin", field: "some/path"})
@@ -161,6 +162,12 @@ class TestValidatePluginJson:
     def test_redundant_default_path_mcp_servers(self):
         """mcpServersにデフォルトパスを指定した場合に警告が出ることを確認"""
         content = json.dumps({"name": "my-plugin", "mcpServers": "./.mcp.json"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert any("デフォルトパス" in w for w in result.warnings)
+
+    def test_redundant_default_path_monitors(self):
+        """monitorsにデフォルトパスを指定した場合に警告が出ることを確認（v2.1.105以降）"""
+        content = json.dumps({"name": "my-plugin", "monitors": "./monitors/monitors.json"})
         result = validate_plugin_json(Path("plugin.json"), content)
         assert any("デフォルトパス" in w for w in result.warnings)
 

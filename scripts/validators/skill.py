@@ -48,14 +48,9 @@ def validate_skill(file_path: Path, content: str) -> ValidationResult:
     description_str = to_str(description)
     if not description_str:
         result.add_error(f"{file_path.name}: descriptionが必須です")
-    elif len(description_str) > 1024:
+    elif len(description_str) > 1536:
         result.add_error(
-            f"{file_path.name}: descriptionは1024文字以内にしてください: {len(description_str)}文字"
-        )
-    elif len(description_str) > 250:
-        result.add_warning(
-            f"{file_path.name}: descriptionが250文字超（{len(description_str)}文字）。"
-            " /skillsメニューでは250文字以降は切り捨てられます（v2.1.86以降）"
+            f"{file_path.name}: descriptionは1536文字以内にしてください: {len(description_str)}文字"
         )
 
     # contextの確認（forkのみサポート、省略時はメインコンテキスト）
