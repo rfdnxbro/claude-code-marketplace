@@ -38,7 +38,7 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 | `lspServers` | string/object | LSP設定パスまたはインライン（→ [lsp-servers.md](lsp-servers.md)） | `.lsp.json` |
 | `outputStyles` | string/array | 出力スタイルファイル/ディレクトリ（→ [output-styles.md](output-styles.md)） | なし |
 | `settings` | string | デフォルト設定ファイルへのパス（v2.1.49以降） | `settings.json` |
-| `monitors` | string/array | バックグラウンドモニター設定（セッション開始時またはスキル起動時に自動で有効化・v2.1.105以降）<!-- TODO: 要確認 --> | なし |
+| `monitors` | string/array/object | バックグラウンドモニター設定。セッション開始時またはこのプラグイン内のスキル起動時に自動で有効化（v2.1.105以降） | `monitors/monitors.json` |
 
 **デフォルトディレクトリの動作**:
 

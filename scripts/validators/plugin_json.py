@@ -67,6 +67,7 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
         "lspServers",
         "outputStyles",
         "settings",
+        "monitors",
     ]
     for field in path_fields:
         value = data.get(field)
@@ -82,6 +83,7 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
         "mcpServers": ["./.mcp.json"],
         "lspServers": ["./.lsp.json"],
         "settings": ["./settings.json"],
+        "monitors": ["./monitors/monitors.json"],
     }
     for field, defaults in default_paths.items():
         value = data.get(field)
