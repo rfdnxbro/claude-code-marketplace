@@ -228,3 +228,40 @@ class TestValidatePluginJson:
         )
         result = validate_plugin_json(Path("plugin.json"), content)
         assert not result.has_errors()
+
+    def test_dependencies_valid(self):
+        """dependenciesが有効な配列の場合はエラーなし（v2.1.110以降）"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "dependencies": ["base-plugin", "shared-tools"],
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+
+    def test_dependencies_empty_array(self):
+        """dependenciesが空配列の場合はエラーなし（v2.1.110以降）"""
+        content = json.dumps({"name": "my-plugin", "dependencies": []})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+
+    def test_dependencies_not_array(self):
+        """dependenciesが配列以外の場合エラー（v2.1.110以降）"""
+        content = json.dumps({"name": "my-plugin", "dependencies": "base-plugin"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("dependencies" in e for e in result.errors)
+
+    def test_dependencies_item_not_string(self):
+        """dependenciesの要素が文字列以外の場合エラー（v2.1.110以降）"""
+        content = json.dumps({"name": "my-plugin", "dependencies": [123]})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("dependencies" in e for e in result.errors)
+
+    def test_dependencies_item_not_kebab_case(self):
+        """dependenciesの要素がkebab-caseでない場合に警告（v2.1.110以降）"""
+        content = json.dumps({"name": "my-plugin", "dependencies": ["MyPlugin"]})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert any("dependencies" in w for w in result.warnings)
