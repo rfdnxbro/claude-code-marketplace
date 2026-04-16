@@ -265,3 +265,10 @@ class TestValidatePluginJson:
         content = json.dumps({"name": "my-plugin", "dependencies": ["MyPlugin"]})
         result = validate_plugin_json(Path("plugin.json"), content)
         assert any("dependencies" in w for w in result.warnings)
+
+    def test_dependencies_item_empty_string(self):
+        """dependenciesの要素が空文字列の場合エラー（v2.1.110以降）"""
+        content = json.dumps({"name": "my-plugin", "dependencies": [""]})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("dependencies" in e for e in result.errors)

@@ -66,7 +66,9 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
             for i, dep in enumerate(dependencies):
                 if not isinstance(dep, str):
                     result.add_error(f"{file_path.name}: dependencies[{i}]は文字列が必要です")
-                elif dep:
+                elif not dep:
+                    result.add_error(f"{file_path.name}: dependencies[{i}]は空文字列です")
+                else:
                     dep_error = validate_kebab_case(dep)
                     if dep_error:
                         result.add_warning(f"{file_path.name}: dependencies[{i}]: {dep_error}")
