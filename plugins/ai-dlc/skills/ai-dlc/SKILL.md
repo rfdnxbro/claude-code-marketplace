@@ -1,6 +1,6 @@
 ---
 name: ai-dlc
-description: AI駆動開発ライフサイクル（AI-DLC）の概念、原則、ベストプラクティスを説明する。AIネイティブな開発方法論について質問されたとき、またはAI-DLCの実践方法を知りたいときに使用。
+description: "AI駆動開発ライフサイクル（AI-DLC）の方法論、原則、ベストプラクティスを解説するスキル。ソフトウェア開発においてAIを中心に据えた体系的なアプローチを提供する。【フェーズ構成】Inception（要件定義）: /ai-dlc:setup → /ai-dlc:inception:user-stories → /ai-dlc:inception:units / Construction（設計・実装）: /ai-dlc:construction:domain-model → /ai-dlc:construction:code-gen / api / architecture / Operation（運用）: 現在のフェーズ状態は /ai-dlc:guide:current で確認。【利用場面】AI-DLCの概念を学びたい時、各コマンドの使い方を確認したい時、開発フローの次のステップを判断したい時、DDD・BDD・TDD・PRFAQなどの手法との連携方法を理解したい時に使用。【提供エージェント】product-manager（要件定義）、software-architect（設計・DDD）、software-engineer（実装・TDD）、cloud-architect（インフラ設計）"
 user-invocable: true
 effort: low
 ---
