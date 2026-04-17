@@ -57,6 +57,23 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
                         f"{file_path.name}: userConfig.{config_key}.sensitiveはブール値が必要です"
                     )
 
+    # dependenciesの確認（v2.1.110以降）
+    dependencies = data.get("dependencies")
+    if dependencies is not None:
+        if not isinstance(dependencies, list):
+            result.add_error(f"{file_path.name}: dependenciesは配列が必要です")
+        else:
+            for i, dep in enumerate(dependencies):
+                if not isinstance(dep, str):
+                    result.add_error(f"{file_path.name}: dependencies[{i}]は文字列が必要です")
+                elif not dep:
+                    result.add_error(f"{file_path.name}: dependencies[{i}]は空文字列です")
+                else:
+                    dep_error = validate_kebab_case(dep)
+                    if dep_error:
+                        msg = f"dependencies[{i}]はkebab-case（小文字とハイフン）のみ: {dep}"
+                        result.add_warning(f"{file_path.name}: {msg}")
+
     # パスの確認
     path_fields = [
         "commands",

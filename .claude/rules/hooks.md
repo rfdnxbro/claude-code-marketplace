@@ -438,6 +438,23 @@ exit 2  # ユーザーには理由が伝わらない
 > **注意（v2.1.89以降）**: フックスクリプトが **50K文字を超える出力** を返した場合、コンテキストに直接注入される代わりに **ディスクに保存** され、ファイルパスとプレビューのみが提供されます。大量の出力を返すフックの動作に注意してください。
 >
 > **注意（v2.1.101以降）**: `permissionDecision: "ask"` を返しても、`permissions.deny` ルールが設定されている場合は **deny が優先** されます。
+>
+> **注意（v2.1.110以降）**: `PermissionRequest` フックが `updatedInput` を返した場合も、`permissions.deny` ルールによる再チェックが行われ、deny が優先されます。
+
+### setMode フィールド（v2.1.110以降）
+
+`PermissionRequest` フックの出力 JSON で `setMode: "bypassPermissions"` を返すと、パーミッションモードを切り替えることができます。
+
+```json
+{
+  "continue": true,
+  "setMode": "bypassPermissions"
+}
+```
+
+**制約:**
+
+- `disableBypassPermissionsMode` が設定されている場合、`setMode: "bypassPermissions"` は無効になります（v2.1.110以降）
 
 ### PreToolUseフックの追加コンテキスト
 
