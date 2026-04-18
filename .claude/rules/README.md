@@ -12,6 +12,7 @@
 | [hooks.md](hooks.md) | フック（イベントハンドラ）の定義方法 |
 | [mcp-servers.md](mcp-servers.md) | MCPサーバーの設定方法 |
 | [lsp-servers.md](lsp-servers.md) | LSPサーバーの設定方法 |
+| [monitors.md](monitors.md) | バックグラウンドモニターの定義方法 |
 | [skill-authoring.md](skill-authoring.md) | スキル作成のベストプラクティス |
 | [slash-commands.md](slash-commands.md) | スラッシュコマンドの定義方法 |
 | [plugin-readme.md](plugin-readme.md) | プラグインREADMEの作成ガイドライン |
@@ -37,7 +38,7 @@
 
 | 変数 | 説明 | 使用箇所 |
 |------|------|----------|
-| `${CLAUDE_PLUGIN_ROOT}` | プラグインルートへの絶対パス | hooks, mcp-servers, lsp-servers, allowed-tools |
+| `${CLAUDE_PLUGIN_ROOT}` | プラグインルートへの絶対パス | hooks, mcp-servers, lsp-servers, monitors, allowed-tools |
 | `${CLAUDE_PROJECT_DIR}` | プロジェクトルートへの絶対パス | hooks |
 | `${CLAUDE_SESSION_ID}` | 現在のセッションID | skills, slash-commands |
 | `${CLAUDE_SKILL_DIR}` | スキル自身のディレクトリへの絶対パス（v2.1.64以降） | skills |
@@ -49,7 +50,7 @@
 | `${VAR:-default}` | デフォルト値付き環境変数 | mcp-servers, lsp-servers |
 | `CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS` | Gitクローンのタイムアウト（ミリ秒）。デフォルト120000（120秒）（v2.1.51以降） | marketplace |
 | `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` | `SessionEnd` フックのタイムアウト（ミリ秒）。デフォルトは `hook.timeout` の設定値（v2.1.74以降） | hooks |
-| `${CLAUDE_PLUGIN_DATA}` | プラグインの永続データディレクトリへの絶対パス。アップデートを超えて永続化される（v2.1.78以降） | hooks |
+| `${CLAUDE_PLUGIN_DATA}` | プラグインの永続データディレクトリへの絶対パス。アップデートを超えて永続化される（v2.1.78以降） | hooks, monitors |
 | `CLAUDE_CODE_PLUGIN_SEED_DIR` | プラグインのシードディレクトリ。v2.1.79以降は複数ディレクトリをパス区切り文字（Unix: `:`, Windows: `;`）で区切って指定可能 | marketplace |
 | `CLAUDE_CODE_MCP_SERVER_NAME` | `headersHelper` スクリプト内で利用可能。呼び出し元の MCP サーバー名（v2.1.85以降） | mcp-servers |
 | `CLAUDE_CODE_MCP_SERVER_URL` | `headersHelper` スクリプト内で利用可能。呼び出し元の MCP サーバー URL（v2.1.85以降） | mcp-servers |
