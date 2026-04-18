@@ -282,6 +282,187 @@ class TestValidatePluginJson:
         assert result.has_errors()
         assert any("dependencies" in e for e in result.errors)
 
+    # channels フィールドのテスト（v2.1.80以降）
+
+    def test_channels_valid_server_matches_mcp_servers(self):
+        """channelsの server が mcpServers キーと一致する場合、整合性警告が出ない"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "mcpServers": {"telegram": {"command": "node", "args": ["server.js"]}},
+                "channels": [
+                    {
+                        "server": "telegram",
+                        "userConfig": {
+                            "bot_token": {"description": "Bot token", "sensitive": True}
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+        assert not any("mcpServers のキーと一致しません" in w for w in result.warnings)
+
+    def test_channels_not_array(self):
+        """channelsが配列以外の場合エラー"""
+        content = json.dumps({"name": "my-plugin", "channels": {"server": "telegram"}})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("channels" in e for e in result.errors)
+
+    def test_channels_entry_not_object(self):
+        """channelsのエントリがオブジェクト以外の場合エラー"""
+        content = json.dumps({"name": "my-plugin", "channels": ["telegram"]})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("channels[0]" in e for e in result.errors)
+
+    def test_channels_missing_server(self):
+        """channelsのserverが欠落した場合エラー"""
+        content = json.dumps({"name": "my-plugin", "channels": [{"userConfig": {}}]})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("server" in e for e in result.errors)
+
+    def test_channels_server_not_string(self):
+        """channelsのserverが文字列以外の場合エラー"""
+        content = json.dumps({"name": "my-plugin", "channels": [{"server": 123}]})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("server" in e for e in result.errors)
+
+    def test_channels_server_not_in_mcp_servers(self):
+        """channelsのserverがmcpServersに存在しない場合に警告"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "mcpServers": {"slack": {"command": "node"}},
+                "channels": [{"server": "telegram"}],
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert any("server" in w and "telegram" in w for w in result.warnings)
+
+    def test_channels_server_no_mcp_servers_declared(self):
+        """mcpServersが未宣言の場合、serverの整合性チェックは行わない"""
+        content = json.dumps({"name": "my-plugin", "channels": [{"server": "telegram"}]})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+        assert not any("server" in w and "telegram" in w for w in result.warnings)
+
+    def test_channels_user_config_not_object(self):
+        """per-channel userConfigがオブジェクト以外の場合エラー"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "mcpServers": {"telegram": {"command": "node"}},
+                "channels": [{"server": "telegram", "userConfig": "invalid"}],
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("userConfig" in e for e in result.errors)
+
+    def test_channels_user_config_item_not_object(self):
+        """per-channel userConfig の設定項目がオブジェクトでない場合エラー"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "mcpServers": {"telegram": {"command": "node"}},
+                "channels": [
+                    {
+                        "server": "telegram",
+                        "userConfig": {"bot_token": "invalid"},
+                    }
+                ],
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("channels[0].userConfig.bot_token" in e for e in result.errors)
+
+    def test_channels_user_config_sensitive_non_boolean(self):
+        """per-channel userConfig の sensitive がブール値でない場合エラー"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "mcpServers": {"telegram": {"command": "node"}},
+                "channels": [
+                    {
+                        "server": "telegram",
+                        "userConfig": {"bot_token": {"description": "Token", "sensitive": "true"}},
+                    }
+                ],
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("channels[0].userConfig.bot_token.sensitive" in e for e in result.errors)
+
+    def test_channels_server_empty_string(self):
+        """channelsのserverが空文字列の場合エラー（必須ではなく空禁止エラー）"""
+        content = json.dumps({"name": "my-plugin", "channels": [{"server": ""}]})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("空文字列" in e for e in result.errors)
+
+    def test_channels_server_integer_zero(self):
+        """server=0 の場合は必須ではなく型エラーを返す"""
+        content = json.dumps({"name": "my-plugin", "channels": [{"server": 0}]})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("文字列" in e for e in result.errors)
+
+    def test_channels_multiple_entries_error_index(self):
+        """複数チャンネルのうち特定のエントリが不正ならインデックス付きエラー"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "mcpServers": {"telegram": {"command": "node"}, "slack": {"command": "node"}},
+                "channels": [
+                    {"server": "telegram"},
+                    {"userConfig": {}},
+                    {"server": "slack"},
+                ],
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("channels[1]" in e and "server" in e for e in result.errors)
+
+    def test_channels_user_config_without_description(self):
+        """description がない userConfig エントリは正常（description は必須と明示されていない）"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "mcpServers": {"telegram": {"command": "node"}},
+                "channels": [
+                    {
+                        "server": "telegram",
+                        "userConfig": {"bot_token": {"sensitive": True}},
+                    }
+                ],
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+
+    def test_channels_mcp_servers_empty_dict(self):
+        """mcpServers: {} の場合は整合性チェックをスキップ（未宣言と同扱い）"""
+        content = json.dumps(
+            {"name": "my-plugin", "mcpServers": {}, "channels": [{"server": "telegram"}]}
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+        assert not any("server" in w and "telegram" in w for w in result.warnings)
+
+    def test_channels_empty_array(self):
+        """channelsが空配列の場合はエラーなし"""
+        content = json.dumps({"name": "my-plugin", "channels": []})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+
     # monitors インライン配列のテスト（v2.1.105以降）
 
     def test_monitors_inline_valid(self):
@@ -327,5 +508,4 @@ class TestValidatePluginJson:
         """monitorsが文字列パスの場合はエントリ検証をスキップ（ファイル解決は別途）"""
         content = json.dumps({"name": "my-plugin", "monitors": "./config/monitors.json"})
         result = validate_plugin_json(Path("plugin.json"), content)
-        # 文字列なのでエントリエラーは出ない（パスフォーマットに関する警告のみ許容）
         assert not result.has_errors()

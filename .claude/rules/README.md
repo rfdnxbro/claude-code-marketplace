@@ -11,6 +11,7 @@
 | [agents.md](agents.md) | サブエージェントの定義方法 |
 | [hooks.md](hooks.md) | フック（イベントハンドラ）の定義方法 |
 | [mcp-servers.md](mcp-servers.md) | MCPサーバーの設定方法 |
+| [channels.md](channels.md) | チャンネル（MCPサーバーからのイベント注入）の設定方法 |
 | [lsp-servers.md](lsp-servers.md) | LSPサーバーの設定方法 |
 | [monitors.md](monitors.md) | バックグラウンドモニターの定義方法 |
 | [skill-authoring.md](skill-authoring.md) | スキル作成のベストプラクティス |
