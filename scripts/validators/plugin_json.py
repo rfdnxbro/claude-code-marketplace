@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .base import ValidationResult, parse_json_safe, validate_kebab_case
+from .monitors_json import validate_monitors_entries
 
 
 def _validate_user_config_mapping(
@@ -122,6 +123,11 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
                     if dep_error:
                         msg = f"dependencies[{i}]はkebab-case（小文字とハイフン）のみ: {dep}"
                         result.add_warning(f"{file_path.name}: {msg}")
+
+    # monitors がインライン配列の場合はエントリを検証（v2.1.105以降）
+    monitors = data.get("monitors")
+    if isinstance(monitors, list):
+        validate_monitors_entries(monitors, file_path, result)
 
     # パスの確認
     path_fields = [

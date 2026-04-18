@@ -21,6 +21,7 @@ from validators import (
     validate_lsp_json,
     validate_marketplace_json,
     validate_mcp_json,
+    validate_monitors_json,
     validate_output_style,
     validate_plugin_json,
     validate_readme,
@@ -79,6 +80,11 @@ def validate_file(file_path: Path) -> ValidationResult:
         content = read_file_content(file_path)
         if content is not None:
             result = validate_lsp_json(file_path, content)
+    elif file_path.name == "monitors.json" and "monitors" in path_parts:
+        # バックグラウンドモニター設定
+        content = read_file_content(file_path)
+        if content is not None:
+            result = validate_monitors_json(file_path, content)
     elif file_path.name == "plugin.json" and ".claude-plugin" in path_parts:
         # プラグインマニフェスト
         content = read_file_content(file_path)

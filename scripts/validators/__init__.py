@@ -8,6 +8,7 @@ from .hooks_json import validate_hooks_json
 from .lsp_json import validate_lsp_json
 from .marketplace_json import validate_marketplace_json
 from .mcp_json import validate_mcp_json
+from .monitors_json import validate_monitors_json
 from .output_style import validate_output_style
 from .plugin_json import validate_plugin_json
 from .readme import validate_readme
@@ -25,6 +26,7 @@ __all__ = [
     "validate_mcp_json",
     "validate_lsp_json",
     "validate_marketplace_json",
+    "validate_monitors_json",
     "validate_output_style",
     "validate_plugin_json",
     "validate_readme",

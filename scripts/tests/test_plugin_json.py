@@ -349,7 +349,6 @@ class TestValidatePluginJson:
         content = json.dumps({"name": "my-plugin", "channels": [{"server": "telegram"}]})
         result = validate_plugin_json(Path("plugin.json"), content)
         assert not result.has_errors()
-        # mcpServers未宣言なら警告しない（plugin.json単独で整合性を保証できないため）
         assert not any("server" in w and "telegram" in w for w in result.warnings)
 
     def test_channels_user_config_not_object(self):
@@ -423,7 +422,7 @@ class TestValidatePluginJson:
                 "mcpServers": {"telegram": {"command": "node"}, "slack": {"command": "node"}},
                 "channels": [
                     {"server": "telegram"},
-                    {"userConfig": {}},  # server missing
+                    {"userConfig": {}},
                     {"server": "slack"},
                 ],
             }
@@ -461,5 +460,52 @@ class TestValidatePluginJson:
     def test_channels_empty_array(self):
         """channelsが空配列の場合はエラーなし"""
         content = json.dumps({"name": "my-plugin", "channels": []})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+
+    # monitors インライン配列のテスト（v2.1.105以降）
+
+    def test_monitors_inline_valid(self):
+        """monitorsがインライン配列で有効な場合エラーなし"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "monitors": [
+                    {
+                        "name": "deploy",
+                        "command": "./scripts/poll.sh",
+                        "description": "Deploy monitor",
+                    }
+                ],
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+
+    def test_monitors_inline_missing_required(self):
+        """monitorsインラインで必須フィールド欠落はエラー"""
+        content = json.dumps({"name": "my-plugin", "monitors": [{"name": "only-name"}]})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("command" in e for e in result.errors)
+
+    def test_monitors_inline_duplicate_names(self):
+        """monitorsインラインでname重複はエラー"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "monitors": [
+                    {"name": "dup", "command": "a", "description": "a"},
+                    {"name": "dup", "command": "b", "description": "b"},
+                ],
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("重複" in e for e in result.errors)
+
+    def test_monitors_string_path_skips_entry_validation(self):
+        """monitorsが文字列パスの場合はエントリ検証をスキップ（ファイル解決は別途）"""
+        content = json.dumps({"name": "my-plugin", "monitors": "./config/monitors.json"})
         result = validate_plugin_json(Path("plugin.json"), content)
         assert not result.has_errors()
