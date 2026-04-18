@@ -63,7 +63,7 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
     if "settings" in data:
         result.add_warning(
             f"{file_path.name}: settingsはplugin.jsonの公式フィールドではありません。"
-            "settings.jsonはプラグインルート直下に配置すれば自動検出されます"
+            f"settings.jsonはプラグインルート直下に配置すれば自動検出されます"
         )
 
     # dependenciesの確認（v2.1.110以降）
