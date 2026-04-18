@@ -34,16 +34,7 @@ def validate_monitors_entries(
     result: ValidationResult,
     label: str = "monitors",
 ) -> None:
-    """
-    モニターエントリ配列を検証する（plugin.json の monitors インライン指定と
-    monitors/monitors.json で共通に使用）
-
-    Args:
-        entries: 検証する配列
-        file_path: エラーメッセージ用のファイルパス
-        result: 検証結果（呼び出し側が初期化する）
-        label: エントリ位置のプレフィックス（デフォルト "monitors"）
-    """
+    """モニターエントリ配列を検証する（monitors.json / plugin.json インライン共通）"""
     seen_names: set[str] = set()
 
     for i, entry in enumerate(entries):
@@ -76,6 +67,9 @@ def validate_monitors_entries(
         if when is not None:
             if not isinstance(when, str):
                 result.add_error(f"{prefix}: whenは文字列が必要です")
+            elif not when:
+                # 他の必須フィールドと同じく空文字列はエラー
+                result.add_error(f"{prefix}: whenは空文字列にできません")
             elif not _validate_when_value(when):
                 result.add_warning(
                     f"{prefix}: whenの値が公式仕様に一致しません: {when}"

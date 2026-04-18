@@ -187,7 +187,7 @@ class TestValidateMonitorsJson:
         assert any("unknownField" in w for w in result.warnings)
 
     def test_on_skill_invoke_without_skill_name(self):
-        """on-skill-invoke: の後にスキル名がない場合は警告"""
+        """on-skill-invoke: の後にスキル名がない場合は警告（エラーではない）"""
         content = json.dumps(
             [
                 {
@@ -199,4 +199,21 @@ class TestValidateMonitorsJson:
             ]
         )
         result = validate_monitors_json(Path("monitors.json"), content)
+        assert not result.has_errors()
         assert any("when" in w for w in result.warnings)
+
+    def test_when_empty_string(self):
+        """when が空文字列の場合はエラー（必須フィールドと同じ一貫性）"""
+        content = json.dumps(
+            [
+                {
+                    "name": "mon",
+                    "command": "echo hi",
+                    "description": "desc",
+                    "when": "",
+                }
+            ]
+        )
+        result = validate_monitors_json(Path("monitors.json"), content)
+        assert result.has_errors()
+        assert any("when" in e and "空文字列" in e for e in result.errors)

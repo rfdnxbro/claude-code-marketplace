@@ -90,6 +90,7 @@ paths: plugins/*/monitors/monitors.json, monitors/monitors.json
   - Google Vertex AI
   - Microsoft Foundry
   - 環境変数 `DISABLE_TELEMETRY` または `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` が設定されている場合
+- `on-skill-invoke:<skill-name>` の `<skill-name>` はプラグイン内のスキル名と一致していること。**バリデーターはスキル名の実在チェック（クロスファイル検証）を行わない**ため、タイプミスがあると該当モニターが起動しない状態となる
 
 ## セキュリティ考慮事項
 
