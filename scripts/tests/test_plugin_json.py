@@ -101,7 +101,6 @@ class TestValidatePluginJson:
             "mcpServers",
             "lspServers",
             "outputStyles",
-            "settings",
             "monitors",
         ]
         for field in path_fields:
@@ -111,27 +110,9 @@ class TestValidatePluginJson:
                 f"Field {field} should trigger path warning"
             )
 
-    def test_settings_custom_path(self):
-        """settingsのカスタムパスが./で始まる場合に警告が出ないことを確認"""
-        content = json.dumps({"name": "my-plugin", "settings": "./config/settings.json"})
-        result = validate_plugin_json(Path("plugin.json"), content)
-        assert not any("settings" in w for w in result.warnings)
-
-    def test_settings_path_without_prefix(self):
-        """settingsのパスが./で始まらない場合に警告が出ることを確認"""
-        content = json.dumps({"name": "my-plugin", "settings": "settings.json"})
-        result = validate_plugin_json(Path("plugin.json"), content)
-        assert any("settings" in w for w in result.warnings)
-
     def test_redundant_default_path_hooks(self):
         """hooksにデフォルトパスを指定した場合に警告が出ることを確認"""
         content = json.dumps({"name": "my-plugin", "hooks": "./hooks/hooks.json"})
-        result = validate_plugin_json(Path("plugin.json"), content)
-        assert any("デフォルトパス" in w for w in result.warnings)
-
-    def test_redundant_default_path_settings(self):
-        """settingsにデフォルトパスを指定した場合に警告が出ることを確認"""
-        content = json.dumps({"name": "my-plugin", "settings": "./settings.json"})
         result = validate_plugin_json(Path("plugin.json"), content)
         assert any("デフォルトパス" in w for w in result.warnings)
 
@@ -147,7 +128,7 @@ class TestValidatePluginJson:
             {
                 "name": "my-plugin",
                 "hooks": "./custom/hooks.json",
-                "settings": "./config/settings.json",
+                "mcpServers": "./config/mcp.json",
             }
         )
         result = validate_plugin_json(Path("plugin.json"), content)
