@@ -284,8 +284,8 @@ class TestValidatePluginJson:
 
     # channels フィールドのテスト（v2.1.80以降）
 
-    def test_channels_valid(self):
-        """channelsが有効な宣言の場合、整合性警告 (server mismatch) が出ないこと"""
+    def test_channels_valid_server_matches_mcp_servers(self):
+        """channelsの server が mcpServers キーと一致する場合、整合性警告が出ない"""
         content = json.dumps(
             {
                 "name": "my-plugin",
@@ -302,9 +302,6 @@ class TestValidatePluginJson:
         )
         result = validate_plugin_json(Path("plugin.json"), content)
         assert not result.has_errors()
-        # 整合性警告（mcpServersキー不一致）が出ないことのみ検証。
-        # 将来 channels 関連の無関係な警告が追加されても壊れないよう、
-        # 具体的なメッセージに絞ってアサートする。
         assert not any("mcpServers のキーと一致しません" in w for w in result.warnings)
 
     def test_channels_not_array(self):
