@@ -401,6 +401,63 @@ class TestValidatePluginJson:
         assert result.has_errors()
         assert any("channels[0].userConfig.bot_token.sensitive" in e for e in result.errors)
 
+    def test_channels_server_empty_string(self):
+        """channelsのserverが空文字列の場合エラー（必須ではなく空禁止エラー）"""
+        content = json.dumps({"name": "my-plugin", "channels": [{"server": ""}]})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("空文字列" in e for e in result.errors)
+
+    def test_channels_server_integer_zero(self):
+        """server=0 の場合は必須ではなく型エラーを返す"""
+        content = json.dumps({"name": "my-plugin", "channels": [{"server": 0}]})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("文字列" in e for e in result.errors)
+
+    def test_channels_multiple_entries_error_index(self):
+        """複数チャンネルのうち特定のエントリが不正ならインデックス付きエラー"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "mcpServers": {"telegram": {"command": "node"}, "slack": {"command": "node"}},
+                "channels": [
+                    {"server": "telegram"},
+                    {"userConfig": {}},  # server missing
+                    {"server": "slack"},
+                ],
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("channels[1]" in e and "server" in e for e in result.errors)
+
+    def test_channels_user_config_without_description(self):
+        """description がない userConfig エントリは正常（description は必須と明示されていない）"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "mcpServers": {"telegram": {"command": "node"}},
+                "channels": [
+                    {
+                        "server": "telegram",
+                        "userConfig": {"bot_token": {"sensitive": True}},
+                    }
+                ],
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+
+    def test_channels_mcp_servers_empty_dict(self):
+        """mcpServers: {} の場合は整合性チェックをスキップ（未宣言と同扱い）"""
+        content = json.dumps(
+            {"name": "my-plugin", "mcpServers": {}, "channels": [{"server": "telegram"}]}
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+        assert not any("server" in w and "telegram" in w for w in result.warnings)
+
     def test_channels_empty_array(self):
         """channelsが空配列の場合はエラーなし"""
         content = json.dumps({"name": "my-plugin", "channels": []})

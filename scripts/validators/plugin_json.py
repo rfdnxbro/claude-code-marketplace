@@ -4,6 +4,7 @@ plugin.json のバリデーター
 
 import re
 from pathlib import Path
+from typing import Any
 
 from .base import ValidationResult, parse_json_safe, validate_kebab_case
 
@@ -11,18 +12,10 @@ from .base import ValidationResult, parse_json_safe, validate_kebab_case
 def _validate_user_config_mapping(
     result: ValidationResult,
     file_path: Path,
-    user_config: object,
+    user_config: Any,
     label: str,
 ) -> None:
-    """
-    userConfig のスキーマを検証する（トップレベルと per-channel で共通化）
-
-    Args:
-        result: 検証結果オブジェクト
-        file_path: エラーメッセージ用のファイルパス
-        user_config: 検証対象の値
-        label: エラーメッセージのプレフィックス（例: "userConfig", "channels[0].userConfig"）
-    """
+    """userConfig のスキーマを検証する（トップレベルと per-channel で共通使用）"""
     if not isinstance(user_config, dict):
         result.add_error(
             f"{file_path.name}: {label}はオブジェクト（キーと設定項目のマッピング）が必要です"
@@ -79,27 +72,29 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
             result.add_error(f"{file_path.name}: channelsは配列が必要です")
         else:
             mcp_servers = data.get("mcpServers")
-            mcp_keys: set[str] = set()
-            if isinstance(mcp_servers, dict):
-                mcp_keys = set(mcp_servers.keys())
+            # mcp_keys が空 set のままなら mcpServers が未宣言。
+            # mcpServers: {} と未宣言は動作上どちらも整合性チェックの根拠が無いため同一扱い。
+            mcp_keys: set[str] = set(mcp_servers.keys()) if isinstance(mcp_servers, dict) else set()
             for i, entry in enumerate(channels):
                 prefix = f"{file_path.name}: channels[{i}]"
                 if not isinstance(entry, dict):
                     result.add_error(f"{prefix}: エントリはオブジェクトが必要です")
                     continue
 
+                # serverの検証: 存在→型→値の順
                 server = entry.get("server")
-                if not server:
+                if server is None:
                     result.add_error(f"{prefix}: serverは必須です")
                 elif not isinstance(server, str):
                     result.add_error(f"{prefix}: serverは文字列が必要です")
-                else:
+                elif not server:
+                    result.add_error(f"{prefix}: serverは空文字列にできません")
+                elif mcp_keys and server not in mcp_keys:
                     # mcpServers が同じ plugin.json 内に宣言されている場合のみ整合性チェック
-                    if isinstance(mcp_servers, dict) and server not in mcp_keys:
-                        result.add_warning(
-                            f"{prefix}: server '{server}' が mcpServers のキーと一致しません"
-                            f"（mcpServers: {sorted(mcp_keys) if mcp_keys else '未宣言'}）"
-                        )
+                    result.add_warning(
+                        f"{prefix}: server '{server}' が mcpServers のキーと一致しません"
+                        f"（mcpServers: {sorted(mcp_keys)}）"
+                    )
 
                 # per-channel userConfig はトップレベル userConfig と同じスキーマ
                 channel_user_config = entry.get("userConfig")
