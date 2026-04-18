@@ -202,6 +202,22 @@ class TestValidateMonitorsJson:
         assert not result.has_errors()
         assert any("when" in w for w in result.warnings)
 
+    def test_on_skill_invoke_non_kebab_skill_name(self):
+        """on-skill-invoke のスキル名が kebab-case でない場合は警告（公式未明示のため）"""
+        content = json.dumps(
+            [
+                {
+                    "name": "mon",
+                    "command": "echo hi",
+                    "description": "desc",
+                    "when": "on-skill-invoke:My_Skill",
+                }
+            ]
+        )
+        result = validate_monitors_json(Path("monitors.json"), content)
+        assert not result.has_errors()
+        assert any("when" in w for w in result.warnings)
+
     def test_when_empty_string(self):
         """when が空文字列の場合はエラー（必須フィールドと同じ一貫性）"""
         content = json.dumps(

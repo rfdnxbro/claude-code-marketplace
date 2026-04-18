@@ -63,12 +63,15 @@ def validate_monitors_entries(
                 seen_names.add(name)
 
         # when のバリデーション
+        # 空文字列 "" は明らかに不正な入力のためエラー、それ以外で公式仕様に
+        # 合わない値（例: "on-skill-invoke:" のようにスキル名欠落、大文字スキル名）は
+        # 警告にとどめる。公式はスキル名の書式を明示しておらず、kebab-case 前提が
+        # 緩和される可能性を考慮してエラーにはしない。
         when = entry.get("when")
         if when is not None:
             if not isinstance(when, str):
                 result.add_error(f"{prefix}: whenは文字列が必要です")
             elif not when:
-                # 他の必須フィールドと同じく空文字列はエラー
                 result.add_error(f"{prefix}: whenは空文字列にできません")
             elif not _validate_when_value(when):
                 result.add_warning(
