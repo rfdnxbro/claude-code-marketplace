@@ -36,6 +36,13 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 | `server` | string | Yes | プラグインの `mcpServers` 内のキーと**完全一致**する必要がある |
 | `userConfig` | object | No | チャンネル単位でのユーザー設定（スキーマはトップレベル `userConfig` と同一） |
 
+**バリデーター挙動に関する注記**: 本リポジトリの `scripts/validators/plugin_json.py` は `server` の値が同一 `plugin.json` の `mcpServers` キーと一致するかをチェックします。ただし以下の場合は整合性チェックをスキップします（同一ファイル内で解決できないため）:
+
+- `mcpServers` フィールド自体が未宣言
+- `mcpServers: {}`（空オブジェクト宣言）
+
+複数ファイル構成（例: `.mcp.json` で MCP サーバーを分離）の場合は `plugin.json` 単独でキー整合性を保証できないため、このスキップは意図的な設計です。
+
 ### 完全なJSON例（Telegram）
 
 ```json
@@ -81,6 +88,8 @@ claude --dangerously-load-development-channels plugin:telegram-channel@my-market
 # あるいはサーバー名指定
 claude --dangerously-load-development-channels server:telegram
 ```
+
+`plugin:<name>@<marketplace>` 形式は**マーケットプレイスからインストール済みのプラグインを開発モードで試す**用途、`server:<mcp-server-name>` 形式は**ローカルの `.mcp.json` に定義された MCP サーバーを直接チャンネルとして試す**用途（プラグイン化前のイテレーション）で使い分けます。
 
 **重要**: `.mcp.json` への登録だけではチャンネルからのプッシュは有効化されません。必ず `--channels` での明示指定が必要です。
 
