@@ -8,6 +8,38 @@ from pathlib import Path
 from .base import ValidationResult, parse_json_safe, validate_kebab_case
 
 
+def _validate_user_config_mapping(
+    result: ValidationResult,
+    file_path: Path,
+    user_config: object,
+    label: str,
+) -> None:
+    """
+    userConfig のスキーマを検証する（トップレベルと per-channel で共通化）
+
+    Args:
+        result: 検証結果オブジェクト
+        file_path: エラーメッセージ用のファイルパス
+        user_config: 検証対象の値
+        label: エラーメッセージのプレフィックス（例: "userConfig", "channels[0].userConfig"）
+    """
+    if not isinstance(user_config, dict):
+        result.add_error(
+            f"{file_path.name}: {label}はオブジェクト（キーと設定項目のマッピング）が必要です"
+        )
+        return
+    for config_key, config_value in user_config.items():
+        if not isinstance(config_value, dict):
+            result.add_error(f"{file_path.name}: {label}.{config_key}はオブジェクトが必要です")
+            continue
+        # sensitiveはブール値のみ
+        sensitive = config_value.get("sensitive")
+        if sensitive is not None and not isinstance(sensitive, bool):
+            result.add_error(
+                f"{file_path.name}: {label}.{config_key}.sensitiveはブール値が必要です"
+            )
+
+
 def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
     """plugin.jsonを検証する"""
     result = ValidationResult()
@@ -38,23 +70,45 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
     # userConfigの確認（v2.1.83以降）
     user_config = data.get("userConfig")
     if user_config is not None:
-        if not isinstance(user_config, dict):
-            result.add_error(
-                f"{file_path.name}: userConfigはオブジェクト（キーと設定項目のマッピング）"
-                "が必要です"
-            )
+        _validate_user_config_mapping(result, file_path, user_config, "userConfig")
+
+    # channelsの確認（v2.1.80以降）
+    channels = data.get("channels")
+    if channels is not None:
+        if not isinstance(channels, list):
+            result.add_error(f"{file_path.name}: channelsは配列が必要です")
         else:
-            for config_key, config_value in user_config.items():
-                if not isinstance(config_value, dict):
-                    result.add_error(
-                        f"{file_path.name}: userConfig.{config_key}はオブジェクトが必要です"
-                    )
+            mcp_servers = data.get("mcpServers")
+            mcp_keys: set[str] = set()
+            if isinstance(mcp_servers, dict):
+                mcp_keys = set(mcp_servers.keys())
+            for i, entry in enumerate(channels):
+                prefix = f"{file_path.name}: channels[{i}]"
+                if not isinstance(entry, dict):
+                    result.add_error(f"{prefix}: エントリはオブジェクトが必要です")
                     continue
-                # sensitiveはブール値のみ
-                sensitive = config_value.get("sensitive")
-                if sensitive is not None and not isinstance(sensitive, bool):
-                    result.add_error(
-                        f"{file_path.name}: userConfig.{config_key}.sensitiveはブール値が必要です"
+
+                server = entry.get("server")
+                if not server:
+                    result.add_error(f"{prefix}: serverは必須です")
+                elif not isinstance(server, str):
+                    result.add_error(f"{prefix}: serverは文字列が必要です")
+                else:
+                    # mcpServers が同じ plugin.json 内に宣言されている場合のみ整合性チェック
+                    if isinstance(mcp_servers, dict) and server not in mcp_keys:
+                        result.add_warning(
+                            f"{prefix}: server '{server}' が mcpServers のキーと一致しません"
+                            f"（mcpServers: {sorted(mcp_keys) if mcp_keys else '未宣言'}）"
+                        )
+
+                # per-channel userConfig はトップレベル userConfig と同じスキーマ
+                channel_user_config = entry.get("userConfig")
+                if channel_user_config is not None:
+                    _validate_user_config_mapping(
+                        result,
+                        file_path,
+                        channel_user_config,
+                        f"channels[{i}].userConfig",
                     )
 
     # dependenciesの確認（v2.1.110以降）

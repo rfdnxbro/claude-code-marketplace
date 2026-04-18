@@ -11,6 +11,7 @@
 | [agents.md](agents.md) | サブエージェントの定義方法 |
 | [hooks.md](hooks.md) | フック（イベントハンドラ）の定義方法 |
 | [mcp-servers.md](mcp-servers.md) | MCPサーバーの設定方法 |
+| [channels.md](channels.md) | チャンネル（Telegram/Discord等のMCPイベント注入）の設定方法 |
 | [lsp-servers.md](lsp-servers.md) | LSPサーバーの設定方法 |
 | [skill-authoring.md](skill-authoring.md) | スキル作成のベストプラクティス |
 | [slash-commands.md](slash-commands.md) | スラッシュコマンドの定義方法 |
