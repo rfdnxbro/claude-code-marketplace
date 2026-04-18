@@ -152,6 +152,19 @@ class TestValidatePluginJson:
         result = validate_plugin_json(Path("plugin.json"), content)
         assert any("デフォルトパス" in w for w in result.warnings)
 
+    def test_deprecated_settings_field_warning(self):
+        """settingsフィールド指定に対する非公式警告（plugin.jsonの公式スキーマに存在しない）"""
+        content = json.dumps({"name": "my-plugin", "settings": "./config/settings.json"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+        assert any("settings" in w and "公式フィールドではありません" in w for w in result.warnings)
+
+    def test_deprecated_settings_field_with_empty_value(self):
+        """settingsを空文字で指定した場合も警告（値に関わらずフィールド名で検出）"""
+        content = json.dumps({"name": "my-plugin", "settings": ""})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert any("settings" in w and "公式フィールドではありません" in w for w in result.warnings)
+
     def test_user_config_valid(self):
         """userConfigが有効なオブジェクトの場合はエラーなし（v2.1.83以降）"""
         content = json.dumps(

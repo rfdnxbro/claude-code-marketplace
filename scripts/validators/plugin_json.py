@@ -57,6 +57,15 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
                         f"{file_path.name}: userConfig.{config_key}.sensitiveはブール値が必要です"
                     )
 
+    # 公式スキーマに存在しないフィールドを警告
+    # settings は plugin.json のフィールドではなく、settings.json はプラグインルート
+    # 直下に配置すれば自動検出される。誤って指定された場合にサイレント無視を防ぐ。
+    if "settings" in data:
+        result.add_warning(
+            f"{file_path.name}: settingsはplugin.jsonの公式フィールドではありません。"
+            "settings.jsonはプラグインルート直下に配置すれば自動検出されます"
+        )
+
     # dependenciesの確認（v2.1.110以降）
     dependencies = data.get("dependencies")
     if dependencies is not None:
