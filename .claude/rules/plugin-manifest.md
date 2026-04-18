@@ -295,6 +295,8 @@ v2.1.51以降、macOS plistまたはWindows Registryを通じてManaged Settings
 
 チャンネル機能全体は v2.1.80 以降、permission relay は v2.1.81 以降、`allowedChannelPlugins` managed setting は v2.1.84 以降で利用できます。
 
+以下は managed setting として設定する際の**キー構造の概念表現**です。実際は macOS plist または Windows Registry 形式で、以下のキー名・値構造に相当する形式で記述します（プラットフォーム固有の書式例は公式未掲載 — 後述の注意参照）。
+
 ```json
 {
   "channelsEnabled": true,
