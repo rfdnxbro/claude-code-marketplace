@@ -94,7 +94,7 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
             inner_hooks = hook_config.get("hooks", [])
             for h in inner_hooks:
                 hook_type = h.get("type")
-                valid_types = ["command", "prompt", "agent", "http"]
+                valid_types = ["command", "prompt", "agent", "http", "mcp_tool"]
                 if hook_type not in valid_types:
                     types_str = "/".join(valid_types)
                     result.add_error(
@@ -133,6 +133,16 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
 
                 if hook_type == "http" and not h.get("url"):
                     result.add_error(f"{file_path.name}: httpタイプにurlフィールドがありません")
+
+                if hook_type == "mcp_tool":
+                    if not h.get("server"):
+                        result.add_error(
+                            f"{file_path.name}: mcp_toolタイプにserverフィールドがありません"
+                        )
+                    if not h.get("tool"):
+                        result.add_error(
+                            f"{file_path.name}: mcp_toolタイプにtoolフィールドがありません"
+                        )
 
                 # onceの確認（boolean型）
                 once = h.get("once")

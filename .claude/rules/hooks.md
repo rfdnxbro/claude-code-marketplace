@@ -168,6 +168,24 @@ LLMを使用してプロンプトを評価:
 | `prompt` | string | ✓ | エージェントに渡すタスク記述 |
 | `timeout` | number | | タイムアウト（秒単位、省略時: 60秒） |
 
+### mcp_tool（MCPツール呼び出し）【v2.1.118以降】
+
+MCPツールをフック内から直接呼び出す:
+
+```json
+{
+  "type": "mcp_tool",
+  "server": "my-mcp-server",
+  "tool": "tool-name"
+}
+```
+
+| フィールド | 型 | 必須 | 説明 |
+|-----------|---|:---:|------|
+| `type` | string | ✓ | `"mcp_tool"` を指定 |
+| `server` | string | ✓ | 呼び出すMCPサーバー名（`mcpServers` で定義したキー名） |
+| `tool` | string | ✓ | 呼び出すツール名 |
+
 ### http（HTTPリクエスト）【v2.1.51以降】
 
 <!-- validator-disable dangerous-operation -->

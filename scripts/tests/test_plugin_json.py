@@ -102,6 +102,7 @@ class TestValidatePluginJson:
             "lspServers",
             "outputStyles",
             "monitors",
+            "themes",
         ]
         for field in path_fields:
             content = json.dumps({"name": "my-plugin", field: "some/path"})
@@ -503,3 +504,22 @@ class TestValidatePluginJson:
         content = json.dumps({"name": "my-plugin", "monitors": "./config/monitors.json"})
         result = validate_plugin_json(Path("plugin.json"), content)
         assert not result.has_errors()
+
+    def test_themes_valid_custom_path(self):
+        """themesにカスタムパスを指定した場合はエラーなし（v2.1.118以降）"""
+        content = json.dumps({"name": "my-plugin", "themes": "./custom-themes/"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+        assert not any("デフォルトパス" in w for w in result.warnings)
+
+    def test_themes_redundant_default_path(self):
+        """themesにデフォルトパスを指定した場合に警告が出ることを確認（v2.1.118以降）"""
+        content = json.dumps({"name": "my-plugin", "themes": "./themes/"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert any("デフォルトパス" in w for w in result.warnings)
+
+    def test_themes_path_without_prefix_warning(self):
+        """themesにパスを指定する場合は./プレフィックスを推奨"""
+        content = json.dumps({"name": "my-plugin", "themes": "themes/"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert any("./" in w for w in result.warnings)
