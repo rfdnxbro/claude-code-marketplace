@@ -610,6 +610,20 @@ if [ -n "$last_message" ]; then
 fi
 ```
 
+### PostToolUse / PostToolUseFailure イベントの入力（v2.1.119以降）
+
+`PostToolUse` および `PostToolUseFailure` フックには、追加フィールド `duration_ms` が渡されます（v2.1.119以降）:
+
+```json
+{
+  "duration_ms": 1234
+}
+```
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `duration_ms` | number | ツール実行時間（ミリ秒）。パーミッションプロンプトと PreToolUse フックの実行時間を除く |
+
 ## イベント詳細
 
 ### SessionStart
