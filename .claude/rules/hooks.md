@@ -610,7 +610,7 @@ if [ -n "$last_message" ]; then
 fi
 ```
 
-### PostToolUse / PostToolUseFailure イベントの入力（v2.1.119以降）
+### PostToolUse / PostToolUseFailure イベントの追加フィールド（v2.1.119以降）
 
 `PostToolUse` および `PostToolUseFailure` フックには、追加フィールド `duration_ms` が渡されます（v2.1.119以降）:
 
