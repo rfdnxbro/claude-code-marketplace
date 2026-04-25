@@ -2,7 +2,8 @@
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "Write|Edit|MultiEdit|NotebookEdit",
+        "matcher": "Write|Edit|MultiEdit",
+        "if": "Write(**/*.ts)|Write(**/*.js)|Write(**/*.py)|Write(**/*.go)|Write(**/*.rs)|Write(**/*.java)|Edit(**/*.ts)|Edit(**/*.js)|Edit(**/*.py)|Edit(**/*.go)|Edit(**/*.rs)|Edit(**/*.java)|MultiEdit(**/*.ts)|MultiEdit(**/*.js)|MultiEdit(**/*.py)|MultiEdit(**/*.go)|MultiEdit(**/*.rs)|MultiEdit(**/*.java)",
         "hooks": [
           {
             "type": "agent",
