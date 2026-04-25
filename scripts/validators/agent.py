@@ -99,14 +99,14 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
     if isolation_str and isolation_str not in valid_isolation_modes:
         result.add_error(f"{file_path.name}: isolationの値が不正です: {isolation_str}（worktree）")
 
-    # effortの値チェック（v2.1.78以降）
+    # effortの値チェック（v2.1.78以降、xhighはv2.1.111以降）
     validate_effort_field(
         result,
         file_path,
         frontmatter,
-        ["low", "medium", "high", "max"],
+        ["low", "medium", "high", "xhigh", "max"],
         level="error",
-        hint="low/medium/high/max",
+        hint="low/medium/high/xhigh/max",
     )
 
     # backgroundの値チェック（v2.1.49以降）
