@@ -117,6 +117,12 @@ Claude Codeがカスタムステータスラインの設定を支援します。
       "used_percentage": 18.0,
       "resets_at": "2026-03-27T00:00:00Z"
     }
+  },
+  "effort": {
+    "level": "medium"
+  },
+  "thinking": {
+    "enabled": false
   }
 }
 ```
@@ -160,6 +166,8 @@ Claude Codeがカスタムステータスラインの設定を支援します。
 | `version` | string | Claude Codeのバージョン | `1.0.80` |
 | `session_id` | string | セッションID | `abc123...` |
 | `output_style.name` | string | 出力スタイル名 | `default` |
+| `effort.level` | string | 現在の effort レベル。取り得る値: `low`, `medium`, `high`, `xhigh`, `max`（`xhigh` は Opus 4.7 のみ。他モデルでは `high` にフォールバック）（v2.1.119以降） | `medium` |
+| `thinking.enabled` | boolean | 思考（thinking）機能が有効かどうか（v2.1.119以降） | `false` |
 
 #### コスト情報
 

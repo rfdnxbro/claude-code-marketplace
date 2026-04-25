@@ -605,6 +605,19 @@ class TestValidateAgent:
         result = validate_agent(Path("agent.md"), content)
         assert not result.has_errors()
 
+    def test_effort_valid_xhigh(self):
+        """effort: xhighが有効であることを確認（Opus 4.7のみ、v2.1.111以降）"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            effort: xhigh
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()
+
     def test_effort_invalid_value(self):
         """effort: に不正な値が指定された場合エラー（v2.1.78以降）"""
         content = dedent("""
