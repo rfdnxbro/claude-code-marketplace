@@ -856,3 +856,81 @@ class TestValidateHooksJson:
         result = validate_hooks_json(Path("hooks.json"), content)
         assert not result.has_errors()
         assert any("matcher" in w for w in result.warnings)
+
+    def test_valid_mcp_tool_type(self):
+        """mcp_toolタイプのフックが有効であることをテスト（v2.1.118以降）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PreToolUse": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [
+                                {
+                                    "type": "mcp_tool",
+                                    "server": "my-mcp-server",
+                                    "tool": "tool-name",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_mcp_tool_missing_server(self):
+        """mcp_toolタイプでserverフィールドが無い場合のテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PreToolUse": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [{"type": "mcp_tool", "tool": "tool-name"}],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("mcp_toolタイプにserver" in e for e in result.errors)
+
+    def test_mcp_tool_missing_tool(self):
+        """mcp_toolタイプでtoolフィールドが無い場合のテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PreToolUse": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [{"type": "mcp_tool", "server": "my-mcp-server"}],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("mcp_toolタイプにtool" in e for e in result.errors)
+
+    def test_mcp_tool_missing_both_fields(self):
+        """mcp_toolタイプでserverとtool両方が無い場合のテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PreToolUse": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [{"type": "mcp_tool"}],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("mcp_toolタイプにserver" in e for e in result.errors)
+        assert any("mcp_toolタイプにtool" in e for e in result.errors)
