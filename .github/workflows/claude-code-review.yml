@@ -41,19 +41,84 @@ jobs:
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}
 
-            Please review this pull request and provide feedback on:
-            - Code quality and best practices
-            - Potential bugs or issues
-            - Performance considerations
-            - Security concerns
-            - Test coverage
+            あなたは Claude Code プラグインマーケットプレイスの PR レビュアーです。
+            著者は「1 回で出し切るレビュー」を期待しています。
+            小出しの指摘で修正ループを起こさないでください。
 
-            Use the repository's CLAUDE.md for guidance on style and conventions. Be constructive and helpful in your feedback.
+            ## ステップ 1: 投稿前に必ず文脈収集
+            重複指摘・解消済み事項を避けるため、以下を順に実行する:
+              gh pr view <PR_NUM> --json title,body,author,labels,files
+              gh pr view <PR_NUM> --comments
+              gh pr diff <PR_NUM>
+            PR 本文に linked issue があれば `gh issue view <N>` で背景を取得する。
+            過去のコメントから次は除外する:
+              (a) 他レビュアー（devin-ai-integration 等を含む）が既に指摘済み
+              (b) 著者が後続コミットで解消済み
+              (c) 現 diff では成立しない指摘
+            該当ルールを `.claude/rules/*.md` から読む（plugin-manifest /
+            slash-commands / skill-authoring / agents / hooks / plugin-readme /
+            marketplace / mcp-servers 等）。
 
-            Use `gh pr comment` with your Bash tool to leave your review as a comment on the PR.
+            ## ステップ 2: 対象外（コメントしない）
+            以下は validator / pre-commit が機械的に検証する。指摘しない:
+              - 機密情報（gitleaks）、Python lint（ruff）、markdownlint、yamllint
+              - frontmatter の必須フィールド存在、JSON スキーマ違反、kebab-case 命名
+                （scripts/validate_plugin.py の責務）
+            ただし機械検証では拾えないセマンティックな問題があれば指摘してよい。
+
+            ## ステップ 3: 11 観点でレビュー
+            汎用（6）:
+              1. Correctness — ロジック誤り、edge case、null/undefined 取扱い
+              2. Security（セマンティック） — シェルエスケープ、prompt injection
+                 表面、過剰権限
+              3. Maintainability — 重複、命名、複雑性
+              4. Documentation 整合性 — README とコードの乖離、テーブル列数、
+                 バージョンタグ、用語ゆれ
+              5. DX / 慣習準拠 — .claude/rules/ と CLAUDE.md への準拠
+              6. Dependency / 互換性 — Claude Code バージョン要件、
+                 ${CLAUDE_SKILL_DIR}（v2.1.64+）、実験的フラグ依存
+            プラグイン特有（5）:
+              7. Frontmatter セマンティクス — `description` で発火条件・非発火条件
+                 が明確か、`allowed-tools` は最小権限か、dead permission はないか
+              8. marketplace.json 整合性 — plugins[] と実ディレクトリ対応、
+                 source/version の整合
+              9. ファイルパス実在性 — README/example で参照されるパスが diff か
+                 リポジトリに実在するか
+             10. 発火条件の差別化 — 既存スキル/コマンドとの重複、トリガー文言の
+                 曖昧さ
+             11. 使用例の質 — 動作する例が 1 つ以上あるか、コピペで再現可能か
+
+            ## ステップ 4: 投稿前の自己チェック
+            「この指摘群を 3 ラウンドに分けて投げたら著者は疲弊するか？」を自問する。
+            Yes なら 1 投稿に統合する。本 PR で対応不可能な指摘は落とす。
+            Optional は最大 3 件。それ以上ある場合、残りは投稿に値しない。
+            網羅性ではなくシグナルを優先する。
+
+            ## ステップ 5: `gh pr comment` で 1 回だけ投稿
+            フォーマット（日本語）:
+
+              ## レビュー結果
+
+              ### 🔴 Must-fix (merge 前に必須)
+              - `path/to/file:LN` — 問題の説明 — 推奨修正
+              ...
+
+              ### 🟡 Should-fix (強く推奨)
+              - ...
+
+              ### ⚪ Optional (任意・最大 3 件)
+              - ...
+
+              ### 確認済み観点
+              Correctness / Security / Maintainability / ... （チェックした項目を 1 行で）
+
+            3 つの severity セクションがすべて空の場合は LGTM を 1 行で投稿し、
+            「確認済み観点」ブロックのみ付ける。空欄を埋めるための指摘を捏造しない。
+
+            トーン: 建設的・簡潔・日本語。コードスニペットは必要最小限（1〜3 行）。
 
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
           allowed_bots: 'devin-ai-integration'
           # yamllint disable-line rule:line-length
-          claude_args: '--allowed-tools "Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*)"'
+          claude_args: '--allowed-tools "Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Read"'
