@@ -1,0 +1,38 @@
+name: PR自動アサイン
+
+on:
+  pull_request:
+    types: [opened]
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  auto-assign:
+    runs-on: ubuntu-latest
+    steps:
+      - name: アサイニーとレビュアーを設定
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prAuthor = context.payload.pull_request.user.login;
+            const assignee = 'rfdnxbro';
+
+            // アサイニーを設定
+            await github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              assignees: [assignee],
+            });
+
+            // レビュアーを設定（PR作者自身には設定不可）
+            if (prAuthor !== assignee) {
+              await github.rest.pulls.requestReviewers({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+                reviewers: [assignee],
+              });
+            }
