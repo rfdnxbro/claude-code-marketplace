@@ -28,28 +28,9 @@
       "category": "quality"
     },
     {
-      "name": "writing-style",
-      "source": "./plugins/writing-style",
-      "description": "ユーザー本人の声で日本語の長文を書く際の文体ガイドを適用するプラグイン",
-      "version": "0.1.0",
-      "author": {
-        "name": "rfdnxbro"
-      },
-      "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/writing-style",
-      "repository": "https://github.com/rfdnxbro/claude-code-marketplace",
-      "license": "MIT",
-      "keywords": [
-        "writing",
-        "style-guide",
-        "japanese",
-        "prose"
-      ],
-      "category": "writing"
-    },
-    {
       "name": "claude-code-workflow",
       "source": "./plugins/claude-code-workflow",
-      "description": "Claude Code を使う際の個人的な作業スタイル（エージェント編成パターン、判断ルール等）をスキルとして集約するプラグイン",
+      "description": "Claude Code を使う際の個人的な作業スタイル（エージェント編成パターン、文体ガイド、判断ルール等）をスキルとして集約するプラグイン",
       "version": "0.1.0",
       "author": {
         "name": "rfdnxbro"
@@ -61,6 +42,7 @@
         "workflow",
         "agent-team",
         "orchestration",
+        "writing-style",
         "personal"
       ],
       "category": "workflow"
