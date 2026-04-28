@@ -390,13 +390,13 @@ description: 説明
         assert not result.has_errors()
         assert not any("effort" in w for w in result.warnings)
 
-    def test_valid_effort_normal(self):
-        """effort: normalが有効であることを確認（v2.1.80以降）"""
+    def test_valid_effort_medium(self):
+        """effort: mediumが有効であることを確認（v2.1.80以降）"""
         content = dedent("""
             ---
             name: test-skill
             description: テストスキルの説明
-            effort: normal
+            effort: medium
             ---
             本文
         """).strip()
@@ -418,6 +418,34 @@ description: 説明
         assert not result.has_errors()
         assert not any("effort" in w for w in result.warnings)
 
+    def test_valid_effort_xhigh(self):
+        """effort: xhighが有効であることを確認（v2.1.111以降、Opus 4.7専用）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            effort: xhigh
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+        assert not any("effort" in w for w in result.warnings)
+
+    def test_valid_effort_max(self):
+        """effort: maxが有効であることを確認（v2.1.80以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            effort: max
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+        assert not any("effort" in w for w in result.warnings)
+
     def test_invalid_effort(self):
         """無効なeffort値で警告が出ることを確認（v2.1.80以降）"""
         content = dedent("""
@@ -425,6 +453,19 @@ description: 説明
             name: test-skill
             description: テストスキルの説明
             effort: ultra
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert any("effort" in w for w in result.warnings)
+
+    def test_invalid_effort_normal(self):
+        """effort: normalは無効（公式仕様に存在しない値、v2.1.120時点）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            effort: normal
             ---
             本文
         """).strip()
