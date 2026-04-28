@@ -507,3 +507,57 @@ class TestValidateMarketplaceJson:
         )
         result = validate_marketplace_json(Path("marketplace.json"), content)
         assert not result.has_errors()
+
+    def test_top_level_schema_field(self):
+        """トップレベルの $schema フィールドが有効であることを確認（v2.1.120以降）"""
+        content = json.dumps(
+            {
+                "$schema": "https://example.com/marketplace-schema.json",
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [{"name": "plugin-one", "source": "./plugins/plugin-one"}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_top_level_version_field(self):
+        """トップレベルの version フィールドが有効であることを確認（v2.1.120以降）"""
+        content = json.dumps(
+            {
+                "version": "1.0.0",
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [{"name": "plugin-one", "source": "./plugins/plugin-one"}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_top_level_description_field(self):
+        """トップレベルの description フィールドが有効であることを確認（v2.1.120以降）"""
+        content = json.dumps(
+            {
+                "description": "マーケットプレイスの説明",
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [{"name": "plugin-one", "source": "./plugins/plugin-one"}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_top_level_all_new_fields(self):
+        """トップレベルの $schema, version, description が同時に指定可能（v2.1.120以降）"""
+        content = json.dumps(
+            {
+                "$schema": "https://example.com/marketplace-schema.json",
+                "version": "1.0.0",
+                "description": "マーケットプレイスの説明",
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [{"name": "plugin-one", "source": "./plugins/plugin-one"}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()

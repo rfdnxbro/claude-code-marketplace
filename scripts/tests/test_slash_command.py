@@ -295,12 +295,12 @@ class TestValidateSlashCommand:
         assert not result.has_errors()
         assert not any("effort" in w for w in result.warnings)
 
-    def test_valid_effort_normal(self):
-        """effort: normalが有効であることを確認（v2.1.80以降）"""
+    def test_valid_effort_medium(self):
+        """effort: mediumが有効であることを確認（v2.1.80以降）"""
         content = dedent("""
             ---
             description: テストコマンド
-            effort: normal
+            effort: medium
             ---
             本文
         """).strip()
@@ -320,6 +320,44 @@ class TestValidateSlashCommand:
         result = validate_slash_command(Path("test.md"), content)
         assert not result.has_errors()
         assert not any("effort" in w for w in result.warnings)
+
+    def test_valid_effort_xhigh(self):
+        """effort: xhighが有効であることを確認（v2.1.111以降、Opus 4.7専用）"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            effort: xhigh
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert not any("effort" in w for w in result.warnings)
+
+    def test_valid_effort_max(self):
+        """effort: maxが有効であることを確認（v2.1.80以降）"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            effort: max
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert not any("effort" in w for w in result.warnings)
+
+    def test_invalid_effort_normal(self):
+        """effort: normalは無効（公式仕様に存在しない値、v2.1.120時点）"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            effort: normal
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert any("effort" in w for w in result.warnings)
 
     def test_valid_argument_hint(self):
         """argument-hintが文字列で指定できることを確認"""

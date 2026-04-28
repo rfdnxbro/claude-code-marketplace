@@ -108,7 +108,7 @@ model: haiku
 effort: low
 ```
 
-使用可能な値: `low`, `normal`, `high`
+使用可能な値: `low`, `medium`, `high`, `xhigh`（Opus 4.7のみ、他モデルは `high` にフォールバック）, `max`
 
 **agent**:
 
@@ -262,6 +262,7 @@ allowed-tools:
 | `${CLAUDE_SESSION_ID}` | 現在のセッションID | セッション固有のログファイル名生成 |
 | `${CLAUDE_PLUGIN_ROOT}` | プラグインルートへの絶対パス | スクリプト実行パスの指定 |
 | `${CLAUDE_SKILL_DIR}` | スキル自身のディレクトリへの絶対パス（v2.1.64以降） | スキルに隣接するリソースファイルの参照 |
+| `${CLAUDE_EFFORT}` | 現在のエフォートレベル（v2.1.120以降） | エフォートに応じた処理分岐 |
 
 **使用例:**
 
@@ -279,6 +280,26 @@ allowed-tools:
 
 すべての出力をログファイルに保存してください。
 ```
+
+`${CLAUDE_EFFORT}` を使用すると、現在のエフォートレベルに応じた処理を記述できます（v2.1.120以降）:
+
+```yaml
+---
+name: adaptive-review
+description: エフォートレベルに応じて詳細度を調整するレビュー
+---
+
+現在のエフォートレベル: ${CLAUDE_EFFORT}
+
+エフォートに応じたレビュー:
+- low: 主要な問題のみ指摘
+- medium: 標準的なレビュー
+- high: 詳細な分析と改善提案
+- xhigh: より深い分析（Opus 4.7のみ、他モデルは high にフォールバック）
+- max: 最大の思考予算で網羅的にレビュー
+```
+
+利用可能な値: `low`, `medium`, `high`, `xhigh`（Opus 4.7のみ、他モデルは `high` にフォールバック）, `max`
 
 `${CLAUDE_SKILL_DIR}` を使用すると、SKILL.mdと同じディレクトリにあるファイルを参照できます（v2.1.64以降）:
 

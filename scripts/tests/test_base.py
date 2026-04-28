@@ -316,20 +316,24 @@ class TestValidateEffortField:
 
     def test_not_specified(self):
         result = ValidationResult()
-        validate_effort_field(result, Path("test.md"), {}, ["low", "normal", "high"])
+        validate_effort_field(
+            result, Path("test.md"), {}, ["low", "medium", "high", "xhigh", "max"]
+        )
         assert not result.has_errors()
         assert len(result.warnings) == 0
 
     def test_valid_value(self):
         result = ValidationResult()
-        validate_effort_field(result, Path("test.md"), {"effort": "low"}, ["low", "normal", "high"])
+        validate_effort_field(
+            result, Path("test.md"), {"effort": "low"}, ["low", "medium", "high", "xhigh", "max"]
+        )
         assert not result.has_errors()
         assert len(result.warnings) == 0
 
     def test_invalid_value_warning(self):
         result = ValidationResult()
         validate_effort_field(
-            result, Path("test.md"), {"effort": "ultra"}, ["low", "normal", "high"]
+            result, Path("test.md"), {"effort": "ultra"}, ["low", "medium", "high", "xhigh", "max"]
         )
         assert any("effort" in w for w in result.warnings)
 
