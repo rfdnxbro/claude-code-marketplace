@@ -52,11 +52,11 @@
 | `CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS` | Gitクローンのタイムアウト（ミリ秒）。デフォルト120000（120秒）（v2.1.51以降） | marketplace |
 | `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` | `SessionEnd` フックのタイムアウト（ミリ秒）。デフォルトは `hook.timeout` の設定値（v2.1.74以降） | hooks |
 | `${CLAUDE_PLUGIN_DATA}` | プラグインの永続データディレクトリへの絶対パス。アップデートを超えて永続化される（v2.1.78以降） | hooks, monitors |
-| `${CLAUDE_EFFORT}` | 現在のエフォートレベル。値: `low` / `medium` / `high` / `xhigh`（Opus 4.7のみ、他モデルは `high` にフォールバック） / `max`（v2.1.120以降） | skills |
 | `CLAUDE_CODE_PLUGIN_SEED_DIR` | プラグインのシードディレクトリ。v2.1.79以降は複数ディレクトリをパス区切り文字（Unix: `:`, Windows: `;`）で区切って指定可能 | marketplace |
 | `CLAUDE_CODE_MCP_SERVER_NAME` | `headersHelper` スクリプト内で利用可能。呼び出し元の MCP サーバー名（v2.1.85以降） | mcp-servers |
 | `CLAUDE_CODE_MCP_SERVER_URL` | `headersHelper` スクリプト内で利用可能。呼び出し元の MCP サーバー URL（v2.1.85以降） | mcp-servers |
 | `CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE` | `git pull` 失敗時に既存マーケットプレイスキャッシュを保持（v2.1.90以降） | marketplace |
+| `${CLAUDE_EFFORT}` | 現在のエフォートレベル。値: `low` / `medium` / `high` / `xhigh`（Opus 4.7のみ、他モデルは `high` にフォールバック） / `max`（v2.1.120以降） | skills |
 
 ## Frontmatterリファレンス
 
