@@ -132,3 +132,16 @@ jobs:
           allowed_bots: 'devin-ai-integration'
           # yamllint disable-line rule:line-length
           claude_args: '--allowed-tools "Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Read,Write(/tmp/claude-review-comment.md)"'
+
+      # Run Claude Code Review が turn ごとの stream JSON を runner の temp に
+      # 保存している。CI ログには init / result の summary しか出ないため、
+      # サイレント失敗（コメント未投稿で success 終了するケース等）の調査用に
+      # この JSON を artifact としてアップロードする。
+      - name: Upload Claude execution log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-execution-output-pr-${{ github.event.pull_request.number }}
+          path: ${{ runner.temp }}/claude-execution-output.json
+          retention-days: 7
+          if-no-files-found: warn
