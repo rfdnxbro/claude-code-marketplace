@@ -18,6 +18,7 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 
 | フィールド | 型 | 説明 |
 |-----------|---|------|
+| `$schema` | string | JSONスキーマ参照URL（v2.1.120以降、`claude plugin validate` で受け入れ可能） |
 | `version` | string | セマンティックバージョン（例: `2.1.0`） |
 | `description` | string | プラグインの説明 |
 | `author` | object | `{name, email?, url?}` |

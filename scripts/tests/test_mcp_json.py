@@ -119,3 +119,52 @@ class TestValidateMcpJson:
         content = json.dumps({"mcpServers": {"test-server": {"command": "node"}}})
         result = validate_mcp_json(Path(".mcp.json"), content)
         assert not result.has_errors()
+
+    def test_always_load_true(self):
+        """alwaysLoad: true は有効（v2.1.121以降）"""
+        content = json.dumps(
+            {
+                "mcpServers": {
+                    "test-server": {
+                        "type": "stdio",
+                        "command": "node",
+                        "alwaysLoad": True,
+                    }
+                }
+            }
+        )
+        result = validate_mcp_json(Path(".mcp.json"), content)
+        assert not result.has_errors()
+
+    def test_always_load_false(self):
+        """alwaysLoad: false は有効（v2.1.121以降）"""
+        content = json.dumps(
+            {
+                "mcpServers": {
+                    "test-server": {
+                        "type": "stdio",
+                        "command": "node",
+                        "alwaysLoad": False,
+                    }
+                }
+            }
+        )
+        result = validate_mcp_json(Path(".mcp.json"), content)
+        assert not result.has_errors()
+
+    def test_always_load_non_boolean(self):
+        """alwaysLoadがブール値以外の場合はエラー（v2.1.121以降）"""
+        content = json.dumps(
+            {
+                "mcpServers": {
+                    "test-server": {
+                        "type": "stdio",
+                        "command": "node",
+                        "alwaysLoad": "true",
+                    }
+                }
+            }
+        )
+        result = validate_mcp_json(Path(".mcp.json"), content)
+        assert result.has_errors()
+        assert any("alwaysLoad" in e for e in result.errors)

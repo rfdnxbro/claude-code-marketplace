@@ -16,10 +16,23 @@ paths: .claude-plugin/marketplace.json
 | `owner` | object | 管理者情報（`name`必須） |
 | `plugins` | array | プラグイン定義リスト |
 
+## トップレベルのオプションフィールド（v2.1.120以降）
+
+v2.1.120以降、以下のフィールドが `marketplace.json` のトップレベルで有効になりました:
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `$schema` | string | JSONスキーマ参照URL |
+| `version` | string | マーケットプレイスのバージョン |
+| `description` | string | マーケットプレイスの説明 |
+
 ## 形式
 
 ```json
 {
+  "$schema": "https://example.com/marketplace-schema.json",
+  "version": "1.0.0",
+  "description": "マーケットプレイスの説明",
   "name": "my-marketplace",
   "owner": {
     "name": "Team Name",

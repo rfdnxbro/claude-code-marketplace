@@ -523,3 +523,14 @@ class TestValidatePluginJson:
         content = json.dumps({"name": "my-plugin", "themes": "themes/"})
         result = validate_plugin_json(Path("plugin.json"), content)
         assert any("./" in w for w in result.warnings)
+
+    def test_schema_field_valid(self):
+        """$schema フィールドが有効であることを確認（v2.1.120以降）"""
+        content = json.dumps(
+            {
+                "$schema": "https://example.com/plugin-schema.json",
+                "name": "my-plugin",
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()

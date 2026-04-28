@@ -38,4 +38,9 @@ def validate_mcp_json(file_path: Path, content: str) -> ValidationResult:
                 f"{file_path.name}: {server_name}: 不明なサーバータイプ: {server_type}"
             )
 
+        # alwaysLoad はブール値のみ有効（v2.1.121以降）
+        always_load = config.get("alwaysLoad")
+        if always_load is not None and not isinstance(always_load, bool):
+            result.add_error(f"{file_path.name}: {server_name}: alwaysLoadはブール値が必要です")
+
     return result

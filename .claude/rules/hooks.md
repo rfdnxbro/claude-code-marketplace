@@ -453,6 +453,23 @@ exit 2  # ユーザーには理由が伝わらない
 }
 ```
 
+### PostToolUse フックでのツール出力置き換え（v2.1.121以降）
+
+`PostToolUse` フックは `hookSpecificOutput.updatedToolOutput` を返すことで、ツールの出力を置き換えることができます。v2.1.121以降、MCPツールだけでなく Bash、Edit、Write などすべてのツールに対応しました。
+
+```json
+{
+  "hookSpecificOutput": {
+    "hookEventName": "PostToolUse",
+    "updatedToolOutput": "置き換えるツール出力内容"
+  }
+}
+```
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `updatedToolOutput` | string | ツールの出力を置き換える文字列。すべてのツール（Bash、Edit、Write、MCPツール等）に対応（v2.1.121以降） |
+
 > **注意（v2.1.89以降）**: フックスクリプトが **50K文字を超える出力** を返した場合、コンテキストに直接注入される代わりに **ディスクに保存** され、ファイルパスとプレビューのみが提供されます。大量の出力を返すフックの動作に注意してください。
 >
 > **注意（v2.1.101以降）**: `permissionDecision: "ask"` を返しても、`permissions.deny` ルールが設定されている場合は **deny が優先** されます。
