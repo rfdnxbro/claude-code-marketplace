@@ -94,18 +94,24 @@ jobs:
             Optional は最大 3 件。それ以上ある場合、残りは投稿に値しない。
             網羅性ではなくシグナルを優先する。
 
-            ## ステップ 5: コメント本文を一時ファイルに書き出し、`--body-file` で投稿
-            投稿は必ず以下の 2 ステップで行う。**`gh pr comment ... --body "..."` の
-            `--body` インライン形式は禁止**。これはシェル引数の誤組み立てや、Read で
-            取得したファイル内容の混入事故を起こすため:
+            ## ステップ 5: `gh pr comment --body-file -` に heredoc でレビュー本文を流して投稿
+            投稿は必ず以下の形式で 1 回だけ実行する。**`gh pr comment ... --body "..."`
+            の `--body` インライン形式は禁止**。シェル引数の誤組み立てや、Read で取得
+            したファイル内容の混入事故を起こすため:
 
-              1. Write ツールで `/tmp/claude-review-comment.md` にレビュー本文だけを書き出す
-              2. `gh pr comment <PR_NUM> --repo <REPO> --body-file /tmp/claude-review-comment.md`
-                 を 1 回だけ実行する
+                gh pr comment <PR_NUM> --repo <REPO> --body-file - << 'REVIEW_EOF'
+                ## レビュー結果
+                ...
+                REVIEW_EOF
 
-            `--body-file` で渡すファイルには、以下のフォーマット（日本語）の本文だけを
-            書く。コミットメッセージ、CLAUDE.md、`.claude/rules/*.md`、`gh pr view` の
-            出力、その他レビュー本文以外の文字列を絶対に含めない:
+            heredoc の delimiter は **必ずシングルクォート付き（`'REVIEW_EOF'`）** に
+            する。これがないと heredoc 内で `$VAR` や `$(...)` が展開され、別ファイル
+            内容や環境変数が混入する事故を招く。
+
+            ファイルへの書き出し（Write ツールや `cat > file` 等）は行わない。heredoc
+            に書く本文には、以下のフォーマット（日本語）の本文だけを書く。コミット
+            メッセージ、CLAUDE.md、`.claude/rules/*.md`、`gh pr view` の出力、その他
+            レビュー本文以外の文字列を絶対に含めない:
 
               ## レビュー結果
 
@@ -131,7 +137,7 @@ jobs:
           # or https://code.claude.com/docs/en/cli-reference for available options
           allowed_bots: 'devin-ai-integration'
           # yamllint disable-line rule:line-length
-          claude_args: '--allowed-tools "Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Read,Write(/tmp/claude-review-comment.md)"'
+          claude_args: '--allowed-tools "Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Read"'
 
       # Run Claude Code Review が turn ごとの stream JSON を runner の temp に
       # 保存している。CI ログには init / result の summary しか出ないため、
