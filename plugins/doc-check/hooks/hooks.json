@@ -3,6 +3,7 @@
     "PostToolUse": [
       {
         "matcher": "Write|Edit|MultiEdit|NotebookEdit",
+        "if": "not(tool_input.file_path matches '\\.(test|spec)\\.(ts|js|py)$|node_modules/|dist/|build/')",
         "hooks": [
           {
             "type": "agent",
