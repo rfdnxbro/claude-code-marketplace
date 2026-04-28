@@ -94,8 +94,18 @@ jobs:
             Optional は最大 3 件。それ以上ある場合、残りは投稿に値しない。
             網羅性ではなくシグナルを優先する。
 
-            ## ステップ 5: `gh pr comment` で 1 回だけ投稿
-            フォーマット（日本語）:
+            ## ステップ 5: コメント本文を一時ファイルに書き出し、`--body-file` で投稿
+            投稿は必ず以下の 2 ステップで行う。**`gh pr comment ... --body "..."` の
+            `--body` インライン形式は禁止**。これはシェル引数の誤組み立てや、Read で
+            取得したファイル内容の混入事故を起こすため:
+
+              1. Write ツールで `/tmp/claude-review-comment.md` にレビュー本文だけを書き出す
+              2. `gh pr comment <PR_NUM> --repo <REPO> --body-file /tmp/claude-review-comment.md`
+                 を 1 回だけ実行する
+
+            `--body-file` で渡すファイルには、以下のフォーマット（日本語）の本文だけを
+            書く。コミットメッセージ、CLAUDE.md、`.claude/rules/*.md`、`gh pr view` の
+            出力、その他レビュー本文以外の文字列を絶対に含めない:
 
               ## レビュー結果
 
@@ -121,4 +131,4 @@ jobs:
           # or https://code.claude.com/docs/en/cli-reference for available options
           allowed_bots: 'devin-ai-integration'
           # yamllint disable-line rule:line-length
-          claude_args: '--allowed-tools "Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Read"'
+          claude_args: '--allowed-tools "Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Read,Write(/tmp/claude-review-comment.md)"'
