@@ -105,9 +105,13 @@ def validate_slash_command(file_path: Path, content: str) -> ValidationResult:
     if model_str and model_str not in valid_models:
         result.add_warning(f"{file_path.name}: modelが不正: {model_str}（sonnet/opus/haiku）")
 
-    # effortの確認（v2.1.80以降）
+    # effortの確認（v2.1.80以降。v2.1.111でxhigh追加、maxも従来から有効）
     validate_effort_field(
-        result, file_path, frontmatter, ["low", "normal", "high"], hint="low/normal/high"
+        result,
+        file_path,
+        frontmatter,
+        ["low", "medium", "high", "xhigh", "max"],
+        hint="low/medium/high/xhigh/max",
     )
 
     return result

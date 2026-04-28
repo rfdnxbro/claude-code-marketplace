@@ -108,7 +108,7 @@ model: haiku
 effort: low
 ```
 
-使用可能な値: `low`, `normal`, `high`
+使用可能な値: `low`, `medium`, `high`, `xhigh`（Opus 4.7のみ、他モデルは `high` にフォールバック）, `max`
 
 **agent**:
 

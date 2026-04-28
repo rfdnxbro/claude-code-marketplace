@@ -74,9 +74,13 @@ def validate_skill(file_path: Path, content: str) -> ValidationResult:
     # allowed-toolsの確認（リスト形式対応）
     validate_allowed_tools(result, file_path, frontmatter, disabled_warnings)
 
-    # effortの確認（v2.1.80以降）
+    # effortの確認（v2.1.80以降。v2.1.111でxhigh追加、maxも従来から有効）
     validate_effort_field(
-        result, file_path, frontmatter, ["low", "normal", "high"], hint="low/normal/high"
+        result,
+        file_path,
+        frontmatter,
+        ["low", "medium", "high", "xhigh", "max"],
+        hint="low/medium/high/xhigh/max",
     )
 
     # hooksの確認（形式警告のみ）

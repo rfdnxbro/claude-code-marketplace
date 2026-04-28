@@ -46,7 +46,7 @@ $ARGUMENTS で引数を受け取れます
 | `context` | No | 実行コンテキスト（`fork`でサブエージェント実行） | 省略時はメインコンテキスト |
 | `agent` | No | 使用するサブエージェント名 | なし |
 | `hooks` | No | フック定義（[hooks.md](hooks.md)参照） | なし |
-| `effort` | No | モデルエフォートレベル（`low`, `normal`, `high`）（v2.1.80以降） | 会話から継承 |
+| `effort` | No | モデルエフォートレベル（`low` / `medium` / `high` / `xhigh`（Opus 4.7のみ、他モデルは `high` にフォールバック） / `max`）（v2.1.80以降） | 会話から継承 |
 
 ## 引数と環境変数
 
