@@ -37,16 +37,18 @@ pr_split() {
 }
 
 # 1 件のレビューコメント（PR トップレベル / インライン共通）を通知。
-# 引数: pr_url, head_sha, comment_id, author, body, path, line
+# 引数: source, pr_url, head_sha, comment_id, author, body, path, line
+# source: "issue_comment" | "review" | "inline"（GitHub は各種別で別 ID シーケンスを
+# 使うため、prefix を付けないと数値衝突時に通知が落ちる可能性がある）
 emit_review_one() {
-  local pr_url="$1" head_sha="$2" cmt_id="$3" author="$4" body="$5" path="$6" line="$7"
+  local source="$1" pr_url="$2" head_sha="$3" cmt_id="$4" author="$5" body="$6" path="$7" line="$8"
   local sig h author_kind excerpt
 
   if [ -z "$body" ] || [ "$body" = "null" ]; then
     return 0
   fi
 
-  sig="$cmt_id"
+  sig="${source}:${cmt_id}"
   h=$(state_event_hash "$pr_url" "review" "$sig")
   if state_seen "$h"; then
     return 0
@@ -132,13 +134,14 @@ while :; do
     # PR トップレベルコメント (issue comment) + レビュー本文
     if top_level=$(gh pr view "$pr_url" --json comments,reviews 2>/dev/null); then
       while read -r cmt; do
+        source=$(printf '%s' "$cmt" | jq -r '.source')
         cmt_id=$(printf '%s' "$cmt" | jq -r '.id')
         author=$(printf '%s' "$cmt" | jq -r '.author')
         body=$(printf '%s' "$cmt" | jq -r '.body')
-        emit_review_one "$pr_url" "$head_sha" "$cmt_id" "$author" "$body" "" ""
+        emit_review_one "$source" "$pr_url" "$head_sha" "$cmt_id" "$author" "$body" "" ""
       done < <(printf '%s' "$top_level" | jq -c '
-        ([(.comments // [])[] | {id:((.id // .databaseId) | tostring), author:(.author.login // .user.login // "unknown"), body:(.body // "")}]
-         + [(.reviews // [])[] | {id:((.id // .databaseId) | tostring), author:(.author.login // .user.login // "unknown"), body:(.body // "")}])[]')
+        ([(.comments // [])[] | {source:"issue_comment", id:((.id // .databaseId) | tostring), author:(.author.login // .user.login // "unknown"), body:(.body // "")}]
+         + [(.reviews // [])[] | {source:"review", id:((.id // .databaseId) | tostring), author:(.author.login // .user.login // "unknown"), body:(.body // "")}])[]')
     fi
 
     # PR インライン review コメント（line-level、`gh pr view` には含まれない）
@@ -150,7 +153,7 @@ while :; do
           body=$(printf '%s' "$cmt" | jq -r '.body')
           path=$(printf '%s' "$cmt" | jq -r '.path')
           line=$(printf '%s' "$cmt" | jq -r '.line')
-          emit_review_one "$pr_url" "$head_sha" "$cmt_id" "$author" "$body" "$path" "$line"
+          emit_review_one "inline" "$pr_url" "$head_sha" "$cmt_id" "$author" "$body" "$path" "$line"
         done < <(printf '%s' "$inline" | jq -c '
           .[]? | {id:(.id | tostring), author:(.user.login // "unknown"), body:(.body // ""), path:(.path // ""), line:((.line // .original_line // "") | tostring)}')
       fi

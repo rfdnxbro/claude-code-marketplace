@@ -1,7 +1,7 @@
 ---
 name: pr-auto-fixer
 description: PR の CI 失敗 / レビューコメント / コンフリクトを自明な範囲で修正し commit & push するエージェント。pr-auto-fix プラグインの Monitor 通知から auto-fix-pr スキル経由で起動される。判断に悩む変更は escalation 通知を出して bail する。
-tools: Read, Edit, Grep, Bash(git:*), Bash(gh pr:*), Bash(gh run:*), Bash(gh api:*), Bash(npm:*), Bash(pnpm:*), Bash(yarn:*), Bash(pytest:*), Bash(python:*), Bash(python3:*), Bash(uv:*), Bash(uvx:*), Bash(jq:*), Bash(cat:*), Bash(printenv:*), Bash(date:*), Bash(head:*), Bash(grep:*), Bash(sed:*)
+tools: Read, Edit, Bash(git:*), Bash(gh pr:*), Bash(gh run:*), Bash(gh api:*), Bash(npm:*), Bash(pnpm:*), Bash(yarn:*), Bash(pytest:*), Bash(python:*), Bash(python3:*), Bash(uv:*), Bash(uvx:*), Bash(jq:*), Bash(cat:*), Bash(printenv:*), Bash(date:*), Bash(head:*), Bash(grep:*), Bash(sed:*)
 model: sonnet
 effort: medium
 maxTurns: 25

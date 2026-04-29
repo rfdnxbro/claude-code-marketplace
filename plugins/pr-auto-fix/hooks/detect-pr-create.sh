@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # gh pr create が成功した直後に呼ばれ、出力から PR URL を抽出して watch-targets.json に登録する。
-# additionalContext で Claude に auto-fix-pr スキルの起動を促す。
+# systemMessage で Claude に auto-fix-pr スキルの起動を促す。
+# 注: hookSpecificOutput.additionalContext は PreToolUse 専用のため PostToolUse では使えない
+# (.claude/rules/hooks.md L451)。systemMessage はトップレベルフィールドでイベント制限なし。
 
 set -euo pipefail
 
@@ -35,7 +37,7 @@ fi
 if printf '%s' "$existing" | jq -e --arg url "$pr_url" '[.[] | select(.pr_url == $url)] | length > 0' >/dev/null 2>&1; then
   jq -nc \
     --arg url "$pr_url" \
-    '{continue: true, hookSpecificOutput: {hookEventName: "PostToolUse", additionalContext: ("pr-auto-fix: PR " + $url + " は既に監視対象に登録済みです。")}}'
+    '{continue: true, systemMessage: ("pr-auto-fix: PR " + $url + " は既に監視対象に登録済みです。")}'
   exit 0
 fi
 
@@ -48,11 +50,11 @@ new_entry=$(jq -nc \
   --arg repo "$repo" \
   --argjson number "$number" \
   --arg registered_at "$registered_at" \
-  '{pr_url: $url, repo: $repo, number: $number, registered_at: $registered_at, last_head_sha: null}')
+  '{pr_url: $url, repo: $repo, number: $number, registered_at: $registered_at}')
 
 printf '%s' "$existing" | jq --argjson e "$new_entry" '. + [$e]' > "$TARGETS.tmp"
 mv "$TARGETS.tmp" "$TARGETS"
 
 jq -nc \
   --arg url "$pr_url" \
-  '{continue: true, hookSpecificOutput: {hookEventName: "PostToolUse", additionalContext: ("pr-auto-fix: PR " + $url + " を監視対象に登録しました。`pr-auto-fix:auto-fix-pr` スキルを起動して CI/レビュー/コンフリクトの自動監視を開始してください。")}}'
+  '{continue: true, systemMessage: ("pr-auto-fix: PR " + $url + " を監視対象に登録しました。`pr-auto-fix:auto-fix-pr` スキルを起動して CI/レビュー/コンフリクトの自動監視を開始してください。")}'
