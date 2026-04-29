@@ -63,7 +63,7 @@ gh pr create --title "..." --body "..."
 [PostToolUse Hook]
    │ PR URL を抽出
    │ watch-targets.json に登録
-   │ additionalContext で Claude にスキル起動を促す
+   │ systemMessage で Claude にスキル起動を促す
    ▼
 [auto-fix-pr スキル invoke]
    │ on-skill-invoke で Monitor が起動
@@ -71,8 +71,9 @@ gh pr create --title "..." --body "..."
 [pr-auto-fix-watcher Monitor]
    │ INTERVAL ごとに以下を poll：
    │   - gh pr checks --json bucket（CI 失敗）
-   │   - gh pr view --json comments,reviews（PR トップレベル + レビュー本文）
-   │   - gh api repos/<owner>/<repo>/pulls/<n>/comments（line-level inline コメント）
+   │   - gh api repos/<owner>/<repo>/issues/<n>/comments --paginate（PR トップレベルコメント）
+   │   - gh api repos/<owner>/<repo>/pulls/<n>/reviews --paginate（レビュー本文）
+   │   - gh api repos/<owner>/<repo>/pulls/<n>/comments --paginate（line-level inline コメント）
    │   - gh pr view --json mergeable,mergeStateStatus（コンフリクト）
    │ 新規イベント（ci_failure / review / conflict）を JSON Lines で通知
    ▼
@@ -99,6 +100,7 @@ gh pr create --title "..." --body "..."
 ## 制限
 
 - `gh pr create` を **Bash ツール経由で実行した場合のみ** 監視が起動します（GitHub MCP 経由などは現時点で対象外）
+- `watch-targets.json` が空のまま起動した Monitor は、短時間 sleep したあと自動終了します。新しい PR を作成すると Hook が再度スキル起動を促します
 - fork からの PR で `maintainerCanModify=false` の場合は push できないため、初回ガードで escalation します
 - flaky / 環境依存の CI 失敗には自動対応せず、`maxAttemptsPerSig` 回失敗で escalation します
 - ユーザーが PR ブランチから別ブランチに切り替えている間は修正をスキップします（戻ってくれば次回 poll で自動再開）

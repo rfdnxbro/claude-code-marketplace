@@ -18,6 +18,7 @@ source "$SCRIPT_DIR/emit-event.sh"
 
 INTERVAL="${1:-45}"
 BOT_PATTERN="${2:-copilot|coderabbit|claude.*review}"
+EMPTY_TARGET_EXIT_CYCLES="${PR_AUTO_FIX_EMPTY_TARGET_EXIT_CYCLES:-3}"
 
 state_init
 
@@ -60,12 +61,13 @@ emit_review_one() {
   else
     author_kind="human"
   fi
-  excerpt=$(printf '%s' "$body" | head -c 240)
+  excerpt=$(printf '%s' "$body" | jq -Rs -r '.[0:240]')
 
   emit_event "review" "$(jq -nc \
     --arg url "$pr_url" \
     --arg author "$author" \
     --arg kind "$author_kind" \
+    --arg source "$source" \
     --arg cmt_id "$cmt_id" \
     --arg sha "$head_sha" \
     --arg path "$path" \
@@ -73,19 +75,25 @@ emit_review_one() {
     --arg excerpt "$excerpt" \
     --arg sig "$sig" \
     --arg hash "$h" \
-    '{pr: $url, author: $author, author_kind: $kind, comment_id: $cmt_id, head_sha: $sha, path: $path, line: $line, body_excerpt: $excerpt, signature: $sig, hash: $hash, action: "classify obvious vs judgment, then act"}')"
+    '{pr: $url, author: $author, author_kind: $kind, comment_source: $source, comment_id: $cmt_id, head_sha: $sha, path: $path, line: $line, body_excerpt: $excerpt, signature: $sig, hash: $hash, action: "classify obvious vs judgment, then act"}')"
 }
 
 auth_warned=0
+empty_target_cycles=0
 
 while :; do
   targets=$(state_targets)
   count=$(printf '%s' "$targets" | jq 'length' 2>/dev/null || echo 0)
 
   if [ "$count" -eq 0 ]; then
+    empty_target_cycles=$((empty_target_cycles + 1))
+    if [ "$empty_target_cycles" -ge "$EMPTY_TARGET_EXIT_CYCLES" ]; then
+      exit 0
+    fi
     sleep "$INTERVAL"
     continue
   fi
+  empty_target_cycles=0
 
   # process substitution で subshell 化を回避し、auth_warned をメインループに伝播させる
   while read -r entry; do
@@ -131,22 +139,32 @@ while :; do
       done < <(printf '%s' "$checks" | jq -c '.[] | select(.bucket == "fail")')
     fi
 
-    # PR トップレベルコメント (issue comment) + レビュー本文
-    if top_level=$(gh pr view "$pr_url" --json comments,reviews 2>/dev/null); then
-      while read -r cmt; do
-        source=$(printf '%s' "$cmt" | jq -r '.source')
-        cmt_id=$(printf '%s' "$cmt" | jq -r '.id')
-        author=$(printf '%s' "$cmt" | jq -r '.author')
-        body=$(printf '%s' "$cmt" | jq -r '.body')
-        emit_review_one "$source" "$pr_url" "$head_sha" "$cmt_id" "$author" "$body" "" ""
-      done < <(printf '%s' "$top_level" | jq -c '
-        ([(.comments // [])[] | {source:"issue_comment", id:((.id // .databaseId) | tostring), author:(.author.login // .user.login // "unknown"), body:(.body // "")}]
-         + [(.reviews // [])[] | {source:"review", id:((.id // .databaseId) | tostring), author:(.author.login // .user.login // "unknown"), body:(.body // "")}])[]')
+    # PR トップレベルコメント (issue comment)。--paginate --slurp で全ページを処理する。
+    if [ -n "$owner" ] && [ -n "$repo" ] && [ -n "$number" ]; then
+      if issue_comments=$(gh api "repos/${owner}/${repo}/issues/${number}/comments" --paginate --slurp 2>/dev/null); then
+        while read -r cmt; do
+          cmt_id=$(printf '%s' "$cmt" | jq -r '.id')
+          author=$(printf '%s' "$cmt" | jq -r '.author')
+          body=$(printf '%s' "$cmt" | jq -r '.body')
+          emit_review_one "issue_comment" "$pr_url" "$head_sha" "$cmt_id" "$author" "$body" "" ""
+        done < <(printf '%s' "$issue_comments" | jq -c '
+          .[][]? | {id:(.id | tostring), author:(.user.login // "unknown"), body:(.body // "")}')
+      fi
+
+      if reviews=$(gh api "repos/${owner}/${repo}/pulls/${number}/reviews" --paginate --slurp 2>/dev/null); then
+        while read -r cmt; do
+          cmt_id=$(printf '%s' "$cmt" | jq -r '.id')
+          author=$(printf '%s' "$cmt" | jq -r '.author')
+          body=$(printf '%s' "$cmt" | jq -r '.body')
+          emit_review_one "review" "$pr_url" "$head_sha" "$cmt_id" "$author" "$body" "" ""
+        done < <(printf '%s' "$reviews" | jq -c '
+          .[][]? | {id:(.id | tostring), author:(.user.login // "unknown"), body:(.body // "")}')
+      fi
     fi
 
-    # PR インライン review コメント（line-level、`gh pr view` には含まれない）
+    # PR インライン review コメント（line-level）
     if [ -n "$owner" ] && [ -n "$repo" ] && [ -n "$number" ]; then
-      if inline=$(gh api "repos/${owner}/${repo}/pulls/${number}/comments" --paginate 2>/dev/null); then
+      if inline=$(gh api "repos/${owner}/${repo}/pulls/${number}/comments" --paginate --slurp 2>/dev/null); then
         while read -r cmt; do
           cmt_id=$(printf '%s' "$cmt" | jq -r '.id')
           author=$(printf '%s' "$cmt" | jq -r '.author')
@@ -155,7 +173,7 @@ while :; do
           line=$(printf '%s' "$cmt" | jq -r '.line')
           emit_review_one "inline" "$pr_url" "$head_sha" "$cmt_id" "$author" "$body" "$path" "$line"
         done < <(printf '%s' "$inline" | jq -c '
-          .[]? | {id:(.id | tostring), author:(.user.login // "unknown"), body:(.body // ""), path:(.path // ""), line:((.line // .original_line // "") | tostring)}')
+          .[][]? | {id:(.id | tostring), author:(.user.login // "unknown"), body:(.body // ""), path:(.path // ""), line:((.line // .original_line // "") | tostring)}')
       fi
     fi
 
