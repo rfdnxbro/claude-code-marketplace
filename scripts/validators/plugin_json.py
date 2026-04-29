@@ -9,6 +9,8 @@ from typing import Any
 from .base import ValidationResult, parse_json_safe, validate_kebab_case
 from .monitors_json import validate_monitors_entries
 
+USER_CONFIG_TYPES = {"string", "number", "boolean", "directory", "file"}
+
 
 def _validate_user_config_mapping(
     result: ValidationResult,
@@ -26,6 +28,20 @@ def _validate_user_config_mapping(
         if not isinstance(config_value, dict):
             result.add_error(f"{file_path.name}: {label}.{config_key}はオブジェクトが必要です")
             continue
+        config_type = config_value.get("type")
+        if config_type not in USER_CONFIG_TYPES:
+            result.add_error(
+                f"{file_path.name}: {label}.{config_key}.typeは"
+                "string/number/boolean/directory/fileのいずれかが必要です"
+            )
+        title = config_value.get("title")
+        if not isinstance(title, str) or not title:
+            result.add_error(f"{file_path.name}: {label}.{config_key}.titleは文字列が必要です")
+        description = config_value.get("description")
+        if not isinstance(description, str) or not description:
+            result.add_error(
+                f"{file_path.name}: {label}.{config_key}.descriptionは文字列が必要です"
+            )
         # sensitiveはブール値のみ
         sensitive = config_value.get("sensitive")
         if sensitive is not None and not isinstance(sensitive, bool):

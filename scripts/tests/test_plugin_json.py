@@ -172,8 +172,15 @@ class TestValidatePluginJson:
             {
                 "name": "my-plugin",
                 "userConfig": {
-                    "apiKey": {"description": "API認証キー", "sensitive": True},
+                    "apiKey": {
+                        "type": "string",
+                        "title": "API認証キー",
+                        "description": "API認証キー",
+                        "sensitive": True,
+                    },
                     "serverUrl": {
+                        "type": "string",
+                        "title": "サーバーURL",
                         "description": "サーバーURL",
                         "default": "https://api.example.com",
                     },
@@ -202,19 +209,89 @@ class TestValidatePluginJson:
         content = json.dumps(
             {
                 "name": "my-plugin",
-                "userConfig": {"apiKey": {"description": "API Key", "sensitive": "true"}},
+                "userConfig": {
+                    "apiKey": {
+                        "type": "string",
+                        "title": "API Key",
+                        "description": "API Key",
+                        "sensitive": "true",
+                    }
+                },
             }
         )
         result = validate_plugin_json(Path("plugin.json"), content)
         assert result.has_errors()
         assert any("sensitive" in e for e in result.errors)
 
+    def test_user_config_missing_type(self):
+        """userConfigのtypeが欠落した場合エラー"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "userConfig": {"apiKey": {"title": "API Key", "description": "API Key"}},
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("userConfig.apiKey.type" in e for e in result.errors)
+
+    def test_user_config_invalid_type(self):
+        """userConfigのtypeが許可値以外の場合エラー"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "userConfig": {
+                    "apiKey": {
+                        "type": "secret",
+                        "title": "API Key",
+                        "description": "API Key",
+                    }
+                },
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("userConfig.apiKey.type" in e for e in result.errors)
+
+    def test_user_config_missing_title(self):
+        """userConfigのtitleが欠落した場合エラー"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "userConfig": {
+                    "apiKey": {"type": "string", "description": "API Key"},
+                },
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("userConfig.apiKey.title" in e for e in result.errors)
+
+    def test_user_config_missing_description(self):
+        """userConfigのdescriptionが欠落した場合エラー"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "userConfig": {"apiKey": {"type": "string", "title": "API Key"}},
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("userConfig.apiKey.description" in e for e in result.errors)
+
     def test_user_config_sensitive_valid_true(self):
         """userConfigのsensitive: trueが有効であることを確認（v2.1.83以降）"""
         content = json.dumps(
             {
                 "name": "my-plugin",
-                "userConfig": {"apiKey": {"description": "API Key", "sensitive": True}},
+                "userConfig": {
+                    "apiKey": {
+                        "type": "string",
+                        "title": "API Key",
+                        "description": "API Key",
+                        "sensitive": True,
+                    }
+                },
             }
         )
         result = validate_plugin_json(Path("plugin.json"), content)
@@ -225,7 +302,14 @@ class TestValidatePluginJson:
         content = json.dumps(
             {
                 "name": "my-plugin",
-                "userConfig": {"serverUrl": {"description": "Server URL", "sensitive": False}},
+                "userConfig": {
+                    "serverUrl": {
+                        "type": "string",
+                        "title": "Server URL",
+                        "description": "Server URL",
+                        "sensitive": False,
+                    }
+                },
             }
         )
         result = validate_plugin_json(Path("plugin.json"), content)
@@ -289,7 +373,12 @@ class TestValidatePluginJson:
                     {
                         "server": "telegram",
                         "userConfig": {
-                            "bot_token": {"description": "Bot token", "sensitive": True}
+                            "bot_token": {
+                                "type": "string",
+                                "title": "Bot token",
+                                "description": "Bot token",
+                                "sensitive": True,
+                            }
                         },
                     }
                 ],
@@ -386,7 +475,14 @@ class TestValidatePluginJson:
                 "channels": [
                     {
                         "server": "telegram",
-                        "userConfig": {"bot_token": {"description": "Token", "sensitive": "true"}},
+                        "userConfig": {
+                            "bot_token": {
+                                "type": "string",
+                                "title": "Token",
+                                "description": "Token",
+                                "sensitive": "true",
+                            }
+                        },
                     }
                 ],
             }
@@ -427,7 +523,7 @@ class TestValidatePluginJson:
         assert any("channels[1]" in e and "server" in e for e in result.errors)
 
     def test_channels_user_config_without_description(self):
-        """description がない userConfig エントリは正常（description は必須と明示されていない）"""
+        """description がない userConfig エントリはエラー"""
         content = json.dumps(
             {
                 "name": "my-plugin",
@@ -435,13 +531,14 @@ class TestValidatePluginJson:
                 "channels": [
                     {
                         "server": "telegram",
-                        "userConfig": {"bot_token": {"sensitive": True}},
+                        "userConfig": {"bot_token": {"type": "string", "title": "Bot token"}},
                     }
                 ],
             }
         )
         result = validate_plugin_json(Path("plugin.json"), content)
-        assert not result.has_errors()
+        assert result.has_errors()
+        assert any("channels[0].userConfig.bot_token.description" in e for e in result.errors)
 
     def test_channels_mcp_servers_empty_dict(self):
         """mcpServers: {} の場合は整合性チェックをスキップ（未宣言と同扱い）"""
