@@ -100,7 +100,7 @@ while :; do
     pr_url=$(printf '%s' "$entry" | jq -r '.pr_url')
     read -r owner repo number <<< "$(pr_split "$pr_url")"
 
-    if ! meta=$(gh pr view "$pr_url" --json state,mergeable,mergeStateStatus,headRefName,headRefOid 2>/dev/null); then
+    if ! meta=$(gh pr view "$pr_url" --json state,mergeable,mergeStateStatus,headRefName,headRefOid,baseRefName 2>/dev/null); then
       if [ "$auth_warned" -eq 0 ]; then
         emit_event "auth_error" "$(jq -nc --arg url "$pr_url" '{pr: $url, reason: "gh pr view failed"}')"
         auth_warned=1
@@ -112,6 +112,7 @@ while :; do
     state=$(printf '%s' "$meta" | jq -r '.state')
     head_sha=$(printf '%s' "$meta" | jq -r '.headRefOid')
     head_ref=$(printf '%s' "$meta" | jq -r '.headRefName')
+    base_ref=$(printf '%s' "$meta" | jq -r '.baseRefName')
 
     if [ "$state" = "CLOSED" ] || [ "$state" = "MERGED" ]; then
       emit_event "closed" "$(jq -nc --arg url "$pr_url" --arg s "$state" '{pr: $url, state: $s, action: "unwatch"}')"
@@ -189,9 +190,10 @@ while :; do
           --arg url "$pr_url" \
           --arg ms "$merge_state" \
           --arg sha "$head_sha" \
+          --arg base "$base_ref" \
           --arg sig "$sig" \
           --arg hash "$h" \
-          '{pr: $url, merge_state: $ms, head_sha: $sha, signature: $sig, hash: $hash, action: "try rebase, escalate if non-trivial"}')"
+          '{pr: $url, merge_state: $ms, head_sha: $sha, base_ref: $base, signature: $sig, hash: $hash, action: "try rebase onto PR base branch, escalate if non-trivial"}')"
       fi
     fi
   done < <(printf '%s' "$targets" | jq -c '.[]')

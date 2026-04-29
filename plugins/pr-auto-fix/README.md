@@ -2,7 +2,7 @@
 
 ## 概要
 
-`gh pr create` で PR を作成した直後から、PR の **CI 失敗 / レビューコメント / main からのコンフリクト** をバックグラウンドで自動監視し、自明な範囲なら修正・commit・push を自動で繰り返すプラグインです。判断に悩む変更は人間にエスカレーションします。
+`gh pr create` で PR を作成した直後から、PR の **CI 失敗 / レビューコメント / ベースブランチからのコンフリクト** をバックグラウンドで自動監視し、自明な範囲なら修正・commit・push を自動で繰り返すプラグインです。判断に悩む変更は人間にエスカレーションします。
 
 主な構成：
 
@@ -74,7 +74,7 @@ gh pr create --title "..." --body "..."
    │   - gh api repos/<owner>/<repo>/issues/<n>/comments --paginate（PR トップレベルコメント）
    │   - gh api repos/<owner>/<repo>/pulls/<n>/reviews --paginate（レビュー本文）
    │   - gh api repos/<owner>/<repo>/pulls/<n>/comments --paginate（line-level inline コメント）
-   │   - gh pr view --json mergeable,mergeStateStatus（コンフリクト）
+   │   - gh pr view --json mergeable,mergeStateStatus,baseRefName（コンフリクト）
    │ 新規イベント（ci_failure / review / conflict）を JSON Lines で通知
    ▼
 [auto-fix-pr スキル]
