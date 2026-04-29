@@ -254,7 +254,7 @@ class TestValidatePluginJson:
         assert any("userConfig.apiKey.type" in e for e in result.errors)
 
     def test_user_config_missing_title(self):
-        """userConfigのtitleが欠落した場合エラー"""
+        """userConfigのtitleが欠落した場合は「必須です」エラー"""
         content = json.dumps(
             {
                 "name": "my-plugin",
@@ -265,10 +265,24 @@ class TestValidatePluginJson:
         )
         result = validate_plugin_json(Path("plugin.json"), content)
         assert result.has_errors()
-        assert any("userConfig.apiKey.title" in e for e in result.errors)
+        assert any("userConfig.apiKey.title" in e and "必須" in e for e in result.errors)
+
+    def test_user_config_title_not_string(self):
+        """userConfigのtitleが非文字列の場合は「文字列が必要です」エラー"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "userConfig": {
+                    "apiKey": {"type": "string", "title": 1, "description": "API Key"},
+                },
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("userConfig.apiKey.title" in e and "文字列" in e for e in result.errors)
 
     def test_user_config_missing_description(self):
-        """userConfigのdescriptionが欠落した場合エラー"""
+        """userConfigのdescriptionが欠落した場合は「必須です」エラー"""
         content = json.dumps(
             {
                 "name": "my-plugin",
@@ -277,7 +291,21 @@ class TestValidatePluginJson:
         )
         result = validate_plugin_json(Path("plugin.json"), content)
         assert result.has_errors()
-        assert any("userConfig.apiKey.description" in e for e in result.errors)
+        assert any("userConfig.apiKey.description" in e and "必須" in e for e in result.errors)
+
+    def test_user_config_description_not_string(self):
+        """userConfigのdescriptionが非文字列の場合は「文字列が必要です」エラー"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "userConfig": {
+                    "apiKey": {"type": "string", "title": "API Key", "description": 0},
+                },
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("userConfig.apiKey.description" in e and "文字列" in e for e in result.errors)
 
     def test_user_config_default_number_string_mismatch(self):
         """type: numberに対しdefaultが文字列の場合エラー"""

@@ -36,11 +36,13 @@ def _validate_user_config_mapping(
                 f"{file_path.name}: {label}.{config_key}.typeは"
                 "string/number/boolean/directory/fileのいずれかが必要です"
             )
-        title = config_value.get("title")
-        if not isinstance(title, str) or not title:
+        if "title" not in config_value:
+            result.add_error(f"{file_path.name}: {label}.{config_key}.titleが必須です")
+        elif not isinstance(config_value["title"], str) or not config_value["title"]:
             result.add_error(f"{file_path.name}: {label}.{config_key}.titleは文字列が必要です")
-        description = config_value.get("description")
-        if not isinstance(description, str) or not description:
+        if "description" not in config_value:
+            result.add_error(f"{file_path.name}: {label}.{config_key}.descriptionが必須です")
+        elif not isinstance(config_value["description"], str) or not config_value["description"]:
             result.add_error(
                 f"{file_path.name}: {label}.{config_key}.descriptionは文字列が必要です"
             )
