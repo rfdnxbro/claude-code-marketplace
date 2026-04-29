@@ -46,6 +46,26 @@
         "personal"
       ],
       "category": "workflow"
+    },
+    {
+      "name": "pr-auto-fix",
+      "source": "./plugins/pr-auto-fix",
+      "description": "PR 作成後に CI 失敗・レビュー・コンフリクトを自動検知し、自明な修正は commit & push、判断要は人間にエスカレーションするプラグイン",
+      "version": "0.1.0",
+      "author": {
+        "name": "rfdnxbro"
+      },
+      "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/pr-auto-fix",
+      "repository": "https://github.com/rfdnxbro/claude-code-marketplace",
+      "license": "MIT",
+      "keywords": [
+        "pull-request",
+        "ci",
+        "automation",
+        "github",
+        "monitor"
+      ],
+      "category": "automation"
     }
   ]
 }
