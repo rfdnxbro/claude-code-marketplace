@@ -1,0 +1,8 @@
+[
+  {
+    "name": "pr-auto-fix-watcher",
+    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/pr-watcher.sh",
+    "description": "PR の CI 失敗・Bot/人間レビュー・コンフリクトを監視し JSON Lines 通知を発行",
+    "when": "on-skill-invoke:auto-fix-pr"
+  }
+]
