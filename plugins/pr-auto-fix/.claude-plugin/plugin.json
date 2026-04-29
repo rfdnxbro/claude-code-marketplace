@@ -1,4 +1,5 @@
 {
+  "$schema": "https://code.claude.com/schemas/plugin.json",
   "name": "pr-auto-fix",
   "version": "0.1.0",
   "description": "PR 作成後に CI 失敗・レビュー・コンフリクトを自動検知し、自明な修正は commit & push、判断要は人間にエスカレーションするプラグイン",
