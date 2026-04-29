@@ -59,10 +59,14 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
       "server": "telegram",
       "userConfig": {
         "bot_token": {
+          "type": "string",
+          "title": "Bot token",
           "description": "Telegram bot token",
           "sensitive": true
         },
         "owner_id": {
+          "type": "string",
+          "title": "Owner ID",
           "description": "Your Telegram user ID",
           "sensitive": false
         }

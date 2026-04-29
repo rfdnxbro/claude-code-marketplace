@@ -17,14 +17,20 @@
   ],
   "userConfig": {
     "pollIntervalSec": {
+      "type": "number",
+      "title": "PR 監視間隔",
       "description": "PR 監視 poll 間隔（秒）",
-      "default": "45"
+      "default": 45
     },
     "maxAttemptsPerSig": {
+      "type": "number",
+      "title": "最大修正試行回数",
       "description": "同一イベントへの最大連続修正試行回数",
-      "default": "3"
+      "default": 3
     },
     "botPattern": {
+      "type": "string",
+      "title": "Bot 判定パターン",
       "description": "Bot レビュアー判定の正規表現（小文字・extended regex）",
       "default": "copilot|coderabbit|claude.*review"
     }

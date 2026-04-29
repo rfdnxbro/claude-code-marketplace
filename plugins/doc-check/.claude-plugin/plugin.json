@@ -9,10 +9,14 @@
   "keywords": ["documentation", "consistency", "check"],
   "userConfig": {
     "docPatterns": {
+      "type": "string",
+      "title": "ドキュメントパターン",
       "description": "チェック対象のドキュメントファイルパターン（カンマ区切り）",
       "default": "README.md,CLAUDE.md"
     },
     "skipPatterns": {
+      "type": "string",
+      "title": "スキップパターン",
       "description": "チェックをスキップするファイルパターン（カンマ区切り、例: *.test.ts,*.spec.ts）",
       "default": ""
     }

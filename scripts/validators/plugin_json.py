@@ -9,6 +9,8 @@ from typing import Any
 from .base import ValidationResult, parse_json_safe, validate_kebab_case
 from .monitors_json import validate_monitors_entries
 
+USER_CONFIG_TYPES = {"string", "number", "boolean", "directory", "file"}
+
 
 def _validate_user_config_mapping(
     result: ValidationResult,
@@ -26,12 +28,52 @@ def _validate_user_config_mapping(
         if not isinstance(config_value, dict):
             result.add_error(f"{file_path.name}: {label}.{config_key}はオブジェクトが必要です")
             continue
+        config_type = config_value.get("type")
+        if "type" not in config_value:
+            result.add_error(f"{file_path.name}: {label}.{config_key}.typeが必須です")
+        elif config_type not in USER_CONFIG_TYPES:
+            result.add_error(
+                f"{file_path.name}: {label}.{config_key}.typeは"
+                "string/number/boolean/directory/fileのいずれかが必要です"
+            )
+        if "title" not in config_value:
+            result.add_error(f"{file_path.name}: {label}.{config_key}.titleが必須です")
+        elif not isinstance(config_value["title"], str) or not config_value["title"]:
+            result.add_error(f"{file_path.name}: {label}.{config_key}.titleは文字列が必要です")
+        if "description" not in config_value:
+            result.add_error(f"{file_path.name}: {label}.{config_key}.descriptionが必須です")
+        elif not isinstance(config_value["description"], str) or not config_value["description"]:
+            result.add_error(
+                f"{file_path.name}: {label}.{config_key}.descriptionは文字列が必要です"
+            )
         # sensitiveはブール値のみ
         sensitive = config_value.get("sensitive")
         if sensitive is not None and not isinstance(sensitive, bool):
             result.add_error(
                 f"{file_path.name}: {label}.{config_key}.sensitiveはブール値が必要です"
             )
+        # defaultの型がtypeと整合するかをチェック
+        if "default" in config_value and config_type in USER_CONFIG_TYPES:
+            default_value = config_value["default"]
+            if config_type == "number":
+                # boolはintのサブクラスなので除外
+                if isinstance(default_value, bool) or not isinstance(default_value, (int, float)):
+                    result.add_error(
+                        f"{file_path.name}: {label}.{config_key}.defaultは"
+                        "数値（type: number）が必要です"
+                    )
+            elif config_type == "boolean":
+                if not isinstance(default_value, bool):
+                    result.add_error(
+                        f"{file_path.name}: {label}.{config_key}.defaultは"
+                        "真偽値（type: boolean）が必要です"
+                    )
+            elif config_type in {"string", "directory", "file"}:
+                if not isinstance(default_value, str):
+                    result.add_error(
+                        f"{file_path.name}: {label}.{config_key}.defaultは"
+                        f"文字列（type: {config_type}）が必要です"
+                    )
 
 
 def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
