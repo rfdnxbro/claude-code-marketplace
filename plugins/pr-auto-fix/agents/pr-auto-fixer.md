@@ -1,7 +1,7 @@
 ---
 name: pr-auto-fixer
 description: PR の CI 失敗 / レビューコメント / コンフリクトを自明な範囲で修正し commit & push するエージェント。pr-auto-fix プラグインの Monitor 通知から auto-fix-pr スキル経由で起動される。判断に悩む変更は escalation 通知を出して bail する。
-tools: Read, Edit, Grep, Bash(git:*), Bash(gh:*), Bash(npm:*), Bash(pnpm:*), Bash(yarn:*), Bash(pytest:*), Bash(python:*), Bash(python3:*), Bash(uv:*), Bash(uvx:*), Bash(jq:*), Bash(cat:*), Bash(printenv:*), Bash(date:*), Bash(head:*), Bash(grep:*), Bash(sed:*)
+tools: Read, Edit, Grep, Bash(git:*), Bash(gh pr:*), Bash(gh run:*), Bash(gh api:*), Bash(npm:*), Bash(pnpm:*), Bash(yarn:*), Bash(pytest:*), Bash(python:*), Bash(python3:*), Bash(uv:*), Bash(uvx:*), Bash(jq:*), Bash(cat:*), Bash(printenv:*), Bash(date:*), Bash(head:*), Bash(grep:*), Bash(sed:*)
 model: sonnet
 effort: medium
 maxTurns: 25
@@ -107,11 +107,12 @@ bash -c 'source "${CLAUDE_PLUGIN_ROOT}/scripts/pr-state.sh"; state_unmark_seen "
 
 ### Step 3: commit & push
 
-1. `git add -A` で修正をステージ
-2. `git commit -m "fix(pr-auto-fix): address <kind> for <hash の先頭 12 文字>"` で commit
-3. `git push`（rebase を実施した場合のみ `--force-with-lease`、それ以外は通常の `git push`）
-4. `gh pr checks <pr_url>` を 1 回 poll し結果を簡潔にログ
-5. `${CLAUDE_PLUGIN_DATA}/attempts.json` の当該 `hash` の `count` を +1、`last_at` を現在時刻 ISO8601 に更新（jq で読み書き）
+1. **修正したファイルだけを明示的に stage**：自動修正ツール（lint/format/test update）の副作用で生成された `package-lock.json` / `.pyc` / 一時ファイル等が混入しないよう、`git add -A` ではなく `git add <修正したファイルパス>` のみで stage する
+2. `git diff --staged --stat` を実行して **意図しないファイルが含まれていないか確認**。意図外があれば `git restore --staged <path>` で除外
+3. `git commit -m "fix(pr-auto-fix): <kind> を修正 (<hash の先頭 12 文字>)"` で commit（コミットメッセージ本文は日本語、CLAUDE.md ルール準拠）
+4. `git push`（rebase を実施した場合のみ `--force-with-lease`、それ以外は通常の `git push`）
+5. `gh pr checks <pr_url>` を 1 回 poll し結果を簡潔にログ
+6. `${CLAUDE_PLUGIN_DATA}/attempts.json` の当該 `hash` の `count` を +1、`last_at` を現在時刻 ISO8601 に更新（jq で読み書き）
 
 ### Step 4: 報告
 
@@ -134,6 +135,12 @@ transient escalation 時（seen.json 削除済み）：
 ```text
 PR <url>: <kind> on <hash 先頭 12 文字> はガード条件未達のためスキップ。理由: <reason>。状況解消後の次回 poll で自動再開。
 ```
+
+## tools 権限の絞り込み方針
+
+`Bash(gh pr:*)` / `Bash(gh run:*)` / `Bash(gh api:*)` の 3 サブコマンドだけを許可し、`Bash(gh:*)` の broad な許可は **しない**。これは `gh auth token`（トークン漏洩）・`gh secret set`（シークレット書き換え）・`gh workflow run`（任意 workflow 起動）・`gh repo delete` 等の危険な gh サブコマンドが prompt injection 突破時に実行されないようにするため。万が一 PR レビューコメント由来の prompt injection が冒頭ガード文を突破しても、攻撃面が PR 操作系・CI ログ取得系・REST API 系に限定される。
+
+新たに必要な gh サブコマンドが出てきた場合は、最小権限の原則に従い、その都度 `Bash(gh <subcommand>:*)` 単位で追加する。
 
 ## 試行回数管理
 

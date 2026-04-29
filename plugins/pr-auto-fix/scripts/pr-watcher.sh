@@ -74,7 +74,6 @@ emit_review_one() {
     '{pr: $url, author: $author, author_kind: $kind, comment_id: $cmt_id, head_sha: $sha, path: $path, line: $line, body_excerpt: $excerpt, signature: $sig, hash: $hash, action: "classify obvious vs judgment, then act"}')"
 }
 
-backoff_count=0
 auth_warned=0
 
 while :; do
@@ -86,20 +85,18 @@ while :; do
     continue
   fi
 
-  # process substitution で subshell 化を回避し、auth_warned/backoff_count をメインループに伝播させる
+  # process substitution で subshell 化を回避し、auth_warned をメインループに伝播させる
   while read -r entry; do
     pr_url=$(printf '%s' "$entry" | jq -r '.pr_url')
     read -r owner repo number <<< "$(pr_split "$pr_url")"
 
     if ! meta=$(gh pr view "$pr_url" --json state,mergeable,mergeStateStatus,headRefName,headRefOid 2>/dev/null); then
-      backoff_count=$((backoff_count + 1))
       if [ "$auth_warned" -eq 0 ]; then
         emit_event "auth_error" "$(jq -nc --arg url "$pr_url" '{pr: $url, reason: "gh pr view failed"}')"
         auth_warned=1
       fi
       continue
     fi
-    backoff_count=0
     auth_warned=0
 
     state=$(printf '%s' "$meta" | jq -r '.state')
