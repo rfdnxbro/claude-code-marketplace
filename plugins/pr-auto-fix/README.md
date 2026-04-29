@@ -69,7 +69,11 @@ gh pr create --title "..." --body "..."
    │ on-skill-invoke で Monitor が起動
    ▼
 [pr-auto-fix-watcher Monitor]
-   │ INTERVAL ごとに gh pr checks / gh pr view を poll
+   │ INTERVAL ごとに以下を poll：
+   │   - gh pr checks --json bucket（CI 失敗）
+   │   - gh pr view --json comments,reviews（PR トップレベル + レビュー本文）
+   │   - gh api repos/<owner>/<repo>/pulls/<n>/comments（line-level inline コメント）
+   │   - gh pr view --json mergeable,mergeStateStatus（コンフリクト）
    │ 新規イベント（ci_failure / review / conflict）を JSON Lines で通知
    ▼
 [auto-fix-pr スキル]
@@ -84,6 +88,9 @@ gh pr create --title "..." --body "..."
 
 ## 必要環境
 
+- **Claude Code v2.1.105 以上**（プラグイン Monitor 機能が必要）
+  - `${CLAUDE_PLUGIN_DATA}` 永続ディレクトリは v2.1.78+
+  - `Bash(... *)` の Hook `if` フィールドは v2.1.85+
 - `gh` CLI（認証済み）
 - `jq`
 - `git`

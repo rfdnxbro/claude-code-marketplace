@@ -46,3 +46,12 @@ state_mark_seen() {
   jq --arg h "$h" '. + [$h] | unique' "$SEEN_FILE" > "$SEEN_FILE.tmp" \
     && mv "$SEEN_FILE.tmp" "$SEEN_FILE"
 }
+
+# transient な失敗（現ブランチ不一致 / dirty worktree など、状況が変わったら再試行したい）
+# の場合に、Agent から呼んで seen.json から自分の hash を削除する。
+# これにより次回 poll で同じ通知が再発火する。
+state_unmark_seen() {
+  local h="$1"
+  jq --arg h "$h" 'map(select(. != $h))' "$SEEN_FILE" > "$SEEN_FILE.tmp" \
+    && mv "$SEEN_FILE.tmp" "$SEEN_FILE"
+}
