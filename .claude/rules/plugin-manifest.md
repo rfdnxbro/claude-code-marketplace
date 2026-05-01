@@ -18,7 +18,7 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 
 | フィールド | 型 | 説明 |
 |-----------|---|------|
-| `$schema` | string | JSONスキーマ参照URL（v2.1.120以降、`claude plugin validate` で受け入れ可能） |
+| `$schema` | string | JSONスキーマ参照URL（v2.1.120以降、`claude plugin validate` で受け入れ可能）。公式リファレンス（[plugins-reference](https://code.claude.com/docs/en/plugins-reference)）では `https://json.schemastore.org/claude-code-plugin-manifest.json` の指定が推奨されている。Claude Code 本体はロード時にこのフィールドを無視するため、純粋にエディタの補完・バリデーション用途。 |
 | `version` | string | セマンティックバージョン（例: `2.1.0`） |
 | `description` | string | プラグインの説明 |
 | `author` | object | `{name, email?, url?}` |
@@ -73,6 +73,7 @@ my-plugin/
 
 ```json
 {
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "my-plugin",
   "version": "1.0.0",
   "description": "プラグインの説明",

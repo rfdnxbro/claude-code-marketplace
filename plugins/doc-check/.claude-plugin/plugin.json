@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "doc-check",
   "version": "0.2.0",
   "description": "変更に関連するドキュメントの整合性を自動チェックするプラグイン",
