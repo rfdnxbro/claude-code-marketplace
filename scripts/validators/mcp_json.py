@@ -6,6 +6,8 @@ from pathlib import Path
 
 from .base import ValidationResult, parse_json_safe
 
+RESERVED_SERVER_NAMES = {"workspace"}
+
 
 def validate_mcp_json(file_path: Path, content: str) -> ValidationResult:
     """MCPサーバー設定を検証する"""
@@ -21,6 +23,11 @@ def validate_mcp_json(file_path: Path, content: str) -> ValidationResult:
         return result
 
     for server_name, config in servers.items():
+        if server_name in RESERVED_SERVER_NAMES:
+            result.add_error(
+                f"{file_path.name}: '{server_name}' は予約済みサーバー名です（v2.1.128以降）。"
+                "使用すると警告とともにスキップされます"
+            )
         server_type = config.get("type", "stdio")
 
         if server_type == "stdio":

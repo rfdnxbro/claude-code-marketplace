@@ -168,3 +168,36 @@ class TestValidateMcpJson:
         result = validate_mcp_json(Path(".mcp.json"), content)
         assert result.has_errors()
         assert any("alwaysLoad" in e for e in result.errors)
+
+    def test_reserved_server_name_workspace(self):
+        """予約済みサーバー名 'workspace' を使用するとエラー（v2.1.128以降）"""
+        content = json.dumps(
+            {
+                "mcpServers": {
+                    "workspace": {
+                        "type": "stdio",
+                        "command": "node",
+                        "args": ["server.js"],
+                    }
+                }
+            }
+        )
+        result = validate_mcp_json(Path(".mcp.json"), content)
+        assert result.has_errors()
+        assert any("予約済み" in e for e in result.errors)
+
+    def test_non_reserved_server_name(self):
+        """予約済みでないサーバー名はエラーにならない"""
+        content = json.dumps(
+            {
+                "mcpServers": {
+                    "my-workspace": {
+                        "type": "stdio",
+                        "command": "node",
+                        "args": ["server.js"],
+                    }
+                }
+            }
+        )
+        result = validate_mcp_json(Path(".mcp.json"), content)
+        assert not result.has_errors()

@@ -16,7 +16,8 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 
 - Claude Code **v2.1.80 以降** が必須
 - **permission relay** 機能は v2.1.81 以降
-- **claude.ai ログインが必須**（Console / API key 認証では動作しない）
+- ~~**claude.ai ログインが必須**（Console / API key 認証では動作しない）~~ → **v2.1.128以降は Console（API key）認証でも動作する**
+  - ただし、コンソール組織（console orgs）の managed settings では `channelsEnabled: true` の設定が必要
 - Team / Enterprise では管理者による明示的な有効化が必要（デフォルトは off）
 
 ## 3つの構成要素
