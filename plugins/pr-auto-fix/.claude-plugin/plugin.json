@@ -35,5 +35,31 @@
       "description": "Bot レビュアー判定の正規表現（小文字・extended regex）",
       "default": "copilot|coderabbit|claude.*review"
     }
-  }
+  },
+  "mcpServers": {
+    "github-webhook": {
+      "type": "stdio",
+      "command": "${CLAUDE_PLUGIN_ROOT}/bin/webhook-server",
+      "alwaysLoad": true
+    }
+  },
+  "channels": [
+    {
+      "server": "github-webhook",
+      "userConfig": {
+        "webhook_secret": {
+          "type": "string",
+          "title": "Webhook シークレット",
+          "description": "GitHub Webhook の HMAC-SHA256 署名検証に使用するシークレット",
+          "sensitive": true
+        },
+        "listen_port": {
+          "type": "number",
+          "title": "待受ポート",
+          "description": "Webhook を受信するローカルポート番号",
+          "default": 9876
+        }
+      }
+    }
+  ]
 }
