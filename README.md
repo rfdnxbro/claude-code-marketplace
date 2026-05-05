@@ -21,12 +21,15 @@ Claude Codeの機能を拡張するプラグイン（スラッシュコマンド
 | **LSPサーバー** | Language Server Protocolを使用したコード補完・診断 |
 | **出力スタイル** | Claudeの応答フォーマットをカスタマイズするスタイル定義 |
 | **ステータスライン** | ターミナル下部の情報バーをカスタマイズするスクリプト |
+| **モニター** | 常駐シェルコマンドのstdoutをClaudeへの通知として配信する仕組み（v2.1.105以降） |
 
 ## 公開プラグイン
 
 | プラグイン | 説明 | 状態 |
 |-----------|------|------|
 | [doc-check](plugins/doc-check/) | 変更に関連するドキュメントの整合性を自動チェック | 🔧 開発中 |
+| [pr-auto-fix](plugins/pr-auto-fix/) | PRのCI失敗・レビュー・コンフリクトを自動検知し、自明な範囲で修正してcommit & push | 🔧 開発中 |
+| [claude-code-workflow](plugins/claude-code-workflow/) | Claude Codeの個人的な作業スタイル（エージェント編成、文体ガイド等）をスキルとして集約 | 🔧 開発中 |
 
 ## ディレクトリ構成
 
@@ -152,14 +155,15 @@ PRおよびpush時に以下のワークフローが実行されます:
 | ワークフロー | トリガー | 説明 |
 |-------------|---------|------|
 | プラグイン検証 | `plugins/**`変更時 | プラグインファイルのバリデーション |
-| スクリプトテスト | `scripts/**`変更時 | pytest実行、カバレッジ測定 |
+| テスト（scripts） | `scripts/**`変更時 | pytest実行、カバレッジ測定 |
 | Lint | 各種ファイル変更時 | ruff、markdownlint、yamllint |
 | セキュリティスキャン | PR/push時 | gitleaksで機密情報検出 |
 | Claude Code Review | PR作成/更新時 | Claude Codeによるコードレビュー |
 | Claude Code | Issueコメント/PR reviewコメント/Issue assign時 | Claude Codeによるタスク実行 |
-| 自動実装 | Issue labeling時 | Claude Codeによるドキュメント・プラグイン更新 |
+| Claude Code自動更新対応 | Issue labeling時 | Claude Codeによるドキュメント・プラグイン更新 |
+| PR自動アサイン | PR作成時 | リポジトリオーナーをassignee/reviewerに自動設定 |
 | プラグイン改善チェック | PR close時 | プラグイン改善提案の検出 |
-| CHANGELOG監視 | 日次 | Claude Code公式の変更検出 |
+| Claude Code CHANGELOG監視 | 日次 | Claude Code公式の変更検出 |
 
 #### プラグイン検証の対象
 
