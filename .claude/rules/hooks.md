@@ -585,6 +585,7 @@ EOF
 - `${CLAUDE_PROJECT_DIR}` - プロジェクトルートへの絶対パス
 - `${CLAUDE_PLUGIN_DATA}` - プラグインの永続データディレクトリへの絶対パス。プラグインのアップデートを超えて永続化される（v2.1.78以降）。`/plugin uninstall` 実行時は削除前に確認プロンプトが表示される
 - `$ARGUMENTS` - フック入力JSON（prompt型で使用）
+- `$CLAUDE_EFFORT` - 現在のエフォートレベル（`low` / `medium` / `high` / `xhigh` / `max`）（v2.1.133以降）
 
 ## フック入力JSON
 
@@ -597,6 +598,9 @@ EOF
   "cwd": "/current/working/directory",
   "permission_mode": "default",
   "hook_event_name": "PreToolUse",
+  "effort": {
+    "level": "high"
+  },
   "tool_name": "Edit",
   "tool_input": { "file_path": "/path/to/file", "old_string": "...", "new_string": "..." },
   "tool_use_id": "toolu_abc123"
@@ -613,6 +617,7 @@ EOF
 | `tool_name` | 実行されるツール名 |
 | `tool_input` | ツールへの入力パラメータ |
 | `tool_use_id` | ツール呼び出しの一意識別子（トラッキング用） |
+| `effort.level` | 現在のエフォートレベル（`low` / `medium` / `high` / `xhigh` / `max`）（v2.1.133以降） |
 | `agent_id` | サブエージェントから実行された場合のエージェントID（v2.1.64以降） |
 | `agent_type` | `--agent`フラグで起動された場合のエージェントタイプ（v2.1.64以降） |
 
