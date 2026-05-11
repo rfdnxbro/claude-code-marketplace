@@ -3,6 +3,7 @@
     "PostToolUse": [
       {
         "matcher": "Write|Edit|MultiEdit|NotebookEdit",
+        "if": "Write(*.ts)|Write(*.py)|Write(*.go)|Write(*.js)|Write(*.jsx)|Write(*.tsx)|Write(*.java)|Write(*.rb)|Write(*.rs)|Edit(*.ts)|Edit(*.py)|Edit(*.go)|Edit(*.js)|Edit(*.jsx)|Edit(*.tsx)|Edit(*.java)|Edit(*.rb)|Edit(*.rs)",
         "hooks": [
           {
             "type": "agent",
