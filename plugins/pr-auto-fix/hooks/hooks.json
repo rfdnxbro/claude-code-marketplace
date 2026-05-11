@@ -13,6 +13,30 @@
           }
         ]
       }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-end.sh",
+            "timeout": 10,
+            "statusMessage": "pr-auto-fix: セッション終了時の監視状態を記録中..."
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-end.sh",
+            "timeout": 10,
+            "statusMessage": "pr-auto-fix: APIエラー発生時の監視状態を記録中..."
+          }
+        ]
+      }
     ]
   }
 }
