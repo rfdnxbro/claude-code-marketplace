@@ -197,6 +197,18 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
         if value and isinstance(value, str) and not value.startswith("./"):
             result.add_warning(f"{file_path.name}: {field}のパスは./で始めることを推奨: {value}")
 
+    # skills フィールドはディレクトリパスのみ有効（ファイルパス指定はエラー）
+    skills_value = data.get("skills")
+    if skills_value is not None:
+        skills_paths = [skills_value] if isinstance(skills_value, str) else skills_value
+        if isinstance(skills_paths, list):
+            for skill_path in skills_paths:
+                if isinstance(skill_path, str) and Path(skill_path).suffix:
+                    result.add_warning(
+                        f"{file_path.name}: skillsにはディレクトリパスを指定してください。"
+                        f"ファイルパス（{skill_path}）を指定するとエラーになります"
+                    )
+
     # デフォルトパスと同一のコンポーネント参照は冗長
     default_paths = {
         "commands": ["./commands/", "./commands"],

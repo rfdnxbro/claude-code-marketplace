@@ -771,3 +771,41 @@ class TestValidatePluginJson:
         )
         result = validate_plugin_json(Path("plugin.json"), content)
         assert not result.has_errors()
+
+    # skills フィールドのディレクトリ/ファイルパス検証（v2.1.136以降）
+
+    def test_skills_directory_path_no_warning(self):
+        """skillsにディレクトリパスを指定した場合は警告なし（v2.1.136以降）"""
+        content = json.dumps({"name": "my-plugin", "skills": "./my-skills/"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not any("ディレクトリパス" in w for w in result.warnings)
+
+    def test_skills_directory_path_no_extension_no_warning(self):
+        """skillsに拡張子なしのカスタムパスを指定した場合は警告なし（v2.1.136以降）"""
+        content = json.dumps({"name": "my-plugin", "skills": "./custom-skills"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not any("ディレクトリパス" in w for w in result.warnings)
+
+    def test_skills_file_path_warns(self):
+        """skillsにファイルパスを指定した場合は警告（v2.1.136以降）"""
+        content = json.dumps({"name": "my-plugin", "skills": "./my-skill.md"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert any("ディレクトリパス" in w and "my-skill.md" in w for w in result.warnings)
+
+    def test_skills_json_file_path_warns(self):
+        """skillsに.jsonファイルパスを指定した場合も警告（v2.1.136以降）"""
+        content = json.dumps({"name": "my-plugin", "skills": "./skills.json"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert any("ディレクトリパス" in w for w in result.warnings)
+
+    def test_skills_array_with_file_path_warns(self):
+        """skillsが配列でファイルパスを含む場合も警告（v2.1.136以降）"""
+        content = json.dumps({"name": "my-plugin", "skills": ["./skills/", "./extra-skill.md"]})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert any("ディレクトリパス" in w and "extra-skill.md" in w for w in result.warnings)
+
+    def test_skills_array_all_directories_no_warning(self):
+        """skillsが配列でディレクトリパスのみの場合は警告なし（v2.1.136以降）"""
+        content = json.dumps({"name": "my-plugin", "skills": ["./skills/", "./extra-skills/"]})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not any("ディレクトリパス" in w for w in result.warnings)
