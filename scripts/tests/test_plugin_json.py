@@ -772,6 +772,126 @@ class TestValidatePluginJson:
         result = validate_plugin_json(Path("plugin.json"), content)
         assert not result.has_errors()
 
+    # experimental ブロックのテスト（v2.1.129以降）
+
+    def test_top_level_monitors_deprecated_warning(self):
+        """monitorsをトップレベルに指定した場合に非推奨警告が出る（v2.1.129以降）"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "monitors": [
+                    {"name": "deploy", "command": "./poll.sh", "description": "Deploy monitor"}
+                ],
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+        assert any("experimentalブロック" in w and "monitors" in w for w in result.warnings)
+
+    def test_top_level_themes_deprecated_warning(self):
+        """themesをトップレベルに指定した場合に非推奨警告が出る（v2.1.129以降）"""
+        content = json.dumps({"name": "my-plugin", "themes": "./custom-themes/"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+        assert any("experimentalブロック" in w and "themes" in w for w in result.warnings)
+
+    def test_experimental_monitors_string_path_valid(self):
+        """experimental.monitorsに文字列パスを指定した場合はエラーも非推奨警告も出ない"""
+        content = json.dumps(
+            {"name": "my-plugin", "experimental": {"monitors": "./config/monitors.json"}}
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+        assert not any("experimentalブロック" in w for w in result.warnings)
+
+    def test_experimental_themes_string_path_valid(self):
+        """experimental.themesに文字列パスを指定した場合はエラーも非推奨警告も出ない"""
+        content = json.dumps({"name": "my-plugin", "experimental": {"themes": "./custom-themes/"}})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+        assert not any("experimentalブロック" in w for w in result.warnings)
+
+    def test_experimental_monitors_inline_valid(self):
+        """experimental.monitorsにインライン配列を指定した場合はエラーなし"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "experimental": {
+                    "monitors": [
+                        {
+                            "name": "deploy-status",
+                            "command": "./scripts/poll.sh",
+                            "description": "Deploy monitor",
+                        }
+                    ]
+                },
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+
+    def test_experimental_monitors_inline_missing_required(self):
+        """experimental.monitorsインラインで必須フィールド欠落はエラー"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "experimental": {"monitors": [{"name": "only-name"}]},
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("command" in e for e in result.errors)
+
+    def test_experimental_monitors_path_without_prefix(self):
+        """experimental.monitorsにパスを指定する場合は./プレフィックスを推奨"""
+        content = json.dumps(
+            {"name": "my-plugin", "experimental": {"monitors": "config/monitors.json"}}
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert any("experimental.monitors" in w and "./" in w for w in result.warnings)
+
+    def test_experimental_themes_path_without_prefix(self):
+        """experimental.themesにパスを指定する場合は./プレフィックスを推奨"""
+        content = json.dumps({"name": "my-plugin", "experimental": {"themes": "themes/"}})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert any("experimental.themes" in w and "./" in w for w in result.warnings)
+
+    def test_experimental_monitors_redundant_default_path(self):
+        """experimental.monitorsにデフォルトパスを指定した場合に警告"""
+        content = json.dumps(
+            {"name": "my-plugin", "experimental": {"monitors": "./monitors/monitors.json"}}
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert any("experimental.monitors" in w and "デフォルトパス" in w for w in result.warnings)
+
+    def test_experimental_themes_redundant_default_path(self):
+        """experimental.themesにデフォルトパスを指定した場合に警告"""
+        content = json.dumps({"name": "my-plugin", "experimental": {"themes": "./themes/"}})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert any("experimental.themes" in w and "デフォルトパス" in w for w in result.warnings)
+
+    def test_experimental_not_object(self):
+        """experimentalがオブジェクト以外の場合エラー"""
+        content = json.dumps({"name": "my-plugin", "experimental": "invalid"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("experimental" in e for e in result.errors)
+
+    def test_experimental_both_monitors_and_themes_valid(self):
+        """experimental ブロックにmonitorsとthemesを両方指定しても有効"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "experimental": {
+                    "monitors": "./config/monitors.json",
+                    "themes": "./custom-themes/",
+                },
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+        assert not any("experimentalブロック" in w for w in result.warnings)
+
     # skills フィールドのディレクトリ/ファイルパス検証（v2.1.136以降）
 
     def test_skills_directory_path_no_warning(self):

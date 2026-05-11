@@ -180,6 +180,37 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
     if isinstance(monitors, list):
         validate_monitors_entries(monitors, file_path, result)
 
+    # experimental ブロックの確認（v2.1.129以降）
+    experimental = data.get("experimental")
+    if experimental is not None:
+        if not isinstance(experimental, dict):
+            result.add_error(f"{file_path.name}: experimentalはオブジェクトが必要です")
+        else:
+            # experimental.monitors がインライン配列の場合はエントリを検証
+            exp_monitors = experimental.get("monitors")
+            if isinstance(exp_monitors, list):
+                validate_monitors_entries(exp_monitors, file_path, result)
+            # experimental 内パスの./プレフィックスチェック
+            for field in ["monitors", "themes"]:
+                value = experimental.get(field)
+                if value and isinstance(value, str) and not value.startswith("./"):
+                    result.add_warning(
+                        f"{file_path.name}: experimental.{field}"
+                        f"のパスは./で始めることを推奨: {value}"
+                    )
+            # experimental 内デフォルトパスの冗長チェック
+            exp_default_paths = {
+                "monitors": ["./monitors/monitors.json"],
+                "themes": ["./themes/", "./themes"],
+            }
+            for field, defaults in exp_default_paths.items():
+                value = experimental.get(field)
+                if isinstance(value, str) and value in defaults:
+                    result.add_warning(
+                        f"{file_path.name}: experimental.{field}"
+                        f"はデフォルトパス（{value}）と同一のため指定不要です。削除してください"
+                    )
+
     # パスの確認
     path_fields = [
         "commands",
@@ -226,6 +257,14 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
             result.add_warning(
                 f"{file_path.name}: {field}はデフォルトパス（{value}）と同一のため"
                 f"指定不要です。削除してください"
+            )
+
+    # v2.1.129以降: monitors, themes はトップレベルではなく experimental ブロック配下を推奨
+    for field in ["monitors", "themes"]:
+        if field in data:
+            result.add_warning(
+                f"{file_path.name}: {field}はトップレベルではなくexperimentalブロック配下に"
+                f"宣言することを推奨します（v2.1.129以降）。トップレベル宣言も引き続き動作します"
             )
 
     return result

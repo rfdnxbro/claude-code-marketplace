@@ -24,12 +24,14 @@ paths: plugins/*/monitors/monitors.json, monitors/monitors.json
 
 ## plugin.json での指定方法
 
-プラグインルート直下に `monitors/monitors.json` を配置すれば自動検出されます（`plugin.json` での指定は不要）。明示的に指定する場合のパターン:
+プラグインルート直下に `monitors/monitors.json` を配置すれば自動検出されます（`plugin.json` での指定は不要）。明示的に指定する場合は、v2.1.129以降は `experimental` ブロック配下に宣言することが推奨されます（トップレベル宣言も引き続き動作するが `claude plugin validate` が警告を出す）:
 
 ```json
 {
   "name": "my-plugin",
-  "monitors": "./config/monitors.json"
+  "experimental": {
+    "monitors": "./config/monitors.json"
+  }
 }
 ```
 
@@ -38,9 +40,11 @@ paths: plugins/*/monitors/monitors.json, monitors/monitors.json
 ```json
 {
   "name": "my-plugin",
-  "monitors": [
-    { "name": "deploy-status", "command": "...", "description": "..." }
-  ]
+  "experimental": {
+    "monitors": [
+      { "name": "deploy-status", "command": "...", "description": "..." }
+    ]
+  }
 }
 ```
 

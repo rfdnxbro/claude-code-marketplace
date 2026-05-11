@@ -38,9 +38,9 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 | `mcpServers` | string/object | MCP設定パスまたはインライン（→ [mcp-servers.md](mcp-servers.md)） | `.mcp.json` |
 | `lspServers` | string/object | LSP設定パスまたはインライン（→ [lsp-servers.md](lsp-servers.md)） | `.lsp.json` |
 | `outputStyles` | string/array | 出力スタイルファイル/ディレクトリ（→ [output-styles.md](output-styles.md)） | なし |
-| `monitors` | string/array | バックグラウンドモニター設定。セッション開始時またはこのプラグイン内のスキル起動時に自動で有効化（v2.1.105以降、→ [monitors.md](monitors.md)） | `monitors/monitors.json` |
+| `monitors` | string/array | バックグラウンドモニター設定。セッション開始時またはこのプラグイン内のスキル起動時に自動で有効化（v2.1.105以降、→ [monitors.md](monitors.md)）。**v2.1.129以降は `experimental` ブロック配下に宣言を推奨**（トップレベル宣言も動作するが `claude plugin validate` が警告を出す） | `monitors/monitors.json` |
 | `channels` | array | チャンネル（Telegram/Discord等のMCPイベント注入）宣言。`server`（必須、`mcpServers` のキーと一致）と per-channel `userConfig` を持つ（v2.1.80以降、→ [channels.md](channels.md)） | なし |
-| `themes` | string/array | カスタムテーマ定義ファイル/ディレクトリ（v2.1.118以降） | `themes/` |
+| `themes` | string/array | カスタムテーマ定義ファイル/ディレクトリ（v2.1.118以降）。**v2.1.129以降は `experimental` ブロック配下に宣言を推奨**（トップレベル宣言も動作するが `claude plugin validate` が警告を出す） | `themes/` |
 | `userConfig` | object | プラグイン有効化時にユーザー入力を要求する設定項目。**インライン定義のみ**（外部ファイル参照は不可）（v2.1.83以降、→「ユーザー設定オプション」節） | なし |
 
 **注意**: プラグイン同梱の `settings.json`（v2.1.49以降）はプラグインルート直下に配置すれば自動検出されます。`plugin.json` のコンポーネント参照フィールドとしては**公式に定義されていない**ため、上記の表には含まれません。詳細は本ドキュメント下部の「デフォルト設定ファイル（settings.json）」節を参照してください。
@@ -69,6 +69,33 @@ my-plugin/
 ```
 
 `bin/` ディレクトリは plugin.json での指定不要で自動的に PATH に追加されます。
+
+## `experimental` ブロック（v2.1.129以降）
+
+v2.1.129以降、`themes` と `monitors` は `"experimental"` ブロック配下に宣言することが推奨されます。トップレベル宣言も引き続き動作しますが、`claude plugin validate` が警告を出します。
+
+```json
+{
+  "name": "my-plugin",
+  "experimental": {
+    "themes": "./themes/",
+    "monitors": "./monitors/monitors.json"
+  }
+}
+```
+
+インライン配列形式でモニターを指定する場合:
+
+```json
+{
+  "name": "my-plugin",
+  "experimental": {
+    "monitors": [
+      { "name": "deploy-status", "command": "...", "description": "..." }
+    ]
+  }
+}
+```
 
 ## 完全な例
 
