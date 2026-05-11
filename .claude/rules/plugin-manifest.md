@@ -33,7 +33,7 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 |-----------|---|------|----------------------|
 | `commands` | string/array | コマンドファイル/ディレクトリ | `commands/` |
 | `agents` | string/array | エージェントファイル/ディレクトリ | `agents/` |
-| `skills` | string/array | スキルディレクトリ | `skills/` |
+| `skills` | string/array | スキルディレクトリ（**ディレクトリパスのみ**。ファイルパスを指定するとエラー） | `skills/` |
 | `hooks` | string/object | フック設定パスまたはインライン | `hooks/hooks.json` |
 | `mcpServers` | string/object | MCP設定パスまたはインライン（→ [mcp-servers.md](mcp-servers.md)） | `.mcp.json` |
 | `lspServers` | string/object | LSP設定パスまたはインライン（→ [lsp-servers.md](lsp-servers.md)） | `.lsp.json` |
@@ -51,6 +51,7 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 - plugin.jsonでの明示的な指定は不要
 - カスタムパスを指定した場合、デフォルトディレクトリと**両方が読み込まれる**（置き換えではなく補足）
 - **デフォルトパスと同じパスの明示指定は禁止**: 冗長な指定を避けるため、デフォルトパスと一致するコンポーネント参照は記述しないこと（例: `"hooks": "./hooks/hooks.json"` はデフォルトと同一のため不要）
+- **`skills` はディレクトリパスのみ有効**: `skills` フィールドにはディレクトリパスを指定すること。ファイルパスを指定するとエラーになる
 
 **`bin/` ディレクトリ（v2.1.91以降）**:
 
@@ -133,6 +134,7 @@ v2.1.129以降、`themes` と `monitors` は `"experimental"` ブロック配下
 - カスタムパスはデフォルトディレクトリを**置き換えない、補足する**
 - 複数パスは配列で指定可能
 - `commands/`, `agents/`, `skills/` は `.claude-plugin/` 内ではなく、プラグインルート直下に配置
+- `skills` にはディレクトリパスのみ指定可能（ファイルパスを指定するとエラー）
 
 ## 依存関係（dependencies）（v2.1.110以降）
 
