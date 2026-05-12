@@ -104,11 +104,14 @@ Bashコマンドを実行:
 {
   "type": "command",
   "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check.sh",
+  "args": ["--config", "${CLAUDE_PLUGIN_ROOT}/config.json"],
   "timeout": 30
 }
 ```
 
 `timeout`は秒単位で指定。省略時のデフォルトは600秒（10分）。
+
+`args`（オプション、v2.1.139以降）: 文字列の配列でコマンド引数を指定。`args`を指定するとシェルを介さずコマンドを直接起動する（exec形式）。パス指定にクォートが不要になる。省略時は引数なしでシェル経由で実行される。
 
 `async`（オプション）: `true`を指定するとフックを非同期で実行し、結果を待たずにツール実行を続行します。
 
@@ -345,6 +348,34 @@ hooks:
 
 - `true`: フックは最初のマッチ時のみ実行
 - `false`（デフォルト）: マッチするたびに実行
+
+## continueOnBlock フィールド（v2.1.139以降）
+
+`PostToolUse` フックエントリに `continueOnBlock: true` を設定すると、フックのブロック（exit code 2 または `{"continue": false}`）時にブロック理由がClaudeへのフィードバックとして渡され、ターンが継続する。デフォルト: `false`（ブロック時はターンを中断）。
+
+**hooks.json形式:**
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "continueOnBlock": true,
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/audit.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+- `true`: ブロック時もターンを継続し、ブロック理由をClaudeにフィードバック
+- `false`（デフォルト）: ブロック時はターンを中断
 
 ## if フィールド（v2.1.85以降）
 
