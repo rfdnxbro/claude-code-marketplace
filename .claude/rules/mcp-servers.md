@@ -152,6 +152,22 @@ esac
 - `${VAR}` - 環境変数を展開
 - `${VAR:-default}` - デフォルト値付き
 - `${CLAUDE_PLUGIN_ROOT}` - プラグインルートへの絶対パス
+- `${CLAUDE_PROJECT_DIR}` - プロジェクトルートへの絶対パス（v2.1.139以降、stdioサーバーの `command`・`args`・`env` フィールドで参照可能）
+
+`${CLAUDE_PROJECT_DIR}` の使用例:
+
+```json
+{
+  "server-name": {
+    "type": "stdio",
+    "command": "${CLAUDE_PLUGIN_ROOT}/servers/my-server",
+    "args": ["--project", "${CLAUDE_PROJECT_DIR}"],
+    "env": {
+      "PROJECT_DIR": "${CLAUDE_PROJECT_DIR}"
+    }
+  }
+}
+```
 
 ## リソース参照
 

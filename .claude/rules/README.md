@@ -40,7 +40,7 @@
 | 変数 | 説明 | 使用箇所 |
 |------|------|----------|
 | `${CLAUDE_PLUGIN_ROOT}` | プラグインルートへの絶対パス | hooks, mcp-servers, lsp-servers, monitors, allowed-tools |
-| `${CLAUDE_PROJECT_DIR}` | プロジェクトルートへの絶対パス | hooks |
+| `${CLAUDE_PROJECT_DIR}` | プロジェクトルートへの絶対パス | hooks, mcp-servers（v2.1.139以降） |
 | `${CLAUDE_SESSION_ID}` | 現在のセッションID | skills, slash-commands |
 | `${CLAUDE_SKILL_DIR}` | スキル自身のディレクトリへの絶対パス（v2.1.64以降） | skills |
 | `$ARGUMENTS` | フック入力JSON / コマンド引数（全体） | hooks, slash-commands |
