@@ -53,6 +53,7 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 - **v2.1.140以降**: `plugin.json` でコンポーネントキー（例: `commands`）を設定した際に、対応するデフォルトフォルダ（例: `commands/`）が存在する場合、`/doctor`・`claude plugin list`・`/plugin` で警告が表示される
 - **デフォルトパスと同じパスの明示指定は禁止**: 冗長な指定を避けるため、デフォルトパスと一致するコンポーネント参照は記述しないこと（例: `"hooks": "./hooks/hooks.json"` はデフォルトと同一のため不要）
 - **`skills` はディレクトリパスのみ有効**: `skills` フィールドにはディレクトリパスを指定すること。ファイルパスを指定するとエラーになる
+- **ルートレベルのスキル宣言（v2.1.142以降）**: `skills: ["./"]` を指定すると、プラグインルートに配置した `SKILL.md` をスキルとして認識できる。`skills/` サブディレクトリなしでの運用が可能になった
 
 **`bin/` ディレクトリ（v2.1.91以降）**:
 
@@ -136,6 +137,27 @@ v2.1.129以降、`themes` と `monitors` は `"experimental"` ブロック配下
 - 複数パスは配列で指定可能
 - `commands/`, `agents/`, `skills/` は `.claude-plugin/` 内ではなく、プラグインルート直下に配置
 - `skills` にはディレクトリパスのみ指定可能（ファイルパスを指定するとエラー）
+- `skills: ["./"]` でプラグインルート自体をスキルディレクトリとして指定可能（v2.1.142以降）
+
+### ルートレベルの SKILL.md 構成例（v2.1.142以降）
+
+`skills/` サブディレクトリなしで、プラグインルートに直接 `SKILL.md` を配置できます:
+
+```json
+{
+  "name": "my-plugin",
+  "skills": ["./"]
+}
+```
+
+対応するディレクトリ構造:
+
+```text
+my-plugin/
+├── .claude-plugin/
+│   └── plugin.json   # skills: ["./"] を指定
+└── SKILL.md          # ルートに直接配置（skills/ 不要）
+```
 
 ## 依存関係（dependencies）（v2.1.110以降）
 

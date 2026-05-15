@@ -1076,3 +1076,207 @@ class TestValidateHooksJson:
         result = validate_hooks_json(Path("hooks.json"), content)
         assert result.has_errors()
         assert any("continueOnBlock" in e for e in result.errors)
+
+    def test_session_start_rejects_prompt_type(self):
+        """SessionStartフックでpromptタイプがエラーになることをテスト（v2.1.142）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "SessionStart": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "prompt",
+                                    "prompt": "セッション開始を評価",
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("SessionStart" in e and "command" in e for e in result.errors)
+
+    def test_session_start_rejects_agent_type(self):
+        """SessionStartフックでagentタイプがエラーになることをテスト（v2.1.142）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "SessionStart": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "agent",
+                                    "agent": "my-agent",
+                                    "prompt": "セッション開始処理",
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("SessionStart" in e and "command" in e for e in result.errors)
+
+    def test_setup_rejects_prompt_type(self):
+        """Setupフックでpromptタイプがエラーになることをテスト（v2.1.142）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "Setup": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "prompt",
+                                    "prompt": "セットアップを評価",
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("Setup" in e and "command" in e for e in result.errors)
+
+    def test_setup_rejects_agent_type(self):
+        """Setupフックでagentタイプがエラーになることをテスト（v2.1.142）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "Setup": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "agent",
+                                    "agent": "setup-agent",
+                                    "prompt": "セットアップ処理",
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("Setup" in e and "command" in e for e in result.errors)
+
+    def test_subagent_start_rejects_prompt_type(self):
+        """SubagentStartフックでpromptタイプがエラーになることをテスト（v2.1.142）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "SubagentStart": [
+                        {
+                            "matcher": "code-reviewer",
+                            "hooks": [
+                                {
+                                    "type": "prompt",
+                                    "prompt": "サブエージェント起動を評価",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("SubagentStart" in e and "command" in e for e in result.errors)
+
+    def test_subagent_start_rejects_agent_type(self):
+        """SubagentStartフックでagentタイプがエラーになることをテスト（v2.1.142）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "SubagentStart": [
+                        {
+                            "matcher": "code-reviewer",
+                            "hooks": [
+                                {
+                                    "type": "agent",
+                                    "agent": "meta-agent",
+                                    "prompt": "サブエージェント起動処理",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("SubagentStart" in e and "command" in e for e in result.errors)
+
+    def test_session_start_allows_command_type(self):
+        """SessionStartフックでcommandタイプは有効であることをテスト（v2.1.142）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "SessionStart": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/session-init.sh",
+                                    "timeout": 30,
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_setup_allows_command_type(self):
+        """Setupフックでcommandタイプは有効であることをテスト（v2.1.142）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "Setup": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/setup.sh",
+                                    "timeout": 60,
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_subagent_start_allows_command_type(self):
+        """SubagentStartフックでcommandタイプは有効であることをテスト（v2.1.142）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "SubagentStart": [
+                        {
+                            "matcher": "code-reviewer",
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on-subagent-start.sh",
+                                    "timeout": 10,
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
