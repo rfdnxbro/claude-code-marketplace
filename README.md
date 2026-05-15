@@ -27,7 +27,6 @@ Claude Codeの機能を拡張するプラグイン（スラッシュコマンド
 
 | プラグイン | 説明 | 状態 |
 |-----------|------|------|
-| [doc-check](plugins/doc-check/) | 変更に関連するドキュメントの整合性を自動チェック | 🔧 開発中 |
 | [pr-auto-fix](plugins/pr-auto-fix/) | PRのCI失敗・レビュー・コンフリクトを自動検知し、自明な範囲で修正してcommit & push | 🔧 開発中 |
 | [claude-code-workflow](plugins/claude-code-workflow/) | Claude Codeの個人的な作業スタイル（エージェント編成、文体ガイド等）をスキルとして集約 | 🔧 開発中 |
 
