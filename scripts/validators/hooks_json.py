@@ -111,6 +111,17 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
                         f"{file_path.name}: PostCompactイベントはcommandタイプのみ対応しています"
                     )
 
+                # SessionStart/Setup/SubagentStartはprompt/agentタイプ不可（v2.1.142）
+                command_only_prompt_agent_events = ["SessionStart", "Setup", "SubagentStart"]
+                if event_name in command_only_prompt_agent_events and hook_type in [
+                    "prompt",
+                    "agent",
+                ]:
+                    result.add_error(
+                        f"{file_path.name}: {event_name}イベントには"
+                        f"prompt/agentタイプは使用できません。commandタイプを使用してください"
+                    )
+
                 if hook_type == "command" and not h.get("command"):
                     result.add_error(
                         f"{file_path.name}: commandタイプにcommandフィールドがありません"
