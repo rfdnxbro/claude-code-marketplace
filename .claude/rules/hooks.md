@@ -249,6 +249,7 @@ HTTPフックはサーバーからのJSONレスポンスを受信・処理でき
   "continue": true,
   "stopReason": "停止メッセージ",
   "systemMessage": "警告メッセージ",
+  "terminalSequence": "エスケープシーケンス文字列",
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
     "permissionDecision": "allow|deny|ask|defer",
@@ -475,6 +476,7 @@ exit 2  # ユーザーには理由が伝わらない
   "continue": true,
   "stopReason": "停止メッセージ",
   "systemMessage": "警告メッセージ",
+  "terminalSequence": "エスケープシーケンス文字列",
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
     "permissionDecision": "allow|deny|ask|defer",
@@ -482,6 +484,26 @@ exit 2  # ユーザーには理由が伝わらない
     "additionalContext": "モデルに提供する追加コンテキスト（PreToolUseのみ）"
   }
 }
+```
+
+### terminalSequence フィールド（v2.1.141以降）
+
+フックのJSON出力に `terminalSequence` フィールドを含めると、ターミナルにエスケープシーケンスを出力できます。制御端末が存在しない環境（ヘッドレスモード等）でも動作します。
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `terminalSequence` | string | ターミナルに送信するエスケープシーケンス文字列 |
+
+**主な用途:**
+
+- デスクトップ通知の送信（OSC 99などの通知エスケープシーケンス）
+- ターミナルウィンドウタイトルの変更（OSC 2）
+- ベル音の発火（``）
+
+```bash
+#!/bin/bash
+# フック完了時にデスクトップ通知とベル音を発火
+printf '{"continue": true, "terminalSequence": "\a"}'
 ```
 
 ### PostToolUse フックでのツール出力置き換え（v2.1.121以降）
