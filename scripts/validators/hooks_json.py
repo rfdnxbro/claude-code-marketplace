@@ -90,6 +90,11 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
                     f"{file_path.name}: ifフィールドは文字列が必要です（パーミッションルール構文）"
                 )
 
+            # continueOnBlockフィールドの確認（v2.1.139以降、PostToolUse向け）
+            continue_on_block = hook_config.get("continueOnBlock")
+            if continue_on_block is not None and not isinstance(continue_on_block, bool):
+                result.add_error(f"{file_path.name}: continueOnBlockはブール値が必要です")
+
             # hooksの確認
             inner_hooks = hook_config.get("hooks", [])
             for h in inner_hooks:
@@ -126,6 +131,17 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
                     result.add_error(
                         f"{file_path.name}: commandタイプにcommandフィールドがありません"
                     )
+
+                # argsフィールドの確認（commandタイプ、v2.1.139以降）
+                if hook_type == "command":
+                    args_field = h.get("args")
+                    if args_field is not None:
+                        if not isinstance(args_field, list) or not all(
+                            isinstance(a, str) for a in args_field
+                        ):
+                            result.add_error(
+                                f"{file_path.name}: commandタイプのargsは文字列の配列が必要です"
+                            )
 
                 if hook_type == "prompt" and not h.get("prompt"):
                     result.add_error(

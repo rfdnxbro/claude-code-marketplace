@@ -152,6 +152,48 @@ esac
 - `${VAR}` - 環境変数を展開
 - `${VAR:-default}` - デフォルト値付き
 - `${CLAUDE_PLUGIN_ROOT}` - プラグインルートへの絶対パス
+- `${CLAUDE_PROJECT_DIR}` - プロジェクトルートへの絶対パス（v2.1.139以降、stdioサーバーの `command`・`args`・`env` フィールドで参照可能）
+
+`${CLAUDE_PROJECT_DIR}` の使用例:
+
+```json
+{
+  "server-name": {
+    "type": "stdio",
+    "command": "${CLAUDE_PLUGIN_ROOT}/servers/my-server",
+    "args": ["--project", "${CLAUDE_PROJECT_DIR}"],
+    "env": {
+      "PROJECT_DIR": "${CLAUDE_PROJECT_DIR}"
+    }
+  }
+}
+```
+
+### POSIXシェルパラメータ展開（v2.1.141以降）
+
+MCP設定ではPOSIXシェルパラメータ展開の各形式がサポートされています:
+
+| 形式 | 説明 |
+|------|------|
+| `${VAR}` | 変数展開 |
+| `${VAR:-default}` | 未設定時にデフォルト値を使用 |
+| `${VAR%pattern}` | 末尾から最短マッチを削除 |
+| `${VAR%%pattern}` | 末尾から最長マッチを削除 |
+| `${VAR#pattern}` | 先頭から最短マッチを削除 |
+| `${VAR##pattern}` | 先頭から最長マッチを削除 |
+
+```json
+{
+  "server-name": {
+    "type": "stdio",
+    "command": "node",
+    "args": ["${CLAUDE_PLUGIN_ROOT}/server.js"],
+    "env": {
+      "BASE_URL": "${API_URL%/}"
+    }
+  }
+}
+```
 
 ## リソース参照
 

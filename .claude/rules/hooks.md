@@ -104,11 +104,14 @@ Bashコマンドを実行:
 {
   "type": "command",
   "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check.sh",
+  "args": ["--config", "${CLAUDE_PLUGIN_ROOT}/config.json"],
   "timeout": 30
 }
 ```
 
 `timeout`は秒単位で指定。省略時のデフォルトは600秒（10分）。
+
+`args`（オプション、v2.1.139以降）: 文字列の配列でコマンド引数を指定。`args`を指定するとシェルを介さずコマンドを直接起動する（exec形式）。パス指定にクォートが不要になる。省略時は引数なしでシェル経由で実行される。
 
 `async`（オプション）: `true`を指定するとフックを非同期で実行し、結果を待たずにツール実行を続行します。
 
@@ -246,6 +249,7 @@ HTTPフックはサーバーからのJSONレスポンスを受信・処理でき
   "continue": true,
   "stopReason": "停止メッセージ",
   "systemMessage": "警告メッセージ",
+  "terminalSequence": "エスケープシーケンス文字列",
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
     "permissionDecision": "allow|deny|ask|defer",
@@ -358,6 +362,34 @@ hooks:
 - `true`: フックは最初のマッチ時のみ実行
 - `false`（デフォルト）: マッチするたびに実行
 
+## continueOnBlock フィールド（v2.1.139以降）
+
+`PostToolUse` フックエントリに `continueOnBlock: true` を設定すると、フックのブロック（exit code 2 または `{"continue": false}`）時にブロック理由がClaudeへのフィードバックとして渡され、ターンが継続する。デフォルト: `false`（ブロック時はターンを中断）。
+
+**hooks.json形式:**
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "continueOnBlock": true,
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/audit.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+- `true`: ブロック時もターンを継続し、ブロック理由をClaudeにフィードバック
+- `false`（デフォルト）: ブロック時はターンを中断
+
 ## if フィールド（v2.1.85以降）
 
 フックエントリにパーミッションルール構文（例: `Bash(git *)`）で条件を指定し、条件が一致する場合のみフックを実行します。プロセス生成のオーバーヘッドを削減するために使用します。
@@ -456,6 +488,7 @@ exit 2  # ユーザーには理由が伝わらない
   "continue": true,
   "stopReason": "停止メッセージ",
   "systemMessage": "警告メッセージ",
+  "terminalSequence": "エスケープシーケンス文字列",
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
     "permissionDecision": "allow|deny|ask|defer",
@@ -463,6 +496,26 @@ exit 2  # ユーザーには理由が伝わらない
     "additionalContext": "モデルに提供する追加コンテキスト（PreToolUseのみ）"
   }
 }
+```
+
+### terminalSequence フィールド（v2.1.141以降）
+
+フックのJSON出力に `terminalSequence` フィールドを含めると、ターミナルにエスケープシーケンスを出力できます。制御端末が存在しない環境（ヘッドレスモード等）でも動作します。
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `terminalSequence` | string | ターミナルに送信するエスケープシーケンス文字列 |
+
+**主な用途:**
+
+- デスクトップ通知の送信（OSC 99などの通知エスケープシーケンス）
+- ターミナルウィンドウタイトルの変更（OSC 2）
+- ベル音の発火（``）
+
+```bash
+#!/bin/bash
+# フック完了時にデスクトップ通知とベル音を発火
+printf '{"continue": true, "terminalSequence": "\a"}'
 ```
 
 ### PostToolUse フックでのツール出力置き換え（v2.1.121以降）

@@ -935,6 +935,148 @@ class TestValidateHooksJson:
         assert any("mcp_toolタイプにserver" in e for e in result.errors)
         assert any("mcp_toolタイプにtool" in e for e in result.errors)
 
+    def test_valid_command_args(self):
+        """commandタイプにargs（文字列配列）が有効であることをテスト（v2.1.139以降）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PreToolUse": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check.sh",
+                                    "args": ["--config", "${CLAUDE_PLUGIN_ROOT}/config.json"],
+                                    "timeout": 30,
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_command_args_invalid_type(self):
+        """commandタイプのargsが文字列配列でない場合エラー（v2.1.139以降）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PreToolUse": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "echo test",
+                                    "args": "not-a-list",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("args" in e for e in result.errors)
+
+    def test_command_args_non_string_elements(self):
+        """commandタイプのargsに文字列以外が含まれる場合エラー（v2.1.139以降）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PreToolUse": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "echo test",
+                                    "args": ["--flag", 123],
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("args" in e for e in result.errors)
+
+    def test_valid_continue_on_block(self):
+        """continueOnBlock: trueが有効であることをテスト（v2.1.139以降）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PostToolUse": [
+                        {
+                            "matcher": "Bash",
+                            "continueOnBlock": True,
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/audit.sh",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_valid_continue_on_block_false(self):
+        """continueOnBlock: falseが有効であることをテスト（v2.1.139以降）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PostToolUse": [
+                        {
+                            "matcher": "Bash",
+                            "continueOnBlock": False,
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "echo test",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_continue_on_block_invalid_type(self):
+        """continueOnBlockがブール値でない場合エラー（v2.1.139以降）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PostToolUse": [
+                        {
+                            "matcher": "Bash",
+                            "continueOnBlock": "true",
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "echo test",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("continueOnBlock" in e for e in result.errors)
+
     def test_session_start_rejects_prompt_type(self):
         """SessionStartフックでpromptタイプがエラーになることをテスト（v2.1.142）"""
         content = json.dumps(
