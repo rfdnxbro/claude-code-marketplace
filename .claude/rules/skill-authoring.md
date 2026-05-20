@@ -398,6 +398,8 @@ my-plugin/
 └── SKILL.md          # ルートに直接配置（skills/ 不要）
 ```
 
+> **注意**: `plugin.json` の `skills:` フィールドにはディレクトリパスのみ指定可能です（v2.1.145以降、ファイルパスを指定すると `claude plugin validate` がエラーを出力します）。例: `"skills": ["./"]` や `"skills": ["./skills/"]` は有効ですが、`"skills": ["./my-skill.md"]` はエラーになります。
+
 ### ファイル分割の基準
 
 - **SKILL.md**: 500行以下。クイックスタートと基本的なワークフロー

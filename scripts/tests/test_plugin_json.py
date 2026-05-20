@@ -892,40 +892,40 @@ class TestValidatePluginJson:
         assert not result.has_errors()
         assert not any("experimentalブロック" in w for w in result.warnings)
 
-    # skills フィールドのディレクトリ/ファイルパス検証（v2.1.136以降）
+    # skills フィールドのディレクトリ/ファイルパス検証（v2.1.145以降はエラー）
 
-    def test_skills_directory_path_no_warning(self):
-        """skillsにディレクトリパスを指定した場合は警告なし（v2.1.136以降）"""
+    def test_skills_directory_path_no_error(self):
+        """skillsにディレクトリパスを指定した場合はエラーなし（v2.1.145以降）"""
         content = json.dumps({"name": "my-plugin", "skills": "./my-skills/"})
         result = validate_plugin_json(Path("plugin.json"), content)
-        assert not any("ディレクトリパス" in w for w in result.warnings)
+        assert not any("ディレクトリパス" in e for e in result.errors)
 
-    def test_skills_directory_path_no_extension_no_warning(self):
-        """skillsに拡張子なしのカスタムパスを指定した場合は警告なし（v2.1.136以降）"""
+    def test_skills_directory_path_no_extension_no_error(self):
+        """skillsに拡張子なしのカスタムパスを指定した場合はエラーなし（v2.1.145以降）"""
         content = json.dumps({"name": "my-plugin", "skills": "./custom-skills"})
         result = validate_plugin_json(Path("plugin.json"), content)
-        assert not any("ディレクトリパス" in w for w in result.warnings)
+        assert not any("ディレクトリパス" in e for e in result.errors)
 
-    def test_skills_file_path_warns(self):
-        """skillsにファイルパスを指定した場合は警告（v2.1.136以降）"""
+    def test_skills_file_path_errors(self):
+        """skillsにファイルパスを指定した場合はエラー（v2.1.145以降）"""
         content = json.dumps({"name": "my-plugin", "skills": "./my-skill.md"})
         result = validate_plugin_json(Path("plugin.json"), content)
-        assert any("ディレクトリパス" in w and "my-skill.md" in w for w in result.warnings)
+        assert any("ディレクトリパス" in e and "my-skill.md" in e for e in result.errors)
 
-    def test_skills_json_file_path_warns(self):
-        """skillsに.jsonファイルパスを指定した場合も警告（v2.1.136以降）"""
+    def test_skills_json_file_path_errors(self):
+        """skillsに.jsonファイルパスを指定した場合もエラー（v2.1.145以降）"""
         content = json.dumps({"name": "my-plugin", "skills": "./skills.json"})
         result = validate_plugin_json(Path("plugin.json"), content)
-        assert any("ディレクトリパス" in w for w in result.warnings)
+        assert any("ディレクトリパス" in e for e in result.errors)
 
-    def test_skills_array_with_file_path_warns(self):
-        """skillsが配列でファイルパスを含む場合も警告（v2.1.136以降）"""
+    def test_skills_array_with_file_path_errors(self):
+        """skillsが配列でファイルパスを含む場合もエラー（v2.1.145以降）"""
         content = json.dumps({"name": "my-plugin", "skills": ["./skills/", "./extra-skill.md"]})
         result = validate_plugin_json(Path("plugin.json"), content)
-        assert any("ディレクトリパス" in w and "extra-skill.md" in w for w in result.warnings)
+        assert any("ディレクトリパス" in e and "extra-skill.md" in e for e in result.errors)
 
-    def test_skills_array_all_directories_no_warning(self):
-        """skillsが配列でディレクトリパスのみの場合は警告なし（v2.1.136以降）"""
+    def test_skills_array_all_directories_no_error(self):
+        """skillsが配列でディレクトリパスのみの場合はエラーなし（v2.1.145以降）"""
         content = json.dumps({"name": "my-plugin", "skills": ["./skills/", "./extra-skills/"]})
         result = validate_plugin_json(Path("plugin.json"), content)
-        assert not any("ディレクトリパス" in w for w in result.warnings)
+        assert not any("ディレクトリパス" in e for e in result.errors)
