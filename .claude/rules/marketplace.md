@@ -344,6 +344,16 @@ export CLAUDE_CODE_PLUGIN_SEED_DIR="/opt/company/plugins:/home/user/my-plugins"
 
 v2.1.78以前は単一ディレクトリのみ指定可能でした。複数のプラグインソースを管理する場合はこの機能を活用してください。
 
+## HTTPS経由でのプラグイン取得（v2.1.141以降）
+
+`CLAUDE_CODE_PLUGIN_PREFER_HTTPS` 環境変数を設定すると、GitHubプラグインソースをSSHの代わりにHTTPSでクローン・更新します（`claude plugin add` および `claude plugin update` 操作を含む）。
+
+```bash
+export CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1
+```
+
+SSH鍵が設定されていないCI環境や企業ネットワーク環境など、SSHでのGitHub接続が難しい場合に有用です。v2.1.144以降はadd/update操作にも適用されます。
+
 ## オフライン環境でのマーケットプレイス（v2.1.90以降）
 
 `CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE` 環境変数を設定すると、`git pull` が失敗した場合でも既存のマーケットプレイスキャッシュを保持します。
