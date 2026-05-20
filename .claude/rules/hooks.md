@@ -688,17 +688,21 @@ EOF
 
 ### Stop / SubagentStop イベントの入力（v2.1.47以降）
 
-`Stop` および `SubagentStop` フックには、追加フィールド `last_assistant_message` が渡されます（v2.1.47以降）:
+`Stop` および `SubagentStop` フックには、以下の追加フィールドが渡されます:
 
 ```json
 {
-  "last_assistant_message": "タスクが完了しました。変更内容を確認してください。"
+  "last_assistant_message": "タスクが完了しました。変更内容を確認してください。",
+  "background_tasks": [],
+  "session_crons": []
 }
 ```
 
 | フィールド | 説明 |
 |-----------|------|
-| `last_assistant_message` | 最後のアシスタント応答テキスト |
+| `last_assistant_message` | 最後のアシスタント応答テキスト（v2.1.47以降） |
+| `background_tasks` | バックグラウンドタスクの情報（v2.1.145以降）TODO: 要確認 - 正確な型・スキーマは未調査 |
+| `session_crons` | セッション内クロンの情報（v2.1.145以降）TODO: 要確認 - 正確な型・スキーマは未調査 |
 
 これにより、フックスクリプトがトランスクリプトファイルをパースすることなく、最後のアシスタント応答にアクセスできます。
 
