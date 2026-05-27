@@ -75,6 +75,7 @@ class TestValidateHooksJson:
             "ElicitationResult",
             "StopFailure",
             "PermissionDenied",
+            "MessageDisplay",
         ]
         for event in valid_events:
             content = json.dumps(
@@ -1273,6 +1274,27 @@ class TestValidateHooksJson:
                                     "timeout": 10,
                                 }
                             ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_message_display_event(self):
+        """MessageDisplayイベント（v2.1.152以降）が有効であることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "MessageDisplay": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/filter-message.sh",
+                                }
+                            ]
                         }
                     ]
                 }

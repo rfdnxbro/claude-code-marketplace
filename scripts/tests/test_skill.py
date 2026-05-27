@@ -471,3 +471,33 @@ description: 説明
         """).strip()
         result = validate_skill(Path("SKILL.md"), content)
         assert any("effort" in w for w in result.warnings)
+
+    def test_disallowed_tools_list(self):
+        """disallowed-toolsがリスト形式で指定できることを確認（v2.1.152以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            disallowed-tools:
+              - Agent
+              - WebSearch
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+        assert len(result.warnings) == 0
+
+    def test_disallowed_tools_string(self):
+        """disallowed-toolsが文字列形式で指定できることを確認（v2.1.152以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            disallowed-tools: Agent, WebSearch
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+        assert len(result.warnings) == 0
