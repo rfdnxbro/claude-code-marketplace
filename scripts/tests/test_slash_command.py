@@ -491,3 +491,31 @@ class TestValidateSlashCommand:
         """).strip()
         result = validate_slash_command(Path("test.md"), content)
         assert not any("ブール" in w for w in result.warnings)
+
+    def test_disallowed_tools_list(self):
+        """disallowed-toolsがリスト形式で指定できることを確認（v2.1.152以降）"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            disallowed-tools:
+              - Agent
+              - WebSearch
+            ---
+            コマンド本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert len(result.warnings) == 0
+
+    def test_disallowed_tools_string(self):
+        """disallowed-toolsが文字列形式で指定できることを確認（v2.1.152以降）"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            disallowed-tools: Agent, WebSearch
+            ---
+            コマンド本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert len(result.warnings) == 0

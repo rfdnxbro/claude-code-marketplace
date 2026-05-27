@@ -15,6 +15,7 @@ from .base import (
     validate_allowed_tools,
     validate_context_field,
     validate_effort_field,
+    validate_string_or_list_field,
 )
 
 
@@ -73,6 +74,11 @@ def validate_skill(file_path: Path, content: str) -> ValidationResult:
 
     # allowed-toolsの確認（リスト形式対応）
     validate_allowed_tools(result, file_path, frontmatter, disabled_warnings)
+
+    # disallowed-toolsの確認（文字列またはリスト形式、v2.1.152以降）
+    validate_string_or_list_field(
+        result, file_path, "disallowed-tools", frontmatter.get("disallowed-tools")
+    )
 
     # effortの確認（v2.1.80以降。v2.1.111でxhigh追加、maxも従来から有効）
     validate_effort_field(

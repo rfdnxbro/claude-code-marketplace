@@ -83,6 +83,7 @@ hooks:
 | `InstructionsLoaded` | CLAUDE.mdまたは`.claude/rules/*.md`がコンテキストに読み込まれた時（v2.1.64以降） | × |
 | `Elicitation` | MCPエリシテーションのレスポンス送信前（v2.1.76以降） | ✓ |
 | `ElicitationResult` | MCPエリシテーションのレスポンス結果（v2.1.76以降） | ✓ |
+| `MessageDisplay` | アシスタントのメッセージテキストが表示される際（変換・非表示に利用可能、v2.1.152以降） | × |
 
 > **v2.1.75 フックソース表示**: パーミッションプロンプトでフックの確認が必要な場合、フックのソース（`settings` / `plugin` / `skill`）が表示されるようになりました。
 
@@ -765,11 +766,31 @@ fi
 
 **`CLAUDE_ENV_FILE`**: SessionStartフックでは`CLAUDE_ENV_FILE`環境変数にファイルパスが設定されます。このファイルに`export KEY=VALUE`形式で環境変数を書き込むと、セッション全体で利用可能になります。
 
+**出力JSON（v2.1.152以降）:**
+
+`SessionStart` フックは以下のフィールドをサポートしています。
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `reloadSkills` | boolean | `true` を返すとスキルディレクトリを再スキャンし、フックがインストールしたスキルを同じセッションで利用可能にする（v2.1.152以降） |
+| `hookSpecificOutput.sessionTitle` | string | 起動時・再開時にセッションタイトルを設定する（v2.1.152以降） |
+
+```json
+{
+  "reloadSkills": true,
+  "hookSpecificOutput": {
+    "sessionTitle": "カスタムセッションタイトル"
+  }
+}
+```
+
 **ユースケース:**
 
 - セッション開始時の初期化処理
 - ウェルカムメッセージの表示
 - 環境チェック（遅延実行を考慮した設計が必要）
+- フックがインストールしたスキルを同じセッション内で即時利用（`reloadSkills: true`）
+- セッションの目的や状態に基づくセッションタイトルの自動設定
 
 ### SessionEnd
 
