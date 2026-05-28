@@ -57,6 +57,7 @@ Claude Codeがカスタムステータスラインの設定を支援します。
 - コマンドのstdoutの最初の行がステータスラインテキストになる
 - ANSIカラーコードがサポートされている
 - Claude Codeは現在のセッションに関するコンテキスト情報をJSON形式でstdin経由でスクリプトに渡す
+- `COLUMNS`（ターミナルの列数）と `LINES`（ターミナルの行数）環境変数がスクリプト実行時に設定される（v2.1.153以降）
 
 ## JSON入力構造
 
@@ -393,6 +394,25 @@ process.stdin.on('end', () => {
 
     console.log(`[${model}] 📁 ${currentDir}${gitBranch}`);
 });
+```
+
+### ターミナルサイズ対応ステータスライン（v2.1.153以降）
+
+`COLUMNS` と `LINES` 環境変数を使用してターミナルサイズに応じた出力調整が可能です:
+
+```bash
+#!/bin/bash
+input=$(cat)
+MODEL=$(echo "$input" | jq -r '.model.display_name')
+
+# ターミナル幅に応じてパスを短縮
+if [ "${COLUMNS:-80}" -lt 100 ]; then
+    DIR=$(echo "$input" | jq -r '.workspace.current_dir' | xargs basename)
+else
+    DIR=$(echo "$input" | jq -r '.workspace.current_dir')
+fi
+
+echo "[$MODEL] $DIR"
 ```
 
 ## ベストプラクティス
