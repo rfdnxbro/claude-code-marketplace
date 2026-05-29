@@ -929,3 +929,33 @@ class TestValidatePluginJson:
         content = json.dumps({"name": "my-plugin", "skills": ["./skills/", "./extra-skills/"]})
         result = validate_plugin_json(Path("plugin.json"), content)
         assert not any("ディレクトリパス" in e for e in result.errors)
+
+
+class TestDefaultEnabled:
+    """defaultEnabled フィールドのテスト（v2.1.154以降）"""
+
+    def test_default_enabled_false(self):
+        """defaultEnabled: false は有効"""
+        content = json.dumps({"name": "my-plugin", "defaultEnabled": False})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+
+    def test_default_enabled_true(self):
+        """defaultEnabled: true は有効"""
+        content = json.dumps({"name": "my-plugin", "defaultEnabled": True})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+
+    def test_default_enabled_string_error(self):
+        """defaultEnabled に文字列を指定するとエラー"""
+        content = json.dumps({"name": "my-plugin", "defaultEnabled": "false"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("defaultEnabled" in e and "ブール値" in e for e in result.errors)
+
+    def test_default_enabled_number_error(self):
+        """defaultEnabled に数値を指定するとエラー"""
+        content = json.dumps({"name": "my-plugin", "defaultEnabled": 0})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("defaultEnabled" in e and "ブール値" in e for e in result.errors)

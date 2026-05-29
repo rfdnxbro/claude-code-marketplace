@@ -26,6 +26,7 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 | `repository` | string | ソースコードURL |
 | `license` | string | SPDXライセンス識別子（`MIT`, `Apache-2.0`等） |
 | `keywords` | array | 検索用タグ |
+| `defaultEnabled` | boolean | `false` を指定するとプラグインをデフォルト無効でインストール。`/plugin` または `claude plugin enable` で有効化する。依存プラグインは有効化済みプラグインの依存関係として自動有効化される（v2.1.154以降） |
 
 ## コンポーネント参照
 

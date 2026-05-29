@@ -149,6 +149,11 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
                         f"channels[{i}].userConfig",
                     )
 
+    # defaultEnabled の確認（v2.1.154以降）
+    default_enabled = data.get("defaultEnabled")
+    if default_enabled is not None and not isinstance(default_enabled, bool):
+        result.add_error(f"{file_path.name}: defaultEnabledはブール値（true/false）が必要です")
+
     # 公式スキーマに存在しないフィールドを警告
     # settings は plugin.json のフィールドではなく、settings.json はプラグインルート
     # 直下に配置すれば自動検出される。誤って指定された場合にサイレント無視を防ぐ。
