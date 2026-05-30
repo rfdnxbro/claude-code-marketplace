@@ -8,6 +8,26 @@ paths: .claude-plugin/marketplace.json
 
 個別プラグインの定義には `plugin.json` を使用します。
 
+## `.claude/skills` への自動ロード（v2.1.157以降）
+
+v2.1.157以降、`.claude/skills` ディレクトリに配置されたプラグインはマーケットプレイスの設定なしに自動的にロードされます。
+
+```text
+.claude/
+└── skills/
+    └── my-plugin/        # プラグインを配置
+        ├── .claude-plugin/
+        │   └── plugin.json
+        └── commands/
+            └── my-command.md
+```
+
+**配置方法:**
+
+- プロジェクトの `.claude/skills/<plugin-name>/` にプラグインを配置するだけで自動ロード
+- `claude plugin init <name>` コマンドで `.claude/skills` 内に雛形を生成可能（→ [plugin-manifest.md](plugin-manifest.md) の「プラグインの初期化」節を参照）
+- マーケットプレイスへの登録・設定が不要なため、個人利用やプロジェクト内専用プラグインに適している
+
 ## 必須フィールド
 
 | フィールド | 型 | 説明 |
