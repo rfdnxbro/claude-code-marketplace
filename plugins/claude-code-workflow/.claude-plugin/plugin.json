@@ -13,5 +13,13 @@
     "orchestration",
     "writing-style",
     "personal"
-  ]
+  ],
+  "userConfig": {
+    "defaultMedium": {
+      "type": "string",
+      "title": "デフォルト媒体",
+      "description": "writing-style スキル実行時に媒体を省略した場合のデフォルト（例: qiita, zenn, note, slack, pr, menta）。空欄の場合は毎回指定が必要。",
+      "default": ""
+    }
+  }
 }
