@@ -104,5 +104,13 @@ def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult
                         f"{file_path.name}: plugins[{i}].source.sourceは無効な値です: "
                         f"{source_type}（{types_str}）"
                     )
+                else:
+                    # skipLfsフィールドの検証（github/urlソースのみ対応、v2.1.153以降）
+                    skip_lfs = source.get("skipLfs")
+                    if skip_lfs is not None and source_type in ("github", "url"):
+                        if not isinstance(skip_lfs, bool):
+                            result.add_error(
+                                f"{file_path.name}: plugins[{i}].source.skipLfsはbooleanが必要です"
+                            )
 
     return result
