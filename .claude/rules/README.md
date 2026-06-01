@@ -60,6 +60,8 @@
 | `CLAUDE_CODE_SESSION_ID` | 現在のセッションID（Stdio MCPサーバーのサブプロセス環境で利用可能、v2.1.154以降） | mcp-servers |
 | `CLAUDECODE` | `1` に設定済み（Stdio MCPサーバーのサブプロセス環境で利用可能、v2.1.154以降） | mcp-servers |
 | `${CLAUDE_EFFORT}` | 現在のエフォートレベル。値: `low` / `medium` / `high` / `xhigh`（Opus 4.7のみ、他モデルは `high` にフォールバック） / `max`（v2.1.120以降） | skills, hooks（v2.1.133以降） |
+| `COLUMNS` | ステータスラインコマンド実行時のターミナルの列数（v2.1.153以降） | statusline |
+| `LINES` | ステータスラインコマンド実行時のターミナルの行数（v2.1.153以降） | statusline |
 
 ## Frontmatterリファレンス
 

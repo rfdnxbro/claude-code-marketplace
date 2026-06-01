@@ -562,6 +562,113 @@ class TestValidateMarketplaceJson:
         result = validate_marketplace_json(Path("marketplace.json"), content)
         assert not result.has_errors()
 
+    def test_plugin_source_github_skip_lfs_true(self):
+        """githubソースでskipLfs: trueが有効（v2.1.153以降）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "github",
+                            "repo": "owner/repo",
+                            "skipLfs": True,
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_plugin_source_github_skip_lfs_false(self):
+        """githubソースでskipLfs: falseが有効（v2.1.153以降）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "github",
+                            "repo": "owner/repo",
+                            "skipLfs": False,
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_plugin_source_github_skip_lfs_invalid_type(self):
+        """githubソースでskipLfsが文字列（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "github",
+                            "repo": "owner/repo",
+                            "skipLfs": "true",
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("skipLfs" in e and "boolean" in e for e in result.errors)
+
+    def test_plugin_source_url_skip_lfs_true(self):
+        """urlソースでskipLfs: trueが有効（v2.1.153以降）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "url",
+                            "url": "https://gitlab.com/team/plugin.git",
+                            "skipLfs": True,
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_plugin_source_url_skip_lfs_invalid_type(self):
+        """urlソースでskipLfsが数値（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "url",
+                            "url": "https://gitlab.com/team/plugin.git",
+                            "skipLfs": 1,
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("skipLfs" in e and "boolean" in e for e in result.errors)
+
 
 class TestDefaultEnabled:
     """プラグインエントリの defaultEnabled フィールドのテスト（v2.1.154以降）"""
