@@ -57,6 +57,8 @@
 | `CLAUDE_CODE_MCP_SERVER_URL` | `headersHelper` スクリプト内で利用可能。呼び出し元の MCP サーバー URL（v2.1.85以降） | mcp-servers |
 | `CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE` | `git pull` 失敗時に既存マーケットプレイスキャッシュを保持（v2.1.90以降） | marketplace |
 | `CLAUDE_CODE_PLUGIN_PREFER_HTTPS` | GitHubプラグインソースをSSHの代わりにHTTPSでクローン・更新する（add/update操作を含む）。SSH鍵がない環境（CI・企業ネットワーク等）向け（v2.1.141以降） | marketplace |
+| `CLAUDE_CODE_SESSION_ID` | 現在のセッションID（Stdio MCPサーバーのサブプロセス環境で利用可能、v2.1.154以降） | mcp-servers |
+| `CLAUDECODE` | `1` に設定済み（Stdio MCPサーバーのサブプロセス環境で利用可能、v2.1.154以降） | mcp-servers |
 | `${CLAUDE_EFFORT}` | 現在のエフォートレベル。値: `low` / `medium` / `high` / `xhigh`（Opus 4.7のみ、他モデルは `high` にフォールバック） / `max`（v2.1.120以降） | skills, hooks（v2.1.133以降） |
 | `COLUMNS` | ステータスラインコマンド実行時のターミナルの列数（v2.1.153以降） | statusline |
 | `LINES` | ステータスラインコマンド実行時のターミナルの行数（v2.1.153以降） | statusline |

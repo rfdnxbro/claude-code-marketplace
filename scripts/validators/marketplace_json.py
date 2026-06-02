@@ -84,6 +84,14 @@ def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult
                 if kebab_error:
                     result.add_error(f"{file_path.name}: plugins[{i}]: {kebab_error}")
 
+            # defaultEnabled の確認（v2.1.154以降）
+            default_enabled = plugin.get("defaultEnabled")
+            if default_enabled is not None and not isinstance(default_enabled, bool):
+                result.add_error(
+                    f"{file_path.name}: plugins[{i}].defaultEnabledは"
+                    "ブール値（true/false）が必要です"
+                )
+
             # プラグインのsourceは必須
             source = plugin.get("source")
             if not source:

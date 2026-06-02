@@ -668,3 +668,73 @@ class TestValidateMarketplaceJson:
         result = validate_marketplace_json(Path("marketplace.json"), content)
         assert result.has_errors()
         assert any("skipLfs" in e and "boolean" in e for e in result.errors)
+
+
+class TestDefaultEnabled:
+    """プラグインエントリの defaultEnabled フィールドのテスト（v2.1.154以降）"""
+
+    def test_default_enabled_false(self):
+        """defaultEnabled: false は有効"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": "./plugins/plugin-one",
+                        "defaultEnabled": False,
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_default_enabled_true(self):
+        """defaultEnabled: true は有効"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {"name": "plugin-one", "source": "./plugins/plugin-one", "defaultEnabled": True}
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_default_enabled_string_error(self):
+        """defaultEnabled に文字列を指定するとエラー"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": "./plugins/plugin-one",
+                        "defaultEnabled": "false",
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("defaultEnabled" in e and "ブール値" in e for e in result.errors)
+
+    def test_default_enabled_number_error(self):
+        """defaultEnabled に数値を指定するとエラー"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {"name": "plugin-one", "source": "./plugins/plugin-one", "defaultEnabled": 0}
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("defaultEnabled" in e and "ブール値" in e for e in result.errors)
