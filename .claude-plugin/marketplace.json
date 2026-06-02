@@ -11,6 +11,7 @@
       "source": "./plugins/claude-code-workflow",
       "description": "Claude Code を使う際の個人的な作業スタイル（エージェント編成パターン、文体ガイド、判断ルール等）をスキルとして集約するプラグイン",
       "version": "0.1.0",
+      "defaultEnabled": false,
       "author": {
         "name": "rfdnxbro"
       },

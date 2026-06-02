@@ -2,6 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "claude-code-workflow",
   "version": "0.1.0",
+  "defaultEnabled": false,
   "description": "Claude Code を使う際の個人的な作業スタイル（エージェント編成パターン、文体ガイド、判断ルール等）をスキルとして集約するプラグイン",
   "author": { "name": "rfdnxbro" },
   "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/claude-code-workflow",
