@@ -89,7 +89,7 @@ def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult
             if default_enabled is not None and not isinstance(default_enabled, bool):
                 result.add_error(
                     f"{file_path.name}: plugins[{i}].defaultEnabledは"
-                    f"ブール値（true/false）が必要です"
+                    "ブール値（true/false）が必要です"
                 )
 
             # プラグインのsourceは必須
