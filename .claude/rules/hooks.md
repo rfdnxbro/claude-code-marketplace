@@ -494,7 +494,7 @@ exit 2  # ユーザーには理由が伝わらない
     "hookEventName": "PreToolUse",
     "permissionDecision": "allow|deny|ask|defer",
     "updatedInput": { "field": "new_value" },
-    "additionalContext": "モデルに提供する追加コンテキスト（PreToolUseのみ）"
+    "additionalContext": "モデルに提供する追加コンテキスト（PreToolUse・Stop・SubagentStop・PostCompact等で使用可能）"
   }
 }
 ```
@@ -718,6 +718,18 @@ last_message=$(echo "$input" | jq -r '.last_assistant_message // ""')
 if [ -n "$last_message" ]; then
   echo "完了メッセージ: $last_message" >> /tmp/session-log.txt
 fi
+```
+
+**`additionalContext` による継続フィードバック（v2.1.163以降）:**
+
+`hookSpecificOutput.additionalContext` を返すと、Claudeにフィードバックを提供しながらターンを継続させることができます。hookエラーとして扱われず、Claudeが処理を続けます。
+
+```json
+{
+  "hookSpecificOutput": {
+    "additionalContext": "タスクが完了していません。続けてください。"
+  }
+}
 ```
 
 ### PostToolUse / PostToolUseFailure イベントの追加フィールド（v2.1.119以降）
