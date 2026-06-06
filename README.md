@@ -28,6 +28,7 @@ Claude Codeの機能を拡張するプラグイン（スラッシュコマンド
 | プラグイン | 説明 | 状態 |
 |-----------|------|------|
 | [claude-code-workflow](plugins/claude-code-workflow/) | Claude Codeの個人的な作業スタイル（エージェント編成、文体ガイド等）をスキルとして集約 | 🔧 開発中 |
+| [pr-auto-fix](plugins/pr-auto-fix/) | PR 作成後に CI 失敗・レビュー・コンフリクトを自動検知し、自明な修正は commit & push、判断要は PR コメントでエスカレーション | 🔧 開発中 |
 
 ## ディレクトリ構成
 
