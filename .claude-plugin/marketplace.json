@@ -45,6 +45,26 @@
         "monitor"
       ],
       "category": "automation"
+    },
+    {
+      "name": "git-main-sync",
+      "source": "./plugins/git-main-sync",
+      "description": "新規セッション開始時、git管理下なら現在ブランチに応じてmainブランチをpullまたはfetchで最新化する",
+      "version": "0.1.0",
+      "author": {
+        "name": "rfdnxbro"
+      },
+      "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/git-main-sync",
+      "repository": "https://github.com/rfdnxbro/claude-code-marketplace",
+      "license": "MIT",
+      "keywords": [
+        "git",
+        "session-start",
+        "hooks",
+        "workflow",
+        "personal"
+      ],
+      "category": "workflow"
     }
   ]
 }
