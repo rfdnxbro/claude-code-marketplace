@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # pr-auto-fix: Monitor 本体。watch-targets.json を poll し、CI 失敗 / レビュー / コンフリクトを JSON Lines で通知する。
 #
-# 引数（monitors.json から渡す）:
-#   $1: pollIntervalSec  デフォルト 45
-#   $2: botPattern       デフォルト "copilot|coderabbit|claude.*review"
-#
-# `${user_config.<key>}` 構文は monitors.json の command 文字列内でしか展開されないため、
-# このスクリプト内では位置引数として受け取る。
+# 設定は環境変数経由で受け取る（monitors.json で `${user_config.<key>}` を `command`
+# 文字列に埋め込むとシェルインジェクションリスクがあるため、CLAUDE_USER_CONFIG_<key>
+# を Claude Code が自動セットする仕組みを使う。エージェント側の env var 読み込みパターン
+# と一貫させる狙いもある）:
+#   CLAUDE_USER_CONFIG_pollIntervalSec  デフォルト 45
+#   CLAUDE_USER_CONFIG_botPattern       デフォルト "copilot|coderabbit|claude.*review"
 
 set -uo pipefail
 
@@ -16,8 +16,8 @@ source "$SCRIPT_DIR/pr-state.sh"
 # shellcheck source=./emit-event.sh
 source "$SCRIPT_DIR/emit-event.sh"
 
-INTERVAL="${1:-45}"
-BOT_PATTERN="${2:-copilot|coderabbit|claude.*review}"
+INTERVAL="${CLAUDE_USER_CONFIG_pollIntervalSec:-45}"
+BOT_PATTERN="${CLAUDE_USER_CONFIG_botPattern:-copilot|coderabbit|claude.*review}"
 EMPTY_TARGET_EXIT_CYCLES="${PR_AUTO_FIX_EMPTY_TARGET_EXIT_CYCLES:-3}"
 
 state_init
@@ -46,6 +46,14 @@ emit_review_one() {
   local sig h author_kind excerpt
 
   if [ -z "$body" ] || [ "$body" = "null" ]; then
+    return 0
+  fi
+
+  # 自己コメント除外: pr-auto-fix 自身が投稿したコメント（HTML マーカー付き）は再通知しない。
+  # これを入れないと「修正完了コメント → human review として再発火 → judgment_required
+  # escalation コメント投稿 → それも再発火」の無限ループが起きる（agent.md の posted-comments.json
+  # では hash 単位の重複しか防げず、新しい head_sha で別 hash になると再発火する）。
+  if printf '%s' "$body" | grep -q '<!-- pr-auto-fix:'; then
     return 0
   fi
 

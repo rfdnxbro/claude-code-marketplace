@@ -7,13 +7,14 @@ mkdir -p "$DATA_DIR"
 WATCH_TARGETS_FILE="$DATA_DIR/watch-targets.json"
 SEEN_FILE="$DATA_DIR/seen.json"
 ATTEMPTS_FILE="$DATA_DIR/attempts.json"
-ESCALATIONS_FILE="$DATA_DIR/escalations.json"
+# 注: escalation の永続記録は agent 側の posted-comments.json で兼ねている
+# （hash 単位に success/escalation の投稿時刻を保存）。Monitor / state 層は
+# 通知発火さえできれば良いので別ファイルは持たない。
 
 state_init() {
   [ -f "$WATCH_TARGETS_FILE" ] || echo '[]' > "$WATCH_TARGETS_FILE"
   [ -f "$SEEN_FILE" ] || echo '[]' > "$SEEN_FILE"
   [ -f "$ATTEMPTS_FILE" ] || echo '{}' > "$ATTEMPTS_FILE"
-  [ -f "$ESCALATIONS_FILE" ] || echo '[]' > "$ESCALATIONS_FILE"
 }
 
 state_targets() {
