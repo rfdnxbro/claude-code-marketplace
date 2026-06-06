@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/sync-main.sh",
+            "timeout": 30,
+            "statusMessage": "main ブランチを最新化中..."
+          }
+        ]
+      }
+    ]
+  }
+}
