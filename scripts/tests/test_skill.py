@@ -501,3 +501,106 @@ description: 説明
         result = validate_skill(Path("SKILL.md"), content)
         assert not result.has_errors()
         assert len(result.warnings) == 0
+
+    def test_allow_simple_tool_name_valid(self):
+        """allowに単純なツール名（グロブなし）は有効（v2.1.166以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            allow:
+              - Bash
+              - Read
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+
+    def test_ask_content_pattern_valid(self):
+        """askにコンテンツパターン（括弧あり）は有効（v2.1.166以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            ask:
+              - Bash(rm *)
+              - Bash(dd *)
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+
+    def test_allow_non_mcp_glob_tool_name_error(self):
+        """allowのツール名位置に非MCPグロブはエラー（v2.1.166以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            allow:
+              - Bash*
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert result.has_errors()
+        assert any("allow" in e and "グロブ" in e for e in result.errors)
+
+    def test_allow_wildcard_all_error(self):
+        """allowに'*'（全ツールワイルドカード）はエラー（v2.1.166以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            allow:
+              - "*"
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert result.has_errors()
+        assert any("allow" in e and "グロブ" in e for e in result.errors)
+
+    def test_ask_non_mcp_glob_tool_name_error(self):
+        """askのツール名位置に非MCPグロブはエラー（v2.1.166以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            ask:
+              - Read*
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert result.has_errors()
+        assert any("ask" in e and "グロブ" in e for e in result.errors)
+
+    def test_allow_mcp_tool_pattern_valid(self):
+        """allowにMCPツールパターン（server:tool形式）はグロブ制限対象外（v2.1.166以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            allow:
+              - myserver:my_tool*
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+
+    def test_allow_mcp_double_underscore_pattern_valid(self):
+        """allowにmcp__server__tool形式のMCPツールはグロブ制限対象外（v2.1.166以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            allow:
+              - mcp__myserver__tool*
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()

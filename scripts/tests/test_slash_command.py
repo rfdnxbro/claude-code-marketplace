@@ -519,3 +519,59 @@ class TestValidateSlashCommand:
         result = validate_slash_command(Path("test.md"), content)
         assert not result.has_errors()
         assert len(result.warnings) == 0
+
+    def test_allow_simple_tool_name_valid(self):
+        """allowに単純なツール名（グロブなし）は有効（v2.1.166以降）"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            allow:
+              - Bash
+              - Read
+            ---
+            コマンド本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+
+    def test_ask_content_pattern_valid(self):
+        """askにコンテンツパターン（括弧あり）は有効（v2.1.166以降）"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            ask:
+              - Bash(rm *)
+              - Bash(dd *)
+            ---
+            コマンド本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+
+    def test_allow_non_mcp_glob_tool_name_error(self):
+        """allowのツール名位置に非MCPグロブはエラー（v2.1.166以降）"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            allow:
+              - Bash*
+            ---
+            コマンド本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert result.has_errors()
+        assert any("allow" in e and "グロブ" in e for e in result.errors)
+
+    def test_allow_wildcard_all_error(self):
+        """allowに'*'（全ツールワイルドカード）はエラー（v2.1.166以降）"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            allow:
+              - "*"
+            ---
+            コマンド本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert result.has_errors()
+        assert any("allow" in e and "グロブ" in e for e in result.errors)

@@ -342,3 +342,42 @@ def validate_string_or_list_field(
                     f"{file_path.name}: {field_name}の各要素は空でない文字列が必要です"
                 )
                 break
+
+
+def _is_non_mcp_tool_name_glob(tool_str: str) -> bool:
+    """ツール名位置の非MCPグロブかどうかを判定する"""
+    if "*" not in tool_str:
+        return False
+    # コンテンツパターン（括弧あり）はツール名位置のグロブではない
+    if "(" in tool_str:
+        return False
+    # MCPツールパターン（server:tool や mcp__server__tool）は対象外
+    if ":" in tool_str or tool_str.startswith("mcp__"):
+        return False
+    return True
+
+
+def validate_allow_ask_glob_fields(
+    result: ValidationResult,
+    file_path: Path,
+    frontmatter: dict[str, Any],
+) -> None:
+    """allow/askフィールドのツール名位置の非MCPグロブを検証する（v2.1.166以降）"""
+    for field_name in ("allow", "ask"):
+        value = frontmatter.get(field_name)
+        if value is None:
+            continue
+        if isinstance(value, list):
+            tools = [str(t) for t in value]
+        elif isinstance(value, str):
+            tools = [t.strip() for t in value.split(",") if t.strip()]
+        else:
+            continue
+        for tool in tools:
+            tool_str = tool.strip()
+            if _is_non_mcp_tool_name_glob(tool_str):
+                result.add_error(
+                    f"{file_path.name}: {field_name}のツール名位置にグロブパターンは使用不可: "
+                    f'"{tool_str}"（v2.1.166以降、非MCPツール。'
+                    f"Bash(rm *)のようなコンテンツパターンは有効）"
+                )
