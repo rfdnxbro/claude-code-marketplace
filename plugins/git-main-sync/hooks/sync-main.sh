@@ -8,11 +8,12 @@ set -u
 
 cat >/dev/null 2>&1 || true
 
+# JSON 文字列値として安全になるよう " と \ をエスケープして出力する。
 emit_json() {
-  python3 - "$1" <<'PY'
-import json, sys
-print(json.dumps({"continue": True, "systemMessage": sys.argv[1]}))
-PY
+  local msg="$1"
+  msg="${msg//\\/\\\\}"
+  msg="${msg//\"/\\\"}"
+  printf '{"continue":true,"systemMessage":"%s"}\n' "${msg}"
 }
 
 silent_exit() {
@@ -39,8 +40,10 @@ fi
 current_branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)" || silent_exit
 
 if [ "${current_branch}" = "${default_branch}" ]; then
-  if output="$(git pull --ff-only origin "${default_branch}" 2>&1)"; then
-    if printf '%s' "${output}" | grep -q "Already up to date"; then
+  before="$(git rev-parse HEAD 2>/dev/null)" || silent_exit
+  if git pull --ff-only origin "${default_branch}" >/dev/null 2>&1; then
+    after="$(git rev-parse HEAD 2>/dev/null)" || after="${before}"
+    if [ "${before}" = "${after}" ]; then
       emit_json "[git-main-sync] ${default_branch} は既に最新です"
     else
       emit_json "[git-main-sync] ${default_branch} を pull で最新化しました"
