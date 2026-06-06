@@ -26,15 +26,17 @@
 |---|---|---|
 | 動作場所 | Anthropic 管理のクラウド VM（[claude.ai/code](https://claude.ai/code)） | ローカルの Claude Code セッション |
 | トリガー | GitHub Webhook（Claude GitHub App 経由） | ローカル `gh` の polling（デフォルト 45 秒） |
-| 必須環境 | Claude GitHub App、**Pro/Max/Team プラン限定**、GitHub のみ | ローカル `gh`/`jq`/`git`、プラン制限なし、git ホスト依存しない |
+| 必須環境 | Claude GitHub App、**Pro/Max/Team プラン限定**、GitHub のみ | ローカル `gh`/`jq`/`git`、プラン制限なし、GitHub のみ（`gh` CLI 前提） |
 | コンフリクト対応 | 不可（GitHub が webhook を出さないため） | 可能（polling で `mergeable` を見て機械的解決を試みる） |
 | ローカル設定の持ち込み | repo にコミットされたもののみ | ローカルセッションそのまま |
 | セッション継続 | クラウドで永続化 | ローカルセッションが開いている間のみ |
 | 対応不可の理由を PR に投稿 | session 内 confirm が中心 | **PR コメントとして自動投稿**（v0.2.0〜） |
 
-**このプラグインを選ぶシーン**: GitHub App を入れたくない／Pro 未満のプラン／GitHub Enterprise Server / GitLab など非対応の git ホスト／コンフリクトも自動対応したい／ローカル設定を持ち込みたい。
+**このプラグインを選ぶシーン**: GitHub App を入れたくない／Pro 未満のプラン／コンフリクトも自動対応したい／ローカル設定を持ち込みたい。
 
 **プリセットを選ぶシーン**: シンプルに済ませたい／リアルタイム webhook が必要／ローカルセッションを開きっぱなしにしたくない。
+
+> **注**: 両方とも GitHub 限定です。Hook の URL 抽出が `github.com` ハードコードのため GitHub Enterprise Server / GitLab / Bitbucket では動作しません。
 
 ## インストール
 
@@ -150,6 +152,7 @@ gh pr create --title "..." --body "..."
 
 ## 制限
 
+- **GitHub のみ対応**: `gh pr create` Hook が抽出する PR URL の正規表現が `https://github.com/...` ハードコードのため、GitHub Enterprise Server（GHES）/ GitLab / Bitbucket では Hook が silent fail します。
 - `gh pr create` を **Bash ツール経由で実行した場合のみ** 監視が起動します（GitHub MCP 経由などは現時点で対象外）
 - `watch-targets.json` が空のまま起動した Monitor は、短時間 sleep したあと自動終了します。新しい PR を作成すると Hook が再度スキル起動を促します
 - fork からの PR で `maintainerCanModify=false` の場合は push できないため、初回ガードで escalation します
