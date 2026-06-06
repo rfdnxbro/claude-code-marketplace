@@ -12,6 +12,7 @@ from .base import (
     parse_frontmatter,
     to_str,
     validate_agent_field,
+    validate_allow_ask_glob_fields,
     validate_allowed_tools,
     validate_context_field,
     validate_effort_field,
@@ -71,6 +72,9 @@ def validate_skill(file_path: Path, content: str) -> ValidationResult:
 
     # agentの確認（空でない文字列）
     validate_agent_field(result, file_path, frontmatter)
+
+    # allow/askのツール名位置グロブを検証（v2.1.166以降）
+    validate_allow_ask_glob_fields(result, file_path, frontmatter)
 
     # allowed-toolsの確認（リスト形式対応）
     validate_allowed_tools(result, file_path, frontmatter, disabled_warnings)

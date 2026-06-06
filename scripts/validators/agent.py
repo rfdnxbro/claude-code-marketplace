@@ -10,6 +10,7 @@ from .base import (
     add_yaml_warnings,
     parse_frontmatter,
     to_str,
+    validate_allow_ask_glob_fields,
     validate_effort_field,
     validate_kebab_case,
     validate_string_or_list_field,
@@ -120,6 +121,9 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
     initial_prompt = frontmatter.get("initialPrompt")
     if initial_prompt is not None and not isinstance(initial_prompt, str):
         result.add_error(f"{file_path.name}: initialPromptは文字列が必要です: {initial_prompt}")
+
+    # allow/askのツール名位置グロブを検証（v2.1.166以降）
+    validate_allow_ask_glob_fields(result, file_path, frontmatter)
 
     # toolsの確認（リスト形式検証）
     tools = frontmatter.get("tools")
