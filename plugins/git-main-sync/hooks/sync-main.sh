@@ -18,7 +18,7 @@ emit_json() {
   if [ -n "$title" ]; then
     title="${title//\\/\\\\}"
     title="${title//\"/\\\"}"
-    printf '{"continue":true,"systemMessage":"%s","hookSpecificOutput":{"sessionTitle":"%s"}}\n' \
+    printf '{"continue":true,"systemMessage":"%s","hookSpecificOutput":{"hookEventName":"SessionStart","sessionTitle":"%s"}}\n' \
       "${msg}" "${title}"
   else
     printf '{"continue":true,"systemMessage":"%s"}\n' "${msg}"
