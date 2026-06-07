@@ -2,6 +2,10 @@
 name: auto-fix-pr
 description: pr-auto-fix プラグインの監視ループを起動するトリガースキル。Hook で PR 作成が検知された後、Claude が `pr-auto-fix:auto-fix-pr` として呼び出すと Monitor (`pr-auto-fix-watcher`) がバックグラウンドで起動する。Monitor からの通知を受けて pr-auto-fixer エージェントへディスパッチする責務を持つ。ユーザーが手動で起動するスキルではなく、Hook 経由でのみ呼ばれる前提。
 user-invocable: false
+disallowed-tools:
+  - Edit
+  - Write
+  - MultiEdit
 ---
 
 # auto-fix-pr
@@ -73,7 +77,7 @@ Agent({
 
 ## 自分で修正を試みない
 
-メインセッションで直接 `Edit` や `git commit` を実行しないでください。エージェントを経由しないと現ブランチ確認や dirty worktree 検出のガードが働かず、ユーザーの作業を破壊する恐れがあります。
+メインセッションで直接 `Edit` / `Write` / `MultiEdit` や `git commit` を実行しないでください（frontmatter の `disallowed-tools` でファイル編集ツールはツールレベルでも禁止）。エージェントを経由しないと現ブランチ確認や dirty worktree 検出のガードが働かず、ユーザーの作業を破壊する恐れがあります。
 
 ## escalation の扱い
 
