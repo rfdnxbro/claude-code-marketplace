@@ -591,6 +591,7 @@ cat <<EOF
 {
   "continue": true,
   "hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
     "additionalContext": "注意: 本番環境での実行です。慎重に操作してください。"
   }
 }
