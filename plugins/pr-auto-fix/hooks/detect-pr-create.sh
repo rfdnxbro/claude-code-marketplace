@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # gh pr create が成功した直後に呼ばれ、出力から PR URL を抽出して watch-targets.json に登録する。
 # systemMessage で Claude に auto-fix-pr スキルの起動を促す。
-# 注: hookSpecificOutput.additionalContext は PreToolUse 専用のため PostToolUse では使えない
-# (.claude/rules/hooks.md L451)。systemMessage はトップレベルフィールドでイベント制限なし。
+# 注: hookSpecificOutput.additionalContext は PostToolUse では非対応
+# （PreToolUse・Stop・SubagentStop・PostCompact等で使用可能）。
+# systemMessage はトップレベルフィールドでイベント制限なし。
 
 set -euo pipefail
 
