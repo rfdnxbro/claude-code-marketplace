@@ -16,9 +16,6 @@
     "github",
     "monitor"
   ],
-  "experimental": {
-    "monitors": "./monitors/monitors.json"
-  },
   "userConfig": {
     "pollIntervalSec": {
       "type": "number",
