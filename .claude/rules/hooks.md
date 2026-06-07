@@ -734,6 +734,8 @@ fi
 }
 ```
 
+> **注意:** `SubagentStop` フックの場合は `"hookEventName": "SubagentStop"` を使用してください。
+
 ### PostToolUse / PostToolUseFailure イベントの追加フィールド（v2.1.119以降）
 
 `PostToolUse` および `PostToolUseFailure` フックには、追加フィールド `duration_ms` が渡されます（v2.1.119以降）:
