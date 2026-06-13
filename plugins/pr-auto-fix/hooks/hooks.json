@@ -4,6 +4,7 @@
       {
         "matcher": "Bash",
         "if": "Bash(gh pr create*)",
+        "continueOnBlock": true,
         "hooks": [
           {
             "type": "command",
