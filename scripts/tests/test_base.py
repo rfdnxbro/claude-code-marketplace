@@ -310,6 +310,14 @@ class TestValidateAllowedTools:
         validate_allowed_tools(result, Path("test.md"), fm, {WARNING_BROAD_BASH_WILDCARD})
         assert len(result.warnings) == 0
 
+    def test_param_value_syntax_accepted(self):
+        """Tool(param:value)構文がエラーなしで受け入れられることを確認（v2.1.178以降）"""
+        result = ValidationResult()
+        fm = {"allowed-tools": ["Agent(model:opus)", "Bash(git:*)"]}
+        validate_allowed_tools(result, Path("test.md"), fm, set())
+        assert not result.has_errors()
+        assert len(result.warnings) == 0
+
 
 class TestValidateEffortField:
     """validate_effort_fieldのテスト"""

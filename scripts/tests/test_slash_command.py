@@ -282,6 +282,34 @@ class TestValidateSlashCommand:
         assert not result.has_errors()
         assert any("Bash(*)" in w for w in result.warnings)
 
+    def test_allowed_tools_param_value_syntax(self):
+        """Tool(param:value)構文がallowed-toolsで受け入れられることを確認（v2.1.178以降）"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            allowed-tools:
+              - Agent(model:sonnet)
+              - Bash(git:*)
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert not any("Agent(model:sonnet)" in w for w in result.warnings)
+
+    def test_disallowed_tools_param_value_syntax(self):
+        """Tool(param:value)構文がdisallowed-toolsで受け入れられることを確認（v2.1.178以降）"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            disallowed-tools:
+              - Agent(model:opus)
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+
     def test_valid_effort_low(self):
         """effort: lowが有効であることを確認（v2.1.80以降）"""
         content = dedent("""

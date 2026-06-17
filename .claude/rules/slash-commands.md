@@ -150,6 +150,18 @@ allowed-tools:
 
 **注意 (v2.1.20以降)**: `Bash(*)`は`Bash`と同等に扱われます。すべてのBashコマンドへのアクセスを許可する場合は、どちらの記法でも同じ意味になります。セキュリティ上の理由から、可能な限り具体的なパターンを指定することを推奨します。
 
+**`Tool(param:value)` 構文（v2.1.178以降）:**
+
+ツールの入力パラメータでマッチングするパターンを指定できます。`*` ワイルドカードも使用可能です。
+
+```yaml
+# allowed-tools: Sonnetモデルのサブエージェントのみ許可
+allowed-tools: Agent(model:sonnet)
+
+# disallowed-tools: Opusモデルのサブエージェントをブロック
+disallowed-tools: Agent(model:opus)
+```
+
 **パーミッション優先順位（v2.1.27以降）:**
 
 content-level（具体的パターン）の`ask`設定は、tool-level（ツール全体）の`allow`設定より優先されます。
