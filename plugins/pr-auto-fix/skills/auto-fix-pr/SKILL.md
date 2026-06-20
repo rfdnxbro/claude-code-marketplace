@@ -6,6 +6,8 @@ disallowed-tools:
   - Edit
   - Write
   - MultiEdit
+  - Bash(git commit:*)
+  - Bash(git push:*)
 ---
 
 # auto-fix-pr
