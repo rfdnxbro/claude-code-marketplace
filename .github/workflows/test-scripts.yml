@@ -15,7 +15,7 @@ jobs:
     outputs:
       scripts: ${{ steps.filter.outputs.scripts }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: dorny/paths-filter@v4
         id: filter
         with:
@@ -33,7 +33,7 @@ jobs:
       pull-requests: write
     steps:
       - name: リポジトリをチェックアウト
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: uvをセットアップ
         uses: astral-sh/setup-uv@v7
