@@ -93,6 +93,31 @@ def validate_skill(file_path: Path, content: str) -> ValidationResult:
         hint="low/medium/high/xhigh/max",
     )
 
+    # display-name の確認（v2.1.186以降: kebab-case/snake_case/camelCase対応）
+    display_name_variants = [
+        (k, frontmatter[k])
+        for k in ("display-name", "display_name", "displayName")
+        if k in frontmatter
+    ]
+    if display_name_variants:
+        field_key, display_name_val = display_name_variants[0]
+        if not to_str(display_name_val):
+            result.add_error(f"{file_path.name}: {field_key}は空にできません")
+
+    # default-enabled の確認（v2.1.186以降: kebab-case/snake_case/camelCase対応）
+    default_enabled_variants = [
+        (k, frontmatter[k])
+        for k in ("default-enabled", "default_enabled", "defaultEnabled")
+        if k in frontmatter
+    ]
+    if default_enabled_variants:
+        field_key, default_enabled_val = default_enabled_variants[0]
+        if not isinstance(default_enabled_val, bool):
+            result.add_error(f"{file_path.name}: {field_key}はブール値が必要です")
+
+    # fallback の確認（v2.1.186以降: kebab-case/snake_case/camelCase対応、全形式で同一）
+    # fallbackは任意の値を受け付けるため型チェックなし
+
     # hooksの確認（形式警告のみ）
     hooks = frontmatter.get("hooks")
     if hooks is not None:

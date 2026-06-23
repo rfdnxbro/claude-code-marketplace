@@ -621,6 +621,125 @@ description: 説明
         result = validate_skill(Path("SKILL.md"), content)
         assert not result.has_errors()
 
+    def test_display_name_kebab_case_valid(self):
+        """display-name（kebab-case）が有効であることを確認（v2.1.186以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            display-name: PDFを処理する
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+
+    def test_display_name_snake_case_valid(self):
+        """display_name（snake_case）が有効であることを確認（v2.1.186以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            display_name: PDFを処理する
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+
+    def test_display_name_camel_case_valid(self):
+        """displayName（camelCase）が有効であることを確認（v2.1.186以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            displayName: PDFを処理する
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+
+    def test_display_name_empty_error(self):
+        """display-nameが空の場合エラー（v2.1.186以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            display-name:
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert result.has_errors()
+        assert any("display-name" in e for e in result.errors)
+
+    def test_default_enabled_kebab_case_valid(self):
+        """default-enabled（kebab-case）にブール値が有効であることを確認（v2.1.186以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            default-enabled: false
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+
+    def test_default_enabled_snake_case_valid(self):
+        """default_enabled（snake_case）にブール値が有効であることを確認（v2.1.186以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            default_enabled: true
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+
+    def test_default_enabled_camel_case_valid(self):
+        """defaultEnabled（camelCase）にブール値が有効であることを確認（v2.1.186以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            defaultEnabled: false
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+
+    def test_default_enabled_non_boolean_error(self):
+        """default-enabledがブール値でない場合エラー（v2.1.186以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            default-enabled: yes
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert result.has_errors()
+        assert any("default-enabled" in e for e in result.errors)
+
+    def test_fallback_valid(self):
+        """fallbackフィールドが有効であることを確認（v2.1.186以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            fallback: true
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+
     def test_allow_mcp_double_underscore_pattern_valid(self):
         """allowにmcp__server__tool形式のMCPツールはグロブ制限対象外（v2.1.166以降）"""
         content = dedent("""
