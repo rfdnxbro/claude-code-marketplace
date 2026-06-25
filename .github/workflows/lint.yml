@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: リポジトリをチェックアウト
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: uvをセットアップ
         uses: astral-sh/setup-uv@v7
@@ -36,7 +36,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: リポジトリをチェックアウト
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: uvをセットアップ
         uses: astral-sh/setup-uv@v7
@@ -50,7 +50,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: リポジトリをチェックアウト
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Node.jsをセットアップ
         uses: actions/setup-node@v6

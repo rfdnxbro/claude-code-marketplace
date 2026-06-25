@@ -52,7 +52,7 @@ jobs:
           SENDER: ${{ github.event.sender.login }}
 
       - name: リポジトリをチェックアウト
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
