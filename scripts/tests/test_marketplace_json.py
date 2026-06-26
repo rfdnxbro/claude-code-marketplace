@@ -670,6 +670,120 @@ class TestValidateMarketplaceJson:
         assert any("skipLfs" in e and "boolean" in e for e in result.errors)
 
 
+class TestRenames:
+    """marketplace.json の renames フィールドのテスト（v2.1.193以降）"""
+
+    def test_renames_valid(self):
+        """有効な renames フィールド"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "renames": {
+                    "old-plugin-name": "new-plugin-name",
+                    "another-old-name": "another-new-name",
+                },
+                "plugins": [{"name": "new-plugin-name", "source": "./plugins/new-plugin-name"}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_renames_single_entry(self):
+        """renames フィールドに1エントリ"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "renames": {"old-name": "new-name"},
+                "plugins": [{"name": "new-name", "source": "./plugins/new-name"}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_renames_empty_object(self):
+        """renames が空オブジェクト（有効）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "renames": {},
+                "plugins": [{"name": "plugin-one", "source": "./plugins/plugin-one"}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_renames_absent(self):
+        """renames フィールドがない（省略可能）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [{"name": "plugin-one", "source": "./plugins/plugin-one"}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_renames_not_object(self):
+        """renames がオブジェクトでない（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "renames": ["old-name", "new-name"],
+                "plugins": [{"name": "plugin-one", "source": "./plugins/plugin-one"}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("renames" in e and "オブジェクト" in e for e in result.errors)
+
+    def test_renames_value_not_string(self):
+        """renames の値が文字列でない（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "renames": {"old-name": 123},
+                "plugins": [{"name": "plugin-one", "source": "./plugins/plugin-one"}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("renames" in e and "文字列が必要" in e for e in result.errors)
+
+    def test_renames_key_not_kebab_case(self):
+        """renames のキーが kebab-case でない（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "renames": {"OldPluginName": "new-plugin-name"},
+                "plugins": [{"name": "new-plugin-name", "source": "./plugins/new-plugin-name"}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("renames" in e and "kebab-case" in e for e in result.errors)
+
+    def test_renames_value_not_kebab_case(self):
+        """renames の値が kebab-case でない（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "renames": {"old-plugin-name": "NewPluginName"},
+                "plugins": [{"name": "plugin-one", "source": "./plugins/plugin-one"}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("renames" in e and "kebab-case" in e for e in result.errors)
+
+
 class TestDefaultEnabled:
     """プラグインエントリの defaultEnabled フィールドのテスト（v2.1.154以降）"""
 

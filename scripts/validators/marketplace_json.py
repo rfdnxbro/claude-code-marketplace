@@ -59,6 +59,32 @@ def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult
         elif not isinstance(owner_name, str):
             result.add_error(f"{file_path.name}: owner.nameは文字列が必要です")
 
+    # オプションフィールド: renames（v2.1.193以降）
+    renames = data.get("renames")
+    if renames is not None:
+        if not isinstance(renames, dict):
+            result.add_error(f"{file_path.name}: renamesはオブジェクトが必要です")
+        else:
+            for old_name, new_name in renames.items():
+                if not isinstance(old_name, str):
+                    result.add_error(f"{file_path.name}: renames のキーは文字列が必要です")
+                else:
+                    kebab_error = validate_kebab_case(old_name)
+                    if kebab_error:
+                        result.add_error(
+                            f"{file_path.name}: renames キー '{old_name}': {kebab_error}"
+                        )
+                if not isinstance(new_name, str):
+                    result.add_error(
+                        f"{file_path.name}: renames['{old_name}'] の値は文字列が必要です"
+                    )
+                else:
+                    kebab_error = validate_kebab_case(new_name)
+                    if kebab_error:
+                        result.add_error(
+                            f"{file_path.name}: renames['{old_name}'] 値: {kebab_error}"
+                        )
+
     # 必須フィールド: plugins
     plugins = data.get("plugins")
     if plugins is None:
