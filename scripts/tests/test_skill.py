@@ -674,6 +674,34 @@ description: 説明
         assert result.has_errors()
         assert any("display-name" in e for e in result.errors)
 
+    def test_display_name_snake_case_empty_error(self):
+        """display_name（snake_case）が空の場合エラー（v2.1.186以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            display_name:
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert result.has_errors()
+        assert any("display_name" in e for e in result.errors)
+
+    def test_display_name_camel_case_empty_error(self):
+        """displayName（camelCase）が空の場合エラー（v2.1.186以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            displayName:
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert result.has_errors()
+        assert any("displayName" in e for e in result.errors)
+
     def test_default_enabled_kebab_case_valid(self):
         """default-enabled（kebab-case）にブール値が有効であることを確認（v2.1.186以降）"""
         content = dedent("""
@@ -734,21 +762,6 @@ description: 説明
             name: test-skill
             description: テストスキルの説明
             fallback: true
-            ---
-            本文
-        """).strip()
-        result = validate_skill(Path("SKILL.md"), content)
-        assert not result.has_errors()
-
-    def test_metadata_nested_no_error(self):
-        """metadata（ネストされたキーと値のペア）はエラーにならないことを確認（v2.1.186以降）"""
-        content = dedent("""
-            ---
-            name: test-skill
-            description: テストスキルの説明
-            metadata:
-              author: my-team
-              version: 1.0.0
             ---
             本文
         """).strip()

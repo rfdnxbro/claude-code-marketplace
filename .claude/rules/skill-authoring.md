@@ -234,9 +234,7 @@ default-enabled: false
 
 **fallback**（v2.1.186以降）:
 
-スキルのフォールバック動作を指定します。
-
-`fallback`はkebab-case/snake_case/camelCaseで同一の形式です:
+スキルのフォールバック動作を指定します:
 
 ```yaml
 fallback: true
