@@ -1,5 +1,6 @@
 ---
 name: auto-fix-pr
+display-name: PR自動修正トリガー
 description: pr-auto-fix プラグインの監視ループを起動するトリガースキル。Hook で PR 作成が検知された後、Claude が `pr-auto-fix:auto-fix-pr` として呼び出すと Monitor (`pr-auto-fix-watcher`) がバックグラウンドで起動する。Monitor からの通知を受けて pr-auto-fixer エージェントへディスパッチする責務を持つ。ユーザーが手動で起動するスキルではなく、Hook 経由でのみ呼ばれる前提。
 user-invocable: false
 disallowed-tools:
