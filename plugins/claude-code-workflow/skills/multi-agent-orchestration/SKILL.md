@@ -1,11 +1,15 @@
 ---
 name: "multi-agent-orchestration"
+display-name: マルチエージェント編成ガイド
 description: "Agent tool で複数のサブエージェントを並列起動する／エージェントチームを組成する前に、編成パターン（サブエージェント vs エージェントチーム、レビュアー Teammate の要否、各役割のモデル選択）を決定するためのガイドを適用する。トリガー：3 つ以上の Agent を並列起動する／タスク間に依存関係がある／チームメイト同士の相互通信が必要／設計や計画フェーズで複数視点が欲しい／ある成果物を別の成果物がレビュー・参照する構造になる。単発のサブエージェント呼び出しや、依存のない fire-and-forget な並列調査では発火しない。"
 model: opus
+effort: high
 disallowed-tools:
   - Edit
   - Write
   - MultiEdit
+metadata:
+  version: 1.0.0
 ---
 
 # マルチエージェント編成パターン

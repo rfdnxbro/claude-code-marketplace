@@ -1,6 +1,8 @@
 ---
 name: "writing-style"
+display-name: 文体ガイド適用
 description: "ユーザー本人の声で日本語のプローズを起草・推敲・レビューする際に文体ガイドを適用する。対象は Qiita/Zenn 技術記事、note 記事、Slack メッセージ下書き、ユーザーが書く PR/コードレビューコメント、その他ユーザー名義で外部に出る日本語の長文。基本トーン・句読点ルール・用語表記・禁止表現（em ダッシュ「——」、「刺さる/効く」、「リポ」略称など）・シチュエーション別温度感を読み込んだ上で文章を組み立てる。コード・ログ・コミットメッセージの定型文、および他者が書いた文章のレビュー（他人の PR コメントの校正など）には適用しない。"
+effort: medium
 argument-hint: "[媒体 or 原稿テキスト]"
 allowed-tools:
   - Read
@@ -9,6 +11,8 @@ disallowed-tools:
   - Edit
   - Write
   - MultiEdit
+metadata:
+  version: 1.0.0
 ---
 
 # 文体ガイド適用スキル
