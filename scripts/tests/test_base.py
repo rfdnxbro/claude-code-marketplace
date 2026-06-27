@@ -13,6 +13,7 @@ from scripts.validators.base import (
     parse_frontmatter,
     to_str,
     validate_agent_field,
+    validate_allow_ask_glob_fields,
     validate_allowed_tools,
     validate_context_field,
     validate_effort_field,
@@ -400,3 +401,26 @@ class TestNormalizePath:
 
     def test_simple_path_unchanged(self):
         assert normalize_path("path/to/plugin") == "path/to/plugin"
+
+
+class TestValidateAllowAskGlobFields:
+    """validate_allow_ask_glob_fieldsのテスト（v2.1.166以降）"""
+
+    def test_comma_separated_string_without_glob_valid(self):
+        """allow/askがカンマ区切り文字列でグロブを含まない場合はエラーなし"""
+        result = ValidationResult()
+        validate_allow_ask_glob_fields(result, Path("SKILL.md"), {"allow": "Bash, Read"})
+        assert not result.has_errors()
+
+    def test_comma_separated_string_with_glob_error(self):
+        """allow/askがカンマ区切り文字列でグロブを含む場合はエラー"""
+        result = ValidationResult()
+        validate_allow_ask_glob_fields(result, Path("SKILL.md"), {"ask": "Bash, Read*"})
+        assert result.has_errors()
+        assert any("グロブパターンは使用不可" in e for e in result.errors)
+
+    def test_non_string_non_list_value_skipped(self):
+        """allow/askがリストでも文字列でもない場合はスキップしエラーなし"""
+        result = ValidationResult()
+        validate_allow_ask_glob_fields(result, Path("SKILL.md"), {"allow": 123})
+        assert not result.has_errors()
