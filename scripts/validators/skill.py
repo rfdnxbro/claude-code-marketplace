@@ -115,8 +115,9 @@ def validate_skill(file_path: Path, content: str) -> ValidationResult:
         if not isinstance(default_enabled_val, bool):
             result.add_error(f"{file_path.name}: {field_key}はブール値が必要です")
 
-    # fallback（v2.1.186以降）: 1単語のためkebab-case/snake_case/camelCaseすべて同形であり、
-    # display-name/default-enabledのようなバリアント処理は不要。任意の値を受け付けるため型チェックもなし。
+    # fallback（v2.1.186以降）: 1単語のためkebab-case/snake_case/camelCaseすべて同形。
+    # display-name/default-enabledのようなバリアント処理は不要。
+    # 任意の値を受け付けるため型チェックもなし。
 
     # metadata の確認（v2.1.186以降: 任意のキーと値のペア）
     # metadataはネストされたオブジェクトのため、本リポジトリの簡易パーサー
