@@ -69,9 +69,7 @@ def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult
                 # JSONのオブジェクトキーは常に文字列のためkebab-caseのみ検証する
                 kebab_error = validate_kebab_case(old_name)
                 if kebab_error:
-                    result.add_error(
-                        f"{file_path.name}: renames キー '{old_name}': {kebab_error}"
-                    )
+                    result.add_error(f"{file_path.name}: renames キー '{old_name}': {kebab_error}")
                 if not isinstance(new_name, str):
                     result.add_error(
                         f"{file_path.name}: renames['{old_name}'] の値は文字列が必要です"
