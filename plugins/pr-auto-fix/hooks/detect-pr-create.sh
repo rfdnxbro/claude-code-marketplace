@@ -58,4 +58,4 @@ mv "$TARGETS.tmp" "$TARGETS"
 
 jq -nc \
   --arg url "$pr_url" \
-  '{continue: true, systemMessage: ("pr-auto-fix: PR " + $url + " を監視対象に登録しました。`pr-auto-fix:auto-fix-pr` スキルを起動して CI/レビュー/コンフリクトの自動監視を開始してください。")}'
+  '{continue: true, systemMessage: ("pr-auto-fix: PR " + $url + " を監視対象に登録しました。`pr-auto-fix:auto-fix-pr` スキルを起動して CI/レビュー/コンフリクトの自動監視を開始してください。"), terminalSequence: ""}'
