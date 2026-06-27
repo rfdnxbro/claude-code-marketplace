@@ -118,6 +118,14 @@ def validate_skill(file_path: Path, content: str) -> ValidationResult:
     # fallback の確認（v2.1.186以降: kebab-case/snake_case/camelCase対応、全形式で同一）
     # fallbackは任意の値を受け付けるため型チェックなし
 
+    # metadata の確認（v2.1.186以降: 任意のキーと値のペア）
+    # metadataはネストされたオブジェクトのため、本リポジトリの簡易パーサー
+    # （base.py の _FrontmatterParser）では値を取得できず、解析時に
+    # 「ネストされたオブジェクトはサポートされていません」警告が出る（hooksと同じ制限・非致命的）。
+    # そのため frontmatter["metadata"] の値を使った検証はできない。
+    # metadata.* サブキーの命名規則（kebab-case/snake_case/camelCase）はClaude Code
+    # ランタイム側の仕様であり、このバリデーターでは検証対象外。
+
     # hooksの確認（形式警告のみ）
     hooks = frontmatter.get("hooks")
     if hooks is not None:

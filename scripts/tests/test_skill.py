@@ -740,6 +740,42 @@ description: 説明
         result = validate_skill(Path("SKILL.md"), content)
         assert not result.has_errors()
 
+    def test_metadata_nested_no_error(self):
+        """metadata（ネストされたキーと値のペア）はエラーにならないことを確認（v2.1.186以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            metadata:
+              author: my-team
+              version: 1.0.0
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+
+    def test_metadata_nested_parser_warning(self):
+        """metadataのネスト構造は簡易パーサーの制限で非致命的な警告が出る（v2.1.186以降）
+
+        本リポジトリのフロントマターパーサーはネストされたオブジェクトを
+        サポートしないため、metadataのサブキー行ごとに警告が出る（エラーではない）。
+        hooksフィールドと同じ制限。
+        """
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            metadata:
+              author: my-team
+              version: 1.0.0
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+        assert any("ネストされたオブジェクト" in w for w in result.warnings)
+
     def test_allow_mcp_double_underscore_pattern_valid(self):
         """allowにmcp__server__tool形式のMCPツールはグロブ制限対象外（v2.1.166以降）"""
         content = dedent("""

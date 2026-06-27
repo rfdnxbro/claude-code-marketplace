@@ -244,13 +244,17 @@ fallback: true
 
 **metadata**（v2.1.186以降）:
 
-スキルに関する任意のメタデータをキーと値のペアで指定します。メタデータのサブキー（`metadata.*`）もkebab-case、snake_case、camelCaseのいずれの形式でも記述できます:
+スキルに関する任意のメタデータをキーと値のペアで指定します:
 
 ```yaml
 metadata:
   author: my-team
   version: 1.0.0
 ```
+
+メタデータのサブキー（`metadata.*`）は、Claude Code 側で kebab-case・snake_case・camelCase のいずれの形式でも解釈されます。これは Claude Code ランタイムの仕様であり、本リポジトリのバリデーターでは検証しません。
+
+> **注（パーサーの制限）**: `metadata` はネストされたオブジェクトのため、本リポジトリの簡易フロントマターパーサー（`scripts/validators/base.py`）はその値を取得できず、検証時に「ネストされたオブジェクトはサポートされていません」という**非致命的な警告**を出します（`hooks` フィールドと同じ制限）。この警告はエラーではなく、`metadata` の記述自体は有効です。
 
 **hooks**:
 
