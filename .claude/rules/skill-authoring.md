@@ -212,6 +212,48 @@ disallowed-tools:
   - WebSearch
 ```
 
+**display-name**（v2.1.186以降）:
+
+スキルのUI表示名を指定します。省略時は`name`フィールドの値が使用されます。
+
+`display-name`（kebab-case）、`display_name`（snake_case）、`displayName`（camelCase）のいずれの形式でも記述できます:
+
+```yaml
+display-name: PDFを処理する
+```
+
+**default-enabled**（v2.1.186以降）:
+
+スキルがデフォルトで有効かどうかを指定します。省略時は有効として扱われます。
+
+`default-enabled`（kebab-case）、`default_enabled`（snake_case）、`defaultEnabled`（camelCase）のいずれの形式でも記述できます:
+
+```yaml
+default-enabled: false
+```
+
+**fallback**（v2.1.186以降）:
+
+スキルのフォールバック動作を指定します。`fallback` は1単語のため、`display-name` などと異なり kebab-case/snake_case/camelCase のバリアント表記はありません:
+
+```yaml
+fallback: true
+```
+
+**metadata**（v2.1.186以降）:
+
+スキルに関する任意のメタデータをキーと値のペアで指定します:
+
+```yaml
+metadata:
+  author: my-team
+  version: 1.0.0
+```
+
+メタデータのサブキー（`metadata.*`）は、Claude Code 側で kebab-case・snake_case・camelCase のいずれの形式でも解釈されます。これは Claude Code ランタイムの仕様であり、本リポジトリのバリデーターでは検証しません。
+
+> **注（パーサーの制限）**: `metadata` はネストされたオブジェクトのため、本リポジトリの簡易フロントマターパーサー（`scripts/validators/base.py`）はその値を取得できず、検証時に「ネストされたオブジェクトはサポートされていません」という**非致命的な警告**を出します（`hooks` フィールドと同じ制限）。この警告はエラーではなく、`metadata` の記述自体は有効です。
+
 **hooks**:
 
 スキル実行時のフックを定義。詳細は[hooks.md](hooks.md)を参照。
