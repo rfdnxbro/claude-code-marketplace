@@ -318,7 +318,7 @@ HTTPフックのレスポンスでJSONを返さない場合（200以外のステ
 |---------|-----|----------|
 | 完全一致 | `Bash` | Bashのみ |
 | 複数（OR）パイプ区切り | `Edit\|Write` | EditまたはWrite |
-| 複数（OR）コンマ区切り | `Bash,PowerShell` | BashまたはPowerShell（v2.1.191以降） |
+| 複数（OR）カンマ区切り | `Bash,PowerShell` | BashまたはPowerShell（v2.1.191以降） |
 | 正規表現 | `Notebook.*` | Notebookで始まるすべて |
 | MCPツール | `mcp__github__.*` | githubサーバーのすべて |
 
