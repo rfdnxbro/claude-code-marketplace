@@ -320,8 +320,11 @@ HTTPフックのレスポンスでJSONを返さない場合（200以外のステ
 | 複数（OR） | `Edit\|Write` | EditまたはWrite |
 | 正規表現 | `Notebook.*` | Notebookで始まるすべて |
 | MCPツール | `mcp__github__.*` | githubサーバーのすべて |
+| MCPツール（ハイフン付き） | `mcp__brave-search__.*` | brave-searchサーバーのすべて |
 
 **注意**: 大文字小文字を区別
+
+> **注意（v2.1.195以降）**: ハイフン（`-`）を含む識別子（例: `mcp__brave-search`、`code-reviewer`）は**完全一致**になります。ハイフン付きMCPサーバーのすべてのツールにマッチするには、`mcp__brave-search__.*` のように正規表現で `__.*` を末尾に付ける必要があります。エージェント名（例: `code-reviewer`）も同様に完全一致です。
 
 ## once フィールド
 
