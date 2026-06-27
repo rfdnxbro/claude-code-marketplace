@@ -317,7 +317,8 @@ HTTPフックのレスポンスでJSONを返さない場合（200以外のステ
 | パターン | 例 | マッチ対象 |
 |---------|-----|----------|
 | 完全一致 | `Bash` | Bashのみ |
-| 複数（OR） | `Edit\|Write` | EditまたはWrite |
+| 複数（OR）パイプ区切り | `Edit\|Write` | EditまたはWrite |
+| 複数（OR）カンマ区切り | `Bash,PowerShell` | BashまたはPowerShell（v2.1.191以降） |
 | 正規表現 | `Notebook.*` | Notebookで始まるすべて |
 | MCPツール | `mcp__github__.*` | githubサーバーのすべて |
 | MCPツール（ハイフン付き） | `mcp__brave-search__.*` | brave-searchサーバーのすべて |
