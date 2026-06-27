@@ -755,6 +755,34 @@ description: 説明
         assert result.has_errors()
         assert any("default-enabled" in e for e in result.errors)
 
+    def test_default_enabled_snake_case_non_boolean_error(self):
+        """default_enabled（snake_case）がブール値でない場合エラー（v2.1.186以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            default_enabled: yes
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert result.has_errors()
+        assert any("default_enabled" in e for e in result.errors)
+
+    def test_default_enabled_camel_case_non_boolean_error(self):
+        """defaultEnabled（camelCase）がブール値でない場合エラー（v2.1.186以降）"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            defaultEnabled: yes
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert result.has_errors()
+        assert any("defaultEnabled" in e for e in result.errors)
+
     def test_fallback_valid(self):
         """fallbackフィールドが有効であることを確認（v2.1.186以降）"""
         content = dedent("""
