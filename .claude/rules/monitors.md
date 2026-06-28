@@ -10,11 +10,6 @@ paths: plugins/*/monitors/monitors.json, monitors/monitors.json
 
 プラグインモニターは組み込みの Monitor tool と**同じメカニズム**で動作し、同じ可用性制約を共有します。プラグインモニター固有の差分は、**Claude に指示しなくても自動起動できる**点です。Monitor tool 本体の仕様については公式 [`/en/tools-reference#monitor-tool`](https://code.claude.com/docs/en/tools-reference#monitor-tool) を参照してください。
 
-## 最低バージョン
-
-- プラグインモニター: **Claude Code v2.1.105 以降** が必須
-- Monitor tool 本体: v2.1.98 以降（プラグインモニターを使わない場合はこちらが下限）
-
 ## デフォルトファイル位置とフォーマット
 
 | 項目 | 値 |
@@ -24,7 +19,7 @@ paths: plugins/*/monitors/monitors.json, monitors/monitors.json
 
 ## plugin.json での指定方法
 
-プラグインルート直下に `monitors/monitors.json` を配置すれば自動検出されます（`plugin.json` での指定は不要）。明示的に指定する場合は、v2.1.129以降は `experimental` ブロック配下に宣言することが推奨されます（トップレベル宣言も引き続き動作するが `claude plugin validate` が警告を出す）:
+プラグインルート直下に `monitors/monitors.json` を配置すれば自動検出されます（`plugin.json` での指定は不要）。明示的に指定する場合は、`experimental` ブロック配下に宣言することが推奨されます（トップレベル宣言も動作するが `claude plugin validate` が警告を出す）:
 
 ```json
 {

@@ -40,36 +40,36 @@
 | 変数 | 説明 | 使用箇所 |
 |------|------|----------|
 | `${CLAUDE_PLUGIN_ROOT}` | プラグインルートへの絶対パス | hooks, mcp-servers, lsp-servers, monitors, allowed-tools |
-| `${CLAUDE_PROJECT_DIR}` | プロジェクトルートへの絶対パス | hooks, mcp-servers（v2.1.139以降） |
+| `${CLAUDE_PROJECT_DIR}` | プロジェクトルートへの絶対パス | hooks, mcp-servers |
 | `${CLAUDE_SESSION_ID}` | 現在のセッションID | skills, slash-commands |
-| `${CLAUDE_SKILL_DIR}` | スキル自身のディレクトリへの絶対パス（v2.1.64以降） | skills |
+| `${CLAUDE_SKILL_DIR}` | スキル自身のディレクトリへの絶対パス | skills |
 | `$ARGUMENTS` | フック入力JSON / コマンド引数（全体） | hooks, slash-commands |
 | `$ARGUMENTS[0]`, `$ARGUMENTS[1]`... | インデックス指定引数（ブラケット記法） | slash-commands |
-| `$0` | コマンド名自体（v2.1.19以降） | slash-commands |
-| `$1`, `$2`, `$3`... | 位置指定引数のショートハンド（v2.1.19以降） | slash-commands |
+| `$0` | コマンド名自体 | slash-commands |
+| `$1`, `$2`, `$3`... | 位置指定引数のショートハンド | slash-commands |
 | `${VAR}` | 任意の環境変数を展開 | mcp-servers, lsp-servers |
 | `${VAR:-default}` | デフォルト値付き環境変数 | mcp-servers, lsp-servers |
-| `CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS` | Gitクローンのタイムアウト（ミリ秒）。デフォルト120000（120秒）（v2.1.51以降） | marketplace |
-| `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` | `SessionEnd` フックのタイムアウト（ミリ秒）。デフォルトは `hook.timeout` の設定値（v2.1.74以降） | hooks |
-| `${CLAUDE_PLUGIN_DATA}` | プラグインの永続データディレクトリへの絶対パス。アップデートを超えて永続化される（v2.1.78以降） | hooks, monitors |
-| `CLAUDE_CODE_PLUGIN_SEED_DIR` | プラグインのシードディレクトリ。v2.1.79以降は複数ディレクトリをパス区切り文字（Unix: `:`, Windows: `;`）で区切って指定可能 | marketplace |
-| `CLAUDE_CODE_MCP_SERVER_NAME` | `headersHelper` スクリプト内で利用可能。呼び出し元の MCP サーバー名（v2.1.85以降） | mcp-servers |
-| `CLAUDE_CODE_MCP_SERVER_URL` | `headersHelper` スクリプト内で利用可能。呼び出し元の MCP サーバー URL（v2.1.85以降） | mcp-servers |
-| `CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE` | `git pull` 失敗時に既存マーケットプレイスキャッシュを保持（v2.1.90以降） | marketplace |
-| `CLAUDE_CODE_PLUGIN_PREFER_HTTPS` | GitHubプラグインソースをSSHの代わりにHTTPSでクローン・更新する（add/update操作を含む）。SSH鍵がない環境（CI・企業ネットワーク等）向け（v2.1.141以降） | marketplace |
-| `CLAUDE_CODE_SESSION_ID` | 現在のセッションID（Stdio MCPサーバーのサブプロセス環境で利用可能、v2.1.154以降） | mcp-servers |
-| `CLAUDECODE` | `1` に設定済み（Stdio MCPサーバーのサブプロセス環境で利用可能、v2.1.154以降） | mcp-servers |
-| `${CLAUDE_EFFORT}` | 現在のエフォートレベル。値: `low` / `medium` / `high` / `xhigh`（Opus 4.7のみ、他モデルは `high` にフォールバック） / `max`（v2.1.120以降） | skills, hooks（v2.1.133以降） |
-| `COLUMNS` | ステータスラインコマンド実行時のターミナルの列数（v2.1.153以降） | statusline |
-| `LINES` | ステータスラインコマンド実行時のターミナルの行数（v2.1.153以降） | statusline |
+| `CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS` | Gitクローンのタイムアウト（ミリ秒）。デフォルト120000（120秒） | marketplace |
+| `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` | `SessionEnd` フックのタイムアウト（ミリ秒）。デフォルトは `hook.timeout` の設定値 | hooks |
+| `${CLAUDE_PLUGIN_DATA}` | プラグインの永続データディレクトリへの絶対パス。アップデートを超えて永続化される | hooks, monitors |
+| `CLAUDE_CODE_PLUGIN_SEED_DIR` | プラグインのシードディレクトリ。複数ディレクトリをパス区切り文字（Unix: `:`, Windows: `;`）で区切って指定可能 | marketplace |
+| `CLAUDE_CODE_MCP_SERVER_NAME` | `headersHelper` スクリプト内で利用可能。呼び出し元の MCP サーバー名 | mcp-servers |
+| `CLAUDE_CODE_MCP_SERVER_URL` | `headersHelper` スクリプト内で利用可能。呼び出し元の MCP サーバー URL | mcp-servers |
+| `CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE` | `git pull` 失敗時に既存マーケットプレイスキャッシュを保持 | marketplace |
+| `CLAUDE_CODE_PLUGIN_PREFER_HTTPS` | GitHubプラグインソースをSSHの代わりにHTTPSでクローン・更新する（add/update操作を含む）。SSH鍵がない環境（CI・企業ネットワーク等）向け | marketplace |
+| `CLAUDE_CODE_SESSION_ID` | 現在のセッションID（Stdio MCPサーバーのサブプロセス環境で利用可能） | mcp-servers |
+| `CLAUDECODE` | `1` に設定済み（Stdio MCPサーバーのサブプロセス環境で利用可能） | mcp-servers |
+| `${CLAUDE_EFFORT}` | 現在のエフォートレベル。値: `low` / `medium` / `high` / `xhigh`（対応モデルでのみ利用可能。非対応モデルでは `high` にフォールバック） / `max` | skills, hooks |
+| `COLUMNS` | ステータスラインコマンド実行時のターミナルの列数 | statusline |
+| `LINES` | ステータスラインコマンド実行時のターミナルの行数 | statusline |
 
 ## Frontmatterリファレンス
 
-### paths: フィールドのフォーマット（v2.1.84以降）
+### paths: フィールドのフォーマット
 
 `.claude/rules/*.md` や CLAUDE.md などのルールファイルの frontmatter で使用する `paths:` フィールドは、カンマ区切り文字列またはYAMLリスト形式で指定できます。`paths:` はルールファイルをスコープ指定するためのフィールドであり、スキルやエージェント等の定義ファイルのfrontmatterとは異なります。
 
-**カンマ区切り形式（従来）:**
+**カンマ区切り形式:**
 
 ```yaml
 ---
@@ -77,7 +77,7 @@ paths: src/**/*.ts, lib/**/*.js
 ---
 ```
 
-**YAMLリスト形式（v2.1.84以降）:**
+**YAMLリスト形式:**
 
 ```yaml
 ---
