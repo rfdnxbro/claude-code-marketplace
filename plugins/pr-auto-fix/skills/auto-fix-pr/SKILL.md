@@ -9,6 +9,8 @@ disallowed-tools:
   - MultiEdit
   - Bash(git commit:*)
   - Bash(git push:*)
+metadata:
+  version: 0.2.0
 ---
 
 # auto-fix-pr
