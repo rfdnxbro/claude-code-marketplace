@@ -67,6 +67,7 @@ paths: plugins/*/monitors/monitors.json, monitors/monitors.json
 |------|------|
 | `${CLAUDE_PLUGIN_ROOT}` | プラグインのインストールディレクトリへの絶対パス（プラグイン更新で変化する） |
 | `${CLAUDE_PLUGIN_DATA}` | 更新をまたいで永続する状態ディレクトリ（`~/.claude/plugins/data/{id}/`） |
+| `${CLAUDE_PROJECT_DIR}` | プロジェクトルートへの絶対パス |
 | `${user_config.<key>}` | `userConfig` で宣言した値 |
 | `${ENV_VAR}` | 任意の環境変数 |
 

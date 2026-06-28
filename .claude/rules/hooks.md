@@ -126,11 +126,12 @@ LLMを使用してプロンプトを評価:
 {
   "type": "prompt",
   "prompt": "タスク完了を評価: $ARGUMENTS",
+  "model": "claude-haiku-4-5-20251001",
   "timeout": 30
 }
 ```
 
-`timeout`は秒単位で指定。省略時のデフォルトは30秒。
+`timeout`は秒単位で指定。省略時のデフォルトは30秒。`model`（任意）で評価に使うモデルを指定できる。省略時は高速モデルが使われる。`prompt` には `$ARGUMENTS` でフック入力JSONを埋め込める。
 
 **注**: プラグインからは`prompt`と`agent`タイプもサポートされます。
 

@@ -40,9 +40,8 @@ JSON形式で記述します。配置場所はプラグインルートの `.lsp.
 | `settings` | object | ワークスペース設定 |
 | `workspaceFolder` | string | ワークスペースフォルダパス |
 | `startupTimeout` | number | サーバー起動タイムアウト（ミリ秒） |
-| `shutdownTimeout` | number | シャットダウン待機時間（ミリ秒） |
-| `restartOnCrash` | boolean | クラッシュ時の自動再起動 |
-| `maxRestarts` | number | 最大再起動回数 |
+| `maxRestarts` | number | 最大再起動回数（これを超えると再起動を諦める） |
+| `diagnostics` | boolean | 編集後に診断情報をClaudeのコンテキストへ注入するか（デフォルト: `true`）。`false` にすると診断の自動注入のみ抑制し、コードナビゲーションは維持する |
 
 ## サンプル
 
@@ -115,7 +114,6 @@ JSON形式で記述します。配置場所はプラグインルートの `.lsp.
       }
     },
     "startupTimeout": 30000,
-    "restartOnCrash": true,
     "maxRestarts": 3
   }
 }

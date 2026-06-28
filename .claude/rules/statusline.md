@@ -179,6 +179,7 @@ Claude Codeがカスタムステータスラインの設定を支援します。
 | `output_style.name` | string | 出力スタイル名 | `default` |
 | `effort.level` | string | 現在の effort レベル。取り得る値: `low`, `medium`, `high`, `xhigh`, `max`（`xhigh` は対応モデルでのみ利用可能。非対応モデルでは `high` にフォールバック） | `medium` |
 | `thinking.enabled` | boolean | 思考（thinking）機能が有効かどうか | `false` |
+| `exceeds_200k_tokens` | boolean | 直近のAPIレスポンスの合計トークン数（入力・キャッシュ・出力の合算）が200kを超えたか。実際のコンテキストウィンドウサイズに関係なく固定しきい値 | `false` |
 
 #### コスト情報
 
