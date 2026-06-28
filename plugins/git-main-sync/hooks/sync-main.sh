@@ -9,7 +9,7 @@ set -u
 cat >/dev/null 2>&1 || true
 
 # JSON 文字列値として安全になるよう " と \ をエスケープして出力する。
-# 第2引数にセッションタイトルを渡すと hookSpecificOutput.sessionTitle を設定する（v2.1.152以降）。
+# 第2引数にセッションタイトルを渡すと hookSpecificOutput.sessionTitle を設定する。
 emit_json() {
   local msg="$1"
   local title="${2:-}"
