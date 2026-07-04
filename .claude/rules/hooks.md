@@ -761,6 +761,17 @@ fi
 
 **注意**: `SessionStart` フックの実行は、起動パフォーマンス改善のため、セッション開始後に約500ms遅延して実行されます。フックが起動直後に即座に実行されることを前提としたロジックがある場合は注意が必要です。
 
+**マッチャー**: 入力JSONの `source` フィールド（セッションの開始方法）に対してマッチします。有効な値:
+
+| matcher値 | 発火タイミング |
+|-----------|--------------|
+| `startup` | 新規セッション開始時 |
+| `resume` | `--resume`、`--continue`、`/resume` によるセッション再開時 |
+| `clear` | `/clear` 実行時 |
+| `compact` | 自動または手動のコンパクション後 |
+
+他のイベントと同様のmatcherパターン指定が可能です（「matcher の仕様」参照）。例えば `"matcher": "startup|resume"` は新規開始・再開時のみ発火し、省略または `"*"` はすべての開始方法にマッチします。
+
 **使用例:**
 
 ```json
@@ -768,6 +779,7 @@ fi
   "hooks": {
     "SessionStart": [
       {
+        "matcher": "startup|resume",
         "hooks": [
           {
             "type": "command",
@@ -781,7 +793,12 @@ fi
 }
 ```
 
-**`agent_type`入力**: `--agent`フラグでセッションを開始した場合、SessionStartフックのJSON入力に`agent_type`フィールドが含まれます。
+**入力JSON（固有フィールド）:**
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `source` | string | セッションの開始方法。`"startup"`（新規セッション）/ `"resume"`（再開）/ `"clear"`（`/clear` 後）/ `"compact"`（コンパクション後）。matcherはこの値に対して評価される |
+| `agent_type` | string | `--agent`フラグでセッションを開始した場合のエージェント名 |
 
 **`CLAUDE_ENV_FILE`**: SessionStartフックでは`CLAUDE_ENV_FILE`環境変数にファイルパスが設定されます。このファイルに`export KEY=VALUE`形式で環境変数を書き込むと、セッション全体で利用可能になります。
 
