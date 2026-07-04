@@ -829,6 +829,68 @@ fi
 - フックがインストールしたスキルを同じセッション内で即時利用（`reloadSkills: true`）
 - セッションの目的や状態に基づくセッションタイトルの自動設定
 
+### Notification
+
+Claude Codeが通知を発行した際に実行されるフック。通知のログ記録、外部サービスへの転送、デスクトップアラートのトリガーなどに使用します。
+
+**マッチャー**: 入力JSONの `type` フィールド（通知種別）に対してマッチします。有効な値:
+
+| matcher値 | 発火タイミング |
+|-----------|--------------|
+| `permission_prompt` | 権限ダイアログ表示時 |
+| `idle_prompt` | Claude Codeがアイドル状態になり入力を求める時 |
+| `auth_success` | 認証成功時 |
+| `elicitation_dialog` | MCPサーバーがツール呼び出し中にユーザー入力を要求した時 |
+| `elicitation_complete` | ユーザーがエリシテーションを完了した時 |
+| `elicitation_response` | MCPサーバーがエリシテーションのレスポンスを受け取った時 |
+| `agent_needs_input` | エージェントが入力を要求した時 |
+| `agent_completed` | エージェントがタスクを完了した時 |
+
+**使用例:**
+
+```json
+{
+  "hooks": {
+    "Notification": [
+      {
+        "matcher": "permission_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/notify.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**入力JSON（固有フィールド）:**
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `type` | string | 通知種別。上記matcher値のいずれか（matcherはこの値に対して評価される） |
+| `message` | string | ユーザーに表示される通知メッセージ本文 |
+
+```json
+{
+  "session_id": "abc123",
+  "transcript_path": "/path/to/transcript.jsonl",
+  "cwd": "/path/to/project",
+  "hook_event_name": "Notification",
+  "type": "permission_prompt",
+  "message": "Bash command requires permission"
+}
+```
+
+**ユースケース:**
+
+- 通知の外部サービス（Slack等）への転送
+- デスクトップ通知・アラートのトリガー
+- 通知ログの記録・監査
+
 ### SessionEnd
 
 セッション終了時に実行されるフック。
