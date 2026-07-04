@@ -29,6 +29,8 @@ Agent tool で非自明な並列・チーム作業を委譲する前に、以下
 
 **エージェントチームの利点**: `SendMessage` でチームメイト間の双方向通信が可能。`TeammateIdle` フックでアイドル時の振る舞いも制御できる。Plan Approval ワークフローで段階的承認も取れる。
 
+**状態変化の観測・通知**: チームメイトが入力待ち/完了になったことを外部（ログ・Slack等）に通知したい場合は `Notification` フック（matcher: `agent_needs_input` / `agent_completed`）を使う。`TeammateIdle` はアイドル時の継続/停止判定、`Notification` は状態変化の観測・通知用途と役割が異なる。
+
 ## 2. レビュアー Teammate の組み込み
 
 エージェントチームを組成する場合は、**原則としてレビュアー Teammate を 1 人入れる**。理由：
