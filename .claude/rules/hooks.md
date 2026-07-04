@@ -682,7 +682,7 @@ EOF
 | `session_id` | セッションID |
 | `transcript_path` | トランスクリプトファイルのパス |
 | `cwd` | 現在の作業ディレクトリ |
-| `permission_mode` | 現在のパーミッションモード（`default`, `plan`, `acceptEdits`, `dontAsk`, `bypassPermissions`） |
+| `permission_mode` | 現在のパーミッションモード（`default`/`manual`, `plan`, `acceptEdits`, `dontAsk`, `bypassPermissions`） |
 | `hook_event_name` | フックイベント名 |
 | `tool_name` | 実行されるツール名 |
 | `tool_input` | ツールへの入力パラメータ |
