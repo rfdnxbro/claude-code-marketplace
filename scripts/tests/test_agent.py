@@ -539,6 +539,19 @@ class TestValidateAgent:
         result = validate_agent(Path("agent.md"), content)
         assert not result.has_errors()
 
+    def test_valid_permission_mode_manual(self):
+        """permissionMode: manualが有効であることを確認（defaultと並んで使用可能な値）"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            permissionMode: manual
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()
+
     def test_invalid_permission_mode_ignore(self):
         """permissionMode: ignoreは廃止されエラーになることを確認"""
         content = dedent("""

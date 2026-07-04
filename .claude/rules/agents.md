@@ -44,7 +44,7 @@ skills: skill-name
 | `tools` | No | アクセス可能なツール（カンマ/YAML形式）。省略時は全ツール継承。`--print` モードでも尊重される |
 | `disallowedTools` | No | 使用禁止ツール（カンマ/YAML形式）。`--print` モードでも尊重される |
 | `model` | No | `sonnet`, `opus`, `haiku`, `inherit`、またはフルモデルID（例: `claude-opus-4-5`, `claude-sonnet-4-6`）。`--model` と同じ値が使用可能。省略時は`inherit`（親スレッドのモデルを継承）。Agent ツール呼び出し時に `model` パラメータで上書き可能（[per-invocation オーバーライド](#model-per-invocation-オーバーライド)参照） |
-| `permissionMode` | No | `default`, `acceptEdits`, `bypassPermissions`, `plan`, `dontAsk`。組み込みエージェントを `--agent <name>` で起動した場合にも適用される |
+| `permissionMode` | No | `default`（表示名は"Manual"。`manual`という値も同じ意味で使用可能）, `acceptEdits`, `bypassPermissions`, `plan`, `dontAsk`。組み込みエージェントを `--agent <name>` で起動した場合にも適用される |
 | `skills` | No | 自動ロードするスキル名（カンマ/YAML形式）。プラグインスキルは完全修飾名（`plugin-name:skill-name`）で指定 |
 | `hooks` | No | フック定義（[hooks.md](hooks.md)参照） |
 | `memory` | No | 永続的メモリのスコープ：`user`, `project`, `local` |
