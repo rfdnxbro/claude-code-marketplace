@@ -10,6 +10,45 @@ from .base import ValidationResult, parse_json_safe
 # httpタイプのheaders値内の環境変数プレースホルダー（${VAR_NAME}形式）を抽出する正規表現
 ENV_VAR_PLACEHOLDER_PATTERN = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
 
+# イベントごとに使用できないhookタイプと、使用可能なタイプの案内文言
+DISALLOWED_HOOK_TYPES_BY_EVENT = {
+    "SessionStart": ({"prompt", "agent", "http"}, "command/mcp_toolタイプ"),
+    "Setup": ({"prompt", "agent", "http"}, "command/mcp_toolタイプ"),
+    "SubagentStart": ({"prompt", "agent"}, "command/http/mcp_toolタイプ"),
+}
+
+
+def _validate_http_allowed_env_vars(
+    h: dict, file_path: Path, result: ValidationResult
+) -> None:
+    """httpタイプのheadersで使用される環境変数プレースホルダーが
+    allowedEnvVarsにホワイトリスト登録されているかを検証する"""
+    headers = h.get("headers")
+    if not isinstance(headers, dict):
+        return
+
+    used_env_vars: set[str] = set()
+    for header_value in headers.values():
+        if isinstance(header_value, str):
+            used_env_vars.update(ENV_VAR_PLACEHOLDER_PATTERN.findall(header_value))
+
+    if not used_env_vars:
+        return
+
+    allowed_env_vars = h.get("allowedEnvVars")
+    if allowed_env_vars is not None and not isinstance(allowed_env_vars, list):
+        result.add_error(f"{file_path.name}: httpタイプのallowedEnvVarsは配列が必要です")
+        allowed_env_vars = []
+
+    missing_env_vars = sorted(used_env_vars - set(allowed_env_vars or []))
+    if missing_env_vars:
+        missing_str = ", ".join(missing_env_vars)
+        result.add_error(
+            f"{file_path.name}: httpタイプのheadersで環境変数 "
+            f"{missing_str} を使用していますが"
+            f"allowedEnvVarsに含まれていません"
+        )
+
 
 def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
     """hooks.jsonを検証する"""
@@ -20,6 +59,9 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
         return result
 
     hooks = data.get("hooks", {})
+    if not isinstance(hooks, dict):
+        result.add_error(f"{file_path.name}: hooksはオブジェクトが必要です")
+        return result
     if not hooks:
         result.add_warning(f"{file_path.name}: hooksが空です")
         return result
@@ -141,25 +183,14 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
                         f"{file_path.name}: PostCompactイベントはcommandタイプのみ対応しています"
                     )
 
-                # SessionStart/Setupはprompt/agent/httpタイプ不可（v2.1.142、httpは非対応）
-                session_start_setup_events = ["SessionStart", "Setup"]
-                if event_name in session_start_setup_events and hook_type in [
-                    "prompt",
-                    "agent",
-                    "http",
-                ]:
+                # イベントごとに使用できないhookタイプの確認
+                disallowed = DISALLOWED_HOOK_TYPES_BY_EVENT.get(event_name)
+                if disallowed and hook_type in disallowed[0]:
+                    allowed_types_str = disallowed[1]
                     result.add_error(
                         f"{file_path.name}: {event_name}イベントには"
-                        f"prompt/agent/httpタイプは使用できません。"
-                        f"command/mcp_toolタイプを使用してください"
-                    )
-
-                # SubagentStartはprompt/agentタイプ不可（v2.1.142、httpは対応）
-                if event_name == "SubagentStart" and hook_type in ["prompt", "agent"]:
-                    result.add_error(
-                        f"{file_path.name}: {event_name}イベントには"
-                        f"prompt/agentタイプは使用できません。"
-                        f"command/http/mcp_toolタイプを使用してください"
+                        f"{hook_type}タイプは使用できません。"
+                        f"{allowed_types_str}を使用してください"
                     )
 
                 if hook_type == "command" and not h.get("command"):
@@ -196,35 +227,7 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
                 if hook_type == "http":
                     if not h.get("url"):
                         result.add_error(f"{file_path.name}: httpタイプにurlフィールドがありません")
-
-                    # allowedEnvVarsの確認（headersでの環境変数展開のホワイトリスト）
-                    headers = h.get("headers")
-                    if isinstance(headers, dict):
-                        used_env_vars: set[str] = set()
-                        for header_value in headers.values():
-                            if isinstance(header_value, str):
-                                used_env_vars.update(
-                                    ENV_VAR_PLACEHOLDER_PATTERN.findall(header_value)
-                                )
-
-                        if used_env_vars:
-                            allowed_env_vars = h.get("allowedEnvVars")
-                            if allowed_env_vars is not None and not isinstance(
-                                allowed_env_vars, list
-                            ):
-                                result.add_error(
-                                    f"{file_path.name}: httpタイプのallowedEnvVarsは配列が必要です"
-                                )
-                                allowed_env_vars = []
-
-                            missing_env_vars = sorted(used_env_vars - set(allowed_env_vars or []))
-                            if missing_env_vars:
-                                missing_str = ", ".join(missing_env_vars)
-                                result.add_error(
-                                    f"{file_path.name}: httpタイプのheadersで環境変数 "
-                                    f"{missing_str} を使用していますが"
-                                    f"allowedEnvVarsに含まれていません"
-                                )
+                    _validate_http_allowed_env_vars(h, file_path, result)
 
                 if hook_type == "mcp_tool":
                     if not h.get("server"):

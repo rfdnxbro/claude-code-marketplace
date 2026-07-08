@@ -1305,6 +1305,20 @@ class TestValidateHooksJson:
 
     # --- 構造不正なJSONに対する型ガードのテスト ---
 
+    def test_hooks_not_dict(self):
+        """hooks自体がオブジェクトでない場合（配列）、クラッシュせずエラーになることをテスト"""
+        content = json.dumps({"hooks": ["invalid"]})
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("hooksはオブジェクトが必要です" in e for e in result.errors)
+
+    def test_hooks_not_dict_string(self):
+        """hooks自体がオブジェクトでない場合（文字列）、クラッシュせずエラーになることをテスト"""
+        content = json.dumps({"hooks": "invalid"})
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("hooksはオブジェクトが必要です" in e for e in result.errors)
+
     def test_event_hooks_not_list(self):
         """イベントのフック設定が配列でない場合、クラッシュせずエラーになることをテスト"""
         content = json.dumps({"hooks": {"PreToolUse": "invalid"}})
