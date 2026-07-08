@@ -38,7 +38,7 @@ def _validate_http_allowed_env_vars(
     allowed_env_vars = h.get("allowedEnvVars")
     if allowed_env_vars is not None and not isinstance(allowed_env_vars, list):
         result.add_error(f"{file_path.name}: httpタイプのallowedEnvVarsは配列が必要です")
-        allowed_env_vars = []
+        return
 
     missing_env_vars = sorted(used_env_vars - set(allowed_env_vars or []))
     if missing_env_vars:

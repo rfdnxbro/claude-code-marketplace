@@ -1541,3 +1541,6 @@ class TestValidateHooksJson:
         result = validate_hooks_json(Path("hooks.json"), content)
         assert result.has_errors()
         assert any("allowedEnvVarsは配列が必要です" in e for e in result.errors)
+        # allowedEnvVarsの型エラーが出た場合、後続の未許可変数チェックは
+        # 行わずエラー1件に留めることを確認（同一設定ミスの二重報告防止）
+        assert len(result.errors) == 1
