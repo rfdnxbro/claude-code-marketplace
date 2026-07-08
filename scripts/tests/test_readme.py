@@ -5,7 +5,7 @@ readme.py のテスト
 from pathlib import Path
 from textwrap import dedent
 
-from scripts.validators.readme import validate_readme
+from scripts.validators.readme import _strip_code_blocks, validate_readme
 
 
 class TestValidateReadme:
@@ -609,8 +609,6 @@ class TestStripCodeBlocksHelper:
 
     def test_preserves_line_count(self):
         """行数が変わらないこと"""
-        from scripts.validators.readme import _strip_code_blocks
-
         content = dedent("""
             line1
             ```python
@@ -623,8 +621,6 @@ class TestStripCodeBlocksHelper:
 
     def test_removes_code_block_content(self):
         """コードブロック内の行が空になること"""
-        from scripts.validators.readme import _strip_code_blocks
-
         content = dedent("""
             before
             ```
