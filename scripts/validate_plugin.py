@@ -38,7 +38,8 @@ def _safe_validate(
         return validator_func(file_path, content)
     except Exception as e:
         result.add_error(
-            f"{file_path.name}: バリデーター実行中に予期しないエラーが発生しました: {e}"
+            f"{file_path.name}: バリデーター実行中に予期しないエラーが発生しました: "
+            f"{type(e).__name__}: {e}"
         )
         return result
 
