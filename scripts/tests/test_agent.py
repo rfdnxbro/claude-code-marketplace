@@ -25,6 +25,8 @@ class TestValidateAgent:
         assert len(result.warnings) == 0
 
     def test_missing_name(self):
+        """nameフィールドがないfrontmatterはエージェント定義として扱われず、
+        エラー・警告を一切出さないことを確認（agents.md仕様: ドキュメント用.md扱い）"""
         content = dedent("""
             ---
             description: 説明
@@ -32,8 +34,36 @@ class TestValidateAgent:
             本文
         """).strip()
         result = validate_agent(Path("agent.md"), content)
-        assert result.has_errors()
-        assert any("name" in e for e in result.errors)
+        assert not result.has_errors()
+        assert len(result.warnings) == 0
+
+    def test_no_frontmatter_at_all(self):
+        """frontmatter自体がない素のMarkdown（README.md等）は
+        エラー・警告を一切出さないことを確認（agents.md仕様: ドキュメント用.md扱い）"""
+        content = dedent("""
+            # エージェント一覧
+
+            このディレクトリにはエージェント定義が含まれます。
+        """).strip()
+        result = validate_agent(Path("README.md"), content)
+        assert not result.has_errors()
+        assert len(result.warnings) == 0
+
+    def test_missing_name_with_invalid_other_fields(self):
+        """nameがなければ、他のフィールド（description等）が不正な値でも
+        一切エラー・警告が出ないことを確認（agents.md仕様: ドキュメント用.md扱い）"""
+        content = dedent("""
+            ---
+            description:
+            model: invalid-model
+            permissionMode: invalid
+            memory: global
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()
+        assert len(result.warnings) == 0
 
     def test_invalid_name_format(self):
         content = dedent("""
