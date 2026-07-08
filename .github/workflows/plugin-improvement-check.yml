@@ -16,7 +16,7 @@ on:
         default: false
 
 permissions:
-  contents: write
+  contents: read
   issues: write
   pull-requests: read
   id-token: write
@@ -39,6 +39,14 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+
+      - name: 前回のチェックポイントを復元
+        uses: actions/cache/restore@v4
+        with:
+          path: .plugin-check-sha
+          key: plugin-check-sha-${{ github.run_id }}
+          restore-keys: |
+            plugin-check-sha-
 
       - name: 変更されたルール/バリデーターを特定
         id: changed-files
@@ -199,15 +207,14 @@ jobs:
 
       - name: チェックポイントを更新
         if: steps.changed-files.outputs.has_changes == 'true' && steps.plugins.outputs.count > 0 && github.event_name != 'workflow_dispatch'
-        run: |
-          set -e
-          git rev-parse HEAD > .plugin-check-sha
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add .plugin-check-sha
-          git diff --staged --quiet || git commit -m "chore: プラグイン改善チェックポイントを更新"
-          git pull --rebase origin main
-          git push origin HEAD:main
+        run: git rev-parse HEAD > .plugin-check-sha
+
+      - name: チェックポイントをキャッシュに保存
+        if: steps.changed-files.outputs.has_changes == 'true' && steps.plugins.outputs.count > 0 && github.event_name != 'workflow_dispatch'
+        uses: actions/cache/save@v4
+        with:
+          path: .plugin-check-sha
+          key: plugin-check-sha-${{ github.run_id }}
 
       - name: 変更がない場合
         if: steps.changed-files.outputs.has_changes == 'false'

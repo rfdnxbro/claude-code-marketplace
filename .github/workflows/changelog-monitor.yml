@@ -13,7 +13,7 @@ on:
         default: false
 
 permissions:
-  contents: write
+  contents: read
   issues: write
   pull-requests: write
   id-token: write
@@ -29,6 +29,14 @@ jobs:
     steps:
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v7
+
+      - name: 前回のCHANGELOGスナップショットを復元
+        uses: actions/cache/restore@v4
+        with:
+          path: .changelog-snapshot.md
+          key: changelog-snapshot-${{ github.run_id }}
+          restore-keys: |
+            changelog-snapshot-
 
       - name: 最新のCHANGELOGを取得
         id: fetch
@@ -64,18 +72,6 @@ jobs:
             echo "初回実行: スナップショットを作成します"
             echo "初回実行のため差分なし" > changelog-diff.txt
           fi
-
-      - name: 初回実行時はスナップショット作成のみ
-        if: steps.check-diff.outputs.is_first_run == 'true'
-        run: |
-          set -e
-          cp current-changelog.md .changelog-snapshot.md
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add .changelog-snapshot.md
-          git commit -m "chore: CHANGELOGスナップショットを初期化"
-          git push
-          echo "初回実行完了。次回以降の実行で変更を検出します。"
 
       - name: claude-code-updateラベルを作成（存在しない場合）
         if: (steps.check-diff.outputs.changed == 'true' && steps.check-diff.outputs.is_first_run == 'false') || inputs.force_check
@@ -135,13 +131,13 @@ jobs:
               2. `gh issue create --title "..." --label "..." --body-file /tmp/changelog-issue.md`を実行
               - 理由: `--body`オプションだとシェルエスケープの問題で本文が欠落するため
 
-      - name: スナップショットを更新
-        if: steps.claude-analysis.outcome == 'success'
-        run: |
-          set -e
-          cp current-changelog.md .changelog-snapshot.md
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add .changelog-snapshot.md
-          git diff --staged --quiet || git commit -m "chore: CHANGELOGスナップショットを更新"
-          git push
+      - name: スナップショットをキャッシュに保存
+        if: steps.check-diff.outputs.is_first_run == 'true' || steps.claude-analysis.outcome == 'success'
+        run: cp current-changelog.md .changelog-snapshot.md
+
+      - name: キャッシュを保存
+        if: steps.check-diff.outputs.is_first_run == 'true' || steps.claude-analysis.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: .changelog-snapshot.md
+          key: changelog-snapshot-${{ github.run_id }}

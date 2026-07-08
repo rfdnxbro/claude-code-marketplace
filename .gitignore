@@ -31,6 +31,10 @@ Thumbs.db
 current-changelog.md
 changelog-diff.txt
 
+# CI状態ファイル（GitHub Actions cacheで永続化するためgit管理外）
+.changelog-snapshot.md
+.plugin-check-sha
+
 # ログファイル
 *.log
 npm-debug.log*
