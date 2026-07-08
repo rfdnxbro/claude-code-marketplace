@@ -1,8 +1,7 @@
 name: プラグイン改善チェック
 
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches: [main]
     paths:
       - '.claude/rules/**'
@@ -29,10 +28,6 @@ jobs:
   check-improvements:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # PRがマージされた場合のみ実行（クローズのみは除外）
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      github.event.pull_request.merged == true
     steps:
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v7
@@ -56,11 +51,10 @@ jobs:
             RULES=$(find .claude/rules -name '*.md' -type f | tr '\n' ',' | sed 's/,$//')
             VALIDATORS=$(find scripts/validators -name '*.py' -type f | tr '\n' ',' | sed 's/,$//')
           else
-            # pull_request: 前回チェックポイントからの累積差分を検出（mainの履歴ベース）
-            # 注意: GitHub Actionsキャッシュはpull_requestイベントのref
-            # （refs/pull/<N>/merge）にスコープされるため、別PRが保存した
-            # チェックポイントを復元できず、通常運用でも下記フォールバックに
-            # よく到達する（累積差分ではなく直前コミットとの差分になる既知の制約）
+            # push（mainへのマージ含む）: 前回チェックポイントからの累積差分を検出
+            # （mainの履歴ベース）。mainブランチへのpushトリガーのため
+            # github.refは常にrefs/heads/mainに固定され、キャッシュのスコープも
+            # 安定して引き継がれる
             if [ -f .plugin-check-sha ]; then
               LAST_SHA=$(tr -d '[:space:]' < .plugin-check-sha)
               if git cat-file -e "${LAST_SHA}" 2>/dev/null; then
@@ -72,7 +66,7 @@ jobs:
               fi
             else
               LAST_SHA="HEAD~1"
-              echo "::warning::前回のチェックポイントが見つかりません（初回実行、または別PRのキャッシュスコープ制約）。HEAD~1にフォールバックするため、累積差分ではなく直前コミットとの差分のみを対象にします"
+              echo "::warning::前回のチェックポイントが見つかりません（初回実行の可能性）。HEAD~1にフォールバックするため、累積差分ではなく直前コミットとの差分のみを対象にします"
             fi
 
             RULES=$(git diff --name-only "${LAST_SHA}" HEAD -- .claude/rules/ | grep '\.md$' | sort -u | tr '\n' ',' | sed 's/,$//')
