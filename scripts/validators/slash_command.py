@@ -27,6 +27,16 @@ _UNQUOTED_BOOL_PATTERN = re.compile(
     re.IGNORECASE | re.MULTILINE,
 )
 
+# 危険そうなキーワード（disable-model-invocationの検討を促す警告用）
+# 単語境界を考慮したマッチングにより、"dropdown"や"reproduction"のような
+# キーワードを部分文字列として含むだけの単語への誤検知を避ける。
+# 単語構成文字にアンダースコアを含めないため、delete_all_records や
+# production_env のようなスネークケースの複合語も引き続き検知できる
+_DANGEROUS_KEYWORDS = ["deploy", "delete", "drop", "production", "本番"]
+_DANGEROUS_KEYWORD_PATTERNS = [
+    re.compile(rf"(?<![A-Za-z0-9]){re.escape(kw)}(?![A-Za-z0-9])") for kw in _DANGEROUS_KEYWORDS
+]
+
 
 def _find_unquoted_bool_fields(content: str) -> list[tuple[str, str]]:
     """frontmatterで引用符なしのYAMLブール値キーワードを持つフィールドを検出する"""
@@ -98,20 +108,13 @@ def validate_slash_command(file_path: Path, content: str) -> ValidationResult:
     # disable-model-invocationの確認
     disable_model = frontmatter.get("disable-model-invocation", False)
     # 危険そうなキーワードが含まれる場合は警告
-    # 単語境界を考慮したマッチングにより、"dropdown"や"reproduction"のような
-    # キーワードを部分文字列として含むだけの単語への誤検知を避ける
-    dangerous_keywords = ["deploy", "delete", "drop", "production", "本番"]
     description = frontmatter.get("description", "")
     description_str = to_str(description)
     body_lower = body.lower()
     description_lower = description_str.lower()
-    dangerous_keyword_patterns = [
-        re.compile(rf"(?<![A-Za-z0-9_]){re.escape(kw)}(?![A-Za-z0-9_])")
-        for kw in dangerous_keywords
-    ]
     if any(
         pattern.search(body_lower) or pattern.search(description_lower)
-        for pattern in dangerous_keyword_patterns
+        for pattern in _DANGEROUS_KEYWORD_PATTERNS
     ):
         if disable_model is not True:
             if WARNING_DANGEROUS_OPERATION not in disabled_warnings:

@@ -212,6 +212,33 @@ class TestValidateSlashCommand:
         assert not result.has_errors()
         assert not any("disable-model-invocation" in w for w in result.warnings)
 
+    def test_dangerous_keyword_snake_case_delete_detected(self):
+        """'delete_all_records'のようなスネークケース複合語は
+        アンダースコアを単語構成文字から除外しているため検知されることを確認"""
+        content = dedent("""
+            ---
+            description: 危険なコマンド
+            ---
+
+            delete_all_recordsを実行する
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert any("disable-model-invocation" in w for w in result.warnings)
+
+    def test_dangerous_keyword_snake_case_production_detected(self):
+        """'production_env'のようなスネークケース複合語が検知されることを確認"""
+        content = dedent("""
+            ---
+            description: 環境変数
+            ---
+
+            production_envを設定する
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert any("disable-model-invocation" in w for w in result.warnings)
+
     def test_disable_broad_bash_wildcard_warning(self):
         """validator-disableコメントでbroad-bash-wildcard警告をスキップ"""
         content = dedent("""
