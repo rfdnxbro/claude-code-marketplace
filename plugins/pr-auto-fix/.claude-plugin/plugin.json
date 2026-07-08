@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "pr-auto-fix",
   "version": "0.2.0",
-  "description": "PR 作成後に CI 失敗・レビュー・コンフリクトを自動検知し、自明な修正は commit & push、判断要は GitHub PR にコメントしてエスカレーションするプラグイン",
+  "description": "PR 作成後に CI 失敗・レビュー・コンフリクトを自動検知し、自明な修正は commit & push、判断要は PR コメントでエスカレーションするプラグイン",
   "author": {
     "name": "rfdnxbro"
   },
