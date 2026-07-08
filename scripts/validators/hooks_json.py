@@ -18,9 +18,7 @@ DISALLOWED_HOOK_TYPES_BY_EVENT = {
 }
 
 
-def _validate_http_allowed_env_vars(
-    h: dict, file_path: Path, result: ValidationResult
-) -> None:
+def _validate_http_allowed_env_vars(h: dict, file_path: Path, result: ValidationResult) -> None:
     """httpタイプのheadersで使用される環境変数プレースホルダーが
     allowedEnvVarsにホワイトリスト登録されているかを検証する"""
     headers = h.get("headers")
