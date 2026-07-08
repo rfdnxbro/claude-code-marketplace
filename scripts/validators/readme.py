@@ -24,8 +24,8 @@ def validate_readme(file_path: Path, content: str) -> ValidationResult:
         if not re.search(pattern, content, re.IGNORECASE):
             result.add_error(f"{file_path.name}: 必須セクション「{section_name}」がありません")
 
-    # 相対パスリンクのチェック
-    _check_relative_links(file_path, content, result)
+    # 相対パスリンクのチェック（コードブロック内のサンプルリンクは対象外にする）
+    _check_relative_links(file_path, _strip_code_blocks(content), result)
 
     # コードブロックの言語指定チェック
     _check_code_blocks(file_path, content, result)
@@ -33,11 +33,37 @@ def validate_readme(file_path: Path, content: str) -> ValidationResult:
     return result
 
 
+def _strip_code_blocks(content: str) -> str:
+    """フェンス付きコードブロックの中身を空行に置き換えた文字列を返す
+
+    行数・全体の構造は変えず、コードブロック内（フェンス行自体も含む）の
+    内容だけを消す。判定ロジックは_check_code_blocksと同様。
+    """
+    lines = content.split("\n")
+    in_code_block = False
+    stripped_lines = []
+
+    for line in lines:
+        stripped = line.strip()
+
+        if stripped.startswith("```"):
+            # コードブロックの開始/終了フラグを反転
+            in_code_block = not in_code_block
+            stripped_lines.append("")
+        elif in_code_block:
+            stripped_lines.append("")
+        else:
+            stripped_lines.append(line)
+
+    return "\n".join(stripped_lines)
+
+
 def _check_relative_links(file_path: Path, content: str, result: ValidationResult) -> None:
     """相対パスのリンク切れをチェックする"""
     # Markdownリンク: [text](path) 形式
     # 外部URL（http://, https://）は除外
-    link_pattern = r"\[([^\]]*)\]\(([^)]*)\)"
+    # 画像記法 ![alt](path) の [alt](path) 部分は除外（直前の!を否定先読み）
+    link_pattern = r"(?<!!)\[([^\]]*)\]\(([^)]*)\)"
     base_dir = file_path.parent
 
     for match in re.finditer(link_pattern, content):

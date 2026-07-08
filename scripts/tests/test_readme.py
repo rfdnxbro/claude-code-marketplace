@@ -458,6 +458,189 @@ class TestCodeBlockCheck:
         assert len(result.warnings) == 0
 
 
+class TestCodeBlockLinksExcluded:
+    """コードブロック内リンクの除外に関するテスト"""
+
+    def test_link_in_code_block_not_checked(self, tmp_path):
+        """コードブロック内の実在しないパスへのリンクはリンク切れとして報告されない"""
+        readme_path = tmp_path / "README.md"
+        content = dedent("""
+            # Plugin
+
+            ## 概要
+
+            説明
+
+            ## インストール
+
+            ```markdown
+            [example](./nonexistent-file)
+            ```
+
+            ## 使い方
+
+            使い方
+        """).strip()
+        readme_path.write_text(content)
+
+        result = validate_readme(readme_path, content)
+        assert not result.has_errors()
+
+    def test_link_outside_code_block_still_checked(self, tmp_path):
+        """コードブロック外の実在しないパスへのリンクは引き続きリンク切れとして報告される"""
+        readme_path = tmp_path / "README.md"
+        content = dedent("""
+            # Plugin
+
+            ## 概要
+
+            詳細は[ガイド](docs/nonexistent.md)を参照。
+
+            ```markdown
+            [example](./nonexistent-file)
+            ```
+
+            ## インストール
+
+            手順
+
+            ## 使い方
+
+            使い方
+        """).strip()
+        readme_path.write_text(content)
+
+        result = validate_readme(readme_path, content)
+        link_errors = [e for e in result.errors if "リンク切れ" in e]
+        assert len(link_errors) == 1
+        assert "docs/nonexistent.md" in link_errors[0]
+
+
+class TestImageLinkNotDoubleReported:
+    """画像リンク切れの二重報告解消に関するテスト"""
+
+    def test_broken_image_reported_once(self, tmp_path):
+        """存在しない画像は画像リンク切れのみ報告され、通常のリンク切れとしては報告されない"""
+        readme_path = tmp_path / "README.md"
+        content = dedent("""
+            # Plugin
+
+            ## 概要
+
+            ![alt](nonexistent.png)
+
+            ## インストール
+
+            手順
+
+            ## 使い方
+
+            使い方
+        """).strip()
+        readme_path.write_text(content)
+
+        result = validate_readme(readme_path, content)
+        image_errors = [e for e in result.errors if "画像リンク切れ" in e]
+        normal_link_errors = [
+            e for e in result.errors if "リンク切れ" in e and "画像リンク切れ" not in e
+        ]
+        assert len(image_errors) == 1
+        assert len(normal_link_errors) == 0
+        assert len(result.errors) == 1
+
+    def test_valid_image_no_errors(self, tmp_path):
+        """存在する画像はエラーが出ない"""
+        readme_path = tmp_path / "README.md"
+        image_path = tmp_path / "screenshot.png"
+        image_path.write_bytes(b"fake image data")
+
+        content = dedent("""
+            # Plugin
+
+            ## 概要
+
+            ![alt](screenshot.png)
+
+            ## インストール
+
+            手順
+
+            ## 使い方
+
+            使い方
+        """).strip()
+        readme_path.write_text(content)
+
+        result = validate_readme(readme_path, content)
+        assert not result.has_errors()
+
+    def test_normal_link_still_checked(self, tmp_path):
+        """通常のMarkdownリンク（画像でない）の実在チェックは引き続き正しく動作する"""
+        readme_path = tmp_path / "README.md"
+        target_file = tmp_path / "docs" / "guide.md"
+        target_file.parent.mkdir(parents=True)
+        target_file.write_text("# Guide")
+
+        content = dedent("""
+            # Plugin
+
+            ## 概要
+
+            詳細は[ガイド](docs/guide.md)を参照。存在しない[リンク](docs/missing.md)もある。
+
+            ## インストール
+
+            手順
+
+            ## 使い方
+
+            使い方
+        """).strip()
+        readme_path.write_text(content)
+
+        result = validate_readme(readme_path, content)
+        link_errors = [e for e in result.errors if "リンク切れ" in e and "画像リンク切れ" not in e]
+        assert len(link_errors) == 1
+        assert "docs/missing.md" in link_errors[0]
+
+
+class TestStripCodeBlocksHelper:
+    """_strip_code_blocks関数単体のテスト"""
+
+    def test_preserves_line_count(self):
+        """行数が変わらないこと"""
+        from scripts.validators.readme import _strip_code_blocks
+
+        content = dedent("""
+            line1
+            ```python
+            code line
+            ```
+            line2
+        """).strip()
+        stripped = _strip_code_blocks(content)
+        assert len(stripped.split("\n")) == len(content.split("\n"))
+
+    def test_removes_code_block_content(self):
+        """コードブロック内の行が空になること"""
+        from scripts.validators.readme import _strip_code_blocks
+
+        content = dedent("""
+            before
+            ```
+            [example](./nonexistent-file)
+            ```
+            after
+        """).strip()
+        stripped = _strip_code_blocks(content)
+        lines = stripped.split("\n")
+        assert lines[0] == "before"
+        assert lines[1] == ""
+        assert lines[2] == ""
+        assert lines[3] == ""
+        assert lines[4] == "after"
+
+
 class TestLinkWithEmptyPath:
     """アンカーのみリンクのテスト"""
 
