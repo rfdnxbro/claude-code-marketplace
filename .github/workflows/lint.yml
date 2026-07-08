@@ -23,6 +23,8 @@ jobs:
 
       - name: uvをセットアップ
         uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
 
       - name: Ruff check
         run: uvx ruff check scripts/
@@ -40,6 +42,8 @@ jobs:
 
       - name: uvをセットアップ
         uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
 
       - name: yamllint
         run: uvx yamllint -c .yamllint.yml .github/workflows/
