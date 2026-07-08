@@ -29,15 +29,16 @@ def validate_mcp_json(file_path: Path, content: str) -> ValidationResult:
         return result
 
     for server_name, config in servers.items():
-        if not isinstance(config, dict):
-            result.add_error(f"{file_path.name}: {server_name}: 設定はオブジェクトが必要")
-            continue
-
         if server_name in RESERVED_SERVER_NAMES:
             result.add_error(
                 f"{file_path.name}: '{server_name}' は予約済みサーバー名です（v2.1.128以降）。"
                 "使用すると警告とともにスキップされます"
             )
+
+        if not isinstance(config, dict):
+            result.add_error(f"{file_path.name}: {server_name}: 設定はオブジェクトが必要")
+            continue
+
         server_type = config.get("type", "stdio")
 
         if server_type == "stdio":

@@ -112,6 +112,15 @@ class TestDetectHardcodedSecrets:
         detect_hardcoded_secrets(result, Path(".mcp.json"), content)
         assert not result.has_errors()
 
+    def test_google_api_key_ending_with_hyphen_detected(self):
+        """鍵の末尾がハイフンの場合でも\\b境界判定に依存せず検出されることを確認"""
+        key = "AIza" + "A" * 34 + "-"
+        content = f'{{"env": {{"GOOGLE_API_KEY": "{key}"}}}}'
+        result = ValidationResult()
+        detect_hardcoded_secrets(result, Path(".mcp.json"), content)
+        assert result.has_errors()
+        assert any("Google APIキー" in e for e in result.errors)
+
     def test_no_secrets_no_errors(self):
         """機密情報がない場合はエラーなし"""
         content = '{"env": {"FOO": "${FOO:-bar}", "PATH": "/usr/local/bin"}}'

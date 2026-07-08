@@ -255,3 +255,11 @@ class TestValidateMcpJson:
         result = validate_mcp_json(Path(".mcp.json"), content)
         assert result.has_errors()
         assert any("設定はオブジェクトが必要" in e for e in result.errors)
+
+    def test_reserved_name_and_non_dict_config_both_reported(self):
+        """予約済みサーバー名かつ設定が非オブジェクトの場合、
+        両方のエラーが報告されることを確認（チェック順序の修正）"""
+        content = json.dumps({"mcpServers": {"workspace": "invalid"}})
+        result = validate_mcp_json(Path(".mcp.json"), content)
+        assert any("予約済みサーバー名" in e for e in result.errors)
+        assert any("設定はオブジェクトが必要" in e for e in result.errors)

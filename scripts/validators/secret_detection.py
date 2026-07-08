@@ -18,7 +18,10 @@ SECRET_PATTERNS: list[tuple[str, re.Pattern]] = [
     ("GitHub Token", re.compile(r"\bgh[pous]_[A-Za-z0-9]{20,}\b")),
     ("Slack Token", re.compile(r"\bxox[bap]-[A-Za-z0-9-]{10,}\b")),
     ("AWS Access Key ID", re.compile(r"\bAKIA[A-Z0-9]{16}\b")),
-    ("Google APIキー", re.compile(r"\bAIza[A-Za-z0-9_-]{35}\b")),
+    # 末尾の文字クラスにハイフンを含むため\bでは境界判定できないケースが
+    # ある（鍵の末尾がハイフンで直後がクォート等の非単語文字だと\bが不成立
+    # になる）。(?![A-Za-z0-9_])という先読みに置き換えて対処する
+    ("Google APIキー", re.compile(r"\bAIza[A-Za-z0-9_-]{35}(?![A-Za-z0-9_])")),
 ]
 
 
