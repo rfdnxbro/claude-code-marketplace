@@ -239,6 +239,59 @@ class TestValidateSlashCommand:
         assert not result.has_errors()
         assert any("disable-model-invocation" in w for w in result.warnings)
 
+    def test_dangerous_keyword_verb_form_deletes_detected(self):
+        """'Deletes'のような三人称単数の活用形が検知されることを確認
+        （単語境界厳格化による活用形の検知漏れ回帰の修正確認）"""
+        content = dedent("""
+            ---
+            description: レコード削除
+            ---
+
+            Deletes all user records
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert any("disable-model-invocation" in w for w in result.warnings)
+
+    def test_dangerous_keyword_verb_form_deploys_detected(self):
+        """'Deploys'のような三人称単数の活用形が検知されることを確認"""
+        content = dedent("""
+            ---
+            description: デプロイコマンド
+            ---
+
+            Deploys the app to staging
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert any("disable-model-invocation" in w for w in result.warnings)
+
+    def test_dangerous_keyword_verb_form_deleted_detected(self):
+        """'Deleted'のような過去形の活用形が検知されることを確認"""
+        content = dedent("""
+            ---
+            description: バックアップ削除
+            ---
+
+            Deleted the old backup
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert any("disable-model-invocation" in w for w in result.warnings)
+
+    def test_dangerous_keyword_verb_form_deploying_detected(self):
+        """'Deploying'のような進行形の活用形が検知されることを確認"""
+        content = dedent("""
+            ---
+            description: デプロイ中
+            ---
+
+            Deploying the new version
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert any("disable-model-invocation" in w for w in result.warnings)
+
     def test_disable_broad_bash_wildcard_warning(self):
         """validator-disableコメントでbroad-bash-wildcard警告をスキップ"""
         content = dedent("""

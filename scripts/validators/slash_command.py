@@ -32,6 +32,10 @@ _UNQUOTED_BOOL_PATTERN = re.compile(
 # キーワードを部分文字列として含むだけの単語への誤検知を避ける。
 # 単語構成文字にアンダースコアを含めないため、delete_all_records や
 # production_env のようなスネークケースの複合語も引き続き検知できる。
+# 右側境界は一般的な活用形サフィックス（s/es/d/ed/ing）を許容するため、
+# "Deletes all records"や"Deploys the app"のような、実際のコマンド
+# 説明で普通に使われる活用形も引き続き検知できる（"dropped"/"dropping"
+# のような子音重複を伴う活用形は対象外）。
 # 注意: 単語構成文字クラスはASCII英数字のみ（[A-Za-z0-9]）のため、
 # 日本語キーワード「本番」については前後が日本語同士だと境界が常に
 # 成立し、単純な部分文字列一致とほぼ同じ挙動になる（例:
@@ -40,7 +44,8 @@ _UNQUOTED_BOOL_PATTERN = re.compile(
 # ケースのみ改善される
 _DANGEROUS_KEYWORDS = ["deploy", "delete", "drop", "production", "本番"]
 _DANGEROUS_KEYWORD_PATTERNS = [
-    re.compile(rf"(?<![A-Za-z0-9]){re.escape(kw)}(?![A-Za-z0-9])") for kw in _DANGEROUS_KEYWORDS
+    re.compile(rf"(?<![A-Za-z0-9]){re.escape(kw)}(?:e?s|e?d|ing)?(?![A-Za-z0-9])")
+    for kw in _DANGEROUS_KEYWORDS
 ]
 
 
