@@ -30,6 +30,19 @@ from validators import (
 )
 
 
+def _safe_validate(
+    validator_func, file_path: Path, content: str, result: ValidationResult
+) -> ValidationResult:
+    """バリデーター関数を例外から保護して実行する"""
+    try:
+        return validator_func(file_path, content)
+    except Exception as e:
+        result.add_error(
+            f"{file_path.name}: バリデーター実行中に予期しないエラーが発生しました: {e}"
+        )
+        return result
+
+
 def validate_file(file_path: Path) -> ValidationResult:
     """単一ファイルを検証し、結果を返す"""
     result = ValidationResult()
@@ -54,57 +67,57 @@ def validate_file(file_path: Path) -> ValidationResult:
         # スキルファイル
         content = read_file_content(file_path)
         if content is not None:
-            result = validate_skill(file_path, content)
+            result = _safe_validate(validate_skill, file_path, content, result)
     elif "commands" in path_parts and file_path.suffix == ".md":
         # スラッシュコマンド
         content = read_file_content(file_path)
         if content is not None:
-            result = validate_slash_command(file_path, content)
+            result = _safe_validate(validate_slash_command, file_path, content, result)
     elif "agents" in path_parts and file_path.suffix == ".md":
         # サブエージェント
         content = read_file_content(file_path)
         if content is not None:
-            result = validate_agent(file_path, content)
+            result = _safe_validate(validate_agent, file_path, content, result)
     elif file_path.name == "hooks.json":
         # hooks設定
         content = read_file_content(file_path)
         if content is not None:
-            result = validate_hooks_json(file_path, content)
+            result = _safe_validate(validate_hooks_json, file_path, content, result)
     elif file_path.name == ".mcp.json":
         # MCP設定
         content = read_file_content(file_path)
         if content is not None:
-            result = validate_mcp_json(file_path, content)
+            result = _safe_validate(validate_mcp_json, file_path, content, result)
     elif file_path.name == ".lsp.json":
         # LSP設定
         content = read_file_content(file_path)
         if content is not None:
-            result = validate_lsp_json(file_path, content)
+            result = _safe_validate(validate_lsp_json, file_path, content, result)
     elif file_path.name == "monitors.json" and "monitors" in path_parts:
         # バックグラウンドモニター設定
         content = read_file_content(file_path)
         if content is not None:
-            result = validate_monitors_json(file_path, content)
+            result = _safe_validate(validate_monitors_json, file_path, content, result)
     elif file_path.name == "plugin.json" and ".claude-plugin" in path_parts:
         # プラグインマニフェスト
         content = read_file_content(file_path)
         if content is not None:
-            result = validate_plugin_json(file_path, content)
+            result = _safe_validate(validate_plugin_json, file_path, content, result)
     elif file_path.name == "marketplace.json" and ".claude-plugin" in path_parts:
         # マーケットプレイス設定
         content = read_file_content(file_path)
         if content is not None:
-            result = validate_marketplace_json(file_path, content)
+            result = _safe_validate(validate_marketplace_json, file_path, content, result)
     elif "output-styles" in path_parts and file_path.suffix == ".md":
         # 出力スタイル
         content = read_file_content(file_path)
         if content is not None:
-            result = validate_output_style(file_path, content)
+            result = _safe_validate(validate_output_style, file_path, content, result)
     elif file_path.name == "README.md" and "plugins" in path_parts:
         # プラグインREADME
         content = read_file_content(file_path)
         if content is not None:
-            result = validate_readme(file_path, content)
+            result = _safe_validate(validate_readme, file_path, content, result)
 
     return result
 
