@@ -191,6 +191,70 @@ class TestParseFrontmatter:
         assert fm["name"] == "test"
         assert "#" not in fm
 
+    def test_inline_comment_after_value(self):
+        """値の末尾のインラインコメントが除去されることを確認"""
+        content = dedent("""
+            ---
+            model: sonnet # 説明のコメント
+            ---
+        """).strip()
+        fm, body, warnings = parse_frontmatter(content)
+        assert fm["model"] == "sonnet"
+
+    def test_quoted_value_with_hash_inside(self):
+        """クォート内のシャープ記号はコメントとして除去されないことを確認"""
+        content = dedent("""
+            ---
+            description: "Use # to comment in bash"
+            ---
+        """).strip()
+        fm, body, warnings = parse_frontmatter(content)
+        assert fm["description"] == "Use # to comment in bash"
+
+    def test_quoted_value_followed_by_inline_comment(self):
+        """クォートされた値の後に続く本当のインラインコメントが除去されることを確認"""
+        content = dedent("""
+            ---
+            description: "実際の値" # これはコメント
+            ---
+        """).strip()
+        fm, body, warnings = parse_frontmatter(content)
+        assert fm["description"] == "実際の値"
+
+    def test_value_is_comment_only_becomes_list_key(self):
+        """値がシャープ記号のみで始まる場合は空値としてリストキー扱いになることを確認"""
+        content = dedent("""
+            ---
+            key: # comment only
+            name: test
+            ---
+        """).strip()
+        fm, body, warnings = parse_frontmatter(content)
+        assert fm["key"] == ""
+        assert fm["name"] == "test"
+
+    def test_list_item_inline_comment_stripped(self):
+        """リスト項目のインラインコメントが除去されることを確認"""
+        content = dedent("""
+            ---
+            tools:
+              - item1 # コメント
+              - item2
+            ---
+        """).strip()
+        fm, body, warnings = parse_frontmatter(content)
+        assert fm["tools"] == ["item1", "item2"]
+
+    def test_unclosed_quote_value_kept_as_is(self):
+        """閉じクォートが見つからない場合は値全体をそのまま保持することを確認"""
+        content = dedent("""
+            ---
+            description: "unterminated
+            ---
+        """).strip()
+        fm, body, warnings = parse_frontmatter(content)
+        assert fm["description"] == '"unterminated'
+
     def test_nested_object_warning(self):
         """ネストされたオブジェクトで警告が出ることを確認"""
         content = dedent("""

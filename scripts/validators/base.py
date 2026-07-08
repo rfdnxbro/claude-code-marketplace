@@ -56,6 +56,33 @@ def _strip_quotes(value: str) -> str:
     return value
 
 
+def _strip_inline_comment(value: str) -> str:
+    """値の末尾に付いたインラインコメント（半角スペース+シャープ記号）を除去する"""
+    value = value.strip()
+    if not value:
+        return value
+
+    if value[0] in ('"', "'"):
+        quote = value[0]
+        close_idx = value.find(quote, 1)
+        if close_idx == -1:
+            # 閉じクォートが見つからない場合は値全体をそのまま返す
+            return value
+        # クォート内のシャープ記号はコメントとして扱わない
+        if "#" not in value[close_idx + 1 :]:
+            return value
+        return value[: close_idx + 1]
+
+    if value.startswith("#"):
+        # 値全体がコメントだったケース
+        return ""
+
+    comment_idx = value.find(" #")
+    if comment_idx == -1:
+        return value
+    return value[:comment_idx].rstrip()
+
+
 def _convert_yaml_value(value: str) -> Any:
     """YAML値を適切なPython型に変換する"""
     unquoted = _strip_quotes(value)
@@ -99,7 +126,7 @@ class _FrontmatterParser:
         if not self._list_key:
             self.warnings.append("リスト/配列はキーの後に続く必要があります")
             return
-        item = "" if stripped == "-" else _strip_quotes(stripped[2:].strip())
+        item = "" if stripped == "-" else _strip_quotes(_strip_inline_comment(stripped[2:].strip()))
         self._list_items.append(item)
 
     def _handle_key_value(self, line: str):
@@ -107,7 +134,7 @@ class _FrontmatterParser:
         self._save_pending_list()
         key, value = line.split(":", 1)
         key = key.strip()
-        value = value.strip()
+        value = _strip_inline_comment(value.strip())
 
         if not value:
             self._list_key = key
