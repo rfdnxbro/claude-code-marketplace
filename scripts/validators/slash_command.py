@@ -31,7 +31,13 @@ _UNQUOTED_BOOL_PATTERN = re.compile(
 # 単語境界を考慮したマッチングにより、"dropdown"や"reproduction"のような
 # キーワードを部分文字列として含むだけの単語への誤検知を避ける。
 # 単語構成文字にアンダースコアを含めないため、delete_all_records や
-# production_env のようなスネークケースの複合語も引き続き検知できる
+# production_env のようなスネークケースの複合語も引き続き検知できる。
+# 注意: 単語構成文字クラスはASCII英数字のみ（[A-Za-z0-9]）のため、
+# 日本語キーワード「本番」については前後が日本語同士だと境界が常に
+# 成立し、単純な部分文字列一致とほぼ同じ挙動になる（例:
+# 「台本番組」の「本番」も引き続き誤検知される）。日本語の形態素解析
+# までは対応しておらず、ハイフン・スペース・カタカナ等で区切られた
+# ケースのみ改善される
 _DANGEROUS_KEYWORDS = ["deploy", "delete", "drop", "production", "本番"]
 _DANGEROUS_KEYWORD_PATTERNS = [
     re.compile(rf"(?<![A-Za-z0-9]){re.escape(kw)}(?![A-Za-z0-9])") for kw in _DANGEROUS_KEYWORDS
