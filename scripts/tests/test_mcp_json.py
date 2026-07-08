@@ -201,3 +201,43 @@ class TestValidateMcpJson:
         )
         result = validate_mcp_json(Path(".mcp.json"), content)
         assert not result.has_errors()
+
+    def test_hardcoded_secret_detected(self):
+        """ハードコードされた機密情報を含む場合はエラー"""
+        content = json.dumps(
+            {
+                "mcpServers": {
+                    "test-server": {
+                        "type": "stdio",
+                        "command": "node",
+                        "env": {"OPENAI_API_KEY": "sk-abcdefghijklmnopqrstuvwxyz123456"},
+                    }
+                }
+            }
+        )
+        result = validate_mcp_json(Path(".mcp.json"), content)
+        assert result.has_errors()
+        assert any("機密情報" in e for e in result.errors)
+
+    def test_env_placeholder_not_flagged_as_secret(self):
+        """${VAR}形式のプレースホルダーは機密情報として検出されない"""
+        content = json.dumps(
+            {
+                "mcpServers": {
+                    "test-server": {
+                        "type": "stdio",
+                        "command": "node",
+                        "env": {"OPENAI_API_KEY": "${OPENAI_API_KEY}"},
+                    }
+                }
+            }
+        )
+        result = validate_mcp_json(Path(".mcp.json"), content)
+        assert not result.has_errors()
+
+    def test_server_config_not_dict(self):
+        """サーバー設定がオブジェクトでない場合はクラッシュせずエラーになる"""
+        content = json.dumps({"mcpServers": {"test-server": "invalid"}})
+        result = validate_mcp_json(Path(".mcp.json"), content)
+        assert result.has_errors()
+        assert any("設定はオブジェクトが必要" in e for e in result.errors)

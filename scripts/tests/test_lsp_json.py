@@ -213,3 +213,75 @@ class TestValidateLspJson:
         result = validate_lsp_json(Path(".lsp.json"), content)
         assert result.has_errors()
         assert any("env" in e and "オブジェクト" in e for e in result.errors)
+
+    def test_hardcoded_secret_detected(self):
+        """ハードコードされた機密情報を含む場合はエラー"""
+        content = json.dumps(
+            {
+                "go": {
+                    "command": "gopls",
+                    "extensionToLanguage": {".go": "go"},
+                    "env": {"GITHUB_TOKEN": "ghp_abcdefghijklmnopqrstuvwxyz1234"},
+                }
+            }
+        )
+        result = validate_lsp_json(Path(".lsp.json"), content)
+        assert result.has_errors()
+        assert any("機密情報" in e for e in result.errors)
+
+    def test_env_placeholder_not_flagged_as_secret(self):
+        """${VAR}形式のプレースホルダーは機密情報として検出されない"""
+        content = json.dumps(
+            {
+                "go": {
+                    "command": "gopls",
+                    "extensionToLanguage": {".go": "go"},
+                    "env": {"GITHUB_TOKEN": "${GITHUB_TOKEN}"},
+                }
+            }
+        )
+        result = validate_lsp_json(Path(".lsp.json"), content)
+        assert not result.has_errors()
+
+    def test_diagnostics_true(self):
+        """diagnostics: true は有効"""
+        content = json.dumps(
+            {
+                "go": {
+                    "command": "gopls",
+                    "extensionToLanguage": {".go": "go"},
+                    "diagnostics": True,
+                }
+            }
+        )
+        result = validate_lsp_json(Path(".lsp.json"), content)
+        assert not result.has_errors()
+
+    def test_diagnostics_false(self):
+        """diagnostics: false は有効"""
+        content = json.dumps(
+            {
+                "go": {
+                    "command": "gopls",
+                    "extensionToLanguage": {".go": "go"},
+                    "diagnostics": False,
+                }
+            }
+        )
+        result = validate_lsp_json(Path(".lsp.json"), content)
+        assert not result.has_errors()
+
+    def test_diagnostics_invalid_type(self):
+        """diagnosticsがブール値でない（エラー）"""
+        content = json.dumps(
+            {
+                "go": {
+                    "command": "gopls",
+                    "extensionToLanguage": {".go": "go"},
+                    "diagnostics": "true",
+                }
+            }
+        )
+        result = validate_lsp_json(Path(".lsp.json"), content)
+        assert result.has_errors()
+        assert any("diagnostics" in e and "ブール" in e for e in result.errors)
