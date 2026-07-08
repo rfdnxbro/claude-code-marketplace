@@ -161,8 +161,7 @@ def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult
                             )
                         elif not isinstance(field_value, str):
                             result.add_error(
-                                f"{file_path.name}: plugins[{i}].source.{field}は"
-                                "文字列が必要です"
+                                f"{file_path.name}: plugins[{i}].source.{field}は文字列が必要です"
                             )
                     # source_type == "settings" の場合、追加の必須フィールドなし
 
