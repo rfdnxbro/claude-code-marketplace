@@ -57,6 +57,10 @@ jobs:
             VALIDATORS=$(find scripts/validators -name '*.py' -type f | tr '\n' ',' | sed 's/,$//')
           else
             # pull_request: 前回チェックポイントからの累積差分を検出（mainの履歴ベース）
+            # 注意: GitHub Actionsキャッシュはpull_requestイベントのref
+            # （refs/pull/<N>/merge）にスコープされるため、別PRが保存した
+            # チェックポイントを復元できず、通常運用でも下記フォールバックに
+            # よく到達する（累積差分ではなく直前コミットとの差分になる既知の制約）
             if [ -f .plugin-check-sha ]; then
               LAST_SHA=$(tr -d '[:space:]' < .plugin-check-sha)
               if git cat-file -e "${LAST_SHA}" 2>/dev/null; then
@@ -64,11 +68,11 @@ jobs:
               else
                 # SHAが存在しない場合（リベース等）、直前のコミットを使用
                 LAST_SHA="HEAD~1"
-                echo "前回のSHAが見つかりません。HEAD~1を使用"
+                echo "::warning::前回のチェックポイントSHAが見つかりません。HEAD~1にフォールバックするため、累積差分ではなく直前コミットとの差分のみを対象にします"
               fi
             else
               LAST_SHA="HEAD~1"
-              echo "初回実行: HEAD~1を使用"
+              echo "::warning::前回のチェックポイントが見つかりません（初回実行、または別PRのキャッシュスコープ制約）。HEAD~1にフォールバックするため、累積差分ではなく直前コミットとの差分のみを対象にします"
             fi
 
             RULES=$(git diff --name-only "${LAST_SHA}" HEAD -- .claude/rules/ | grep '\.md$' | sort -u | tr '\n' ',' | sed 's/,$//')

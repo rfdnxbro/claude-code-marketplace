@@ -69,7 +69,7 @@ jobs:
           else
             echo "changed=true" >> $GITHUB_OUTPUT
             echo "is_first_run=true" >> $GITHUB_OUTPUT
-            echo "初回実行: スナップショットを作成します"
+            echo "::warning::前回のスナップショットが見つかりませんでした（初回実行、またはキャッシュ失効の可能性）。現在のCHANGELOGでスナップショットを再作成するため、この間の変更は検出されずスキップされます"
             echo "初回実行のため差分なし" > changelog-diff.txt
           fi
 
