@@ -67,6 +67,20 @@ class TestValidateMcpJson:
         assert not result.has_errors()
         assert any("空" in w for w in result.warnings)
 
+    def test_mcp_servers_not_dict(self):
+        """mcpServers自体がオブジェクトでない場合（配列）、クラッシュせずエラーになることをテスト"""
+        content = json.dumps({"mcpServers": ["invalid"]})
+        result = validate_mcp_json(Path(".mcp.json"), content)
+        assert result.has_errors()
+        assert any("mcpServersはオブジェクトが必要です" in e for e in result.errors)
+
+    def test_mcp_servers_not_dict_string(self):
+        """mcpServers自体がオブジェクトでない場合（文字列）、クラッシュせずエラーになることをテスト"""
+        content = json.dumps({"mcpServers": "invalid"})
+        result = validate_mcp_json(Path(".mcp.json"), content)
+        assert result.has_errors()
+        assert any("mcpServersはオブジェクトが必要です" in e for e in result.errors)
+
     def test_stdio_missing_command(self):
         content = json.dumps({"mcpServers": {"test-server": {"type": "stdio"}}})
         result = validate_mcp_json(Path(".mcp.json"), content)

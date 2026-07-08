@@ -21,6 +21,9 @@ def validate_mcp_json(file_path: Path, content: str) -> ValidationResult:
     detect_hardcoded_secrets(result, file_path, content)
 
     servers = data.get("mcpServers", {})
+    if not isinstance(servers, dict):
+        result.add_error(f"{file_path.name}: mcpServersはオブジェクトが必要です")
+        return result
     if not servers:
         result.add_warning(f"{file_path.name}: mcpServersが空です")
         return result
