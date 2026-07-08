@@ -173,6 +173,45 @@ class TestValidateSlashCommand:
         # スキップコメントがないので警告が出る
         assert any("disable-model-invocation" in w for w in result.warnings)
 
+    def test_dangerous_keyword_word_boundary_dropdown_no_warning(self):
+        """'drop'が'dropdown'の部分文字列である場合は警告が出ないことを確認（単語境界チェック）"""
+        content = dedent("""
+            ---
+            description: UIコンポーネント
+            ---
+
+            dropdown選択肢を追加する機能
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert not any("disable-model-invocation" in w for w in result.warnings)
+
+    def test_dangerous_keyword_word_boundary_reproduction_no_warning(self):
+        """'production'が'reproduction'の部分文字列である場合は警告が出ないことを確認（単語境界チェック）"""
+        content = dedent("""
+            ---
+            description: 画像処理
+            ---
+
+            画像のreproductionを行う
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert not any("disable-model-invocation" in w for w in result.warnings)
+
+    def test_dangerous_keyword_word_boundary_deployment_no_warning(self):
+        """'deploy'が'deployment'の部分文字列である場合は警告が出ないことを確認（単語境界チェック）"""
+        content = dedent("""
+            ---
+            description: パイプライン整備
+            ---
+
+            deploymentパイプラインを整備する
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert not any("disable-model-invocation" in w for w in result.warnings)
+
     def test_disable_broad_bash_wildcard_warning(self):
         """validator-disableコメントでbroad-bash-wildcard警告をスキップ"""
         content = dedent("""

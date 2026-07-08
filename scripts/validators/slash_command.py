@@ -98,10 +98,21 @@ def validate_slash_command(file_path: Path, content: str) -> ValidationResult:
     # disable-model-invocationの確認
     disable_model = frontmatter.get("disable-model-invocation", False)
     # 危険そうなキーワードが含まれる場合は警告
+    # 単語境界を考慮したマッチングにより、"dropdown"や"reproduction"のような
+    # キーワードを部分文字列として含むだけの単語への誤検知を避ける
     dangerous_keywords = ["deploy", "delete", "drop", "production", "本番"]
     description = frontmatter.get("description", "")
     description_str = to_str(description)
-    if any(kw in body.lower() or kw in description_str.lower() for kw in dangerous_keywords):
+    body_lower = body.lower()
+    description_lower = description_str.lower()
+    dangerous_keyword_patterns = [
+        re.compile(rf"(?<![A-Za-z0-9_]){re.escape(kw)}(?![A-Za-z0-9_])")
+        for kw in dangerous_keywords
+    ]
+    if any(
+        pattern.search(body_lower) or pattern.search(description_lower)
+        for pattern in dangerous_keyword_patterns
+    ):
         if disable_model is not True:
             if WARNING_DANGEROUS_OPERATION not in disabled_warnings:
                 result.add_warning(
