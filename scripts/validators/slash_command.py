@@ -34,8 +34,9 @@ _UNQUOTED_BOOL_PATTERN = re.compile(
 # production_env のようなスネークケースの複合語も引き続き検知できる。
 # 右側境界は一般的な活用形サフィックス（s/es/d/ed/ing）を許容するため、
 # "Deletes all records"や"Deploys the app"のような、実際のコマンド
-# 説明で普通に使われる活用形も引き続き検知できる（"dropped"/"dropping"
-# のような子音重複を伴う活用形は対象外）。
+# 説明で普通に使われる活用形も引き続き検知できる。"drop"は子音重複を
+# 伴う活用形（dropped/dropping）を持つため、_KEYWORD_EXTRA_SUFFIXES で
+# 個別に追加サフィックスを許容する。
 # 注意: 単語構成文字クラスはASCII英数字のみ（[A-Za-z0-9]）のため、
 # 日本語キーワード「本番」については前後が日本語同士だと境界が常に
 # 成立し、単純な部分文字列一致とほぼ同じ挙動になる（例:
@@ -43,10 +44,17 @@ _UNQUOTED_BOOL_PATTERN = re.compile(
 # までは対応しておらず、ハイフン・スペース・カタカナ等で区切られた
 # ケースのみ改善される
 _DANGEROUS_KEYWORDS = ["deploy", "delete", "drop", "production", "本番"]
-_DANGEROUS_KEYWORD_PATTERNS = [
-    re.compile(rf"(?<![A-Za-z0-9]){re.escape(kw)}(?:e?s|e?d|ing)?(?![A-Za-z0-9])")
-    for kw in _DANGEROUS_KEYWORDS
-]
+# 規則活用（s/es/d/ed/ing）でカバーできない、子音重複等を伴う活用形の追加パターン
+_KEYWORD_EXTRA_SUFFIXES = {
+    "drop": ["ped", "ping"],
+}
+_DANGEROUS_KEYWORD_PATTERNS = []
+for _kw in _DANGEROUS_KEYWORDS:
+    _suffixes = ["e?s", "e?d", "ing", *_KEYWORD_EXTRA_SUFFIXES.get(_kw, [])]
+    _suffix_group = "|".join(_suffixes)
+    _DANGEROUS_KEYWORD_PATTERNS.append(
+        re.compile(rf"(?<![A-Za-z0-9]){re.escape(_kw)}(?:{_suffix_group})?(?![A-Za-z0-9])")
+    )
 
 
 def _find_unquoted_bool_fields(content: str) -> list[tuple[str, str]]:

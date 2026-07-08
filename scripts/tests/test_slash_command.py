@@ -292,6 +292,33 @@ class TestValidateSlashCommand:
         assert not result.has_errors()
         assert any("disable-model-invocation" in w for w in result.warnings)
 
+    def test_dangerous_keyword_drop_past_tense_detected(self):
+        """'dropped'のような子音重複を伴う活用形が検知されることを確認
+        （drop固有の追加サフィックスパターンによる回帰修正確認）"""
+        content = dedent("""
+            ---
+            description: テーブル削除
+            ---
+
+            dropped the table
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert any("disable-model-invocation" in w for w in result.warnings)
+
+    def test_dangerous_keyword_drop_gerund_detected(self):
+        """'dropping'のような子音重複を伴う進行形が検知されることを確認"""
+        content = dedent("""
+            ---
+            description: インデックス削除
+            ---
+
+            dropping the index
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert any("disable-model-invocation" in w for w in result.warnings)
+
     def test_disable_broad_bash_wildcard_warning(self):
         """validator-disableコメントでbroad-bash-wildcard警告をスキップ"""
         content = dedent("""
