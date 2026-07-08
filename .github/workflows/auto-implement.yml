@@ -62,6 +62,8 @@ jobs:
         with:
           path: ~/.cache/pre-commit
           key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            pre-commit-${{ runner.os }}-
 
       - name: pre-commitをセットアップ
         run: |
@@ -171,9 +173,9 @@ jobs:
             - リポジトリに永続的に必要なファイルのみ作成・変更すること
             - issue-body.md, issue-title.txt などの一時ファイルは参照のみで、変更やコミットに含めないこと
 
-          # ラベルは手動付与のため、Edit/Writeのパス制限は不要
-          # ただし外部由来のCHANGELOGを起点にIssueが自動生成されbotラベルが付与される経路もあるため、
-          # Bashはplugin-updateステップと同様に実行手順で必要なコマンドのみに絞る
+          # 外部由来のCHANGELOGを起点にIssueが自動生成されbotラベルが付与される
+          # 経路があるため、Bashはplugin-updateステップと同様に実行手順で
+          # 必要なコマンドのみに絞る（Edit/Writeのパス制限要否は別途検討）
           claude_args: '--max-turns 50 --allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx *),Bash(python3 scripts/*),Bash(npx *),Bash(pre-commit run*)"'
 
       - name: Claudeで実装を実行（plugin-update）
