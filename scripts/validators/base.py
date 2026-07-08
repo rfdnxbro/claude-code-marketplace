@@ -68,8 +68,10 @@ def _strip_inline_comment(value: str) -> str:
         if close_idx == -1:
             # 閉じクォートが見つからない場合は値全体をそのまま返す
             return value
-        # クォート内のシャープ記号はコメントとして扱わない
-        if "#" not in value[close_idx + 1 :]:
+        # 閉じクォート後に本当のインラインコメント（半角スペース+シャープ記号）が
+        # 続く場合のみコメントとして切り詰める（非クォート値の規約と統一する。
+        # 例: "text"#anchor のようにスペースなしで#が続く場合はコメット扱いしない）
+        if " #" not in value[close_idx + 1 :]:
             return value
         return value[: close_idx + 1]
 
@@ -77,10 +79,21 @@ def _strip_inline_comment(value: str) -> str:
         # 値全体がコメントだったケース
         return ""
 
-    comment_idx = value.find(" #")
-    if comment_idx == -1:
-        return value
-    return value[:comment_idx].rstrip()
+    # 非クォート値の途中に埋め込まれたクォート文字列（例: Bash(git commit -m "chore: update #123")）
+    # の中の#をコメントとして誤除去しないよう、クォート区間をスキップしながら走査する
+    in_quote: str | None = None
+    i = 0
+    while i < len(value) - 1:
+        ch = value[i]
+        if in_quote:
+            if ch == in_quote:
+                in_quote = None
+        elif ch in ('"', "'"):
+            in_quote = ch
+        elif ch == " " and value[i + 1] == "#":
+            return value[:i].rstrip()
+        i += 1
+    return value
 
 
 def _convert_yaml_value(value: str) -> Any:

@@ -221,6 +221,39 @@ class TestParseFrontmatter:
         fm, body, warnings = parse_frontmatter(content)
         assert fm["description"] == "実際の値"
 
+    def test_quoted_value_hash_without_space_not_comment(self):
+        """閉じクォート直後にスペースなしで#が続く場合、非クォート値の規約
+        （半角スペース+#が必須）と統一してコメント扱いしないことを確認"""
+        content = dedent("""
+            ---
+            description: "text"#anchor
+            ---
+        """).strip()
+        fm, body, warnings = parse_frontmatter(content)
+        assert fm["description"] == '"text"#anchor'
+
+    def test_unquoted_value_with_embedded_quoted_hash(self):
+        """非クォート値の途中に埋め込まれたクォート文字列内の#が
+        誤ってコメント扱いされないことを確認"""
+        content = dedent("""
+            ---
+            allowed-tools: Bash(git commit -m "chore: update #123")
+            ---
+        """).strip()
+        fm, body, warnings = parse_frontmatter(content)
+        assert fm["allowed-tools"] == 'Bash(git commit -m "chore: update #123")'
+
+    def test_unquoted_value_with_multiple_embedded_quotes_and_trailing_comment(self):
+        """非クォート値に複数のクォート区間がある場合でも、
+        区間外の本当のインラインコメントは正しく除去されることを確認"""
+        content = dedent("""
+            ---
+            allowed-tools: Bash(rm "a" "b") # comment
+            ---
+        """).strip()
+        fm, body, warnings = parse_frontmatter(content)
+        assert fm["allowed-tools"] == 'Bash(rm "a" "b")'
+
     def test_value_is_comment_only_becomes_list_key(self):
         """値がシャープ記号のみで始まる場合は空値としてリストキー扱いになることを確認"""
         content = dedent("""
