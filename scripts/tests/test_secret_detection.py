@@ -4,9 +4,8 @@ secret_detection.py のテスト
 
 from pathlib import Path
 
-from scripts.validators.secret_detection import detect_hardcoded_secrets
-
 from scripts.validators.base import ValidationResult
+from scripts.validators.secret_detection import detect_hardcoded_secrets
 
 
 class TestDetectHardcodedSecrets:
