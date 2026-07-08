@@ -143,4 +143,62 @@ def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult
                                 f"{file_path.name}: plugins[{i}].source.skipLfsはbooleanが必要です"
                             )
 
+                    # source_type別の必須サブフィールドの検証
+                    if source_type == "github":
+                        repo = source.get("repo")
+                        if not repo:
+                            result.add_error(
+                                f"{file_path.name}: plugins[{i}].source.repoは必須です"
+                                "（source: github）"
+                            )
+                        elif not isinstance(repo, str):
+                            result.add_error(
+                                f"{file_path.name}: plugins[{i}].source.repoは文字列が必要です"
+                            )
+                    elif source_type == "url":
+                        url = source.get("url")
+                        if not url:
+                            result.add_error(
+                                f"{file_path.name}: plugins[{i}].source.urlは必須です"
+                                "（source: url）"
+                            )
+                        elif not isinstance(url, str):
+                            result.add_error(
+                                f"{file_path.name}: plugins[{i}].source.urlは文字列が必要です"
+                            )
+                    elif source_type == "npm":
+                        package = source.get("package")
+                        if not package:
+                            result.add_error(
+                                f"{file_path.name}: plugins[{i}].source.packageは必須です"
+                                "（source: npm）"
+                            )
+                        elif not isinstance(package, str):
+                            result.add_error(
+                                f"{file_path.name}: plugins[{i}].source.packageは文字列が必要です"
+                            )
+                    elif source_type == "git-subdir":
+                        url = source.get("url")
+                        if not url:
+                            result.add_error(
+                                f"{file_path.name}: plugins[{i}].source.urlは必須です"
+                                "（source: git-subdir）"
+                            )
+                        elif not isinstance(url, str):
+                            result.add_error(
+                                f"{file_path.name}: plugins[{i}].source.urlは文字列が必要です"
+                            )
+
+                        path = source.get("path")
+                        if not path:
+                            result.add_error(
+                                f"{file_path.name}: plugins[{i}].source.pathは必須です"
+                                "（source: git-subdir）"
+                            )
+                        elif not isinstance(path, str):
+                            result.add_error(
+                                f"{file_path.name}: plugins[{i}].source.pathは文字列が必要です"
+                            )
+                    # source_type == "settings" の場合、追加の必須フィールドなし
+
     return result
