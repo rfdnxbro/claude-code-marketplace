@@ -57,6 +57,12 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: pre-commitキャッシュを復元
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
       - name: pre-commitをセットアップ
         run: |
           pip install pre-commit
@@ -166,8 +172,9 @@ jobs:
             - issue-body.md, issue-title.txt などの一時ファイルは参照のみで、変更やコミットに含めないこと
 
           # ラベルは手動付与のため、Edit/Writeのパス制限は不要
-          # Bashは全コマンド許可（ラベルは手動付与なので信頼できる）
-          claude_args: '--max-turns 50 --allowed-tools "Read,Grep,Glob,Edit,Write,Bash(*)"'
+          # ただし外部由来のCHANGELOGを起点にIssueが自動生成されbotラベルが付与される経路もあるため、
+          # Bashはplugin-updateステップと同様に実行手順で必要なコマンドのみに絞る
+          claude_args: '--max-turns 50 --allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx *),Bash(python3 scripts/*),Bash(npx *),Bash(pre-commit run*)"'
 
       - name: Claudeで実装を実行（plugin-update）
         if: github.event.label.name == 'plugin-update'
