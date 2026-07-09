@@ -56,6 +56,46 @@ def _strip_quotes(value: str) -> str:
     return value
 
 
+def _strip_inline_comment(value: str) -> str:
+    """値の末尾に付いたインラインコメント（半角スペース+シャープ記号）を除去する"""
+    value = value.strip()
+    if not value:
+        return value
+
+    if value[0] in ('"', "'"):
+        quote = value[0]
+        close_idx = value.find(quote, 1)
+        if close_idx == -1:
+            # 閉じクォートが見つからない場合は値全体をそのまま返す
+            return value
+        # 閉じクォート後に本当のインラインコメント（半角スペース+シャープ記号）が
+        # 続く場合のみコメントとして切り詰める（非クォート値の規約と統一する。
+        # 例: "text"#anchor のようにスペースなしで#が続く場合はコメット扱いしない）
+        if " #" not in value[close_idx + 1 :]:
+            return value
+        return value[: close_idx + 1]
+
+    if value.startswith("#"):
+        # 値全体がコメントだったケース
+        return ""
+
+    # 非クォート値の途中に埋め込まれたクォート文字列（例: Bash(git commit -m "chore: update #123")）
+    # の中の#をコメントとして誤除去しないよう、クォート区間をスキップしながら走査する
+    in_quote: str | None = None
+    i = 0
+    while i < len(value) - 1:
+        ch = value[i]
+        if in_quote:
+            if ch == in_quote:
+                in_quote = None
+        elif ch in ('"', "'"):
+            in_quote = ch
+        elif ch == " " and value[i + 1] == "#":
+            return value[:i].rstrip()
+        i += 1
+    return value
+
+
 def _convert_yaml_value(value: str) -> Any:
     """YAML値を適切なPython型に変換する"""
     unquoted = _strip_quotes(value)
@@ -99,7 +139,7 @@ class _FrontmatterParser:
         if not self._list_key:
             self.warnings.append("リスト/配列はキーの後に続く必要があります")
             return
-        item = "" if stripped == "-" else _strip_quotes(stripped[2:].strip())
+        item = "" if stripped == "-" else _strip_quotes(_strip_inline_comment(stripped[2:].strip()))
         self._list_items.append(item)
 
     def _handle_key_value(self, line: str):
@@ -107,7 +147,7 @@ class _FrontmatterParser:
         self._save_pending_list()
         key, value = line.split(":", 1)
         key = key.strip()
-        value = value.strip()
+        value = _strip_inline_comment(value.strip())
 
         if not value:
             self._list_key = key
