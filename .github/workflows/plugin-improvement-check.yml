@@ -1,8 +1,7 @@
 name: プラグイン改善チェック
 
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches: [main]
     paths:
       - '.claude/rules/**'
@@ -16,7 +15,7 @@ on:
         default: false
 
 permissions:
-  contents: write
+  contents: read
   issues: write
   pull-requests: read
   id-token: write
@@ -29,16 +28,20 @@ jobs:
   check-improvements:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # PRがマージされた場合のみ実行（クローズのみは除外）
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      github.event.pull_request.merged == true
     steps:
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 0
+
+      - name: 前回のチェックポイントを復元
+        uses: actions/cache/restore@v4
+        with:
+          path: .plugin-check-sha
+          key: plugin-check-sha-${{ github.run_id }}
+          restore-keys: |
+            plugin-check-sha-
 
       - name: 変更されたルール/バリデーターを特定
         id: changed-files
@@ -48,7 +51,10 @@ jobs:
             RULES=$(find .claude/rules -name '*.md' -type f | tr '\n' ',' | sed 's/,$//')
             VALIDATORS=$(find scripts/validators -name '*.py' -type f | tr '\n' ',' | sed 's/,$//')
           else
-            # pull_request: 前回チェックポイントからの累積差分を検出（mainの履歴ベース）
+            # push（mainへのマージ含む）: 前回チェックポイントからの累積差分を検出
+            # （mainの履歴ベース）。mainブランチへのpushトリガーのため
+            # github.refは常にrefs/heads/mainに固定され、キャッシュのスコープも
+            # 安定して引き継がれる
             if [ -f .plugin-check-sha ]; then
               LAST_SHA=$(tr -d '[:space:]' < .plugin-check-sha)
               if git cat-file -e "${LAST_SHA}" 2>/dev/null; then
@@ -56,11 +62,11 @@ jobs:
               else
                 # SHAが存在しない場合（リベース等）、直前のコミットを使用
                 LAST_SHA="HEAD~1"
-                echo "前回のSHAが見つかりません。HEAD~1を使用"
+                echo "::warning::前回のチェックポイントSHAが見つかりません。HEAD~1にフォールバックするため、累積差分ではなく直前コミットとの差分のみを対象にします"
               fi
             else
               LAST_SHA="HEAD~1"
-              echo "初回実行: HEAD~1を使用"
+              echo "::warning::前回のチェックポイントが見つかりません（初回実行の可能性）。HEAD~1にフォールバックするため、累積差分ではなく直前コミットとの差分のみを対象にします"
             fi
 
             RULES=$(git diff --name-only "${LAST_SHA}" HEAD -- .claude/rules/ | grep '\.md$' | sort -u | tr '\n' ',' | sed 's/,$//')
@@ -199,15 +205,14 @@ jobs:
 
       - name: チェックポイントを更新
         if: steps.changed-files.outputs.has_changes == 'true' && steps.plugins.outputs.count > 0 && github.event_name != 'workflow_dispatch'
-        run: |
-          set -e
-          git rev-parse HEAD > .plugin-check-sha
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add .plugin-check-sha
-          git diff --staged --quiet || git commit -m "chore: プラグイン改善チェックポイントを更新"
-          git pull --rebase origin main
-          git push origin HEAD:main
+        run: git rev-parse HEAD > .plugin-check-sha
+
+      - name: チェックポイントをキャッシュに保存
+        if: steps.changed-files.outputs.has_changes == 'true' && steps.plugins.outputs.count > 0 && github.event_name != 'workflow_dispatch'
+        uses: actions/cache/save@v4
+        with:
+          path: .plugin-check-sha
+          key: plugin-check-sha-${{ github.run_id }}
 
       - name: 変更がない場合
         if: steps.changed-files.outputs.has_changes == 'false'
