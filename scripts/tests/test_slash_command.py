@@ -173,6 +173,152 @@ class TestValidateSlashCommand:
         # スキップコメントがないので警告が出る
         assert any("disable-model-invocation" in w for w in result.warnings)
 
+    def test_dangerous_keyword_word_boundary_dropdown_no_warning(self):
+        """'drop'が'dropdown'の部分文字列である場合は警告が出ないことを確認（単語境界チェック）"""
+        content = dedent("""
+            ---
+            description: UIコンポーネント
+            ---
+
+            dropdown選択肢を追加する機能
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert not any("disable-model-invocation" in w for w in result.warnings)
+
+    def test_dangerous_keyword_word_boundary_reproduction_no_warning(self):
+        """'production'が'reproduction'の部分文字列である場合は警告が出ないことを確認（単語境界チェック）"""
+        content = dedent("""
+            ---
+            description: 画像処理
+            ---
+
+            画像のreproductionを行う
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert not any("disable-model-invocation" in w for w in result.warnings)
+
+    def test_dangerous_keyword_word_boundary_deployment_no_warning(self):
+        """'deploy'が'deployment'の部分文字列である場合は警告が出ないことを確認（単語境界チェック）"""
+        content = dedent("""
+            ---
+            description: パイプライン整備
+            ---
+
+            deploymentパイプラインを整備する
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert not any("disable-model-invocation" in w for w in result.warnings)
+
+    def test_dangerous_keyword_snake_case_delete_detected(self):
+        """'delete_all_records'のようなスネークケース複合語は
+        アンダースコアを単語構成文字から除外しているため検知されることを確認"""
+        content = dedent("""
+            ---
+            description: 危険なコマンド
+            ---
+
+            delete_all_recordsを実行する
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert any("disable-model-invocation" in w for w in result.warnings)
+
+    def test_dangerous_keyword_snake_case_production_detected(self):
+        """'production_env'のようなスネークケース複合語が検知されることを確認"""
+        content = dedent("""
+            ---
+            description: 環境変数
+            ---
+
+            production_envを設定する
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert any("disable-model-invocation" in w for w in result.warnings)
+
+    def test_dangerous_keyword_verb_form_deletes_detected(self):
+        """'Deletes'のような三人称単数の活用形が検知されることを確認
+        （単語境界厳格化による活用形の検知漏れ回帰の修正確認）"""
+        content = dedent("""
+            ---
+            description: レコード削除
+            ---
+
+            Deletes all user records
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert any("disable-model-invocation" in w for w in result.warnings)
+
+    def test_dangerous_keyword_verb_form_deploys_detected(self):
+        """'Deploys'のような三人称単数の活用形が検知されることを確認"""
+        content = dedent("""
+            ---
+            description: デプロイコマンド
+            ---
+
+            Deploys the app to staging
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert any("disable-model-invocation" in w for w in result.warnings)
+
+    def test_dangerous_keyword_verb_form_deleted_detected(self):
+        """'Deleted'のような過去形の活用形が検知されることを確認"""
+        content = dedent("""
+            ---
+            description: バックアップ削除
+            ---
+
+            Deleted the old backup
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert any("disable-model-invocation" in w for w in result.warnings)
+
+    def test_dangerous_keyword_verb_form_deploying_detected(self):
+        """'Deploying'のような進行形の活用形が検知されることを確認"""
+        content = dedent("""
+            ---
+            description: デプロイ中
+            ---
+
+            Deploying the new version
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert any("disable-model-invocation" in w for w in result.warnings)
+
+    def test_dangerous_keyword_drop_past_tense_detected(self):
+        """'dropped'のような子音重複を伴う活用形が検知されることを確認
+        （drop固有の追加サフィックスパターンによる回帰修正確認）"""
+        content = dedent("""
+            ---
+            description: テーブル削除
+            ---
+
+            dropped the table
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert any("disable-model-invocation" in w for w in result.warnings)
+
+    def test_dangerous_keyword_drop_gerund_detected(self):
+        """'dropping'のような子音重複を伴う進行形が検知されることを確認"""
+        content = dedent("""
+            ---
+            description: インデックス削除
+            ---
+
+            dropping the index
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert any("disable-model-invocation" in w for w in result.warnings)
+
     def test_disable_broad_bash_wildcard_warning(self):
         """validator-disableコメントでbroad-bash-wildcard警告をスキップ"""
         content = dedent("""
