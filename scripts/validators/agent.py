@@ -38,18 +38,20 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
     result = ValidationResult()
     frontmatter, body, yaml_warnings = parse_frontmatter(content)
 
-    add_yaml_warnings(result, file_path, yaml_warnings)
-
-    # 必須フィールドの確認
+    # nameフィールドを持たない.mdはエージェント定義として扱わない
+    # （agents/配下のREADME.md等のドキュメント用ファイルには警告を一切出さない。
+    # .claude/rules/agents.md参照）
     name = frontmatter.get("name", "")
     name_str = to_str(name)
     if not name_str:
-        result.add_error(f"{file_path.name}: nameが必須です")
-    else:
-        # kebab-case（小文字とハイフンのみ）チェック
-        kebab_error = validate_kebab_case(name_str)
-        if kebab_error:
-            result.add_error(f"{file_path.name}: {kebab_error}")
+        return result
+
+    add_yaml_warnings(result, file_path, yaml_warnings)
+
+    # kebab-case（小文字とハイフンのみ）チェック
+    kebab_error = validate_kebab_case(name_str)
+    if kebab_error:
+        result.add_error(f"{file_path.name}: {kebab_error}")
 
     # descriptionの確認
     description = frontmatter.get("description", "")
