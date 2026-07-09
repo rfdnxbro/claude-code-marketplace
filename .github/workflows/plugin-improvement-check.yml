@@ -1,5 +1,14 @@
 name: プラグイン改善チェック
 
+# 【重要】on: に push を追加しないこと。
+# 下記jobはanthropics/claude-code-action@v1を使用しているが、このアクションは
+# pushイベントをサポートしておらず「Unsupported event type: push」で即失敗する。
+# GitHub Actionsキャッシュのscope問題（pull_requestだとgithub.refが
+# refs/pull/<N>/mergeになり別PRのキャッシュを復元できない）を解決したくなっても、
+# トリガーをpushに変えるのは対症療法として誤り。過去に同じ変更で2度壊れている
+# （#392で発覚・修正 → #587で見落として再導入 → #600で再修正）。
+# キャッシュscope問題への対応が必要な場合は、on:はpull_requestのままにして、
+# 別の手段（cache miss時の警告可視化・別ストレージの検討等）で解決すること。
 on:
   pull_request:
     types: [closed]
