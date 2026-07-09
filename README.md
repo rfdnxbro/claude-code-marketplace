@@ -29,6 +29,7 @@ Claude Codeの機能を拡張するプラグイン（スラッシュコマンド
 |-----------|------|------|
 | [claude-code-workflow](plugins/claude-code-workflow/) | Claude Codeの個人的な作業スタイル（エージェント編成、文体ガイド等）をスキルとして集約 | 🔧 開発中 |
 | [pr-auto-fix](plugins/pr-auto-fix/) | PR 作成後に CI 失敗・レビュー・コンフリクトを自動検知し、自明な修正は commit & push、判断要は PR コメントでエスカレーション | 🔧 開発中 |
+| [git-main-sync](plugins/git-main-sync/) | 新規セッション開始時、git管理下なら現在ブランチに応じてmainブランチをpullまたはfetchで最新化する | 🔧 開発中 |
 
 ## ディレクトリ構成
 
