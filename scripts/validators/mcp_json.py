@@ -5,6 +5,7 @@
 from pathlib import Path
 
 from .base import ValidationResult, parse_json_safe
+from .secret_detection import detect_hardcoded_secrets
 
 RESERVED_SERVER_NAMES = {"workspace"}
 
@@ -17,7 +18,12 @@ def validate_mcp_json(file_path: Path, content: str) -> ValidationResult:
     if data is None:
         return result
 
+    detect_hardcoded_secrets(result, file_path, content)
+
     servers = data.get("mcpServers", {})
+    if not isinstance(servers, dict):
+        result.add_error(f"{file_path.name}: mcpServersはオブジェクトが必要です")
+        return result
     if not servers:
         result.add_warning(f"{file_path.name}: mcpServersが空です")
         return result
@@ -28,6 +34,11 @@ def validate_mcp_json(file_path: Path, content: str) -> ValidationResult:
                 f"{file_path.name}: '{server_name}' は予約済みサーバー名です（v2.1.128以降）。"
                 "使用すると警告とともにスキップされます"
             )
+
+        if not isinstance(config, dict):
+            result.add_error(f"{file_path.name}: {server_name}: 設定はオブジェクトが必要")
+            continue
+
         server_type = config.get("type", "stdio")
 
         if server_type == "stdio":

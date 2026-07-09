@@ -5,6 +5,7 @@
 from pathlib import Path
 
 from .base import ValidationResult, parse_json_safe
+from .secret_detection import detect_hardcoded_secrets
 
 # 有効なtransport値
 VALID_TRANSPORTS = {"stdio", "socket"}
@@ -17,6 +18,8 @@ def validate_lsp_json(file_path: Path, content: str) -> ValidationResult:
     data = parse_json_safe(content, file_path, result)
     if data is None:
         return result
+
+    detect_hardcoded_secrets(result, file_path, content)
 
     if not data:
         result.add_warning(f"{file_path.name}: LSPサーバー設定が空です")
@@ -75,6 +78,10 @@ def validate_lsp_json(file_path: Path, content: str) -> ValidationResult:
         restart_on_crash = config.get("restartOnCrash")
         if restart_on_crash is not None and not isinstance(restart_on_crash, bool):
             result.add_error(f"{file_path.name}: {server_name}: restartOnCrashはブール値が必要")
+
+        diagnostics = config.get("diagnostics")
+        if diagnostics is not None and not isinstance(diagnostics, bool):
+            result.add_error(f"{file_path.name}: {server_name}: diagnosticsはブール値が必要")
 
         # envのバリデーション
         env = config.get("env")
