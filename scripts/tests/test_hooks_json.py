@@ -1302,3 +1302,245 @@ class TestValidateHooksJson:
         )
         result = validate_hooks_json(Path("hooks.json"), content)
         assert not result.has_errors()
+
+    # --- 構造不正なJSONに対する型ガードのテスト ---
+
+    def test_hooks_not_dict(self):
+        """hooks自体がオブジェクトでない場合（配列）、クラッシュせずエラーになることをテスト"""
+        content = json.dumps({"hooks": ["invalid"]})
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("hooksはオブジェクトが必要です" in e for e in result.errors)
+
+    def test_hooks_not_dict_string(self):
+        """hooks自体がオブジェクトでない場合（文字列）、クラッシュせずエラーになることをテスト"""
+        content = json.dumps({"hooks": "invalid"})
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("hooksはオブジェクトが必要です" in e for e in result.errors)
+
+    def test_event_hooks_not_list(self):
+        """イベントのフック設定が配列でない場合、クラッシュせずエラーになることをテスト"""
+        content = json.dumps({"hooks": {"PreToolUse": "invalid"}})
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("配列が必要です" in e for e in result.errors)
+
+    def test_hook_config_not_dict(self):
+        """hook_configがオブジェクトでない場合、クラッシュせずエラーになることをテスト"""
+        content = json.dumps({"hooks": {"PreToolUse": ["invalid"]}})
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("オブジェクトが必要です" in e for e in result.errors)
+
+    def test_inner_hooks_not_list(self):
+        """hooks配列（inner_hooks）が配列でない場合、クラッシュせずエラーになることをテスト"""
+        content = json.dumps({"hooks": {"PreToolUse": [{"matcher": "*", "hooks": "invalid"}]}})
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("hooksは配列が必要です" in e for e in result.errors)
+
+    def test_inner_hook_not_dict(self):
+        """hooks配列の要素がオブジェクトでない場合、クラッシュせずエラーになることをテスト"""
+        content = json.dumps({"hooks": {"PreToolUse": [{"matcher": "*", "hooks": ["invalid"]}]}})
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("hooks要素はオブジェクトが必要です" in e for e in result.errors)
+
+    # --- SessionStart/Setup/SubagentStartのhttpタイプ制約のテスト ---
+
+    def test_session_start_rejects_http_type(self):
+        """SessionStartフックでhttpタイプがエラーになることをテスト（hooks.mdの対応表に準拠）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "SessionStart": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "http",
+                                    "url": "https://example.com/session-start",
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("SessionStart" in e and "command" in e for e in result.errors)
+
+    def test_setup_rejects_http_type(self):
+        """Setupフックでhttpタイプがエラーになることをテスト（hooks.mdの対応表に準拠）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "Setup": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "http",
+                                    "url": "https://example.com/setup",
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("Setup" in e and "command" in e for e in result.errors)
+
+    def test_subagent_start_allows_http_type(self):
+        """SubagentStartフックでhttpタイプは引き続き有効であることをテスト（回帰テスト）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "SubagentStart": [
+                        {
+                            "matcher": "code-reviewer",
+                            "hooks": [
+                                {
+                                    "type": "http",
+                                    "url": "https://example.com/subagent-start",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    # --- httpタイプのallowedEnvVars検証のテスト ---
+
+    def test_http_headers_without_placeholder_valid(self):
+        """headersに環境変数プレースホルダーが無ければallowedEnvVars未指定でも有効（回帰テスト）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PreToolUse": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [
+                                {
+                                    "type": "http",
+                                    "url": "https://api.example.com/webhook",
+                                    "headers": {"Content-Type": "application/json"},
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_http_headers_unauthorized_env_var(self):
+        """headersの環境変数プレースホルダーがallowedEnvVarsに無い場合エラーになることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PreToolUse": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [
+                                {
+                                    "type": "http",
+                                    "url": "https://api.example.com/webhook",
+                                    "headers": {"Authorization": "Bearer ${API_TOKEN}"},
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("API_TOKEN" in e and "allowedEnvVars" in e for e in result.errors)
+
+    def test_http_headers_multiple_unauthorized_env_vars(self):
+        """headersに複数の未許可環境変数がある場合、両方がエラーメッセージに含まれることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PreToolUse": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [
+                                {
+                                    "type": "http",
+                                    "url": "https://api.example.com/webhook",
+                                    "headers": {
+                                        "X-Auth-Token": "${MY_SECRET_TOKEN}",
+                                        "X-Team-ID": "${TEAM_ID}",
+                                    },
+                                    "allowedEnvVars": ["MY_SECRET_TOKEN"],
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("TEAM_ID" in e and "allowedEnvVars" in e for e in result.errors)
+        assert not any("MY_SECRET_TOKEN" in e for e in result.errors)
+
+    def test_http_headers_allowed_env_var_valid(self):
+        """headersの環境変数プレースホルダーがallowedEnvVarsに含まれていれば有効であることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PreToolUse": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [
+                                {
+                                    "type": "http",
+                                    "url": "https://api.example.com/webhook",
+                                    "headers": {"Authorization": "Bearer ${API_TOKEN}"},
+                                    "allowedEnvVars": ["API_TOKEN"],
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_http_allowed_env_vars_invalid_type(self):
+        """allowedEnvVarsが配列でない場合エラーになることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PreToolUse": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [
+                                {
+                                    "type": "http",
+                                    "url": "https://api.example.com/webhook",
+                                    "headers": {"Authorization": "Bearer ${API_TOKEN}"},
+                                    "allowedEnvVars": "API_TOKEN",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("allowedEnvVarsは配列が必要です" in e for e in result.errors)
+        # allowedEnvVarsの型エラーが出た場合、後続の未許可変数チェックは
+        # 行わずエラー1件に留めることを確認（同一設定ミスの二重報告防止）
+        assert len(result.errors) == 1

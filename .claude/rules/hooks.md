@@ -281,7 +281,7 @@ HTTPフックのレスポンスでJSONを返さない場合（200以外のステ
 
 ## フックタイプ制限
 
-`SessionStart`・`Setup`・`SubagentStart` イベントでは、`prompt` 型および `agent` 型のフックは使用できません。これらのイベントには `command` 型のみ有効です。誤った設定時は「use a command-type hook instead」というエラーが表示されます。
+`SessionStart`・`Setup`・`SubagentStart` イベントでは、`prompt` 型および `agent` 型のフックは使用できません。有効なフックタイプは下表の通りイベントごとに異なります（`SessionStart`/`Setup` は `command`/`mcp_tool`、`SubagentStart` は `command`/`http`/`mcp_tool`）。誤った設定時は「use a command-type hook instead」というエラーが表示されます。
 
 | イベント | command | prompt | agent | http | mcp_tool |
 |---------|:-------:|:------:|:-----:|:----:|:--------:|
