@@ -7,7 +7,7 @@ from pathlib import Path
 from .base import ValidationResult, parse_json_safe
 from .secret_detection import detect_hardcoded_secrets
 
-RESERVED_SERVER_NAMES = {"workspace"}
+RESERVED_SERVER_NAMES = {"workspace", "Claude Browser", "Claude Preview"}
 
 
 def validate_mcp_json(file_path: Path, content: str) -> ValidationResult:
@@ -31,7 +31,7 @@ def validate_mcp_json(file_path: Path, content: str) -> ValidationResult:
     for server_name, config in servers.items():
         if server_name in RESERVED_SERVER_NAMES:
             result.add_error(
-                f"{file_path.name}: '{server_name}' は予約済みサーバー名です（v2.1.128以降）。"
+                f"{file_path.name}: '{server_name}' は予約済みサーバー名です。"
                 "使用すると警告とともにスキップされます"
             )
 

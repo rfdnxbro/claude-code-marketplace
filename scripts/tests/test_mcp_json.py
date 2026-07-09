@@ -184,11 +184,45 @@ class TestValidateMcpJson:
         assert any("alwaysLoad" in e for e in result.errors)
 
     def test_reserved_server_name_workspace(self):
-        """予約済みサーバー名 'workspace' を使用するとエラー（v2.1.128以降）"""
+        """予約済みサーバー名 'workspace' を使用するとエラー"""
         content = json.dumps(
             {
                 "mcpServers": {
                     "workspace": {
+                        "type": "stdio",
+                        "command": "node",
+                        "args": ["server.js"],
+                    }
+                }
+            }
+        )
+        result = validate_mcp_json(Path(".mcp.json"), content)
+        assert result.has_errors()
+        assert any("予約済み" in e for e in result.errors)
+
+    def test_reserved_server_name_claude_browser(self):
+        """予約済みサーバー名 'Claude Browser' を使用するとエラー"""
+        content = json.dumps(
+            {
+                "mcpServers": {
+                    "Claude Browser": {
+                        "type": "stdio",
+                        "command": "node",
+                        "args": ["server.js"],
+                    }
+                }
+            }
+        )
+        result = validate_mcp_json(Path(".mcp.json"), content)
+        assert result.has_errors()
+        assert any("予約済み" in e for e in result.errors)
+
+    def test_reserved_server_name_claude_preview(self):
+        """予約済みサーバー名 'Claude Preview' を使用するとエラー"""
+        content = json.dumps(
+            {
+                "mcpServers": {
+                    "Claude Preview": {
                         "type": "stdio",
                         "command": "node",
                         "args": ["server.js"],
