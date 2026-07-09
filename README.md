@@ -228,7 +228,7 @@ MIT License
 
 ### サードパーティコンテンツ
 
-`.changelog-snapshot.md` はClaude Code公式リポジトリのCHANGELOGのスナップショットであり、Anthropic, PBC の著作物です。このファイルはCHANGELOG監視機能の差分検出のために使用されており、元のライセンスはAnthropicに帰属します。
+CHANGELOG監視機能（`.github/workflows/changelog-monitor.yml`）は、差分検出のためにClaude Code公式リポジトリのCHANGELOGのスナップショット（`.changelog-snapshot.md`、Anthropic, PBC の著作物）をCI実行時に外部から取得しGitHub Actionsキャッシュに一時保存します。このファイルはリポジトリには含まれません。
 
 - 元ファイル: <https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md>
 - 著作権: © Anthropic, PBC
