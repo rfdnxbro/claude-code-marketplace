@@ -670,6 +670,236 @@ class TestValidateMarketplaceJson:
         assert any("skipLfs" in e and "boolean" in e for e in result.errors)
 
 
+class TestSourceTypeRequiredFields:
+    """source_type別の必須サブフィールド検証のテスト"""
+
+    def test_source_github_missing_repo(self):
+        """source: githubでrepoが欠けている（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [{"name": "plugin-one", "source": {"source": "github"}}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.repo" in e and "必須" in e for e in result.errors)
+
+    def test_source_github_repo_not_string(self):
+        """source: githubでrepoが文字列でない（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [{"name": "plugin-one", "source": {"source": "github", "repo": 123}}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.repo" in e and "文字列が必要" in e for e in result.errors)
+
+    def test_source_url_missing_url(self):
+        """source: urlでurlが欠けている（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [{"name": "plugin-one", "source": {"source": "url"}}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.url" in e and "必須" in e for e in result.errors)
+
+    def test_source_url_url_not_string(self):
+        """source: urlでurlが文字列でない（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [{"name": "plugin-one", "source": {"source": "url", "url": 123}}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.url" in e and "文字列が必要" in e for e in result.errors)
+
+    def test_plugin_source_npm(self):
+        """source: npmが有効であることをテスト"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {"source": "npm", "package": "my-claude-plugin"},
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_plugin_source_npm_with_version_and_registry(self):
+        """source: npmでversion・registryを指定しても有効"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "npm",
+                            "package": "@company/my-claude-plugin",
+                            "version": "1.2.3",
+                            "registry": "https://registry.company.internal",
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_source_npm_missing_package(self):
+        """source: npmでpackageが欠けている（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [{"name": "plugin-one", "source": {"source": "npm"}}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.package" in e and "必須" in e for e in result.errors)
+
+    def test_source_npm_package_not_string(self):
+        """source: npmでpackageが文字列でない（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [{"name": "plugin-one", "source": {"source": "npm", "package": 123}}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.package" in e and "文字列が必要" in e for e in result.errors)
+
+    def test_source_git_subdir_missing_url(self):
+        """source: git-subdirでurlが欠けている（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {"source": "git-subdir", "path": "packages/my-plugin"},
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.url" in e and "必須" in e for e in result.errors)
+
+    def test_source_git_subdir_missing_path(self):
+        """source: git-subdirでpathが欠けている（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "git-subdir",
+                            "url": "https://github.com/owner/monorepo.git",
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.path" in e and "必須" in e for e in result.errors)
+
+    def test_source_git_subdir_missing_both(self):
+        """source: git-subdirでurl・pathの両方が欠けている（両方エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [{"name": "plugin-one", "source": {"source": "git-subdir"}}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.url" in e and "必須" in e for e in result.errors)
+        assert any("source.path" in e and "必須" in e for e in result.errors)
+
+    def test_source_git_subdir_url_not_string(self):
+        """source: git-subdirでurlが文字列でない（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "git-subdir",
+                            "url": 123,
+                            "path": "packages/my-plugin",
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.url" in e and "文字列が必要" in e for e in result.errors)
+
+    def test_source_git_subdir_path_not_string(self):
+        """source: git-subdirでpathが文字列でない（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "git-subdir",
+                            "url": "https://github.com/owner/monorepo.git",
+                            "path": 123,
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.path" in e and "文字列が必要" in e for e in result.errors)
+
+    def test_plugin_source_settings_no_extra_fields_required(self):
+        """source: settingsは追加フィールドなしで有効（回帰確認）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [{"name": "plugin-one", "source": {"source": "settings"}}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+
 class TestRenames:
     """marketplace.json の renames フィールドのテスト（v2.1.193以降）"""
 

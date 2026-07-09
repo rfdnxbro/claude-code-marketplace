@@ -17,6 +17,14 @@ RESERVED_NAMES = {
     "life-sciences",
 }
 
+# source_type別の必須サブフィールド一覧（settingsは追加の必須フィールドなし）
+REQUIRED_FIELDS_BY_SOURCE_TYPE = {
+    "github": ["repo"],
+    "url": ["url"],
+    "npm": ["package"],
+    "git-subdir": ["url", "path"],
+}
+
 
 def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult:
     """marketplace.jsonを検証する"""
@@ -142,5 +150,19 @@ def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult
                             result.add_error(
                                 f"{file_path.name}: plugins[{i}].source.skipLfsはbooleanが必要です"
                             )
+
+                    # source_type別の必須サブフィールドの検証
+                    for field in REQUIRED_FIELDS_BY_SOURCE_TYPE.get(source_type, []):
+                        field_value = source.get(field)
+                        if not field_value:
+                            result.add_error(
+                                f"{file_path.name}: plugins[{i}].source.{field}は必須です"
+                                f"（source: {source_type}）"
+                            )
+                        elif not isinstance(field_value, str):
+                            result.add_error(
+                                f"{file_path.name}: plugins[{i}].source.{field}は文字列が必要です"
+                            )
+                    # source_type == "settings" の場合、追加の必須フィールドなし
 
     return result
