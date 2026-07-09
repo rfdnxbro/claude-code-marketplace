@@ -1,7 +1,17 @@
 name: プラグイン改善チェック
 
+# 【重要】on: に push を追加しないこと。
+# 下記jobはanthropics/claude-code-action@v1を使用しているが、このアクションは
+# pushイベントをサポートしておらず「Unsupported event type: push」で即失敗する。
+# GitHub Actionsキャッシュのscope問題（pull_requestだとgithub.refが
+# refs/pull/<N>/mergeになり別PRのキャッシュを復元できない）を解決したくなっても、
+# トリガーをpushに変えるのは対症療法として誤り。過去に同じ変更で2度壊れている
+# （#392で発覚・修正 → #587で見落として再導入 → #600で再修正）。
+# キャッシュscope問題への対応が必要な場合は、on:はpull_requestのままにして、
+# 別の手段（cache miss時の警告可視化・別ストレージの検討等）で解決すること。
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches: [main]
     paths:
       - '.claude/rules/**'
@@ -28,6 +38,10 @@ jobs:
   check-improvements:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # PRがマージされた場合のみ実行（クローズのみは除外）
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.merged == true
     steps:
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v7
@@ -51,10 +65,10 @@ jobs:
             RULES=$(find .claude/rules -name '*.md' -type f | tr '\n' ',' | sed 's/,$//')
             VALIDATORS=$(find scripts/validators -name '*.py' -type f | tr '\n' ',' | sed 's/,$//')
           else
-            # push（mainへのマージ含む）: 前回チェックポイントからの累積差分を検出
-            # （mainの履歴ベース）。mainブランチへのpushトリガーのため
-            # github.refは常にrefs/heads/mainに固定され、キャッシュのスコープも
-            # 安定して引き継がれる
+            # pull_request: 前回チェックポイントからの累積差分を検出（mainの履歴ベース）
+            # github.refがrefs/pull/<N>/mergeスコープになるため、キャッシュは
+            # 別PRの実行から復元できないことがある（既知の制約。復元できない
+            # 場合は下記のwarningで可視化し、HEAD~1フォールバックで動作継続する）
             if [ -f .plugin-check-sha ]; then
               LAST_SHA=$(tr -d '[:space:]' < .plugin-check-sha)
               if git cat-file -e "${LAST_SHA}" 2>/dev/null; then
