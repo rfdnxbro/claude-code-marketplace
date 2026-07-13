@@ -31,7 +31,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: 前回のCHANGELOGスナップショットを復元
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: .changelog-snapshot.md
           key: changelog-snapshot-${{ github.run_id }}
@@ -137,7 +137,7 @@ jobs:
 
       - name: キャッシュを保存
         if: steps.check-diff.outputs.is_first_run == 'true' || steps.claude-analysis.outcome == 'success'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: .changelog-snapshot.md
           key: changelog-snapshot-${{ github.run_id }}
