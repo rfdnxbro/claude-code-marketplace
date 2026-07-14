@@ -24,6 +24,7 @@ tools:
   - Bash(grep:*)
   - Bash(sed:*)
   - Bash(mktemp:*)
+permissionMode: dontAsk
 model: sonnet
 effort: medium
 maxTurns: 25
