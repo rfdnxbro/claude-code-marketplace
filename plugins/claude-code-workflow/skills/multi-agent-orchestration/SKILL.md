@@ -67,11 +67,12 @@ Agent tool で非自明な並列・チーム作業を委譲する前に、以下
 
 ## 補足: オーケストレーターの Task 起動範囲を制限する
 
-オーケストレーター役をエージェント定義（`plugins/*/agents/**/*.md` 等）として作成する場合は、`tools` frontmatter で `Task(agent_type)` 構文を使い、起動可能なサブエージェントを名前単位で制限する（詳細: サブエージェント定義の仕様ドキュメント「サブエージェントの制限」節）。
+オーケストレーター役をエージェント定義（`plugins/*/agents/**/*.md` 等）として作成する場合は、`tools` frontmatter で `Task(agent_type)` 構文を使い、起動可能なサブエージェントを名前単位で制限する（詳細: 本リポジトリのコントリビューター向けドキュメント `.claude/rules/agents.md` の「サブエージェントの制限」節。プラグイン単体インストール時にはこのファイルは配布されないため、実装時はエージェント定義自体に必要な情報を書き切る）。
 
 ```yaml
 ---
 name: orchestrator-agent
+description: 制限付きサブエージェントのみ起動可能なオーケストレーター
 tools:
   - Read
   - Task(reviewer-agent)
