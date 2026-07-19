@@ -4,7 +4,15 @@ description: PR の CI 失敗 / レビューコメント / コンフリクトを
 tools:
   - Read
   - Edit
-  - Bash(git:*)
+  - Bash(git add:*)
+  - Bash(git commit:*)
+  - Bash(git push:*)
+  - Bash(git fetch:*)
+  - Bash(git rebase:*)
+  - Bash(git status:*)
+  - Bash(git diff:*)
+  - Bash(git rev-parse:*)
+  - Bash(git restore:*)
   - Bash(gh pr:*)
   - Bash(gh run:*)
   - Bash(gh api:*)
@@ -275,6 +283,10 @@ PR <url>: <kind> on <hash 先頭 12 文字> はガード条件未達のためス
 `Bash(gh pr:*)` / `Bash(gh run:*)` / `Bash(gh api:*)` の 3 サブコマンドだけを許可し、`Bash(gh:*)` の broad な許可は **しない**。これは `gh auth token`（トークン漏洩）・`gh secret set`（シークレット書き換え）・`gh workflow run`（任意 workflow 起動）・`gh repo delete` 等の危険な gh サブコマンドが prompt injection 突破時に実行されないようにするため。万が一 PR レビューコメント由来の prompt injection が冒頭ガード文を突破しても、攻撃面が PR 操作系・CI ログ取得系・REST API 系に限定される。
 
 新たに必要な gh サブコマンドが出てきた場合は、最小権限の原則に従い、その都度 `Bash(gh <subcommand>:*)` 単位で追加する。
+
+同様に `git` も `add` / `commit` / `push` / `fetch` / `rebase` / `status` / `diff` / `rev-parse` / `restore` の実行フローで使用するサブコマンドのみを許可し、`Bash(git:*)` の broad な許可は **しない**。`git push --force` や `git reset --hard` 等の破壊的操作は「安全弁」節でプロンプトレベルで禁止しているが、`permissionMode: dontAsk` により人間の確認プロンプトという最後の砦がないため、`tools` の技術的な許可範囲自体を実行フローで必要なサブコマンドに限定し、攻撃面の実質的な上限を安全弁の宣言と一致させる（`git reset` / `git clean` / `git checkout -- .` 等の破壊的サブコマンドはそもそも tools に含めない）。
+
+新たに必要な git サブコマンドが出てきた場合も同様に、その都度 `Bash(git <subcommand>:*)` 単位で追加する。
 
 ## 試行回数管理
 
