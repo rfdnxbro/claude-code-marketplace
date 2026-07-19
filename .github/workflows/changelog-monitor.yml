@@ -95,7 +95,7 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           # yamllint disable-line rule:line-length
-          claude_args: '--max-turns 20 --allowed-tools "Bash(gh issue create:*),Bash(gh issue list:*),Read,Write,Grep,Glob"'
+          claude_args: '--max-turns 40 --allowed-tools "Bash(gh issue create:*),Bash(gh issue list:*),Read,Write,Grep,Glob"'
           prompt: |
             あなたはClaude Codeマーケットプレイスのメンテナーです。
 
@@ -111,7 +111,7 @@ jobs:
 
             1. changelog-diff.txtを読んで、差分の概要を把握
             2. current-changelog.mdを読んで、プラグイン関連の変更候補を特定
-            3. CLAUDE.mdの「Claude Code アップデート時の追跡方針」に従い、各変更を追跡対象/対象外に分類
+            3. .claude/rules/contribution-guide.md の「Claude Code アップデート時の追跡方針」に従い、各変更を追跡対象/対象外に分類
             4. .claude/rules/README.md を読んで、現在のドキュメント構造を把握
             5. 必要に応じて .claude/rules/ 配下の関連ドキュメントを確認
             6. 追跡対象の変更がある場合:
