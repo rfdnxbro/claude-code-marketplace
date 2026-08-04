@@ -110,6 +110,17 @@ jobs:
           git checkout -b "${BRANCH_NAME}"
           echo "作業ブランチを作成しました: ${BRANCH_NAME}"
 
+      # 前回失敗時に付与されたラベルを実行開始時に外す。
+      # 今回も失敗すれば末尾の通知ステップが付け直すため、
+      # 「解決済みのIssueにラベルが残り続ける」状態を防ぐ。
+      - name: 前回の失敗ラベルを除去
+        continue-on-error: true
+        run: |
+          gh issue edit "${{ github.event.issue.number }}" \
+            --remove-label auto-implement-failed 2>/dev/null || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Issueの内容を取得
         id: issue
         run: |
@@ -280,6 +291,11 @@ jobs:
         id: verify
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
+          # このワークフローのrunステップは既定シェル（bash -e）で実行されpipefailが
+          # 無効なため、明示しないと `pre-commit | tee` の終了ステータスがteeの0になり
+          # pre-commitの失敗を検知できない
+          set -o pipefail
+
           echo "=== 最終検証: pre-commit実行 ==="
           # 一時ファイルを除外してステージング
           rm -f issue-body.md issue-title.txt

@@ -2,7 +2,9 @@ name: Claude Code Review
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    # ready_for_reviewが無いと、Draft PRをReadyに切り替えただけでは
+    # レビューが一度も走らないまま通常PRとしてマージ可能になる
+    types: [opened, synchronize, ready_for_review]
     # Optional: Only run on specific file changes
     # paths:
     #   - "src/**/*.ts"
