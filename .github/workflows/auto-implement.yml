@@ -301,12 +301,32 @@ jobs:
           rm -f issue-body.md issue-title.txt
           git add -A
 
+          # 機密情報の検出は成果保全より優先する。gitleaksが検出した場合は
+          # commit・push・PR作成のいずれも行わずジョブを中止する。
+          # 公開リポジトリのため、検出内容がブランチやPR本文・実行ログに
+          # 載らないよう、gitleaksの出力は表示せずファイルに退避する。
+          if ! pre-commit run gitleaks --all-files > /tmp/gitleaks.log 2>&1; then
+            echo "::error::機密情報が検出されました。commit・pushを行わず中止します。"
+            echo "検出内容は公開を避けるため出力しません。"
+            echo "ローカルで 'pre-commit run gitleaks --all-files' を実行して確認してください。"
+            exit 1
+          fi
+
           # pre-commit実行（自動修正があれば適用）
           if ! pre-commit run --all-files 2>&1 | tee /tmp/precommit.log; then
             echo "自動修正が適用されました。再度ステージングして検証します。"
             git add -A
             # 2回目の実行
             if ! pre-commit run --all-files 2>&1 | tee /tmp/precommit.log; then
+              # 万一この段階でgitleaksが検出した場合、ログをPR本文に埋め込むと
+              # 検出内容が公開されるため、ログを破棄してジョブを中止する
+              if grep -q '^Detect hardcoded secrets\.*Failed' /tmp/precommit.log; then
+                rm -f /tmp/precommit.log
+                echo "::error::機密情報が検出されました。commit・pushを行わず中止します。"
+                echo "ローカルで 'pre-commit run gitleaks --all-files' を実行して確認してください。"
+                exit 1
+              fi
+
               # ここでジョブを落とすとClaudeの実装結果がpushされず完全に失われるため、
               # 結果だけを記録して後続のpush・Draft PR作成に進む。
               # E501のようにruffが自動修正できない違反は再実行しても解消しない。
@@ -320,6 +340,7 @@ jobs:
           echo "✓ すべてのpre-commitチェックがパスしました"
 
       - name: 変更をコミットしてプッシュ
+        id: push
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
           set -e
@@ -543,7 +564,13 @@ jobs:
             echo "🤖 **自動実装に失敗しました**"
             echo ""
             echo "- 実行ログ: ${RUN_URL}"
-            echo "- 作業ブランチ: \`${{ steps.branch.outputs.name }}\`"
+            # 作業ブランチはpushステップが成功した場合のみリモートに存在する。
+            # Claudeの実行失敗などpush前に落ちた場合は、案内しても存在しない。
+            if [ "${{ steps.push.outcome }}" = "success" ]; then
+              echo "- 作業ブランチ: \`${{ steps.branch.outputs.name }}\`（push済み）"
+            else
+              echo "- 作業ブランチはpushされていないため、実装内容は残っていません"
+            fi
             echo ""
             echo "手動での対応が必要です。原因を解消したうえでラベルを付け直すと再実行されます。"
             echo ""
