@@ -769,6 +769,7 @@ fi
 | `resume` | `--resume`、`--continue`、`/resume` によるセッション再開時 |
 | `clear` | `/clear` 実行時 |
 | `compact` | 自動または手動のコンパクション後 |
+| `fork` | `/fork` などでセッションがフォークとして開始された時 |
 
 他のイベントと同様のmatcherパターン指定が可能です（「matcher の仕様」参照）。例えば `"matcher": "startup|resume"` は新規開始・再開時のみ発火し、省略または `"*"` はすべての開始方法にマッチします。
 
@@ -797,7 +798,7 @@ fi
 
 | フィールド | 型 | 説明 |
 |-----------|---|------|
-| `source` | string | セッションの開始方法。`"startup"`（新規セッション）/ `"resume"`（再開）/ `"clear"`（`/clear` 後）/ `"compact"`（コンパクション後）。matcherはこの値に対して評価される |
+| `source` | string | セッションの開始方法。`"startup"`（新規セッション）/ `"resume"`（再開）/ `"clear"`（`/clear` 後）/ `"compact"`（コンパクション後）/ `"fork"`（フォークとして開始）。matcherはこの値に対して評価される |
 | `agent_type` | string | `--agent`フラグでセッションを開始した場合のエージェント名 |
 
 **`CLAUDE_ENV_FILE`**: SessionStartフックでは`CLAUDE_ENV_FILE`環境変数にファイルパスが設定されます。このファイルに`export KEY=VALUE`形式で環境変数を書き込むと、セッション全体で利用可能になります。
