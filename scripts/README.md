@@ -104,6 +104,7 @@ pytest scripts/tests/ -v
 from pathlib import Path
 from .base import ValidationResult, parse_frontmatter
 
+
 def validate_new_file(file_path: Path, content: str) -> ValidationResult:
     result = ValidationResult()
     frontmatter, body, yaml_warnings = parse_frontmatter(content)
