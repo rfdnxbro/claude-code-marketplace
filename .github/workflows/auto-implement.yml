@@ -273,6 +273,7 @@ jobs:
           fi
 
       - name: pre-commitで最終検証
+        id: verify
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
           echo "=== 最終検証: pre-commit実行 ==="
@@ -281,17 +282,21 @@ jobs:
           git add -A
 
           # pre-commit実行（自動修正があれば適用）
-          if ! pre-commit run --all-files; then
+          if ! pre-commit run --all-files 2>&1 | tee /tmp/precommit.log; then
             echo "自動修正が適用されました。再度ステージングして検証します。"
             git add -A
             # 2回目の実行
-            if ! pre-commit run --all-files; then
-              echo "::error::pre-commitチェックに失敗しました。Claude Codeによる自動修正が不完全です。"
+            if ! pre-commit run --all-files 2>&1 | tee /tmp/precommit.log; then
+              # ここでジョブを落とすとClaudeの実装結果がpushされず完全に失われるため、
+              # 結果だけを記録して後続のpush・Draft PR作成に進む。
+              # E501のようにruffが自動修正できない違反は再実行しても解消しない。
+              echo "::warning::pre-commitチェックが未通過です。Draft PRとして作成します。"
+              echo "status=fail" >> "$GITHUB_OUTPUT"
               git status
-              git diff
-              exit 1
+              exit 0
             fi
           fi
+          echo "status=pass" >> "$GITHUB_OUTPUT"
           echo "✓ すべてのpre-commitチェックがパスしました"
 
       - name: 変更をコミットしてプッシュ
@@ -382,6 +387,13 @@ jobs:
             CHANGE_SUMMARY="Claude Actionによって自動生成された変更です。詳細はコミット履歴を参照してください。"
           fi
 
+          # pre-commit未通過のPRは誤マージでIssueが自動クローズされないよう Refs にする
+          if [ "${{ steps.verify.outputs.status }}" = "fail" ]; then
+            ISSUE_REF="Refs #${ISSUE_NUM}"
+          else
+            ISSUE_REF="Closes #${ISSUE_NUM}"
+          fi
+
           # PR本文をファイルに書き込む（シェルエスケープの問題を回避）
           if [ "${{ github.event.label.name }}" = "claude-code-update" ]; then
             {
@@ -391,7 +403,7 @@ jobs:
               echo "Claude Codeのアップデートに対応します。"
               echo ""
               echo "## 関連Issue"
-              echo "Closes #${ISSUE_NUM}"
+              echo "${ISSUE_REF}"
               echo ""
               echo "## 変更内容"
               echo "$CHANGE_SUMMARY"
@@ -412,7 +424,7 @@ jobs:
               echo "プラグイン改善提案を実装します。"
               echo ""
               echo "## 関連Issue"
-              echo "Closes #${ISSUE_NUM}"
+              echo "${ISSUE_REF}"
               echo ""
               echo "## 変更内容"
               echo "$CHANGE_SUMMARY"
@@ -426,7 +438,24 @@ jobs:
             } > /tmp/pr-body.md
           fi
 
-          gh pr create \
+          # pre-commit未通過の場合はDraft PRにし、失敗ログを本文に添える
+          DRAFT_FLAG=""
+          if [ "${{ steps.verify.outputs.status }}" = "fail" ]; then
+            DRAFT_FLAG="--draft"
+            {
+              echo ""
+              echo "## ⚠️ pre-commit未通過"
+              echo ""
+              echo "自動修正では解消できないチェック違反が残っています。手動修正が必要です。"
+              echo ""
+              echo '```text'
+              tail -60 /tmp/precommit.log
+              echo '```'
+            } >> /tmp/pr-body.md
+          fi
+
+          # shellcheck disable=SC2086
+          gh pr create $DRAFT_FLAG \
             --title "$PR_TITLE" \
             --body-file /tmp/pr-body.md \
             --label "${{ github.event.label.name }}" \
@@ -436,12 +465,27 @@ jobs:
           ISSUE_TITLE: ${{ steps.issue.outputs.title }}
 
       - name: Issueにコメントを追加（変更あり）
-        if: steps.check-changes.outputs.has_changes == 'true'
+        if: steps.verify.outputs.status == 'pass'
         continue-on-error: true
         run: |
           gh issue comment ${{ github.event.issue.number }} --body "🤖 **自動実装完了**
 
           PRを作成しました。レビューをお願いします。
+
+          ---
+          *このコメントはClaude Code自動更新対応ワークフローによって生成されました*"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Issueにコメントを追加（Draft PR作成）
+        if: steps.verify.outputs.status == 'fail'
+        continue-on-error: true
+        run: |
+          gh issue comment ${{ github.event.issue.number }} --body "🤖 **Draft PRを作成しました**
+
+          実装は完了しましたが、pre-commitチェックが未通過のためDraft PRとして作成しました。
+          残っている違反はruffの自動修正では解消できないため、手動修正が必要です。
+          詳細はPR本文のログを参照してください。
 
           ---
           *このコメントはClaude Code自動更新対応ワークフローによって生成されました*"
@@ -465,6 +509,8 @@ jobs:
       # ジョブが途中で失敗した場合、従来はIssueに何も残らず放置されていたため通知する。
       # 権限チェック（オーナー以外がラベルを付けたケース）で失敗した場合は
       # Issueにコメントを残さないよう、ブランチ作成まで到達したかで条件を絞る。
+      # なお pre-commit未通過だけの場合はジョブ末尾まで成功状態で進むため、
+      # このステップは発火せず「Draft PR作成」コメントのみが残る。
       - name: Issueに失敗を通知
         if: failure() && steps.branch.outcome == 'success'
         continue-on-error: true
@@ -491,3 +537,11 @@ jobs:
           gh issue edit "${{ github.event.issue.number }}" --add-label auto-implement-failed
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 成果（Draft PR）を残したうえで、run自体は赤くして見落としを防ぐ。
+      # 必ずPR作成・通知ステップより後に置くこと。
+      - name: pre-commit未通過ならジョブを失敗させる
+        if: steps.verify.outputs.status == 'fail'
+        run: |
+          echo "::error::pre-commit未通過のDraft PRを作成しました。手動修正が必要です。"
+          exit 1

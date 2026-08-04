@@ -16,6 +16,10 @@ concurrency:
 
 jobs:
   claude-review:
+    # Draft PRはレビュー対象外。auto-implement.ymlがpre-commit未通過時に
+    # Draft PRを作成するため、手動修正前の状態にレビューが走るのを避ける。
+    if: github.event.pull_request.draft == false
+
     # Optional: Filter by PR author
     # if: |
     #   github.event.pull_request.user.login == 'external-contributor' ||
