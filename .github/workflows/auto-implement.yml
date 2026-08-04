@@ -253,7 +253,9 @@ jobs:
           fi
 
           # 公開リポジトリのため実行ログ全体はアーティファクト化せず、
-          # allowed-tools の調整に必要な「拒否されたツール呼び出し」のみを抽出する
+          # allowed-tools の調整に必要な「拒否されたツール呼び出し」のみを抽出する。
+          # job summaryはREST APIから取得できずUIでしか読めないため、
+          # 同じ内容を実行ログ（stdout）にも出して gh run view --log で追えるようにする。
           {
             echo "### 権限拒否（permission denials）の内訳"
             echo ""
@@ -273,7 +275,7 @@ jobs:
             echo '```'
             echo ""
             echo "</details>"
-          } >> "${GITHUB_STEP_SUMMARY}"
+          } | tee -a "${GITHUB_STEP_SUMMARY}"
 
       - name: 変更があるか確認
         id: check-changes

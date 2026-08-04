@@ -26,11 +26,14 @@ jobs:
         with:
           enable-cache: true
 
+      # バージョンは .pre-commit-config.yaml の ruff-pre-commit rev と揃える。
+      # 未固定にすると、ruffの更新（例: Markdown内コードブロックの整形対象化）で
+      # 「ローカルのpre-commitは通るがCIだけ落ちる」状態が突然発生する。
       - name: Ruff check
-        run: uvx ruff check scripts/
+        run: uvx ruff@0.14.10 check scripts/
 
       - name: Ruff format check
-        run: uvx ruff format --check scripts/
+        run: uvx ruff@0.14.10 format --check scripts/
 
   yaml-lint:
     name: YAML (yamllint)
