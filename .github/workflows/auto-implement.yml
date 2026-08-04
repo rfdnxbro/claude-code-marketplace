@@ -110,6 +110,17 @@ jobs:
           git checkout -b "${BRANCH_NAME}"
           echo "作業ブランチを作成しました: ${BRANCH_NAME}"
 
+      # 前回失敗時に付与されたラベルを実行開始時に外す。
+      # 今回も失敗すれば末尾の通知ステップが付け直すため、
+      # 「解決済みのIssueにラベルが残り続ける」状態を防ぐ。
+      - name: 前回の失敗ラベルを除去
+        continue-on-error: true
+        run: |
+          gh issue edit "${{ github.event.issue.number }}" \
+            --remove-label auto-implement-failed 2>/dev/null || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Issueの内容を取得
         id: issue
         run: |
@@ -154,6 +165,8 @@ jobs:
                - `pre-commit run --all-files` を実行
                - エラーがあれば内容を確認し、該当ファイルを修正
                - 再度pre-commitを実行し、すべてパスするまで繰り返す
+               - Pythonの1行は100桁以内に収める。長い日本語コメントや文字列リテラルは
+                 formatterが折り返さないため、自分で分割すること
             8. すべてのチェックがパスしたら、変更内容のサマリーを /tmp/change-summary.txt に書き出す
                - 変更したファイル一覧と各ファイルの変更概要を箇条書きで記載
                - 例: "- .claude/rules/README.md: 用語集にPRFAQ、DDDを追加"
@@ -168,6 +181,8 @@ jobs:
             - CLAUDE.mdのガイドラインに従う
             - 既存のコードスタイルを維持
             - 新機能を追加する場合は対応するテストも追加
+            - scripts/validators/ にコードを追加・変更した場合は、対応するテストで
+              カバレッジ100%を維持すること（CIで --cov-fail-under=100 が課されている）
             - 破壊的変更がある場合は明確にコメントを残す
             - 不明確な部分は「TODO: 要確認」としてマーク
             - リポジトリに永続的に必要なファイルのみ作成・変更すること
@@ -227,6 +242,39 @@ jobs:
           # yamllint disable-line rule:line-length
           claude_args: '--max-turns 50 --allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx *),Bash(python3 scripts/*),Bash(npx *),Bash(pre-commit run*)"'
 
+      - name: 権限拒否の内訳を出力
+        if: always()
+        continue-on-error: true
+        run: |
+          LOG="${RUNNER_TEMP}/claude-execution-output.json"
+          if [ ! -f "${LOG}" ]; then
+            echo "実行ログが見つかりません: ${LOG}"
+            exit 0
+          fi
+
+          # 公開リポジトリのため実行ログ全体はアーティファクト化せず、
+          # allowed-tools の調整に必要な「拒否されたツール呼び出し」のみを抽出する
+          {
+            echo "### 権限拒否（permission denials）の内訳"
+            echo ""
+            echo '```text'
+            jq -r '[.. | objects | select(has("permission_denials")) | .permission_denials[]?]
+                   | if length == 0 then "抽出結果なし"
+                     else (.[] | "\(.tool_name // "?"): \(.tool_input.command // .tool_input.file_path // "-")")
+                     end' "${LOG}" 2>/dev/null || echo "抽出に失敗しました"
+            echo '```'
+            echo ""
+            # 抽出できなかった場合に構造を追えるよう、キー名のみ（値は出さない）を併記する
+            echo "<details><summary>実行ログのキー名一覧</summary>"
+            echo ""
+            echo '```text'
+            jq -r '[.. | objects | keys[]] | unique | join(", ")' "${LOG}" 2>/dev/null | head -c 2000
+            echo ""
+            echo '```'
+            echo ""
+            echo "</details>"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
       - name: 変更があるか確認
         id: check-changes
         run: |
@@ -240,28 +288,59 @@ jobs:
           fi
 
       - name: pre-commitで最終検証
+        id: verify
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
+          # このワークフローのrunステップは既定シェル（bash -e）で実行されpipefailが
+          # 無効なため、明示しないと `pre-commit | tee` の終了ステータスがteeの0になり
+          # pre-commitの失敗を検知できない
+          set -o pipefail
+
           echo "=== 最終検証: pre-commit実行 ==="
           # 一時ファイルを除外してステージング
           rm -f issue-body.md issue-title.txt
           git add -A
 
+          # 機密情報の検出は成果保全より優先する。gitleaksが検出した場合は
+          # commit・push・PR作成のいずれも行わずジョブを中止する。
+          # 公開リポジトリのため、検出内容がブランチやPR本文・実行ログに
+          # 載らないよう、gitleaksの出力は表示せずファイルに退避する。
+          if ! pre-commit run gitleaks --all-files > /tmp/gitleaks.log 2>&1; then
+            echo "::error::機密情報が検出されました。commit・pushを行わず中止します。"
+            echo "検出内容は公開を避けるため出力しません。"
+            echo "ローカルで 'pre-commit run gitleaks --all-files' を実行して確認してください。"
+            exit 1
+          fi
+
           # pre-commit実行（自動修正があれば適用）
-          if ! pre-commit run --all-files; then
+          if ! pre-commit run --all-files 2>&1 | tee /tmp/precommit.log; then
             echo "自動修正が適用されました。再度ステージングして検証します。"
             git add -A
             # 2回目の実行
-            if ! pre-commit run --all-files; then
-              echo "::error::pre-commitチェックに失敗しました。Claude Codeによる自動修正が不完全です。"
+            if ! pre-commit run --all-files 2>&1 | tee /tmp/precommit.log; then
+              # 万一この段階でgitleaksが検出した場合、ログをPR本文に埋め込むと
+              # 検出内容が公開されるため、ログを破棄してジョブを中止する
+              if grep -q '^Detect hardcoded secrets\.*Failed' /tmp/precommit.log; then
+                rm -f /tmp/precommit.log
+                echo "::error::機密情報が検出されました。commit・pushを行わず中止します。"
+                echo "ローカルで 'pre-commit run gitleaks --all-files' を実行して確認してください。"
+                exit 1
+              fi
+
+              # ここでジョブを落とすとClaudeの実装結果がpushされず完全に失われるため、
+              # 結果だけを記録して後続のpush・Draft PR作成に進む。
+              # E501のようにruffが自動修正できない違反は再実行しても解消しない。
+              echo "::warning::pre-commitチェックが未通過です。Draft PRとして作成します。"
+              echo "status=fail" >> "$GITHUB_OUTPUT"
               git status
-              git diff
-              exit 1
+              exit 0
             fi
           fi
+          echo "status=pass" >> "$GITHUB_OUTPUT"
           echo "✓ すべてのpre-commitチェックがパスしました"
 
       - name: 変更をコミットしてプッシュ
+        id: push
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
           set -e
@@ -278,7 +357,10 @@ jobs:
             COMMIT_DESC="ルール更新に伴うプラグイン改善"
           fi
 
-          git commit -m "feat: Issue #${{ github.event.issue.number }} の自動実装
+          # 直前のステップでpre-commitを明示実行済み。かつpre-commit未通過でも
+          # Draft PRとして成果を残す設計のため、コミットフックは意図的にスキップする
+          # （pre-commit installされているため--no-verifyがないとcommitがブロックされる）
+          git commit --no-verify -m "feat: Issue #${{ github.event.issue.number }} の自動実装
 
           ${COMMIT_DESC}
 
@@ -349,6 +431,13 @@ jobs:
             CHANGE_SUMMARY="Claude Actionによって自動生成された変更です。詳細はコミット履歴を参照してください。"
           fi
 
+          # pre-commit未通過のPRは誤マージでIssueが自動クローズされないよう Refs にする
+          if [ "${{ steps.verify.outputs.status }}" = "fail" ]; then
+            ISSUE_REF="Refs #${ISSUE_NUM}"
+          else
+            ISSUE_REF="Closes #${ISSUE_NUM}"
+          fi
+
           # PR本文をファイルに書き込む（シェルエスケープの問題を回避）
           if [ "${{ github.event.label.name }}" = "claude-code-update" ]; then
             {
@@ -358,7 +447,7 @@ jobs:
               echo "Claude Codeのアップデートに対応します。"
               echo ""
               echo "## 関連Issue"
-              echo "Closes #${ISSUE_NUM}"
+              echo "${ISSUE_REF}"
               echo ""
               echo "## 変更内容"
               echo "$CHANGE_SUMMARY"
@@ -379,7 +468,7 @@ jobs:
               echo "プラグイン改善提案を実装します。"
               echo ""
               echo "## 関連Issue"
-              echo "Closes #${ISSUE_NUM}"
+              echo "${ISSUE_REF}"
               echo ""
               echo "## 変更内容"
               echo "$CHANGE_SUMMARY"
@@ -393,7 +482,24 @@ jobs:
             } > /tmp/pr-body.md
           fi
 
-          gh pr create \
+          # pre-commit未通過の場合はDraft PRにし、失敗ログを本文に添える
+          DRAFT_FLAG=""
+          if [ "${{ steps.verify.outputs.status }}" = "fail" ]; then
+            DRAFT_FLAG="--draft"
+            {
+              echo ""
+              echo "## ⚠️ pre-commit未通過"
+              echo ""
+              echo "自動修正では解消できないチェック違反が残っています。手動修正が必要です。"
+              echo ""
+              echo '```text'
+              tail -60 /tmp/precommit.log
+              echo '```'
+            } >> /tmp/pr-body.md
+          fi
+
+          # shellcheck disable=SC2086
+          gh pr create $DRAFT_FLAG \
             --title "$PR_TITLE" \
             --body-file /tmp/pr-body.md \
             --label "${{ github.event.label.name }}" \
@@ -403,12 +509,27 @@ jobs:
           ISSUE_TITLE: ${{ steps.issue.outputs.title }}
 
       - name: Issueにコメントを追加（変更あり）
-        if: steps.check-changes.outputs.has_changes == 'true'
+        if: steps.verify.outputs.status == 'pass'
         continue-on-error: true
         run: |
           gh issue comment ${{ github.event.issue.number }} --body "🤖 **自動実装完了**
 
           PRを作成しました。レビューをお願いします。
+
+          ---
+          *このコメントはClaude Code自動更新対応ワークフローによって生成されました*"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Issueにコメントを追加（Draft PR作成）
+        if: steps.verify.outputs.status == 'fail'
+        continue-on-error: true
+        run: |
+          gh issue comment ${{ github.event.issue.number }} --body "🤖 **Draft PRを作成しました**
+
+          実装は完了しましたが、pre-commitチェックが未通過のためDraft PRとして作成しました。
+          残っている違反はruffの自動修正では解消できないため、手動修正が必要です。
+          詳細はPR本文のログを参照してください。
 
           ---
           *このコメントはClaude Code自動更新対応ワークフローによって生成されました*"
@@ -428,3 +549,49 @@ jobs:
           *このコメントはClaude Code自動更新対応ワークフローによって生成されました*"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ジョブが途中で失敗した場合、従来はIssueに何も残らず放置されていたため通知する。
+      # 権限チェック（オーナー以外がラベルを付けたケース）で失敗した場合は
+      # Issueにコメントを残さないよう、ブランチ作成まで到達したかで条件を絞る。
+      # なお pre-commit未通過だけの場合はジョブ末尾まで成功状態で進むため、
+      # このステップは発火せず「Draft PR作成」コメントのみが残る。
+      - name: Issueに失敗を通知
+        if: failure() && steps.branch.outcome == 'success'
+        continue-on-error: true
+        run: |
+          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          {
+            echo "🤖 **自動実装に失敗しました**"
+            echo ""
+            echo "- 実行ログ: ${RUN_URL}"
+            # 作業ブランチはpushステップが成功した場合のみリモートに存在する。
+            # Claudeの実行失敗などpush前に落ちた場合は、案内しても存在しない。
+            if [ "${{ steps.push.outcome }}" = "success" ]; then
+              echo "- 作業ブランチ: \`${{ steps.branch.outputs.name }}\`（push済み）"
+            else
+              echo "- 作業ブランチはpushされていないため、実装内容は残っていません"
+            fi
+            echo ""
+            echo "手動での対応が必要です。原因を解消したうえでラベルを付け直すと再実行されます。"
+            echo ""
+            echo "---"
+            echo "*このコメントはClaude Code自動更新対応ワークフローによって生成されました*"
+          } > /tmp/fail-comment.md
+
+          gh issue comment "${{ github.event.issue.number }}" --body-file /tmp/fail-comment.md
+
+          # 失敗したIssueを一覧で絞り込めるようラベルを付与する
+          gh label create auto-implement-failed \
+            --color d73a4a \
+            --description "自動実装が失敗したIssue" 2>/dev/null || true
+          gh issue edit "${{ github.event.issue.number }}" --add-label auto-implement-failed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 成果（Draft PR）を残したうえで、run自体は赤くして見落としを防ぐ。
+      # 必ずPR作成・通知ステップより後に置くこと。
+      - name: pre-commit未通過ならジョブを失敗させる
+        if: steps.verify.outputs.status == 'fail'
+        run: |
+          echo "::error::pre-commit未通過のDraft PRを作成しました。手動修正が必要です。"
+          exit 1
