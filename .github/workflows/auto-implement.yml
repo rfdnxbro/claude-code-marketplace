@@ -320,7 +320,10 @@ jobs:
             COMMIT_DESC="ルール更新に伴うプラグイン改善"
           fi
 
-          git commit -m "feat: Issue #${{ github.event.issue.number }} の自動実装
+          # 直前のステップでpre-commitを明示実行済み。かつpre-commit未通過でも
+          # Draft PRとして成果を残す設計のため、コミットフックは意図的にスキップする
+          # （pre-commit installされているため--no-verifyがないとcommitがブロックされる）
+          git commit --no-verify -m "feat: Issue #${{ github.event.issue.number }} の自動実装
 
           ${COMMIT_DESC}
 
