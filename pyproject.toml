@@ -14,7 +14,11 @@ select = [
     "C4",  # flake8-comprehensions
     "UP",  # pyupgrade
 ]
-ignore = []
+ignore = [
+    # E501はformatterが分割できない要素（長い文字列リテラル・日本語コメント・URL）に
+    # のみ残り、--fixの対象外のためCIで自動修復できない。行長はline-lengthに委ねる。
+    "E501",
+]
 
 [tool.ruff.format]
 # フォーマット設定
