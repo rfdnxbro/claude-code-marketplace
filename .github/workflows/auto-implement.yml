@@ -227,6 +227,39 @@ jobs:
           # yamllint disable-line rule:line-length
           claude_args: '--max-turns 50 --allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx *),Bash(python3 scripts/*),Bash(npx *),Bash(pre-commit run*)"'
 
+      - name: 権限拒否の内訳を出力
+        if: always()
+        continue-on-error: true
+        run: |
+          LOG="${RUNNER_TEMP}/claude-execution-output.json"
+          if [ ! -f "${LOG}" ]; then
+            echo "実行ログが見つかりません: ${LOG}"
+            exit 0
+          fi
+
+          # 公開リポジトリのため実行ログ全体はアーティファクト化せず、
+          # allowed-tools の調整に必要な「拒否されたツール呼び出し」のみを抽出する
+          {
+            echo "### 権限拒否（permission denials）の内訳"
+            echo ""
+            echo '```text'
+            jq -r '[.. | objects | select(has("permission_denials")) | .permission_denials[]?]
+                   | if length == 0 then "抽出結果なし"
+                     else (.[] | "\(.tool_name // "?"): \(.tool_input.command // .tool_input.file_path // "-")")
+                     end' "${LOG}" 2>/dev/null || echo "抽出に失敗しました"
+            echo '```'
+            echo ""
+            # 抽出できなかった場合に構造を追えるよう、キー名のみ（値は出さない）を併記する
+            echo "<details><summary>実行ログのキー名一覧</summary>"
+            echo ""
+            echo '```text'
+            jq -r '[.. | objects | keys[]] | unique | join(", ")' "${LOG}" 2>/dev/null | head -c 2000
+            echo ""
+            echo '```'
+            echo ""
+            echo "</details>"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
       - name: 変更があるか確認
         id: check-changes
         run: |
@@ -426,5 +459,35 @@ jobs:
 
           ---
           *このコメントはClaude Code自動更新対応ワークフローによって生成されました*"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ジョブが途中で失敗した場合、従来はIssueに何も残らず放置されていたため通知する。
+      # 権限チェック（オーナー以外がラベルを付けたケース）で失敗した場合は
+      # Issueにコメントを残さないよう、ブランチ作成まで到達したかで条件を絞る。
+      - name: Issueに失敗を通知
+        if: failure() && steps.branch.outcome == 'success'
+        continue-on-error: true
+        run: |
+          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          {
+            echo "🤖 **自動実装に失敗しました**"
+            echo ""
+            echo "- 実行ログ: ${RUN_URL}"
+            echo "- 作業ブランチ: \`${{ steps.branch.outputs.name }}\`"
+            echo ""
+            echo "手動での対応が必要です。原因を解消したうえでラベルを付け直すと再実行されます。"
+            echo ""
+            echo "---"
+            echo "*このコメントはClaude Code自動更新対応ワークフローによって生成されました*"
+          } > /tmp/fail-comment.md
+
+          gh issue comment "${{ github.event.issue.number }}" --body-file /tmp/fail-comment.md
+
+          # 失敗したIssueを一覧で絞り込めるようラベルを付与する
+          gh label create auto-implement-failed \
+            --color d73a4a \
+            --description "自動実装が失敗したIssue" 2>/dev/null || true
+          gh issue edit "${{ github.event.issue.number }}" --add-label auto-implement-failed
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
