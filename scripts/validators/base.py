@@ -18,6 +18,9 @@ DISABLE_PATTERN = re.compile(r"<!--\s*validator-disable\s+([\w-]+)\s*-->")
 WARNING_DANGEROUS_OPERATION = "dangerous-operation"
 WARNING_BROAD_BASH_WILDCARD = "broad-bash-wildcard"
 
+# ブール値として有効な文字列表現（true/false に加え、大文字小文字区別なしで許可）
+BOOLEAN_LIKE_STRINGS = {"true", "false", "yes", "no", "on", "off", "1", "0"}
+
 
 class ValidationResult:
     """検証結果を管理するクラス"""
@@ -296,6 +299,28 @@ def add_yaml_warnings(result: ValidationResult, file_path: Path, yaml_warnings: 
     """YAML警告をValidationResultに追加する"""
     for w in yaml_warnings:
         result.add_warning(f"{file_path.name}: {w}")
+
+
+def is_valid_boolean_value(value: Any) -> bool:
+    """
+    ブール値として有効な値かどうかを判定する（スキル・プラグインfrontmatter用）
+
+    Python の bool 型（true/false）に加え、yes/no/on/off/1/0
+    （大文字小文字区別なし）も有効なブール値として扱う。
+
+    TODO: 要確認 — CHANGELOGには「skill and plugin frontmatter booleans」と
+    のみ記載されており、この拡張がすべてのブール値フィールドに適用されるのか、
+    一部フィールドのみなのかは本文からは確認できていない。エージェントの
+    `background` 等（agent.py側）は対象外の可能性があるため、本ヘルパーは
+    skill.py / plugin_json.py 側のブール値フィールドでのみ使用する。
+    """
+    if isinstance(value, bool):
+        return True
+    if isinstance(value, int):
+        return value in (0, 1)
+    if isinstance(value, str):
+        return value.lower() in BOOLEAN_LIKE_STRINGS
+    return False
 
 
 def validate_context_field(

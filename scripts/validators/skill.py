@@ -9,6 +9,7 @@ from .base import (
     ValidationResult,
     add_yaml_warnings,
     get_disabled_warnings,
+    is_valid_boolean_value,
     parse_frontmatter,
     to_str,
     validate_agent_field,
@@ -18,6 +19,9 @@ from .base import (
     validate_effort_field,
     validate_string_or_list_field,
 )
+
+# ブール値フィールドの許可値ヒント（yes/no/on/off/1/0を大文字小文字区別なしで許可）
+_BOOLEAN_HINT = "true/false/yes/no/on/off/1/0のいずれか（大文字小文字区別なし）"
 
 
 def validate_skill(file_path: Path, content: str) -> ValidationResult:
@@ -58,6 +62,12 @@ def validate_skill(file_path: Path, content: str) -> ValidationResult:
     # contextの確認（forkのみサポート、省略時はメインコンテキスト）
     validate_context_field(result, file_path, frontmatter)
 
+    # backgroundの確認（context: forkはデフォルトでバックグラウンド実行され、
+    # background: falseで個別にオプトアウト可能）
+    background = frontmatter.get("background")
+    if background is not None and not is_valid_boolean_value(background):
+        result.add_error(f"{file_path.name}: backgroundはブール値が必要です（{_BOOLEAN_HINT}）")
+
     # modelの値チェック
     model = frontmatter.get("model", "")
     model_str = to_str(model)
@@ -65,10 +75,10 @@ def validate_skill(file_path: Path, content: str) -> ValidationResult:
     if model_str and model_str not in valid_models:
         result.add_warning(f"{file_path.name}: modelが不正: {model_str}（sonnet/opus/haiku）")
 
-    # user-invocableの確認（boolean型）
+    # user-invocableの確認（boolean型。yes/no/on/off/1/0も許可）
     user_invocable = frontmatter.get("user-invocable")
-    if user_invocable is not None and not isinstance(user_invocable, bool):
-        result.add_error(f"{file_path.name}: user-invocableはブール値が必要です")
+    if user_invocable is not None and not is_valid_boolean_value(user_invocable):
+        result.add_error(f"{file_path.name}: user-invocableはブール値が必要です（{_BOOLEAN_HINT}）")
 
     # agentの確認（空でない文字列）
     validate_agent_field(result, file_path, frontmatter)
@@ -112,8 +122,10 @@ def validate_skill(file_path: Path, content: str) -> ValidationResult:
     ]
     if default_enabled_variants:
         field_key, default_enabled_val = default_enabled_variants[0]
-        if not isinstance(default_enabled_val, bool):
-            result.add_error(f"{file_path.name}: {field_key}はブール値が必要です")
+        if not is_valid_boolean_value(default_enabled_val):
+            result.add_error(
+                f"{file_path.name}: {field_key}はブール値が必要です（{_BOOLEAN_HINT}）"
+            )
 
     # fallback（v2.1.186以降）: 1単語のためkebab-case/snake_case/camelCaseすべて同形。
     # display-name/default-enabledのようなバリアント処理は不要。
