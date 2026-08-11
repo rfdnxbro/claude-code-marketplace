@@ -265,8 +265,13 @@ jobs:
                      else
                        .[]
                        | "\(.tool_name // "?"): \(.tool_input.command // .tool_input.file_path // "-")"
-                         + "\n  拒否理由[\(.decision_reason_type // "?")]: "
-                         + ((.decision_reason // "-") | tostring | .[0:300])
+                         + "\n  拒否種別: \(.decision_reason_type // "?")"
+                         + "\n  理由の構造: "
+                         + ((.decision_reason // null)
+                            | if type == "object" then "object{" + (keys | join(", ")) + "}"
+                              elif type == "string" then "string(\(length)文字)"
+                              elif . == null then "-"
+                              else type end)
                      end' "${LOG}" 2>/dev/null || echo "抽出に失敗しました"
             echo '```'
             echo ""
