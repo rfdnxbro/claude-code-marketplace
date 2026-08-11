@@ -6,13 +6,10 @@ import re
 from pathlib import Path
 from typing import Any
 
-from .base import ValidationResult, is_valid_boolean_value, parse_json_safe, validate_kebab_case
+from .base import ValidationResult, parse_json_safe, validate_kebab_case
 from .monitors_json import validate_monitors_entries
 
 USER_CONFIG_TYPES = {"string", "number", "boolean", "directory", "file"}
-
-# ブール値フィールドの許可値ヒント（yes/no/on/off/1/0を大文字小文字区別なしで許可）
-_BOOLEAN_HINT = "true/false/yes/no/on/off/1/0のいずれか（大文字小文字区別なし）"
 
 
 def _validate_user_config_mapping(
@@ -49,12 +46,11 @@ def _validate_user_config_mapping(
             result.add_error(
                 f"{file_path.name}: {label}.{config_key}.descriptionは文字列が必要です"
             )
-        # sensitiveはブール値（yes/no/on/off/1/0も許可）
+        # sensitiveはブール値のみ
         sensitive = config_value.get("sensitive")
-        if sensitive is not None and not is_valid_boolean_value(sensitive):
+        if sensitive is not None and not isinstance(sensitive, bool):
             result.add_error(
                 f"{file_path.name}: {label}.{config_key}.sensitiveはブール値が必要です"
-                f"（{_BOOLEAN_HINT}）"
             )
         # defaultの型がtypeと整合するかをチェック
         if "default" in config_value and config_type in USER_CONFIG_TYPES:
@@ -67,10 +63,10 @@ def _validate_user_config_mapping(
                         "数値（type: number）が必要です"
                     )
             elif config_type == "boolean":
-                if not is_valid_boolean_value(default_value):
+                if not isinstance(default_value, bool):
                     result.add_error(
                         f"{file_path.name}: {label}.{config_key}.defaultは"
-                        f"真偽値（type: boolean）が必要です（{_BOOLEAN_HINT}）"
+                        "真偽値（type: boolean）が必要です"
                     )
             elif config_type in {"string", "directory", "file"}:
                 if not isinstance(default_value, str):
@@ -153,10 +149,10 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
                         f"channels[{i}].userConfig",
                     )
 
-    # defaultEnabled の確認（v2.1.154以降。yes/no/on/off/1/0も許可）
+    # defaultEnabled の確認（v2.1.154以降）
     default_enabled = data.get("defaultEnabled")
-    if default_enabled is not None and not is_valid_boolean_value(default_enabled):
-        result.add_error(f"{file_path.name}: defaultEnabledはブール値が必要です（{_BOOLEAN_HINT}）")
+    if default_enabled is not None and not isinstance(default_enabled, bool):
+        result.add_error(f"{file_path.name}: defaultEnabledはブール値（true/false）が必要です")
 
     # 公式スキーマに存在しないフィールドを警告
     # settings は plugin.json のフィールドではなく、settings.json はプラグインルート

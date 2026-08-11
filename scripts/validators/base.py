@@ -308,11 +308,14 @@ def is_valid_boolean_value(value: Any) -> bool:
     Python の bool 型（true/false）に加え、yes/no/on/off/1/0
     （大文字小文字区別なし）も有効なブール値として扱う。
 
-    TODO: 要確認 — CHANGELOGには「skill and plugin frontmatter booleans」と
-    のみ記載されており、この拡張がすべてのブール値フィールドに適用されるのか、
-    一部フィールドのみなのかは本文からは確認できていない。エージェントの
-    `background` 等（agent.py側）は対象外の可能性があるため、本ヘルパーは
-    skill.py / plugin_json.py 側のブール値フィールドでのみ使用する。
+    適用範囲はフロントマター（YAML）のブール値フィールドに限る。
+    CHANGELOGの記述は「skill and plugin frontmatter booleans」であり、
+    yes/no/on/off はYAMLにおける慣用的なブール値表記のため。
+
+    plugin.json や marketplace.json はJSONでネイティブのブール値を持つため
+    対象外とし、それらのバリデーターでは isinstance(value, bool) を使う。
+    JSONで文字列 "false" や数値 0 を許容すると、Claude Codeが解釈しない値を
+    バリデーターが見逃すことになる。
     """
     if isinstance(value, bool):
         return True

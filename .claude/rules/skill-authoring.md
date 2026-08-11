@@ -60,7 +60,9 @@ allowed-tools:
 
 **ブール値フィールドの許容形式**:
 
-`user-invocable`・`background`・`default-enabled` などのブール値フィールドは、`true` / `false` に加えて `yes` / `no` / `on` / `off` / `1` / `0` を受け付けます。大文字小文字は区別されません。プラグインの `plugin.json`（`defaultEnabled`、`userConfig` の `sensitive` など）でも同様です。
+`user-invocable`・`background`・`default-enabled` などのブール値フィールドは、`true` / `false` に加えて `yes` / `no` / `on` / `off` / `1` / `0` を受け付けます。大文字小文字は区別されません。
+
+これはフロントマター（YAML）に対する緩和です。`plugin.json` や `marketplace.json` は JSON でネイティブのブール値を持つため、これらのファイルでは `true` / `false` のみが有効です。
 
 ```yaml
 # いずれも同じ意味
