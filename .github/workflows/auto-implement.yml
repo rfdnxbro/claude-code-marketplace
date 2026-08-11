@@ -262,7 +262,7 @@ jobs:
             echo '```text'
             jq -r '[.. | objects | select(has("permission_denials")) | .permission_denials[]?]
                    | if length == 0 then "抽出結果なし"
-                     else (.[] | "\(.tool_name // "?"): \(.tool_input.command // .tool_input.file_path // "-")")
+                     else (.[] | "\(.tool_name // "?"): \(.tool_input.command // .tool_input.file_path // "-")\n  拒否理由[\(.decision_reason_type // "?")]: \((.decision_reason // "-") | tostring | .[0:300])")
                      end' "${LOG}" 2>/dev/null || echo "抽出に失敗しました"
             echo '```'
             echo ""
