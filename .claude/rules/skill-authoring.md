@@ -58,6 +58,22 @@ allowed-tools:
 - YAML ブール値キーワード（`true` / `false` / `yes` / `no` / `on` / `off` 等）と一致する値
 - 行頭または値先頭に YAML 特殊文字（`#`、`&`、`*`、`!`、`|`、`>`、`%`、`@`、`` ` ``、`[`、`{`、`-` + 半角スペース、`:` + 半角スペース）が現れる値
 
+**ブール値フィールドの許容形式**:
+
+`user-invocable`・`background`・`default-enabled` などのブール値フィールドは、`true` / `false` に加えて `yes` / `no` / `on` / `off` / `1` / `0` を受け付けます。大文字小文字は区別されません。
+
+これはフロントマター（YAML）に対する緩和です。`plugin.json` や `marketplace.json` は JSON でネイティブのブール値を持つため、これらのファイルでは `true` / `false` のみが有効です。
+
+```yaml
+# いずれも同じ意味
+user-invocable: false
+user-invocable: "no"
+user-invocable: "off"
+user-invocable: 0
+```
+
+読み手にとって最も明確なのは `true` / `false` のため、特段の理由がなければそちらを使ってください。
+
 ```yaml
 # クォート不要（通常の文字列）
 name: my-skill
@@ -139,6 +155,16 @@ agent: Explore
 ```yaml
 # フォークされたコンテキストで実行
 context: fork
+```
+
+**background** (デフォルト: `context: fork` のとき `true`):
+
+`context: fork` のスキルはバックグラウンドで実行されます。`background: false` を指定すると、そのスキルだけバックグラウンド実行をオプトアウトできます。
+
+```yaml
+# フォークするが、バックグラウンドでは実行しない
+context: fork
+background: false
 ```
 
 **allowed-tools**:

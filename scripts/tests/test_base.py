@@ -9,6 +9,7 @@ from scripts.validators.base import (
     WARNING_BROAD_BASH_WILDCARD,
     ValidationResult,
     add_yaml_warnings,
+    is_valid_boolean_value,
     normalize_path,
     parse_frontmatter,
     to_str,
@@ -521,3 +522,36 @@ class TestValidateAllowAskGlobFields:
         result = ValidationResult()
         validate_allow_ask_glob_fields(result, Path("SKILL.md"), {"allow": 123})
         assert not result.has_errors()
+
+
+class TestIsValidBooleanValue:
+    """is_valid_boolean_valueのテスト"""
+
+    def test_bool_values(self):
+        assert is_valid_boolean_value(True)
+        assert is_valid_boolean_value(False)
+
+    def test_int_zero_and_one(self):
+        assert is_valid_boolean_value(1)
+        assert is_valid_boolean_value(0)
+
+    def test_other_int_is_invalid(self):
+        assert not is_valid_boolean_value(2)
+        assert not is_valid_boolean_value(-1)
+
+    def test_boolean_like_strings(self):
+        for value in ("true", "false", "yes", "no", "on", "off", "1", "0"):
+            assert is_valid_boolean_value(value), value
+
+    def test_boolean_like_strings_are_case_insensitive(self):
+        for value in ("TRUE", "False", "Yes", "NO", "On", "OFF"):
+            assert is_valid_boolean_value(value), value
+
+    def test_other_strings_are_invalid(self):
+        assert not is_valid_boolean_value("maybe")
+        assert not is_valid_boolean_value("")
+
+    def test_non_bool_like_types_are_invalid(self):
+        assert not is_valid_boolean_value(None)
+        assert not is_valid_boolean_value(1.5)
+        assert not is_valid_boolean_value(["true"])

@@ -18,6 +18,9 @@ DISABLE_PATTERN = re.compile(r"<!--\s*validator-disable\s+([\w-]+)\s*-->")
 WARNING_DANGEROUS_OPERATION = "dangerous-operation"
 WARNING_BROAD_BASH_WILDCARD = "broad-bash-wildcard"
 
+# ブール値として有効な文字列表現（true/false に加え、大文字小文字区別なしで許可）
+BOOLEAN_LIKE_STRINGS = {"true", "false", "yes", "no", "on", "off", "1", "0"}
+
 
 class ValidationResult:
     """検証結果を管理するクラス"""
@@ -296,6 +299,31 @@ def add_yaml_warnings(result: ValidationResult, file_path: Path, yaml_warnings: 
     """YAML警告をValidationResultに追加する"""
     for w in yaml_warnings:
         result.add_warning(f"{file_path.name}: {w}")
+
+
+def is_valid_boolean_value(value: Any) -> bool:
+    """
+    ブール値として有効な値かどうかを判定する（スキル・プラグインfrontmatter用）
+
+    Python の bool 型（true/false）に加え、yes/no/on/off/1/0
+    （大文字小文字区別なし）も有効なブール値として扱う。
+
+    適用範囲はフロントマター（YAML）のブール値フィールドに限る。
+    CHANGELOGの記述は「skill and plugin frontmatter booleans」であり、
+    yes/no/on/off はYAMLにおける慣用的なブール値表記のため。
+
+    plugin.json や marketplace.json はJSONでネイティブのブール値を持つため
+    対象外とし、それらのバリデーターでは isinstance(value, bool) を使う。
+    JSONで文字列 "false" や数値 0 を許容すると、Claude Codeが解釈しない値を
+    バリデーターが見逃すことになる。
+    """
+    if isinstance(value, bool):
+        return True
+    if isinstance(value, int):
+        return value in (0, 1)
+    if isinstance(value, str):
+        return value.lower() in BOOLEAN_LIKE_STRINGS
+    return False
 
 
 def validate_context_field(
