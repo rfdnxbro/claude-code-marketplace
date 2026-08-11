@@ -214,7 +214,7 @@ class TestValidatePluginJson:
                         "type": "string",
                         "title": "API Key",
                         "description": "API Key",
-                        "sensitive": "true",
+                        "sensitive": "maybe",
                     }
                 },
             }
@@ -222,6 +222,25 @@ class TestValidatePluginJson:
         result = validate_plugin_json(Path("plugin.json"), content)
         assert result.has_errors()
         assert any("sensitive" in e for e in result.errors)
+
+    def test_user_config_sensitive_boolean_like_string(self):
+        """userConfigのsensitiveはyes/no/on/off/1/0も有効なブール値として扱う"""
+        for value in ("true", "no", "On", "1", 0):
+            content = json.dumps(
+                {
+                    "name": "my-plugin",
+                    "userConfig": {
+                        "apiKey": {
+                            "type": "string",
+                            "title": "API Key",
+                            "description": "API Key",
+                            "sensitive": value,
+                        }
+                    },
+                }
+            )
+            result = validate_plugin_json(Path("plugin.json"), content)
+            assert not result.has_errors(), f"{value}: {result.errors}"
 
     def test_user_config_missing_type(self):
         """userConfigのtypeが欠落した場合は「必須です」エラー"""
@@ -364,7 +383,7 @@ class TestValidatePluginJson:
         assert not result.has_errors()
 
     def test_user_config_default_boolean_string_mismatch(self):
-        """type: booleanに対しdefaultが文字列の場合エラー"""
+        """type: booleanに対しdefaultがブール値と解釈できない文字列の場合エラー"""
         content = json.dumps(
             {
                 "name": "my-plugin",
@@ -373,7 +392,7 @@ class TestValidatePluginJson:
                         "type": "boolean",
                         "title": "有効化",
                         "description": "機能を有効化",
-                        "default": "true",
+                        "default": "maybe",
                     }
                 },
             }
@@ -620,7 +639,7 @@ class TestValidatePluginJson:
                                 "type": "string",
                                 "title": "Token",
                                 "description": "Token",
-                                "sensitive": "true",
+                                "sensitive": "maybe",
                             }
                         },
                     }
@@ -946,16 +965,23 @@ class TestDefaultEnabled:
         result = validate_plugin_json(Path("plugin.json"), content)
         assert not result.has_errors()
 
+    def test_default_enabled_boolean_like_string(self):
+        """defaultEnabled はyes/no/on/off/1/0も有効なブール値として扱う"""
+        for value in ("false", "yes", "Off", "1", 0, 1):
+            content = json.dumps({"name": "my-plugin", "defaultEnabled": value})
+            result = validate_plugin_json(Path("plugin.json"), content)
+            assert not result.has_errors(), f"{value}: {result.errors}"
+
     def test_default_enabled_string_error(self):
-        """defaultEnabled に文字列を指定するとエラー"""
-        content = json.dumps({"name": "my-plugin", "defaultEnabled": "false"})
+        """defaultEnabled にブール値と解釈できない文字列を指定するとエラー"""
+        content = json.dumps({"name": "my-plugin", "defaultEnabled": "maybe"})
         result = validate_plugin_json(Path("plugin.json"), content)
         assert result.has_errors()
         assert any("defaultEnabled" in e and "ブール値" in e for e in result.errors)
 
     def test_default_enabled_number_error(self):
-        """defaultEnabled に数値を指定するとエラー"""
-        content = json.dumps({"name": "my-plugin", "defaultEnabled": 0})
+        """defaultEnabled に0/1以外の数値を指定するとエラー"""
+        content = json.dumps({"name": "my-plugin", "defaultEnabled": 2})
         result = validate_plugin_json(Path("plugin.json"), content)
         assert result.has_errors()
         assert any("defaultEnabled" in e and "ブール値" in e for e in result.errors)

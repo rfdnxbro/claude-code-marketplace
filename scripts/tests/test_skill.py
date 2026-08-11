@@ -207,19 +207,61 @@ description: 説明
         result = validate_skill(Path("SKILL.md"), content)
         assert not result.has_errors()
 
+    def test_user_invocable_boolean_like_string(self):
+        """user-invocableはyes/no/on/off/1/0も有効なブール値として扱う"""
+        for value in ("yes", "no", "on", "off", "1", "0", "YES", "Off"):
+            content = dedent(f"""
+                ---
+                name: test-skill
+                description: テストスキルの説明
+                user-invocable: {value}
+                ---
+                本文
+            """).strip()
+            result = validate_skill(Path("SKILL.md"), content)
+            assert not result.has_errors(), f"{value}: {result.errors}"
+
     def test_user_invocable_invalid(self):
         """user-invocableがブール値でない場合エラー"""
         content = dedent("""
             ---
             name: test-skill
             description: テストスキルの説明
-            user-invocable: yes
+            user-invocable: maybe
             ---
             本文
         """).strip()
         result = validate_skill(Path("SKILL.md"), content)
         assert result.has_errors()
         assert any("user-invocable" in e for e in result.errors)
+
+    def test_background_valid(self):
+        """backgroundがブール値の場合はエラーにならない"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            context: fork
+            background: false
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+
+    def test_background_invalid(self):
+        """backgroundがブール値でない場合エラー"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            background: maybe
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert result.has_errors()
+        assert any("background" in e for e in result.errors)
 
     def test_agent_valid(self):
         """agentが空でない文字列であることを確認"""
@@ -747,7 +789,7 @@ description: 説明
             ---
             name: test-skill
             description: テストスキルの説明
-            default-enabled: yes
+            default-enabled: maybe
             ---
             本文
         """).strip()
@@ -761,7 +803,7 @@ description: 説明
             ---
             name: test-skill
             description: テストスキルの説明
-            default_enabled: yes
+            default_enabled: maybe
             ---
             本文
         """).strip()
@@ -775,7 +817,7 @@ description: 説明
             ---
             name: test-skill
             description: テストスキルの説明
-            defaultEnabled: yes
+            defaultEnabled: maybe
             ---
             本文
         """).strip()
