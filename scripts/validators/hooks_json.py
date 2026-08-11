@@ -85,6 +85,7 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
         "ConfigChange",
         "CwdChanged",
         "FileChanged",
+        "DirectoryAdded",
         "WorktreeCreate",
         "WorktreeRemove",
         "InstructionsLoaded",

@@ -78,6 +78,7 @@ hooks:
 | `ConfigChange` | セッション中に設定ファイルが変更された時 | ✓ |
 | `CwdChanged` | カレントディレクトリが変更された時（direnvなどのリアクティブ環境管理用） | ✓ |
 | `FileChanged` | ファイルが変更された時（direnvなどのリアクティブ環境管理用） | ✓ |
+| `DirectoryAdded` | `/add-dir`またはSDKの`register_repo_root`でセッション中に新しい作業ディレクトリが登録された時 | × |
 | `WorktreeCreate` | エージェントworktree分離でworktreeが作成された時 | × |
 | `WorktreeRemove` | エージェントworktree分離でworktreeが削除された時 | × |
 | `InstructionsLoaded` | CLAUDE.mdまたは`.claude/rules/*.md`がコンテキストに読み込まれた時 | × |
@@ -1178,6 +1179,37 @@ input=$(cat)
 echo "エラー: この設定変更はポリシーにより禁止されています。" >&2
 exit 2
 ```
+
+### DirectoryAdded
+
+`/add-dir` コマンド実行後、またはSDKの `register_repo_root` コントロールリクエストによって、セッション中に新しい作業ディレクトリが登録された後に実行されるフック。
+
+**使用例:**
+
+```json
+{
+  "hooks": {
+    "DirectoryAdded": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on-directory-added.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**ユースケース:**
+
+- 新しく追加された作業ディレクトリの初期化処理・監査ログ記録
+- 追加ディレクトリの権限・信頼性チェック
+
+**TODO: 要確認** — マッチャー対応の有無、フックが受け取る入力JSONの固有フィールド（追加されたディレクトリパス等）の詳細は、現状のCHANGELOG記述からは不明。実装または公式ドキュメントを確認して正確な仕様を記載すること。
 
 ### WorktreeCreate
 

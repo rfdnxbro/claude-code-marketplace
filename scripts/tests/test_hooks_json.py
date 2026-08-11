@@ -68,6 +68,7 @@ class TestValidateHooksJson:
             "ConfigChange",
             "CwdChanged",
             "FileChanged",
+            "DirectoryAdded",
             "WorktreeCreate",
             "WorktreeRemove",
             "InstructionsLoaded",
@@ -310,6 +311,28 @@ class TestValidateHooksJson:
         result = validate_hooks_json(Path("hooks.json"), content)
         assert result.has_errors()
         assert any("once" in e for e in result.errors)
+
+    def test_valid_directory_added_hook(self):
+        """DirectoryAddedフックが有効であることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "DirectoryAdded": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on-directory-added.sh",
+                                    "timeout": 10,
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
 
     def test_valid_worktree_create_hook(self):
         """WorktreeCreateフックが有効であることをテスト（v2.1.50以降）"""
