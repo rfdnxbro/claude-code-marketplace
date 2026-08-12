@@ -3,6 +3,21 @@ name: Claude Code自動更新対応
 on:
   issues:
     types: [labeled]
+  # ラベルの付け外し以外に再実行手段がないと、失敗したIssueを再試行するたびに
+  # Issueのタイムラインがラベル操作で埋まるため、手動トリガーを用意する
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 対象のIssue番号
+        required: true
+        type: string
+      label:
+        description: 実装の種別
+        required: true
+        type: choice
+        options:
+          - claude-code-update
+          - plugin-update
 
 permissions:
   contents: write
@@ -11,16 +26,46 @@ permissions:
   id-token: write
 
 concurrency:
-  group: auto-implement-${{ github.event.issue.number }}
+  group: auto-implement-${{ github.event.issue.number || inputs.issue_number }}
   cancel-in-progress: false
 
 jobs:
   auto-implement:
-    # claude-code-updateまたはplugin-updateラベルが付いたissueに反応
-    if: github.event.label.name == 'claude-code-update' || github.event.label.name == 'plugin-update'
+    # claude-code-updateまたはplugin-updateラベルが付いたissueに反応する。
+    # workflow_dispatchの場合は種別をinputsで受け取るためラベル判定は行わない。
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      || github.event.label.name == 'claude-code-update'
+      || github.event.label.name == 'plugin-update'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      # issues.labeled と workflow_dispatch のどちらが起点でも
+      # 以降のステップが同じ値を参照できるようにジョブ単位で解決しておく
+      ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
+      TARGET_LABEL: ${{ github.event.label.name || inputs.label }}
     steps:
+      # workflow_dispatchのissue_numberは自由入力のため、ブランチ名や
+      # gh issue view に渡す前に数値であることを確認する
+      - name: 入力値を検証
+        run: |
+          # grepは行単位で照合するため "123\nfoo" のような複数行入力を通してしまう。
+          # caseは文字列全体を見るので、改行を含む値をここで弾ける。
+          case "${ISSUE_NUMBER}" in
+            "" | *[!0-9]*)
+              echo "::error::Issue番号が数値ではありません"
+              exit 1
+              ;;
+          esac
+          case "${TARGET_LABEL}" in
+            claude-code-update | plugin-update) ;;
+            *)
+              echo "::error::対応していない種別です: ${TARGET_LABEL}"
+              exit 1
+              ;;
+          esac
+          echo "✓ 対象: Issue #${ISSUE_NUMBER}（種別: ${TARGET_LABEL}）"
+
       - name: ラベル付与者の権限チェック
         run: |
           echo "ラベル付与者: ${SENDER}"
@@ -49,13 +94,20 @@ jobs:
           exit 1
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SENDER: ${{ github.event.sender.login }}
+          # workflow_dispatchでもsenderは入るが、念のためactorにフォールバックする
+          SENDER: ${{ github.event.sender.login || github.actor }}
 
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Claudeの検証用（Bash(uvx *)）と、PR作成前のテスト実行の両方でuvxを使う
+      - name: uvをセットアップ
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
 
       - name: pre-commitキャッシュを復元
         uses: actions/cache@v6
@@ -81,7 +133,7 @@ jobs:
       - name: ラベルに基づく設定を決定
         id: config
         run: |
-          LABEL="${{ github.event.label.name }}"
+          LABEL="${TARGET_LABEL}"
 
           if [ "$LABEL" = "claude-code-update" ]; then
             echo "branch_prefix=auto/claude-code-update" >> $GITHUB_OUTPUT
@@ -98,7 +150,7 @@ jobs:
       - name: 作業ブランチを作成
         id: branch
         run: |
-          BRANCH_NAME="${{ steps.config.outputs.branch_prefix }}-issue-${{ github.event.issue.number }}"
+          BRANCH_NAME="${{ steps.config.outputs.branch_prefix }}-issue-${ISSUE_NUMBER}"
           echo "name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
 
           # ローカルブランチが既に存在する場合は削除
@@ -116,7 +168,7 @@ jobs:
       - name: 前回の失敗ラベルを除去
         continue-on-error: true
         run: |
-          gh issue edit "${{ github.event.issue.number }}" \
+          gh issue edit "${ISSUE_NUMBER}" \
             --remove-label auto-implement-failed 2>/dev/null || true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -125,16 +177,16 @@ jobs:
         id: issue
         run: |
           # Issue本文をファイルに保存
-          gh issue view ${{ github.event.issue.number }} --json title,body --jq '.body' > issue-body.md
-          gh issue view ${{ github.event.issue.number }} --json title --jq '.title' > issue-title.txt
+          gh issue view "${ISSUE_NUMBER}" --json title,body --jq '.body' > issue-body.md
+          gh issue view "${ISSUE_NUMBER}" --json title --jq '.title' > issue-title.txt
           # タイトルをoutputにも保存（後のステップで使用）
           echo "title=$(cat issue-title.txt | tr -d '\n')" >> $GITHUB_OUTPUT
-          echo "取得完了: Issue #${{ github.event.issue.number }}"
+          echo "取得完了: Issue #${ISSUE_NUMBER}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Claudeで実装を実行（claude-code-update）
-        if: github.event.label.name == 'claude-code-update'
+        if: env.TARGET_LABEL == 'claude-code-update'
         id: claude-implement-docs
         uses: anthropics/claude-code-action@v1
         with:
@@ -144,7 +196,7 @@ jobs:
             あなたはClaude Codeマーケットプレイスのソフトウェアエンジニアです。
 
             ## タスク
-            Issue #${{ github.event.issue.number }} の内容に基づいて、必要な実装を行ってください。
+            Issue #${{ env.ISSUE_NUMBER }} の内容に基づいて、必要な実装を行ってください。
 
             ## Issue情報
             - タイトル: (issue-title.txtを参照)
@@ -170,6 +222,11 @@ jobs:
             8. すべてのチェックがパスしたら、変更内容のサマリーを /tmp/change-summary.txt に書き出す
                - 変更したファイル一覧と各ファイルの変更概要を箇条書きで記載
                - 例: "- .claude/rules/README.md: 用語集にPRFAQ、DDDを追加"
+            9. 変更が不要と判断した場合は、その判断理由を /tmp/no-change-reason.txt に書き出す
+               - Issueが挙げた項目ごとに、なぜ変更が不要かを箇条書きで記載
+               - 既に対応済みの場合は該当するファイルパスと記述箇所を必ず示す
+               - 例: "- backgroundフィールド: .claude/rules/skill-authoring.md に記載済み"
+               - 「特になし」「問題なし」のような根拠のない記述はしないこと
 
             ## プロジェクト構造
             - CLAUDE.md: プロジェクトのガイドライン（必読）
@@ -194,7 +251,7 @@ jobs:
           claude_args: '--max-turns 50 --allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx *),Bash(python3 scripts/*),Bash(npx *),Bash(pre-commit run*)"'
 
       - name: Claudeで実装を実行（plugin-update）
-        if: github.event.label.name == 'plugin-update'
+        if: env.TARGET_LABEL == 'plugin-update'
         id: claude-implement-plugin
         uses: anthropics/claude-code-action@v1
         with:
@@ -204,7 +261,7 @@ jobs:
             あなたはClaude Codeマーケットプレイスのソフトウェアエンジニアです。
 
             ## タスク
-            Issue #${{ github.event.issue.number }} の改善提案に基づいて、プラグインを更新してください。
+            Issue #${{ env.ISSUE_NUMBER }} の改善提案に基づいて、プラグインを更新してください。
 
             ## Issue情報
             - タイトル: (issue-title.txtを参照)
@@ -226,6 +283,10 @@ jobs:
             7. すべてのチェックがパスしたら、変更内容のサマリーを /tmp/change-summary.txt に書き出す
                - 変更したファイル一覧と各ファイルの変更概要を箇条書きで記載
                - 例: "- plugins/my-plugin/commands/review.md: レビュー観点を追加"
+            8. 変更が不要と判断した場合は、その判断理由を /tmp/no-change-reason.txt に書き出す
+               - Issueが挙げた改善提案ごとに、なぜ変更が不要かを箇条書きで記載
+               - 既に対応済みの場合は該当するファイルパスと記述箇所を必ず示す
+               - 「特になし」「問題なし」のような根拠のない記述はしないこと
 
             ## プロジェクト構造
             - CLAUDE.md: プロジェクトのガイドライン（必読）
@@ -260,19 +321,36 @@ jobs:
             echo "### 権限拒否（permission denials）の内訳"
             echo ""
             echo '```text'
+            # decision_reason / decision_reason_type は permission_denials の
+            # エントリ直下には存在しなかったため、エントリのキー名を併記して
+            # 実際のスキーマを追えるようにする
             jq -r '[.. | objects | select(has("permission_denials")) | .permission_denials[]?]
                    | if length == 0 then "抽出結果なし"
                      else
                        .[]
                        | "\(.tool_name // "?"): \(.tool_input.command // .tool_input.file_path // "-")"
-                         + "\n  拒否種別: \(.decision_reason_type // "?")"
-                         + "\n  理由の構造: "
+                         + "\n  エントリのキー: " + ([keys[]] | join(", "))
+                     end' "${LOG}" 2>/dev/null || echo "抽出に失敗しました"
+            echo '```'
+            echo ""
+            # 拒否の理由がルール由来かフック由来かを切り分ける。
+            # 公開リポジトリのため理由の本文は出さず、種別と構造のみを出力する。
+            echo "### 拒否理由の種別"
+            echo ""
+            echo '```text'
+            jq -r '[.. | objects | select(has("decision_reason_type"))]
+                   | if length == 0 then "decision_reason_type を含むオブジェクトなし"
+                     else
+                       .[]
+                       | "種別: \(.decision_reason_type // "-")"
+                         + "  ツール: \(.tool_name // .name // "-")"
+                         + "  理由の構造: "
                          + ((.decision_reason // null)
                             | if type == "object" then "object{" + (keys | join(", ")) + "}"
                               elif type == "string" then "string(\(length)文字)"
                               elif . == null then "-"
                               else type end)
-                     end' "${LOG}" 2>/dev/null || echo "抽出に失敗しました"
+                     end' "${LOG}" 2>/dev/null | sort | uniq -c || echo "抽出に失敗しました"
             echo '```'
             echo ""
             # 抽出できなかった場合に構造を追えるよう、キー名のみ（値は出さない）を併記する
@@ -289,13 +367,20 @@ jobs:
       - name: 変更があるか確認
         id: check-changes
         run: |
-          if git diff --quiet; then
+          # Issue取得ステップが作った一時ファイルはコミット対象外のため先に削除する。
+          # 残したままだとuntrackedとして検出され、常に「変更あり」になってしまう。
+          rm -f issue-body.md issue-title.txt
+
+          # git diff は追跡済みファイルの変更しか見ないため、新規ファイルの追加だけを
+          # 行ったケース（テストファイルの新規作成など）を「変更なし」と誤判定していた。
+          # 後続のcommitは git add -A で行うため、判定もuntrackedを含む状態に揃える。
+          if [ -z "$(git status --porcelain)" ]; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
             echo "変更なし"
           else
             echo "has_changes=true" >> $GITHUB_OUTPUT
             echo "変更あり"
-            git diff --stat
+            git status --porcelain
           fi
 
       - name: pre-commitで最終検証
@@ -350,6 +435,50 @@ jobs:
           echo "status=pass" >> "$GITHUB_OUTPUT"
           echo "✓ すべてのpre-commitチェックがパスしました"
 
+      # GITHUB_TOKENで作成したPRではCIワークフローが自動起動しないため、
+      # test-scripts.yml と同等のテストをこのジョブ内で実行する。
+      # これがないと、テストが壊れた変更がノーチェックのままPRとして並ぶ。
+      - name: テストを実行
+        id: test
+        if: steps.check-changes.outputs.has_changes == 'true'
+        run: |
+          set -o pipefail
+
+          # test-scripts.yml と同じく scripts/ に変更がある場合のみ実行する
+          if [ -z "$(git status --porcelain -- scripts)" ]; then
+            echo "scripts/ に変更がないためテストをスキップします"
+            echo "status=skip" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          cd scripts
+          # 失敗してもここでジョブを落とさない。pre-commit未通過時と同様に、
+          # 結果だけ記録してDraft PRとして成果を残す。
+          if ! uvx --with pytest-cov pytest tests/ -v \
+                 --cov=validators --cov-report=term --cov-fail-under=100 \
+                 2>&1 | tee /tmp/pytest.log; then
+            echo "::warning::テストまたはカバレッジ100%要件が未通過です。Draft PRとして作成します。"
+            echo "status=fail" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "status=pass" >> "$GITHUB_OUTPUT"
+          echo "✓ テストとカバレッジ要件がパスしました"
+
+      # Draft判定の条件を1か所に集約する。判定箇所が散らばると、
+      # チェックを追加したときに一部だけ更新し忘れる事故が起きる。
+      - name: 検証結果を集約
+        id: gate
+        if: steps.check-changes.outputs.has_changes == 'true'
+        run: |
+          if [ "${{ steps.verify.outputs.status }}" = "fail" ] \
+             || [ "${{ steps.test.outputs.status }}" = "fail" ]; then
+            echo "status=fail" >> "$GITHUB_OUTPUT"
+            echo "検証未通過: Draft PRとして作成します"
+          else
+            echo "status=pass" >> "$GITHUB_OUTPUT"
+            echo "検証通過: 通常のPRとして作成します"
+          fi
+
       - name: 変更をコミットしてプッシュ
         id: push
         if: steps.check-changes.outputs.has_changes == 'true'
@@ -362,7 +491,7 @@ jobs:
           git add -A
 
           # ラベルに応じてコミットメッセージを変更
-          if [ "${{ github.event.label.name }}" = "claude-code-update" ]; then
+          if [ "${TARGET_LABEL}" = "claude-code-update" ]; then
             COMMIT_DESC="Claude Codeのアップデートに伴うドキュメント・バリデーター更新"
           else
             COMMIT_DESC="ルール更新に伴うプラグイン改善"
@@ -371,7 +500,7 @@ jobs:
           # 直前のステップでpre-commitを明示実行済み。かつpre-commit未通過でも
           # Draft PRとして成果を残す設計のため、コミットフックは意図的にスキップする
           # （pre-commit installされているため--no-verifyがないとcommitがブロックされる）
-          git commit --no-verify -m "feat: Issue #${{ github.event.issue.number }} の自動実装
+          git commit --no-verify -m "feat: Issue #${ISSUE_NUMBER} の自動実装
 
           ${COMMIT_DESC}
 
@@ -400,7 +529,7 @@ jobs:
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
           # PRに付与するラベルが存在するか確認し、なければ作成
-          for LABEL in "${{ github.event.label.name }}" "${{ steps.config.outputs.pr_label }}"; do
+          for LABEL in "${TARGET_LABEL}" "${{ steps.config.outputs.pr_label }}"; do
             if ! gh label list --json name --jq '.[].name' | grep -q "^${LABEL}$"; then
               echo "ラベル '${LABEL}' が存在しないため作成します"
               gh label create "${LABEL}" --description "自動生成されたラベル" || true
@@ -412,10 +541,11 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: PRを作成
+        id: pr
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
           # ISSUE_TITLEはユーザー制御可能なため、env経由で安全に渡す
-          ISSUE_NUM="${{ github.event.issue.number }}"
+          ISSUE_NUM="${ISSUE_NUMBER}"
 
           # Issueタイトルが空の場合のフォールバック
           if [ -z "$ISSUE_TITLE" ]; then
@@ -442,15 +572,15 @@ jobs:
             CHANGE_SUMMARY="Claude Actionによって自動生成された変更です。詳細はコミット履歴を参照してください。"
           fi
 
-          # pre-commit未通過のPRは誤マージでIssueが自動クローズされないよう Refs にする
-          if [ "${{ steps.verify.outputs.status }}" = "fail" ]; then
+          # 検証未通過のPRは誤マージでIssueが自動クローズされないよう Refs にする
+          if [ "${{ steps.gate.outputs.status }}" = "fail" ]; then
             ISSUE_REF="Refs #${ISSUE_NUM}"
           else
             ISSUE_REF="Closes #${ISSUE_NUM}"
           fi
 
           # PR本文をファイルに書き込む（シェルエスケープの問題を回避）
-          if [ "${{ github.event.label.name }}" = "claude-code-update" ]; then
+          if [ "${TARGET_LABEL}" = "claude-code-update" ]; then
             {
               echo "## 概要"
               echo "Issue #${ISSUE_NUM}: ${ISSUE_TITLE}"
@@ -493,10 +623,12 @@ jobs:
             } > /tmp/pr-body.md
           fi
 
-          # pre-commit未通過の場合はDraft PRにし、失敗ログを本文に添える
+          # 検証未通過の場合はDraft PRにし、失敗ログを本文に添える
           DRAFT_FLAG=""
-          if [ "${{ steps.verify.outputs.status }}" = "fail" ]; then
+          if [ "${{ steps.gate.outputs.status }}" = "fail" ]; then
             DRAFT_FLAG="--draft"
+          fi
+          if [ "${{ steps.verify.outputs.status }}" = "fail" ]; then
             {
               echo ""
               echo "## ⚠️ pre-commit未通過"
@@ -508,24 +640,67 @@ jobs:
               echo '```'
             } >> /tmp/pr-body.md
           fi
+          if [ "${{ steps.test.outputs.status }}" = "fail" ]; then
+            {
+              echo ""
+              echo "## ⚠️ テスト未通過"
+              echo ""
+              echo "テストの失敗、またはカバレッジ100%要件の未達があります。手動修正が必要です。"
+              echo ""
+              echo '```text'
+              tail -60 /tmp/pytest.log
+              echo '```'
+            } >> /tmp/pr-body.md
+          fi
+
+          # 作業ブランチ名はIssue番号から決まり、pushはforce pushで行うため、
+          # 再実行時は既存PRがそのまま更新される。この状態で gh pr create を
+          # 呼ぶと「既にPRが存在する」で落ち、成果はpush済みなのに
+          # 「失敗しました」コメントとラベルが付いてしまう。
+          EXISTING_PR=$(gh pr list --head "${{ steps.branch.outputs.name }}" \
+            --state open --json number --jq '.[0].number // empty')
+
+          if [ -n "${EXISTING_PR}" ]; then
+            echo "既存のPR #${EXISTING_PR} を更新します"
+            gh pr edit "${EXISTING_PR}" --title "$PR_TITLE" --body-file /tmp/pr-body.md
+            # 再実行で検証結果が変わった場合にDraft状態を追従させる
+            if [ -n "$DRAFT_FLAG" ]; then
+              gh pr ready "${EXISTING_PR}" --undo
+            else
+              gh pr ready "${EXISTING_PR}"
+            fi
+            echo "number=${EXISTING_PR}" >> "$GITHUB_OUTPUT"
+            echo "action=updated" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
           # shellcheck disable=SC2086
-          gh pr create $DRAFT_FLAG \
+          PR_URL=$(gh pr create $DRAFT_FLAG \
             --title "$PR_TITLE" \
             --body-file /tmp/pr-body.md \
-            --label "${{ github.event.label.name }}" \
-            --label "${{ steps.config.outputs.pr_label }}"
+            --label "${TARGET_LABEL}" \
+            --label "${{ steps.config.outputs.pr_label }}")
+          echo "作成しました: ${PR_URL}"
+          echo "number=${PR_URL##*/}" >> "$GITHUB_OUTPUT"
+          echo "action=created" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_TITLE: ${{ steps.issue.outputs.title }}
 
       - name: Issueにコメントを追加（変更あり）
-        if: steps.verify.outputs.status == 'pass'
+        if: steps.gate.outputs.status == 'pass'
         continue-on-error: true
         run: |
-          gh issue comment ${{ github.event.issue.number }} --body "🤖 **自動実装完了**
+          # 再実行では既存PRを更新するため、実際に行った操作を反映する
+          if [ "${{ steps.pr.outputs.action }}" = "updated" ]; then
+            ACTION_TEXT="既存のPR #${{ steps.pr.outputs.number }} を更新しました"
+          else
+            ACTION_TEXT="PR #${{ steps.pr.outputs.number }} を作成しました"
+          fi
 
-          PRを作成しました。レビューをお願いします。
+          gh issue comment "${ISSUE_NUMBER}" --body "🤖 **自動実装完了**
+
+          ${ACTION_TEXT}。レビューをお願いします。
 
           ---
           *このコメントはClaude Code自動更新対応ワークフローによって生成されました*"
@@ -533,13 +708,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Issueにコメントを追加（Draft PR作成）
-        if: steps.verify.outputs.status == 'fail'
+        if: steps.gate.outputs.status == 'fail'
         continue-on-error: true
         run: |
-          gh issue comment ${{ github.event.issue.number }} --body "🤖 **Draft PRを作成しました**
+          gh issue comment "${ISSUE_NUMBER}" --body "🤖 **Draft PR #${{ steps.pr.outputs.number }}**
 
-          実装は完了しましたが、pre-commitチェックが未通過のためDraft PRとして作成しました。
-          残っている違反はruffの自動修正では解消できないため、手動修正が必要です。
+          実装は完了しましたが、pre-commitまたはテストが未通過のためDraft PRになっています。
+          自動修正では解消できないため、手動修正が必要です。
           詳細はPR本文のログを参照してください。
 
           ---
@@ -547,25 +722,44 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # 「変更なし」で終わったIssueはPRもラベルも付かず放置されやすい。
+      # 判断が妥当かを人が確認できるよう、Claudeが書いた根拠をコメントに載せる。
       - name: Issueにコメントを追加（変更なし）
         if: steps.check-changes.outputs.has_changes == 'false'
         continue-on-error: true
         run: |
-          gh issue comment ${{ github.event.issue.number }} --body "🤖 **自動実装結果**
+          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          {
+            echo "🤖 **自動実装結果: 変更なし**"
+            echo ""
+            echo "Issueの内容を分析しましたが、変更が必要な箇所は見つかりませんでした。"
+            echo ""
+            if [ -s /tmp/no-change-reason.txt ]; then
+              echo "## 判断理由"
+              echo ""
+              cat /tmp/no-change-reason.txt
+            else
+              echo "> ⚠️ 判断理由が記録されていません。実装が途中で打ち切られた可能性があります。"
+              echo ">"
+              echo "> 実行ログ: ${RUN_URL}"
+            fi
+            echo ""
+            echo "判断が妥当であればIssueをクローズし、そうでなければ手動で対応してください。"
+            echo ""
+            echo "---"
+            echo "*このコメントはClaude Code自動更新対応ワークフローによって生成されました*"
+          } > /tmp/no-change-comment.md
 
-          Issueの内容を分析しましたが、自動で実装可能な変更は見つかりませんでした。
-          手動での対応が必要な可能性があります。
-
-          ---
-          *このコメントはClaude Code自動更新対応ワークフローによって生成されました*"
+          gh issue comment "${ISSUE_NUMBER}" --body-file /tmp/no-change-comment.md
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # ジョブが途中で失敗した場合、従来はIssueに何も残らず放置されていたため通知する。
       # 権限チェック（オーナー以外がラベルを付けたケース）で失敗した場合は
       # Issueにコメントを残さないよう、ブランチ作成まで到達したかで条件を絞る。
-      # なお pre-commit未通過だけの場合はジョブ末尾まで成功状態で進むため、
-      # このステップは発火せず「Draft PR作成」コメントのみが残る。
+      # なお pre-commitまたはテストが未通過なだけの場合は、Draft PRを作った上で
+      # ジョブ末尾まで成功状態で進む。このステップは発火せず
+      # 「Draft PR」コメントのみが残る。
       - name: Issueに失敗を通知
         if: failure() && steps.branch.outcome == 'success'
         continue-on-error: true
@@ -589,20 +783,20 @@ jobs:
             echo "*このコメントはClaude Code自動更新対応ワークフローによって生成されました*"
           } > /tmp/fail-comment.md
 
-          gh issue comment "${{ github.event.issue.number }}" --body-file /tmp/fail-comment.md
+          gh issue comment "${ISSUE_NUMBER}" --body-file /tmp/fail-comment.md
 
           # 失敗したIssueを一覧で絞り込めるようラベルを付与する
           gh label create auto-implement-failed \
             --color d73a4a \
             --description "自動実装が失敗したIssue" 2>/dev/null || true
-          gh issue edit "${{ github.event.issue.number }}" --add-label auto-implement-failed
+          gh issue edit "${ISSUE_NUMBER}" --add-label auto-implement-failed
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # 成果（Draft PR）を残したうえで、run自体は赤くして見落としを防ぐ。
       # 必ずPR作成・通知ステップより後に置くこと。
-      - name: pre-commit未通過ならジョブを失敗させる
-        if: steps.verify.outputs.status == 'fail'
+      - name: 検証未通過ならジョブを失敗させる
+        if: steps.gate.outputs.status == 'fail'
         run: |
-          echo "::error::pre-commit未通過のDraft PRを作成しました。手動修正が必要です。"
+          echo "::error::検証未通過のDraft PRを作成しました。手動修正が必要です。"
           exit 1
