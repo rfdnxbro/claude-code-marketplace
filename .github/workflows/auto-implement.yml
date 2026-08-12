@@ -245,10 +245,26 @@ jobs:
             - リポジトリに永続的に必要なファイルのみ作成・変更すること
             - issue-body.md, issue-title.txt などの一時ファイルは参照のみで、変更やコミットに含めないこと
 
-          # 外部由来のCHANGELOGを起点にIssueが自動生成されbotラベルが付与される
-          # 経路があるため、Bashはplugin-updateステップと同様に実行手順で
-          # 必要なコマンドのみに絞る（Edit/Writeのパス制限要否は別途検討）
-          claude_args: '--max-turns 50 --allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx *),Bash(python3 scripts/*),Bash(npx *),Bash(pre-commit run*)"'
+          # permission-mode: このリポジトリのルールドキュメントは .claude/rules/ にあり、
+          #   .claude はClaude Codeの「保護パス」なので既定では書き込みが必ず承認待ちになる。
+          #   ヘッドレス実行には承認する相手がいないため拒否され、実装が成立しなかった。
+          #   allow ルールは保護パスより後に評価されるため効かず、bypassPermissions が唯一の手段。
+          # disallowed-tools: bypassPermissions でも deny ルールは有効なので、
+          #   次回以降の実行を乗っ取れるファイル（hooks・ワークフロー・設定）だけを塞ぐ。
+          #   Edit ルールは Write を含む全ファイル編集ツールに効く。
+          # allowed-tools: uvx/npx のワイルドカードは任意コード実行に等しく、
+          #   deny ルールはサブプロセスの書き込みには効かないため実際に使うコマンドへ絞る。
+          # max-turns: 実測で成功38〜46 turns、失敗は一律51（上限50に到達）だったため引き上げる。
+          claude_args: >-
+            --max-turns 80
+            --permission-mode bypassPermissions
+            --allowed-tools "Read,Grep,Glob,Edit,Write,
+            Bash(uvx pytest*),Bash(uvx --with pytest-cov pytest*),Bash(uvx ruff*),
+            Bash(python3 scripts/*),Bash(pre-commit run*)"
+            --disallowed-tools "Edit(/.claude/settings.json),
+            Edit(/.claude/settings.local.json),Edit(/.claude/hooks/**),
+            Edit(/.claude/skills/**),Edit(/.mcp.json),Edit(/CLAUDE.md),
+            Edit(/.github/**),Edit(/.pre-commit-config.yaml)"
 
       - name: Claudeで実装を実行（plugin-update）
         if: env.TARGET_LABEL == 'plugin-update'
@@ -300,8 +316,19 @@ jobs:
             - リポジトリに永続的に必要なファイルのみ作成・変更すること
             - issue-body.md, issue-title.txt などの一時ファイルは参照のみで、変更やコミットに含めないこと
 
-          # yamllint disable-line rule:line-length
-          claude_args: '--max-turns 50 --allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx *),Bash(python3 scripts/*),Bash(npx *),Bash(pre-commit run*)"'
+          # claude-code-updateステップと同じ設定にする。理由はそちらのコメントを参照。
+          # plugins/ 配下は保護パスではないためbypassPermissionsは必須ではないが、
+          # 2つのステップで権限設定が食い違うと片方だけ更新し忘れる事故が起きる。
+          claude_args: >-
+            --max-turns 80
+            --permission-mode bypassPermissions
+            --allowed-tools "Read,Grep,Glob,Edit,Write,
+            Bash(uvx pytest*),Bash(uvx --with pytest-cov pytest*),Bash(uvx ruff*),
+            Bash(python3 scripts/*),Bash(pre-commit run*)"
+            --disallowed-tools "Edit(/.claude/settings.json),
+            Edit(/.claude/settings.local.json),Edit(/.claude/hooks/**),
+            Edit(/.claude/skills/**),Edit(/.mcp.json),Edit(/CLAUDE.md),
+            Edit(/.github/**),Edit(/.pre-commit-config.yaml)"
 
       - name: 権限拒否の内訳を出力
         if: always()
