@@ -3,6 +3,21 @@ name: Claude Code自動更新対応
 on:
   issues:
     types: [labeled]
+  # ラベルの付け外し以外に再実行手段がないと、失敗したIssueを再試行するたびに
+  # Issueのタイムラインがラベル操作で埋まるため、手動トリガーを用意する
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 対象のIssue番号
+        required: true
+        type: string
+      label:
+        description: 実装の種別
+        required: true
+        type: choice
+        options:
+          - claude-code-update
+          - plugin-update
 
 permissions:
   contents: write
@@ -11,16 +26,42 @@ permissions:
   id-token: write
 
 concurrency:
-  group: auto-implement-${{ github.event.issue.number }}
+  group: auto-implement-${{ github.event.issue.number || inputs.issue_number }}
   cancel-in-progress: false
 
 jobs:
   auto-implement:
-    # claude-code-updateまたはplugin-updateラベルが付いたissueに反応
-    if: github.event.label.name == 'claude-code-update' || github.event.label.name == 'plugin-update'
+    # claude-code-updateまたはplugin-updateラベルが付いたissueに反応する。
+    # workflow_dispatchの場合は種別をinputsで受け取るためラベル判定は行わない。
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      || github.event.label.name == 'claude-code-update'
+      || github.event.label.name == 'plugin-update'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      # issues.labeled と workflow_dispatch のどちらが起点でも
+      # 以降のステップが同じ値を参照できるようにジョブ単位で解決しておく
+      ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
+      TARGET_LABEL: ${{ github.event.label.name || inputs.label }}
     steps:
+      # workflow_dispatchのissue_numberは自由入力のため、ブランチ名や
+      # gh issue view に渡す前に数値であることを確認する
+      - name: 入力値を検証
+        run: |
+          if ! printf '%s' "${ISSUE_NUMBER}" | grep -Eq '^[0-9]+$'; then
+            echo "::error::Issue番号が数値ではありません: ${ISSUE_NUMBER}"
+            exit 1
+          fi
+          case "${TARGET_LABEL}" in
+            claude-code-update | plugin-update) ;;
+            *)
+              echo "::error::対応していない種別です: ${TARGET_LABEL}"
+              exit 1
+              ;;
+          esac
+          echo "✓ 対象: Issue #${ISSUE_NUMBER}（種別: ${TARGET_LABEL}）"
+
       - name: ラベル付与者の権限チェック
         run: |
           echo "ラベル付与者: ${SENDER}"
@@ -49,7 +90,8 @@ jobs:
           exit 1
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SENDER: ${{ github.event.sender.login }}
+          # workflow_dispatchでもsenderは入るが、念のためactorにフォールバックする
+          SENDER: ${{ github.event.sender.login || github.actor }}
 
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v7
@@ -81,7 +123,7 @@ jobs:
       - name: ラベルに基づく設定を決定
         id: config
         run: |
-          LABEL="${{ github.event.label.name }}"
+          LABEL="${TARGET_LABEL}"
 
           if [ "$LABEL" = "claude-code-update" ]; then
             echo "branch_prefix=auto/claude-code-update" >> $GITHUB_OUTPUT
@@ -98,7 +140,7 @@ jobs:
       - name: 作業ブランチを作成
         id: branch
         run: |
-          BRANCH_NAME="${{ steps.config.outputs.branch_prefix }}-issue-${{ github.event.issue.number }}"
+          BRANCH_NAME="${{ steps.config.outputs.branch_prefix }}-issue-${ISSUE_NUMBER}"
           echo "name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
 
           # ローカルブランチが既に存在する場合は削除
@@ -116,7 +158,7 @@ jobs:
       - name: 前回の失敗ラベルを除去
         continue-on-error: true
         run: |
-          gh issue edit "${{ github.event.issue.number }}" \
+          gh issue edit "${ISSUE_NUMBER}" \
             --remove-label auto-implement-failed 2>/dev/null || true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -125,16 +167,16 @@ jobs:
         id: issue
         run: |
           # Issue本文をファイルに保存
-          gh issue view ${{ github.event.issue.number }} --json title,body --jq '.body' > issue-body.md
-          gh issue view ${{ github.event.issue.number }} --json title --jq '.title' > issue-title.txt
+          gh issue view "${ISSUE_NUMBER}" --json title,body --jq '.body' > issue-body.md
+          gh issue view "${ISSUE_NUMBER}" --json title --jq '.title' > issue-title.txt
           # タイトルをoutputにも保存（後のステップで使用）
           echo "title=$(cat issue-title.txt | tr -d '\n')" >> $GITHUB_OUTPUT
-          echo "取得完了: Issue #${{ github.event.issue.number }}"
+          echo "取得完了: Issue #${ISSUE_NUMBER}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Claudeで実装を実行（claude-code-update）
-        if: github.event.label.name == 'claude-code-update'
+        if: env.TARGET_LABEL == 'claude-code-update'
         id: claude-implement-docs
         uses: anthropics/claude-code-action@v1
         with:
@@ -144,7 +186,7 @@ jobs:
             あなたはClaude Codeマーケットプレイスのソフトウェアエンジニアです。
 
             ## タスク
-            Issue #${{ github.event.issue.number }} の内容に基づいて、必要な実装を行ってください。
+            Issue #${{ env.ISSUE_NUMBER }} の内容に基づいて、必要な実装を行ってください。
 
             ## Issue情報
             - タイトル: (issue-title.txtを参照)
@@ -170,6 +212,11 @@ jobs:
             8. すべてのチェックがパスしたら、変更内容のサマリーを /tmp/change-summary.txt に書き出す
                - 変更したファイル一覧と各ファイルの変更概要を箇条書きで記載
                - 例: "- .claude/rules/README.md: 用語集にPRFAQ、DDDを追加"
+            9. 変更が不要と判断した場合は、その判断理由を /tmp/no-change-reason.txt に書き出す
+               - Issueが挙げた項目ごとに、なぜ変更が不要かを箇条書きで記載
+               - 既に対応済みの場合は該当するファイルパスと記述箇所を必ず示す
+               - 例: "- backgroundフィールド: .claude/rules/skill-authoring.md に記載済み"
+               - 「特になし」「問題なし」のような根拠のない記述はしないこと
 
             ## プロジェクト構造
             - CLAUDE.md: プロジェクトのガイドライン（必読）
@@ -194,7 +241,7 @@ jobs:
           claude_args: '--max-turns 50 --allowed-tools "Read,Grep,Glob,Edit,Write,Bash(uvx *),Bash(python3 scripts/*),Bash(npx *),Bash(pre-commit run*)"'
 
       - name: Claudeで実装を実行（plugin-update）
-        if: github.event.label.name == 'plugin-update'
+        if: env.TARGET_LABEL == 'plugin-update'
         id: claude-implement-plugin
         uses: anthropics/claude-code-action@v1
         with:
@@ -204,7 +251,7 @@ jobs:
             あなたはClaude Codeマーケットプレイスのソフトウェアエンジニアです。
 
             ## タスク
-            Issue #${{ github.event.issue.number }} の改善提案に基づいて、プラグインを更新してください。
+            Issue #${{ env.ISSUE_NUMBER }} の改善提案に基づいて、プラグインを更新してください。
 
             ## Issue情報
             - タイトル: (issue-title.txtを参照)
@@ -226,6 +273,10 @@ jobs:
             7. すべてのチェックがパスしたら、変更内容のサマリーを /tmp/change-summary.txt に書き出す
                - 変更したファイル一覧と各ファイルの変更概要を箇条書きで記載
                - 例: "- plugins/my-plugin/commands/review.md: レビュー観点を追加"
+            8. 変更が不要と判断した場合は、その判断理由を /tmp/no-change-reason.txt に書き出す
+               - Issueが挙げた改善提案ごとに、なぜ変更が不要かを箇条書きで記載
+               - 既に対応済みの場合は該当するファイルパスと記述箇所を必ず示す
+               - 「特になし」「問題なし」のような根拠のない記述はしないこと
 
             ## プロジェクト構造
             - CLAUDE.md: プロジェクトのガイドライン（必読）
@@ -289,13 +340,20 @@ jobs:
       - name: 変更があるか確認
         id: check-changes
         run: |
-          if git diff --quiet; then
+          # Issue取得ステップが作った一時ファイルはコミット対象外のため先に削除する。
+          # 残したままだとuntrackedとして検出され、常に「変更あり」になってしまう。
+          rm -f issue-body.md issue-title.txt
+
+          # git diff は追跡済みファイルの変更しか見ないため、新規ファイルの追加だけを
+          # 行ったケース（テストファイルの新規作成など）を「変更なし」と誤判定していた。
+          # 後続のcommitは git add -A で行うため、判定もuntrackedを含む状態に揃える。
+          if [ -z "$(git status --porcelain)" ]; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
             echo "変更なし"
           else
             echo "has_changes=true" >> $GITHUB_OUTPUT
             echo "変更あり"
-            git diff --stat
+            git status --porcelain
           fi
 
       - name: pre-commitで最終検証
@@ -362,7 +420,7 @@ jobs:
           git add -A
 
           # ラベルに応じてコミットメッセージを変更
-          if [ "${{ github.event.label.name }}" = "claude-code-update" ]; then
+          if [ "${TARGET_LABEL}" = "claude-code-update" ]; then
             COMMIT_DESC="Claude Codeのアップデートに伴うドキュメント・バリデーター更新"
           else
             COMMIT_DESC="ルール更新に伴うプラグイン改善"
@@ -371,7 +429,7 @@ jobs:
           # 直前のステップでpre-commitを明示実行済み。かつpre-commit未通過でも
           # Draft PRとして成果を残す設計のため、コミットフックは意図的にスキップする
           # （pre-commit installされているため--no-verifyがないとcommitがブロックされる）
-          git commit --no-verify -m "feat: Issue #${{ github.event.issue.number }} の自動実装
+          git commit --no-verify -m "feat: Issue #${ISSUE_NUMBER} の自動実装
 
           ${COMMIT_DESC}
 
@@ -400,7 +458,7 @@ jobs:
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
           # PRに付与するラベルが存在するか確認し、なければ作成
-          for LABEL in "${{ github.event.label.name }}" "${{ steps.config.outputs.pr_label }}"; do
+          for LABEL in "${TARGET_LABEL}" "${{ steps.config.outputs.pr_label }}"; do
             if ! gh label list --json name --jq '.[].name' | grep -q "^${LABEL}$"; then
               echo "ラベル '${LABEL}' が存在しないため作成します"
               gh label create "${LABEL}" --description "自動生成されたラベル" || true
@@ -415,7 +473,7 @@ jobs:
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
           # ISSUE_TITLEはユーザー制御可能なため、env経由で安全に渡す
-          ISSUE_NUM="${{ github.event.issue.number }}"
+          ISSUE_NUM="${ISSUE_NUMBER}"
 
           # Issueタイトルが空の場合のフォールバック
           if [ -z "$ISSUE_TITLE" ]; then
@@ -450,7 +508,7 @@ jobs:
           fi
 
           # PR本文をファイルに書き込む（シェルエスケープの問題を回避）
-          if [ "${{ github.event.label.name }}" = "claude-code-update" ]; then
+          if [ "${TARGET_LABEL}" = "claude-code-update" ]; then
             {
               echo "## 概要"
               echo "Issue #${ISSUE_NUM}: ${ISSUE_TITLE}"
@@ -513,7 +571,7 @@ jobs:
           gh pr create $DRAFT_FLAG \
             --title "$PR_TITLE" \
             --body-file /tmp/pr-body.md \
-            --label "${{ github.event.label.name }}" \
+            --label "${TARGET_LABEL}" \
             --label "${{ steps.config.outputs.pr_label }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -523,7 +581,7 @@ jobs:
         if: steps.verify.outputs.status == 'pass'
         continue-on-error: true
         run: |
-          gh issue comment ${{ github.event.issue.number }} --body "🤖 **自動実装完了**
+          gh issue comment "${ISSUE_NUMBER}" --body "🤖 **自動実装完了**
 
           PRを作成しました。レビューをお願いします。
 
@@ -536,7 +594,7 @@ jobs:
         if: steps.verify.outputs.status == 'fail'
         continue-on-error: true
         run: |
-          gh issue comment ${{ github.event.issue.number }} --body "🤖 **Draft PRを作成しました**
+          gh issue comment "${ISSUE_NUMBER}" --body "🤖 **Draft PRを作成しました**
 
           実装は完了しましたが、pre-commitチェックが未通過のためDraft PRとして作成しました。
           残っている違反はruffの自動修正では解消できないため、手動修正が必要です。
@@ -547,17 +605,35 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # 「変更なし」で終わったIssueはPRもラベルも付かず放置されやすい。
+      # 判断が妥当かを人が確認できるよう、Claudeが書いた根拠をコメントに載せる。
       - name: Issueにコメントを追加（変更なし）
         if: steps.check-changes.outputs.has_changes == 'false'
         continue-on-error: true
         run: |
-          gh issue comment ${{ github.event.issue.number }} --body "🤖 **自動実装結果**
+          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          {
+            echo "🤖 **自動実装結果: 変更なし**"
+            echo ""
+            echo "Issueの内容を分析しましたが、変更が必要な箇所は見つかりませんでした。"
+            echo ""
+            if [ -s /tmp/no-change-reason.txt ]; then
+              echo "## 判断理由"
+              echo ""
+              cat /tmp/no-change-reason.txt
+            else
+              echo "> ⚠️ 判断理由が記録されていません。実装が途中で打ち切られた可能性があります。"
+              echo ">"
+              echo "> 実行ログ: ${RUN_URL}"
+            fi
+            echo ""
+            echo "判断が妥当であればIssueをクローズし、そうでなければ手動で対応してください。"
+            echo ""
+            echo "---"
+            echo "*このコメントはClaude Code自動更新対応ワークフローによって生成されました*"
+          } > /tmp/no-change-comment.md
 
-          Issueの内容を分析しましたが、自動で実装可能な変更は見つかりませんでした。
-          手動での対応が必要な可能性があります。
-
-          ---
-          *このコメントはClaude Code自動更新対応ワークフローによって生成されました*"
+          gh issue comment "${ISSUE_NUMBER}" --body-file /tmp/no-change-comment.md
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -589,13 +665,13 @@ jobs:
             echo "*このコメントはClaude Code自動更新対応ワークフローによって生成されました*"
           } > /tmp/fail-comment.md
 
-          gh issue comment "${{ github.event.issue.number }}" --body-file /tmp/fail-comment.md
+          gh issue comment "${ISSUE_NUMBER}" --body-file /tmp/fail-comment.md
 
           # 失敗したIssueを一覧で絞り込めるようラベルを付与する
           gh label create auto-implement-failed \
             --color d73a4a \
             --description "自動実装が失敗したIssue" 2>/dev/null || true
-          gh issue edit "${{ github.event.issue.number }}" --add-label auto-implement-failed
+          gh issue edit "${ISSUE_NUMBER}" --add-label auto-implement-failed
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
