@@ -99,6 +99,12 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      # Claudeの検証用（Bash(uvx *)）と、PR作成前のテスト実行の両方でuvxを使う
+      - name: uvをセットアップ
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
       - name: pre-commitキャッシュを復元
         uses: actions/cache@v6
         with:
@@ -408,6 +414,50 @@ jobs:
           echo "status=pass" >> "$GITHUB_OUTPUT"
           echo "✓ すべてのpre-commitチェックがパスしました"
 
+      # GITHUB_TOKENで作成したPRではCIワークフローが自動起動しないため、
+      # test-scripts.yml と同等のテストをこのジョブ内で実行する。
+      # これがないと、テストが壊れた変更がノーチェックのままPRとして並ぶ。
+      - name: テストを実行
+        id: test
+        if: steps.check-changes.outputs.has_changes == 'true'
+        run: |
+          set -o pipefail
+
+          # test-scripts.yml と同じく scripts/ に変更がある場合のみ実行する
+          if [ -z "$(git status --porcelain -- scripts)" ]; then
+            echo "scripts/ に変更がないためテストをスキップします"
+            echo "status=skip" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          cd scripts
+          # 失敗してもここでジョブを落とさない。pre-commit未通過時と同様に、
+          # 結果だけ記録してDraft PRとして成果を残す。
+          if ! uvx --with pytest-cov pytest tests/ -v \
+                 --cov=validators --cov-report=term --cov-fail-under=100 \
+                 2>&1 | tee /tmp/pytest.log; then
+            echo "::warning::テストまたはカバレッジ100%要件が未通過です。Draft PRとして作成します。"
+            echo "status=fail" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "status=pass" >> "$GITHUB_OUTPUT"
+          echo "✓ テストとカバレッジ要件がパスしました"
+
+      # Draft判定の条件を1か所に集約する。判定箇所が散らばると、
+      # チェックを追加したときに一部だけ更新し忘れる事故が起きる。
+      - name: 検証結果を集約
+        id: gate
+        if: steps.check-changes.outputs.has_changes == 'true'
+        run: |
+          if [ "${{ steps.verify.outputs.status }}" = "fail" ] \
+             || [ "${{ steps.test.outputs.status }}" = "fail" ]; then
+            echo "status=fail" >> "$GITHUB_OUTPUT"
+            echo "検証未通過: Draft PRとして作成します"
+          else
+            echo "status=pass" >> "$GITHUB_OUTPUT"
+            echo "検証通過: 通常のPRとして作成します"
+          fi
+
       - name: 変更をコミットしてプッシュ
         id: push
         if: steps.check-changes.outputs.has_changes == 'true'
@@ -500,8 +550,8 @@ jobs:
             CHANGE_SUMMARY="Claude Actionによって自動生成された変更です。詳細はコミット履歴を参照してください。"
           fi
 
-          # pre-commit未通過のPRは誤マージでIssueが自動クローズされないよう Refs にする
-          if [ "${{ steps.verify.outputs.status }}" = "fail" ]; then
+          # 検証未通過のPRは誤マージでIssueが自動クローズされないよう Refs にする
+          if [ "${{ steps.gate.outputs.status }}" = "fail" ]; then
             ISSUE_REF="Refs #${ISSUE_NUM}"
           else
             ISSUE_REF="Closes #${ISSUE_NUM}"
@@ -551,10 +601,12 @@ jobs:
             } > /tmp/pr-body.md
           fi
 
-          # pre-commit未通過の場合はDraft PRにし、失敗ログを本文に添える
+          # 検証未通過の場合はDraft PRにし、失敗ログを本文に添える
           DRAFT_FLAG=""
-          if [ "${{ steps.verify.outputs.status }}" = "fail" ]; then
+          if [ "${{ steps.gate.outputs.status }}" = "fail" ]; then
             DRAFT_FLAG="--draft"
+          fi
+          if [ "${{ steps.verify.outputs.status }}" = "fail" ]; then
             {
               echo ""
               echo "## ⚠️ pre-commit未通過"
@@ -563,6 +615,18 @@ jobs:
               echo ""
               echo '```text'
               tail -60 /tmp/precommit.log
+              echo '```'
+            } >> /tmp/pr-body.md
+          fi
+          if [ "${{ steps.test.outputs.status }}" = "fail" ]; then
+            {
+              echo ""
+              echo "## ⚠️ テスト未通過"
+              echo ""
+              echo "テストの失敗、またはカバレッジ100%要件の未達があります。手動修正が必要です。"
+              echo ""
+              echo '```text'
+              tail -60 /tmp/pytest.log
               echo '```'
             } >> /tmp/pr-body.md
           fi
@@ -578,7 +642,7 @@ jobs:
           ISSUE_TITLE: ${{ steps.issue.outputs.title }}
 
       - name: Issueにコメントを追加（変更あり）
-        if: steps.verify.outputs.status == 'pass'
+        if: steps.gate.outputs.status == 'pass'
         continue-on-error: true
         run: |
           gh issue comment "${ISSUE_NUMBER}" --body "🤖 **自動実装完了**
@@ -591,13 +655,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Issueにコメントを追加（Draft PR作成）
-        if: steps.verify.outputs.status == 'fail'
+        if: steps.gate.outputs.status == 'fail'
         continue-on-error: true
         run: |
           gh issue comment "${ISSUE_NUMBER}" --body "🤖 **Draft PRを作成しました**
 
-          実装は完了しましたが、pre-commitチェックが未通過のためDraft PRとして作成しました。
-          残っている違反はruffの自動修正では解消できないため、手動修正が必要です。
+          実装は完了しましたが、pre-commitまたはテストが未通過のためDraft PRとして作成しました。
+          自動修正では解消できないため、手動修正が必要です。
           詳細はPR本文のログを参照してください。
 
           ---
@@ -677,8 +741,8 @@ jobs:
 
       # 成果（Draft PR）を残したうえで、run自体は赤くして見落としを防ぐ。
       # 必ずPR作成・通知ステップより後に置くこと。
-      - name: pre-commit未通過ならジョブを失敗させる
-        if: steps.verify.outputs.status == 'fail'
+      - name: 検証未通過ならジョブを失敗させる
+        if: steps.gate.outputs.status == 'fail'
         run: |
-          echo "::error::pre-commit未通過のDraft PRを作成しました。手動修正が必要です。"
+          echo "::error::検証未通過のDraft PRを作成しました。手動修正が必要です。"
           exit 1
