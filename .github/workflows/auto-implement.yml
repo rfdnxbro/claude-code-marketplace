@@ -49,10 +49,14 @@ jobs:
       # gh issue view に渡す前に数値であることを確認する
       - name: 入力値を検証
         run: |
-          if ! printf '%s' "${ISSUE_NUMBER}" | grep -Eq '^[0-9]+$'; then
-            echo "::error::Issue番号が数値ではありません: ${ISSUE_NUMBER}"
-            exit 1
-          fi
+          # grepは行単位で照合するため "123\nfoo" のような複数行入力を通してしまう。
+          # caseは文字列全体を見るので、改行を含む値をここで弾ける。
+          case "${ISSUE_NUMBER}" in
+            "" | *[!0-9]*)
+              echo "::error::Issue番号が数値ではありません"
+              exit 1
+              ;;
+          esac
           case "${TARGET_LABEL}" in
             claude-code-update | plugin-update) ;;
             *)
@@ -537,6 +541,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: PRを作成
+        id: pr
         if: steps.check-changes.outputs.has_changes == 'true'
         run: |
           # ISSUE_TITLEはユーザー制御可能なため、env経由で安全に渡す
@@ -648,12 +653,36 @@ jobs:
             } >> /tmp/pr-body.md
           fi
 
+          # 作業ブランチ名はIssue番号から決まり、pushはforce pushで行うため、
+          # 再実行時は既存PRがそのまま更新される。この状態で gh pr create を
+          # 呼ぶと「既にPRが存在する」で落ち、成果はpush済みなのに
+          # 「失敗しました」コメントとラベルが付いてしまう。
+          EXISTING_PR=$(gh pr list --head "${{ steps.branch.outputs.name }}" \
+            --state open --json number --jq '.[0].number // empty')
+
+          if [ -n "${EXISTING_PR}" ]; then
+            echo "既存のPR #${EXISTING_PR} を更新します"
+            gh pr edit "${EXISTING_PR}" --title "$PR_TITLE" --body-file /tmp/pr-body.md
+            # 再実行で検証結果が変わった場合にDraft状態を追従させる
+            if [ -n "$DRAFT_FLAG" ]; then
+              gh pr ready "${EXISTING_PR}" --undo
+            else
+              gh pr ready "${EXISTING_PR}"
+            fi
+            echo "number=${EXISTING_PR}" >> "$GITHUB_OUTPUT"
+            echo "action=updated" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           # shellcheck disable=SC2086
-          gh pr create $DRAFT_FLAG \
+          PR_URL=$(gh pr create $DRAFT_FLAG \
             --title "$PR_TITLE" \
             --body-file /tmp/pr-body.md \
             --label "${TARGET_LABEL}" \
-            --label "${{ steps.config.outputs.pr_label }}"
+            --label "${{ steps.config.outputs.pr_label }}")
+          echo "作成しました: ${PR_URL}"
+          echo "number=${PR_URL##*/}" >> "$GITHUB_OUTPUT"
+          echo "action=created" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_TITLE: ${{ steps.issue.outputs.title }}
@@ -662,9 +691,16 @@ jobs:
         if: steps.gate.outputs.status == 'pass'
         continue-on-error: true
         run: |
+          # 再実行では既存PRを更新するため、実際に行った操作を反映する
+          if [ "${{ steps.pr.outputs.action }}" = "updated" ]; then
+            ACTION_TEXT="既存のPR #${{ steps.pr.outputs.number }} を更新しました"
+          else
+            ACTION_TEXT="PR #${{ steps.pr.outputs.number }} を作成しました"
+          fi
+
           gh issue comment "${ISSUE_NUMBER}" --body "🤖 **自動実装完了**
 
-          PRを作成しました。レビューをお願いします。
+          ${ACTION_TEXT}。レビューをお願いします。
 
           ---
           *このコメントはClaude Code自動更新対応ワークフローによって生成されました*"
@@ -675,9 +711,9 @@ jobs:
         if: steps.gate.outputs.status == 'fail'
         continue-on-error: true
         run: |
-          gh issue comment "${ISSUE_NUMBER}" --body "🤖 **Draft PRを作成しました**
+          gh issue comment "${ISSUE_NUMBER}" --body "🤖 **Draft PR #${{ steps.pr.outputs.number }}**
 
-          実装は完了しましたが、pre-commitまたはテストが未通過のためDraft PRとして作成しました。
+          実装は完了しましたが、pre-commitまたはテストが未通過のためDraft PRになっています。
           自動修正では解消できないため、手動修正が必要です。
           詳細はPR本文のログを参照してください。
 
@@ -721,8 +757,9 @@ jobs:
       # ジョブが途中で失敗した場合、従来はIssueに何も残らず放置されていたため通知する。
       # 権限チェック（オーナー以外がラベルを付けたケース）で失敗した場合は
       # Issueにコメントを残さないよう、ブランチ作成まで到達したかで条件を絞る。
-      # なお pre-commit未通過だけの場合はジョブ末尾まで成功状態で進むため、
-      # このステップは発火せず「Draft PR作成」コメントのみが残る。
+      # なお pre-commitまたはテストが未通過なだけの場合は、Draft PRを作った上で
+      # ジョブ末尾まで成功状態で進む。このステップは発火せず
+      # 「Draft PR」コメントのみが残る。
       - name: Issueに失敗を通知
         if: failure() && steps.branch.outcome == 'success'
         continue-on-error: true
