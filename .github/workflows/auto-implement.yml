@@ -317,19 +317,36 @@ jobs:
             echo "### 権限拒否（permission denials）の内訳"
             echo ""
             echo '```text'
+            # decision_reason / decision_reason_type は permission_denials の
+            # エントリ直下には存在しなかったため、エントリのキー名を併記して
+            # 実際のスキーマを追えるようにする
             jq -r '[.. | objects | select(has("permission_denials")) | .permission_denials[]?]
                    | if length == 0 then "抽出結果なし"
                      else
                        .[]
                        | "\(.tool_name // "?"): \(.tool_input.command // .tool_input.file_path // "-")"
-                         + "\n  拒否種別: \(.decision_reason_type // "?")"
-                         + "\n  理由の構造: "
+                         + "\n  エントリのキー: " + ([keys[]] | join(", "))
+                     end' "${LOG}" 2>/dev/null || echo "抽出に失敗しました"
+            echo '```'
+            echo ""
+            # 拒否の理由がルール由来かフック由来かを切り分ける。
+            # 公開リポジトリのため理由の本文は出さず、種別と構造のみを出力する。
+            echo "### 拒否理由の種別"
+            echo ""
+            echo '```text'
+            jq -r '[.. | objects | select(has("decision_reason_type"))]
+                   | if length == 0 then "decision_reason_type を含むオブジェクトなし"
+                     else
+                       .[]
+                       | "種別: \(.decision_reason_type // "-")"
+                         + "  ツール: \(.tool_name // .name // "-")"
+                         + "  理由の構造: "
                          + ((.decision_reason // null)
                             | if type == "object" then "object{" + (keys | join(", ")) + "}"
                               elif type == "string" then "string(\(length)文字)"
                               elif . == null then "-"
                               else type end)
-                     end' "${LOG}" 2>/dev/null || echo "抽出に失敗しました"
+                     end' "${LOG}" 2>/dev/null | sort | uniq -c || echo "抽出に失敗しました"
             echo '```'
             echo ""
             # 抽出できなかった場合に構造を追えるよう、キー名のみ（値は出さない）を併記する
