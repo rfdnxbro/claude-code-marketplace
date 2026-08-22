@@ -444,24 +444,51 @@ export CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS=300000
 `--add-dir`で追加したディレクトリから以下の設定が読み込まれます:
 
 - `enabledPlugins`: 有効化するプラグインのリスト
-- `extraKnownMarketplaces`: 追加のマーケットプレイス定義
+- `extraKnownMarketplaces`: 追加のマーケットプレイス定義（`additionalMarketplaces` という別名でも指定可能）
 
 これにより、プロジェクト固有の設定を`--add-dir`ディレクトリ内で管理できます。設定はプロジェクトルートの`.claude.json`と同様の形式で記述できます。
 
+## マーケットプレイスURLの形式
+
+> **この節は `/plugin marketplace add <URL>` でマーケットプレイス自体を追加する場合の話です。**
+> `marketplace.json` 内で個別プラグインの取得元を指定する `source: "url"` とは別の操作であり、
+> `.git` サフィックスの扱いも異なります。プラグインの取得元については[Git URL](#git-url)を参照してください。
+
+`/plugin marketplace add <URL>` でマーケットプレイス自体を追加する場合、`.git` サフィックスの要否はホストによって異なります。サフィックスが無いURLは、リポジトリのクローンではなく、ホストされた `marketplace.json` への直接リンクとして扱われることがあるためです。
+
+| ホスト | `.git` サフィックス | 挙動 |
+|--------|:---:|------|
+| `github.com` / `gitlab.com` | 任意 | どちらの形式でもリポジトリとして認識しクローンする |
+| Azure DevOps | 付けない | パスに `/_git/` を含むURLをクローンする。`.git` を付けるとクローンに失敗する |
+| 上記以外（自己管理のGitLabサーバーを含む） | 必要 | 付けないと `marketplace.json` への直接リンクとして扱われる。ただしAWS CodeCommitのようにクローンURLがサフィックスを持たないホストは `.git` を付けられないため、後述の `extraKnownMarketplaces` を使う |
+
+`gitlab.com` については、ネストしたサブグループを含むURL（例: `https://gitlab.com/group/subgroup/project`）もクローンされます。
+
+AWS CodeCommit のようにクローンURLがサフィックスを持たないホストは、`/plugin marketplace add` ではなく `extraKnownMarketplaces` のgitエントリとして追加してください。gitエントリはURLが `.git` で終わるかどうかに関わらずクローンされます。
+
+なお、同じ AWS CodeCommit のURLでも、[Git URL](#git-url)節のとおり**個別プラグインの `source` としてはそのまま指定できます**。制約があるのはマーケットプレイス自体の追加時のみです。
+
+URLには `https://` プレフィックスが必要です。`gitlab.com/company/plugins.git` のようにホスト名から書くと、GitHubの `owner/repo` 短縮形として解釈され拒否されます。
+
+> この節は公式ドキュメント [discover-plugins](https://code.claude.com/docs/en/discover-plugins) の「Add from other Git hosts」節に基づきます。
+
 ## strictKnownMarketplacesのpathPattern
 
-エンタープライズ管理設定の `strictKnownMarketplaces` の `pathPattern` フィールドにより、ファイル/ディレクトリマーケットプレイスソースの正規表現マッチングが可能です。
+エンタープライズ管理設定の `strictKnownMarketplaces` の `pathPattern` フィールドにより、ファイル/ディレクトリマーケットプレイスソースの正規表現マッチングが可能です。`strictKnownMarketplaces` は `allowedMarketplaces` という別名でも指定できます。
 
-`hostPattern` による制限に加えて、ローカルパスのパターンマッチングでマーケットプレイスソースを制限できます:
+TODO: 要確認 — 両方の綴りを同一ファイルに指定した場合にどちらが優先されるかは未調査。
+
+`hostPattern` による制限に加えて、ローカルパスのパターンマッチングでマーケットプレイスソースを制限できます。エントリは `source` の値ごとに1つずつ書きます:
 
 ```json
 {
   "strictKnownMarketplaces": [
     {
-      "hostPattern": "github.com",
-      "pathPattern": "^/myorg/.*-plugins$"
+      "source": "hostPattern",
+      "hostPattern": "^github\\.example\\.com$"
     },
     {
+      "source": "pathPattern",
       "pathPattern": "^/opt/company/plugins/.*"
     }
   ]
@@ -472,6 +499,48 @@ export CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS=300000
 |-----------|---|------|
 | `hostPattern` | string | ホスト名のパターン（gitソースに使用） |
 | `pathPattern` | string | ファイル/ディレクトリパスの正規表現パターン |
+
+> 公式ドキュメント [plugin-marketplaces](https://code.claude.com/docs/en/plugin-marketplaces) の「Common configurations」節には、`hostPattern` / `pathPattern` のエントリがそれぞれ `{"source": "hostPattern", "hostPattern": "^github\\.example\\.com$"}` / `{"source": "pathPattern", "pathPattern": "^/opt/approved/"}` の形で示されています。`source` を省略した形式や、`hostPattern` と `pathPattern` を1エントリに併記した形式は公式ドキュメントには見当たりません。
+
+## blockedMarketplacesによるマーケットプレイスのブロック
+
+エンタープライズ管理設定の `blockedMarketplaces` フィールドにより、組織で特定のマーケットプレイスソースをブロックできます。`strictKnownMarketplaces`（許可リスト）と対になるブロックリストで、エントリは `source` の値ごとに書き分けます。
+
+| `source` | 併記するフィールド | 説明 |
+|----------|------------------|------|
+| `github` | `repo` | `owner/repo` 形式。`owner/*` のownerワイルドカード形式も可 |
+| `url` | `url` | 完全一致で照合される |
+| `hostPattern` | `hostPattern` | ホスト名の正規表現パターン |
+| `pathPattern` | `pathPattern` | ファイル/ディレクトリパスの正規表現パターン |
+
+```json
+{
+  "blockedMarketplaces": [
+    {
+      "source": "github",
+      "repo": "untrusted-org/*"
+    },
+    {
+      "source": "url",
+      "url": "https://plugins.example.com/marketplace.json"
+    },
+    {
+      "source": "hostPattern",
+      "hostPattern": "^plugins\\.untrusted\\.example\\.com$"
+    },
+    {
+      "source": "pathPattern",
+      "pathPattern": "^/tmp/"
+    }
+  ]
+}
+```
+
+ユーザーが `.git` サフィックスなしのbareなリポジトリURL（例: `https://github.com/owner/repo` や `https://gitlab.com/owner/repo`）をマーケットプレイスとして追加しようとし、Claude Codeがそれをフェッチではなくクローンとして扱う場合でも、`url` エントリとの照合が行われます。エントリが同じURLを指していれば追加はブロックされます。この比較では `.git` サフィックスと `#` 以降のref指定は無視されます。
+
+ブロックの検査はネットワークアクセスやファイルシステム操作より前に行われます。マーケットプレイスの追加時に加えて、プラグインのインストール・更新・リフレッシュ・自動更新のたびに実行されます。
+
+> この節は公式ドキュメント [plugin-marketplaces](https://code.claude.com/docs/en/plugin-marketplaces) に基づきます。ブロックの検査タイミングとownerワイルドカード・bare URLの照合は「How restrictions work」節、`source` の値ごとのエントリ形式は同ドキュメント「Common configurations」節の `strictKnownMarketplaces` の例（`github` / `url` / `hostPattern` / `pathPattern` の4種がいずれも `source` を持つ）に基づきます。両者はエントリ形式を共有します。
 
 ## pluginTrustMessageマネージド設定
 
