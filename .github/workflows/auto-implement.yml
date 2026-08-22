@@ -241,9 +241,34 @@ jobs:
             - scripts/validators/ にコードを追加・変更した場合は、対応するテストで
               カバレッジ100%を維持すること（CIで --cov-fail-under=100 が課されている）
             - 破壊的変更がある場合は明確にコメントを残す
-            - 不明確な部分は「TODO: 要確認」としてマーク
             - リポジトリに永続的に必要なファイルのみ作成・変更すること
             - issue-body.md, issue-title.txt などの一時ファイルは参照のみで、変更やコミットに含めないこと
+
+            ## 出典のない記述をしないこと（最重要）
+
+            このリポジトリのドキュメントは恒久的なリファレンスとして参照される。
+            誤情報を書くと、それが正しい仕様として定着する。
+
+            - Issueに引用されたCHANGELOG本文に書かれていない具体的事実を、
+              確認済みであるかのように書かないこと。特に次は根拠なく書きやすい:
+              モデル名 / バージョン番号 / 数値の上限 / 優先順位 /
+              エラー時の挙動 / 拒否されるホストやプロトコルなどの制限
+            - 「〜とされている」「〜と言われている」のような伝聞表現で、
+              未確認の内容を既成事実のように書かないこと
+            - 裏が取れない項目は、書かないか「TODO: 要確認」と明記して
+              「何が確認できていないのか」を具体的に書く
+            - 判断に迷ったら書かない。記述の欠落は後から足せるが、
+              誤情報は気付かれないまま残る
+
+            ## 対応できなかった項目の記録
+
+            Issueのトリアージ結果で「追跡対象」に挙がった項目は全て対応すること。
+            対応できない項目が残る場合は /tmp/unresolved-items.txt に書き出す。
+
+            - 項目ごとに「何が未対応か」と「なぜ対応できなかったか」を箇条書きで記載
+            - このファイルがある場合、PR本文に未対応項目が明記され、
+              マージしてもIssueは自動クローズされない（Closes ではなく Refs になる）
+            - 黙って一部だけ実装してIssueを閉じることは、最も避けたい失敗である
 
           # permission-mode: このリポジトリのルールドキュメントは .claude/rules/ にあり、
           #   .claude はClaude Codeの「保護パス」なので既定では書き込みが必ず承認待ちになる。
@@ -315,6 +340,24 @@ jobs:
             - 既存の動作を壊さないよう注意
             - リポジトリに永続的に必要なファイルのみ作成・変更すること
             - issue-body.md, issue-title.txt などの一時ファイルは参照のみで、変更やコミットに含めないこと
+
+            ## 出典のない記述をしないこと（最重要）
+
+            - Issueに書かれていない具体的事実を、確認済みであるかのように書かない。
+              特に次は根拠なく書きやすい: バージョン番号 / 数値の上限 /
+              優先順位 / エラー時の挙動 / 依存ツールの有無
+            - 裏が取れない項目は書かないか「TODO: 要確認」と明記する
+            - 判断に迷ったら書かない。誤情報は気付かれないまま残る
+
+            ## 対応できなかった項目の記録
+
+            Issueが挙げた改善提案は全て対応すること。
+            対応できない項目が残る場合は /tmp/unresolved-items.txt に書き出す。
+
+            - 項目ごとに「何が未対応か」と「なぜ対応できなかったか」を箇条書きで記載
+            - このファイルがある場合、PR本文に未対応項目が明記され、
+              マージしてもIssueは自動クローズされない（Closes ではなく Refs になる）
+            - 黙って一部だけ実装してIssueを閉じることは、最も避けたい失敗である
 
           # claude-code-updateステップと同じ設定にする。理由はそちらのコメントを参照。
           # plugins/ 配下は保護パスではないためbypassPermissionsは必須ではないが、
@@ -599,8 +642,13 @@ jobs:
             CHANGE_SUMMARY="Claude Actionによって自動生成された変更です。詳細はコミット履歴を参照してください。"
           fi
 
-          # 検証未通過のPRは誤マージでIssueが自動クローズされないよう Refs にする
-          if [ "${{ steps.gate.outputs.status }}" = "fail" ]; then
+          # 検証未通過、またはIssueの項目を実装しきれなかった場合は、
+          # 誤マージでIssueが自動クローズされないよう Refs にする。
+          # 一部だけ実装したPRが Closes 付きでマージされ、残りの項目が
+          # 誰にも気付かれないまま消える事故を繰り返していたため。
+          if [ -s /tmp/unresolved-items.txt ]; then
+            ISSUE_REF="Refs #${ISSUE_NUM}"
+          elif [ "${{ steps.gate.outputs.status }}" = "fail" ]; then
             ISSUE_REF="Refs #${ISSUE_NUM}"
           else
             ISSUE_REF="Closes #${ISSUE_NUM}"
@@ -679,6 +727,19 @@ jobs:
               echo '```'
             } >> /tmp/pr-body.md
           fi
+          # 実装しきれなかった項目はPR本文に明記する。ジョブ実行中しか存在しない
+          # 一時ファイルに残しても、マージ後は誰も経緯を追えないため。
+          if [ -s /tmp/unresolved-items.txt ]; then
+            {
+              echo ""
+              echo "## ⚠️ 未対応の項目"
+              echo ""
+              echo "Issueの項目のうち、以下は実装できていません。"
+              echo "このPRをマージしてもIssueは自動クローズされません（\`Refs\`）。"
+              echo ""
+              cat /tmp/unresolved-items.txt
+            } >> /tmp/pr-body.md
+          fi
 
           # 作業ブランチ名はIssue番号から決まり、pushはforce pushで行うため、
           # 再実行時は既存PRがそのまま更新される。この状態で gh pr create を
@@ -725,9 +786,20 @@ jobs:
             ACTION_TEXT="PR #${{ steps.pr.outputs.number }} を作成しました"
           fi
 
-          gh issue comment "${ISSUE_NUMBER}" --body "🤖 **自動実装完了**
+          # 一部だけ実装した場合に「完了」とだけ伝えると見落とされる
+          if [ -s /tmp/unresolved-items.txt ]; then
+            HEADER="🤖 **自動実装完了（未対応の項目あり）**"
+            NOTE="未対応の項目があるため、このPRをマージしてもIssueは閉じません。詳細はPR本文を参照してください。"
+          else
+            HEADER="🤖 **自動実装完了**"
+            NOTE=""
+          fi
+
+          gh issue comment "${ISSUE_NUMBER}" --body "${HEADER}
 
           ${ACTION_TEXT}。レビューをお願いします。
+
+          ${NOTE}
 
           ---
           *このコメントはClaude Code自動更新対応ワークフローによって生成されました*"
@@ -738,11 +810,21 @@ jobs:
         if: steps.gate.outputs.status == 'fail'
         continue-on-error: true
         run: |
+          # 検証未通過と未対応項目は同時に起きうる。Draft側のコメントにも
+          # 未対応項目の有無を載せないと、この経路だけ情報が欠ける。
+          if [ -s /tmp/unresolved-items.txt ]; then
+            UNRESOLVED_NOTE="また、Issueの項目のうち未対応のものがあります（PR本文を参照）。"
+          else
+            UNRESOLVED_NOTE=""
+          fi
+
           gh issue comment "${ISSUE_NUMBER}" --body "🤖 **Draft PR #${{ steps.pr.outputs.number }}**
 
           実装は完了しましたが、pre-commitまたはテストが未通過のためDraft PRになっています。
           自動修正では解消できないため、手動修正が必要です。
           詳細はPR本文のログを参照してください。
+
+          ${UNRESOLVED_NOTE}
 
           ---
           *このコメントはClaude Code自動更新対応ワークフローによって生成されました*"
