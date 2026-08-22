@@ -50,7 +50,7 @@
     {
       "name": "git-main-sync",
       "source": "./plugins/git-main-sync",
-      "description": "新規セッション開始時、git管理下なら現在ブランチに応じてmainブランチをpullまたはfetchで最新化する",
+      "description": "新規セッション開始時や /add-dir での作業ディレクトリ追加時に、git管理下なら現在ブランチに応じてmainブランチをpullまたはfetchで最新化する",
       "version": "0.1.0",
       "author": {
         "name": "rfdnxbro"
