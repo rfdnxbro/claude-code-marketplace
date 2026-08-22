@@ -930,6 +930,19 @@ class TestValidatePluginJson:
         result = validate_plugin_json(Path("plugin.json"), content)
         assert not any("ディレクトリパス" in e for e in result.errors)
 
+    def test_skills_dot_path_no_error_no_prefix_warning(self):
+        """skillsに"."（プラグインルート）を指定した場合はエラー・./プレフィックス警告なし"""
+        content = json.dumps({"name": "my-plugin", "skills": "."})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+        assert not any("./で始めることを推奨" in w for w in result.warnings)
+
+    def test_skills_dot_array_no_error(self):
+        """skillsが配列で"."を含む場合もエラーなし"""
+        content = json.dumps({"name": "my-plugin", "skills": ["."]})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not any("ディレクトリパス" in e for e in result.errors)
+
 
 class TestDefaultEnabled:
     """defaultEnabled フィールドのテスト（v2.1.154以降）"""
