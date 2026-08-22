@@ -231,6 +231,9 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
     for field in path_fields:
         value = data.get(field)
         if value and isinstance(value, str) and not value.startswith("./"):
+            # skills はプラグインルートを指す "." も正式に許容されるパス
+            if field == "skills" and value == ".":
+                continue
             result.add_warning(f"{file_path.name}: {field}のパスは./で始めることを推奨: {value}")
 
     # skills フィールドはディレクトリパスのみ有効（ファイルパス指定はエラー、v2.1.145以降）
