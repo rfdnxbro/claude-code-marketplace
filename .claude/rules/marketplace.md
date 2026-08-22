@@ -492,10 +492,13 @@ export CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS=300000
 ```
 
 - 生成されたヘッダーは、カタログ（`marketplace.json`本体）の取得と、同一オリジン（スキーム・ホスト・ポートが一致）のアーカイブ取得に使用される
-- 異なるオリジンへのアーカイブ取得や、オリジンを離れるリダイレクトではヘッダーは送信されない（マーケットプレイスの認証情報が第三者ホストに送られることはない）
 - ヘルパースクリプトはJSON形式でヘッダーを出力する。書式は `.mcp.json` の `headersHelper` と同様（[mcp-servers.md](mcp-servers.md#headershelper)を参照）
 
-TODO: 要確認 — カタログエントリ（`claude plugin install`/`update`）と同様に、`claude plugin marketplace add` 実行時にもコマンド内容の表示・`[y/N]` 確認が行われるかは現時点で未確認。
+TODO: 要確認 — 以下は現時点で未確認。
+
+- 異なるオリジンへのアーカイブ取得や、オリジンを離れるリダイレクトでヘッダーが送信されるか。CHANGELOGは「カタログおよび同一オリジンのアーカイブ取得に使用される」とのみ述べており、それ以外の場合の挙動には触れていない。送信されないことを前提に設計しないこと
+- カタログエントリ（`claude plugin install`/`update`）と同様に、`claude plugin marketplace add` 実行時にもコマンド内容の表示・`[y/N]` 確認が行われるか
+- `headersHelper` の配置。上記の例では `source` オブジェクトの中として記載しているが、`source` と同階層の可能性もある（[headersHelper（カタログエントリ）](#headershelperカタログエントリ)の同じ注記を参照）
 
 ## strictKnownMarketplacesのpathPattern
 
