@@ -232,6 +232,7 @@ GitHub sourceでは、fragment構文を使ってbranch、tag、またはcommit S
 | `source` | string | ✓ | `"url"` を指定 |
 | `url` | string | ✓ | gitリポジトリのURL（fragment構文でbranch/tag/commit指定可） |
 | `skipLfs` | boolean | | `true` に設定すると Git LFS のダウンロードをスキップ |
+| `headersHelper` | string | | HTTPヘッダーを動的生成するコマンド。詳細は[headersHelper（カタログエントリ）](#headershelperカタログエントリ)を参照 |
 
 #### branch/tag/commit SHA指定
 
@@ -271,6 +272,27 @@ Git URL sourceでも、URL末尾にfragment構文を使ってbranch、tag、ま�
 >
 > - 安定性重視 → commit SHA指定（例: `https://gitlab.com/team/plugin.git#abc123def456789`）
 > - 常に最新を使用 → branch/tag指定（例: `https://gitlab.com/team/plugin.git#main`）
+
+#### headersHelper（カタログエントリ）
+
+`url` ソースのプラグインエントリ（カタログエントリ）には `headersHelper` を設定できます。そのプラグインをインストール・更新する際にコマンドを実行し、生成したHTTPヘッダー（短命トークンなど）をカタログ取得・同一オリジンのアーカイブ取得に使用します。
+
+```json
+{
+  "name": "private-plugin",
+  "source": {
+    "source": "url",
+    "url": "https://plugins.example.com/private-plugin.git",
+    "headersHelper": "./scripts/get-auth-headers.sh"
+  }
+}
+```
+
+- `headersHelper` はそのプラグインをインストール／更新する時にのみ実行される
+- 実行前にコマンド内容が表示され、`claude plugin install`/`update` で `[y/N]` の確認を要求（`-y` で省略可）
+- ヘルパースクリプトはJSON形式でヘッダーを出力する。書式は `.mcp.json` の `headersHelper` と同様（[mcp-servers.md](mcp-servers.md#headershelper)を参照）
+
+TODO: 要確認 — `github` ソース（`source: "github"`）のカタログエントリでも `headersHelper` が利用できるかは現時点で未確認。
 
 ### npm
 
@@ -447,6 +469,30 @@ export CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS=300000
 - `extraKnownMarketplaces`: 追加のマーケットプレイス定義
 
 これにより、プロジェクト固有の設定を`--add-dir`ディレクトリ内で管理できます。設定はプロジェクトルートの`.claude.json`と同様の形式で記述できます。
+
+## urlマーケットプレイスのheadersHelper
+
+`extraKnownMarketplaces` や `claude plugin marketplace add` でマーケットプレイス自体を `url` ソースとして登録する場合も、`headersHelper` を設定してカタログ（`marketplace.json`本体）取得時のHTTPヘッダーを動的生成できます。
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "internal-catalog": {
+      "source": {
+        "source": "url",
+        "url": "https://plugins.example.com/marketplace.json",
+        "headersHelper": "/path/to/mint-headers.sh"
+      }
+    }
+  }
+}
+```
+
+- 生成されたヘッダーは、カタログ（`marketplace.json`本体）の取得と、同一オリジン（スキーム・ホスト・ポートが一致）のアーカイブ取得に使用される
+- 異なるオリジンへのアーカイブ取得や、オリジンを離れるリダイレクトではヘッダーは送信されない（マーケットプレイスの認証情報が第三者ホストに送られることはない）
+- ヘルパースクリプトはJSON形式でヘッダーを出力する。書式は `.mcp.json` の `headersHelper` と同様（[mcp-servers.md](mcp-servers.md#headershelper)を参照）
+
+TODO: 要確認 — カタログエントリ（`claude plugin install`/`update`）と同様に、`claude plugin marketplace add` 実行時にもコマンド内容の表示・`[y/N]` 確認が行われるかは現時点で未確認。
 
 ## strictKnownMarketplacesのpathPattern
 
