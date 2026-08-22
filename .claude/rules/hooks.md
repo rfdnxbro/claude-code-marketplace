@@ -1037,6 +1037,8 @@ echo '{"continue": false, "stopReason": "タスクは完了しました。これ
 
 マルチエージェントワークフロー環境で、タスクが完了したときに実行されるフック。
 
+**注意**: `TaskCreated`と同様、一部モデル（Opus 4.8、Sonnet 5、Fable 5、Mythos 5以降）ではTodo/タスク管理ツールがデフォルトで無効化されているため、`CLAUDE_CODE_ENABLE_TODO_TOOLS=1`環境変数を設定しない限りこのフックも発火しない。
+
 **使用例:**
 
 ```json
@@ -1076,6 +1078,8 @@ echo '{"continue": false, "stopReason": "タスクが完了しました。後続
 ### TaskCreated
 
 `TaskCreate` でタスクが作成された時に実行されるフック。
+
+**注意**: `TaskCreate`/`TaskGet`/`TaskUpdate`/`TaskList`、`TodoWrite`といったTodo/タスク管理ツールは、一部モデル（Opus 4.8、Sonnet 5、Fable 5、Mythos 5以降）ではデフォルトで無効化されている。対象モデルでは`CLAUDE_CODE_ENABLE_TODO_TOOLS=1`環境変数を設定しない限り`TaskCreate`が呼び出されないため、このフックも発火しない。
 
 **使用例:**
 
