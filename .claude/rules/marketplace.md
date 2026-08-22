@@ -489,20 +489,16 @@ TODO: 要確認 — 両方の綴りを同一ファイルに指定した場合に
 
 ## blockedMarketplacesによるマーケットプレイスのブロック
 
-エンタープライズ管理設定の `blockedMarketplaces` フィールドにより、組織で特定のマーケットプレイスソースをブロックできます。`strictKnownMarketplaces`（許可リスト）と対になるブロックリストで、エントリの形式は `strictKnownMarketplaces` と同じです。
+エンタープライズ管理設定の `blockedMarketplaces` フィールドにより、組織で特定のマーケットプレイスソースをブロックできます。`strictKnownMarketplaces`（許可リスト）と対になるブロックリストです。
 
-```json
-{
-  "blockedMarketplaces": [
-    {
-      "hostPattern": "github.com",
-      "pathPattern": "^/untrusted-org/.*"
-    }
-  ]
-}
-```
+ユーザーが `.git` サフィックスなしのbareなリポジトリURL（例: `https://github.com/owner/repo` や `https://gitlab.com/owner/repo`）をマーケットプレイスとして追加しようとし、CLIがそのURLをgit cloneとして分類した場合でも、url型のブロックエントリは同じURLを引き続きブロックします。
 
-ユーザーが `.git` サフィックスなしのbareなリポジトリURL（例: `https://github.com/owner/repo` や `https://gitlab.com/owner/repo`）をマーケットプレイスとして追加しようとし、CLIがそのURLをgit cloneとして分類した場合でも、`url` タイプのブロックエントリは同じURLを引き続きブロックします。この比較では `.git` サフィックスや `#` 以降のref指定は無視されます。
+TODO: 要確認 — 以下は現時点で未確認。CHANGELOGは「bareなリポジトリURLに対するurl型の `blockedMarketplaces` エントリは、CLIがそのURLをgit cloneとして分類した場合もブロックし続ける」とのみ述べており、エントリの書式には触れていない。
+
+- エントリの書式。`strictKnownMarketplaces` と同じ `hostPattern` / `pathPattern` 形式なのか、
+  上記の「url型」に対応する別のフィールド（`url` など）が存在するのかを特定できていない。
+  書式が確認できるまで、このドキュメントには例を載せない
+- URL比較で `.git` サフィックスや `#` 以降のref指定が無視されるか
 
 ## pluginTrustMessageマネージド設定
 
