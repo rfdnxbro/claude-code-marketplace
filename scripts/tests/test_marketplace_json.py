@@ -1014,6 +1014,208 @@ class TestRenames:
         assert any("renames" in e and "kebab-case" in e for e in result.errors)
 
 
+class TestCommandSource:
+    """source: command のテスト"""
+
+    def test_plugin_source_command_minimal(self):
+        """commandソースが最小構成で有効"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {"source": "command", "command": "my-ide-tool print-dir"},
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_plugin_source_command_with_timeout_and_mode(self):
+        """commandソースでtimeout・modeを指定しても有効"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "command",
+                            "command": "my-ide-tool print-dir",
+                            "timeout": 30,
+                            "mode": "link",
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_source_command_missing_command(self):
+        """source: commandでcommandが欠けている（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [{"name": "plugin-one", "source": {"source": "command"}}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.command" in e and "必須" in e for e in result.errors)
+
+    def test_source_command_command_not_string(self):
+        """source: commandでcommandが文字列でない（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {"name": "plugin-one", "source": {"source": "command", "command": 123}}
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.command" in e and "文字列が必要" in e for e in result.errors)
+
+    def test_source_command_timeout_not_int(self):
+        """commandソースでtimeoutが整数でない（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "command",
+                            "command": "my-ide-tool print-dir",
+                            "timeout": "30",
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.timeout" in e and "整数が必要" in e for e in result.errors)
+
+    def test_source_command_timeout_bool_error(self):
+        """commandソースでtimeoutがbool（エラー、bool is int対策の確認）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "command",
+                            "command": "my-ide-tool print-dir",
+                            "timeout": True,
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.timeout" in e and "整数が必要" in e for e in result.errors)
+
+    def test_source_command_timeout_zero_error(self):
+        """commandソースでtimeoutが0（範囲外エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "command",
+                            "command": "my-ide-tool print-dir",
+                            "timeout": 0,
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.timeout" in e and "範囲" in e for e in result.errors)
+
+    def test_source_command_timeout_over_max_error(self):
+        """commandソースでtimeoutが600超過（範囲外エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "command",
+                            "command": "my-ide-tool print-dir",
+                            "timeout": 601,
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.timeout" in e and "範囲" in e for e in result.errors)
+
+    def test_source_command_mode_invalid(self):
+        """commandソースでmodeが無効な値（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "command",
+                            "command": "my-ide-tool print-dir",
+                            "mode": "invalid-mode",
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.mode" in e and "無効な値" in e for e in result.errors)
+
+    def test_source_command_mode_copy(self):
+        """commandソースでmode: copyが有効"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "command",
+                            "command": "my-ide-tool print-dir",
+                            "mode": "copy",
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+
 class TestDefaultEnabled:
     """プラグインエントリの defaultEnabled フィールドのテスト（v2.1.154以降）"""
 

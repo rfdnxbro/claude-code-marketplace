@@ -23,7 +23,11 @@ REQUIRED_FIELDS_BY_SOURCE_TYPE = {
     "url": ["url"],
     "npm": ["package"],
     "git-subdir": ["url", "path"],
+    "command": ["command"],
 }
+
+# command source_type の mode フィールドで許可される値
+VALID_COMMAND_MODES = {"copy", "link"}
 
 
 def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult:
@@ -133,7 +137,7 @@ def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult
             elif isinstance(source, dict):
                 # オブジェクト形式のsourceタイプを検証
                 source_type = source.get("source")
-                valid_source_types = ["github", "url", "npm", "git-subdir", "settings"]
+                valid_source_types = ["github", "url", "npm", "git-subdir", "settings", "command"]
                 if not source_type:
                     result.add_error(f"{file_path.name}: plugins[{i}].source.sourceは必須です")
                 elif source_type not in valid_source_types:
@@ -164,5 +168,27 @@ def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult
                                 f"{file_path.name}: plugins[{i}].source.{field}は文字列が必要です"
                             )
                     # source_type == "settings" の場合、追加の必須フィールドなし
+
+                    # commandソースのtimeout/modeフィールドの検証
+                    if source_type == "command":
+                        timeout = source.get("timeout")
+                        if timeout is not None:
+                            if isinstance(timeout, bool) or not isinstance(timeout, int):
+                                result.add_error(
+                                    f"{file_path.name}: plugins[{i}].source.timeoutは整数が必要です"
+                                )
+                            elif not (0 < timeout <= 600):
+                                result.add_error(
+                                    f"{file_path.name}: plugins[{i}].source.timeoutは"
+                                    "1〜600の範囲である必要があります"
+                                )
+
+                        mode = source.get("mode")
+                        if mode is not None and mode not in VALID_COMMAND_MODES:
+                            modes_str = "/".join(sorted(VALID_COMMAND_MODES))
+                            result.add_error(
+                                f"{file_path.name}: plugins[{i}].source.modeは無効な値です: "
+                                f"{mode}（{modes_str}）"
+                            )
 
     return result
