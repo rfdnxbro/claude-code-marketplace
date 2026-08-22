@@ -444,13 +444,13 @@ export CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS=300000
 `--add-dir`で追加したディレクトリから以下の設定が読み込まれます:
 
 - `enabledPlugins`: 有効化するプラグインのリスト
-- `extraKnownMarketplaces`: 追加のマーケットプレイス定義
+- `extraKnownMarketplaces`: 追加のマーケットプレイス定義（`additionalMarketplaces` という別名でも指定可能）
 
 これにより、プロジェクト固有の設定を`--add-dir`ディレクトリ内で管理できます。設定はプロジェクトルートの`.claude.json`と同様の形式で記述できます。
 
 ## strictKnownMarketplacesのpathPattern
 
-エンタープライズ管理設定の `strictKnownMarketplaces` の `pathPattern` フィールドにより、ファイル/ディレクトリマーケットプレイスソースの正規表現マッチングが可能です。
+エンタープライズ管理設定の `strictKnownMarketplaces` の `pathPattern` フィールドにより、ファイル/ディレクトリマーケットプレイスソースの正規表現マッチングが可能です。`strictKnownMarketplaces` は `allowedMarketplaces` という別名でも指定できます（両方の綴りを同一ファイルに指定した場合、`strictKnownMarketplaces` 側の値が優先されます）。
 
 `hostPattern` による制限に加えて、ローカルパスのパターンマッチングでマーケットプレイスソースを制限できます:
 
@@ -472,6 +472,20 @@ export CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS=300000
 |-----------|---|------|
 | `hostPattern` | string | ホスト名のパターン（gitソースに使用） |
 | `pathPattern` | string | ファイル/ディレクトリパスの正規表現パターン |
+
+## blockedMarketplacesによるマーケットプレイスのブロック
+
+エンタープライズ管理設定の `blockedMarketplaces` フィールドにより、組織で特定のマーケットプレイスソースをブロックできます。`strictKnownMarketplaces`（許可リスト）と対になるブロックリストで、エントリの形式は `strictKnownMarketplaces` と同じです。
+
+```json
+{
+  "blockedMarketplaces": [
+    { "source": "github", "repo": "untrusted-org/plugins" }
+  ]
+}
+```
+
+ユーザーが `.git` サフィックスなしのbareなリポジトリURL（例: `https://github.com/owner/repo` や `https://gitlab.com/owner/repo`）をマーケットプレイスとして追加しようとし、CLIがそのURLをgit cloneとして分類した場合でも、`url` タイプのブロックエントリは同じURLを引き続きブロックします。この比較では `.git` サフィックスや `#` 以降のref指定は無視されます。
 
 ## pluginTrustMessageマネージド設定
 
