@@ -450,6 +450,10 @@ export CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS=300000
 
 ## マーケットプレイスURLの形式
 
+> **この節は `/plugin marketplace add <URL>` でマーケットプレイス自体を追加する場合の話です。**
+> `marketplace.json` 内で個別プラグインの取得元を指定する `source: "url"` とは別の操作であり、
+> `.git` サフィックスの扱いも異なります。プラグインの取得元については[Git URL](#git-url)を参照してください。
+
 `/plugin marketplace add <URL>` でマーケットプレイス自体を追加する場合、`.git` サフィックスの要否はホストによって異なります。サフィックスが無いURLは、リポジトリのクローンではなく、ホストされた `marketplace.json` への直接リンクとして扱われることがあるためです。
 
 | ホスト | `.git` サフィックス | 挙動 |
@@ -460,7 +464,9 @@ export CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS=300000
 
 `gitlab.com` については、ネストしたサブグループを含むURL（例: `https://gitlab.com/group/subgroup/project`）もクローンされます。
 
-AWS CodeCommit のようにクローンURLがサフィックスを持たないホストは、`extraKnownMarketplaces` のgitエントリとして追加してください。gitエントリはURLが `.git` で終わるかどうかに関わらずクローンされます。
+AWS CodeCommit のようにクローンURLがサフィックスを持たないホストは、`/plugin marketplace add` ではなく `extraKnownMarketplaces` のgitエントリとして追加してください。gitエントリはURLが `.git` で終わるかどうかに関わらずクローンされます。
+
+なお、同じ AWS CodeCommit のURLでも、[Git URL](#git-url)節のとおり**個別プラグインの `source` としてはそのまま指定できます**。制約があるのはマーケットプレイス自体の追加時のみです。
 
 URLには `https://` プレフィックスが必要です。`gitlab.com/company/plugins.git` のようにホスト名から書くと、GitHubの `owner/repo` 短縮形として解釈され拒否されます。
 
