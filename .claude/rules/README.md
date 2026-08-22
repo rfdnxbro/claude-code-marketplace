@@ -60,6 +60,7 @@
 | `CLAUDE_CODE_SESSION_ID` | 現在のセッションID（Stdio MCPサーバーのサブプロセス環境で利用可能） | mcp-servers |
 | `CLAUDECODE` | `1` に設定済み（Stdio MCPサーバーのサブプロセス環境で利用可能） | mcp-servers |
 | `${CLAUDE_EFFORT}` | 現在のエフォートレベル。値: `low` / `medium` / `high` / `xhigh`（対応モデルでのみ利用可能。非対応モデルでは `high` にフォールバック） / `max` | skills, hooks |
+| `CLAUDE_CODE_ENABLE_TODO_TOOLS` | `1` を設定すると、一部モデルでデフォルト無効化されたTodo/タスク管理ツール（`TaskCreate`/`Get`/`Update`/`List`, `TodoWrite`）を復活させる | hooks |
 | `COLUMNS` | ステータスラインコマンド実行時のターミナルの列数 | statusline |
 | `LINES` | ステータスラインコマンド実行時のターミナルの行数 | statusline |
 
