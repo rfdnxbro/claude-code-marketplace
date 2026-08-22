@@ -353,6 +353,23 @@ claude plugin init my-plugin
 
 > **注意**: `userConfig` の詳細スキーマ（追加フィールドなど）は公式ドキュメントを参照してください。
 
+### 入力値（pluginConfigs）の読み込み元
+
+ユーザーが `userConfig` に入力した値（`pluginConfigs`）が読み込まれるのは、以下のいずれかからのみです:
+
+- ユーザー設定（`~/.claude/settings.json`）
+- `--settings` フラグで指定した設定ファイル
+- Managed settings（macOS plist / Windows Registry）
+
+プロジェクトレベルの設定ファイルは、共有・ローカルのどちらも読み込み対象外です:
+
+| ファイル | `pluginConfigs` の読み込み |
+|---------|:---:|
+| `.claude/settings.json`（共有） | されない |
+| `.claude/settings.local.json`（ローカル） | されない |
+
+`.claude/settings.local.json` は個人用設定として頻繁に使われ、[設定の優先順位](#エンタープライズ管理設定との優先順位)では共有設定より上位に位置しますが、`pluginConfigs` については上記の3つ以外から読み込まれることはありません。「共有はダメでもローカルなら効く」ということはない点に注意してください。
+
 ## エンタープライズ管理設定との優先順位
 
 macOS plistまたはWindows Registryを通じてManaged Settings（管理設定）を使用できます。

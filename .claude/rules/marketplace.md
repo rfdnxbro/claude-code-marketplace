@@ -127,6 +127,26 @@ paths: .claude-plugin/marketplace.json
 
 ## ソース指定
 
+### `metadata.pluginRoot`による裸のソース名解決
+
+`metadata.pluginRoot` を設定すると、`./`や`../`で始まらない裸のプラグインソース名（例: `"source": "my-plugin"`）が、そのディレクトリ配下で解決されます。
+
+```json
+{
+  "metadata": {
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "my-plugin",
+      "source": "my-plugin"
+    }
+  ]
+}
+```
+
+上記の例では `source: "my-plugin"` は `./plugins/my-plugin` として解決されます。`./plugins/my-plugin` のような相対パス指定や、GitHub/Git URL/npm等のオブジェクト形式のsourceには影響しません。
+
 ### 相対パス
 
 ```json
@@ -375,6 +395,45 @@ gitリポジトリ内の特定サブディレクトリをプラグインソー�
 | `url` | string | ✓ | gitリポジトリのURL（fragment構文でbranch/tag/commit指定可） |
 | `path` | string | ✓ | リポジトリ内のサブディレクトリパス |
 
+### archive
+
+zipアーカイブをHTTPS経由でダウンロードしてインストールするソース種別です。ユーザー側にgit/npmが不要です:
+
+```json
+{
+  "name": "my-plugin",
+  "source": {
+    "source": "archive",
+    "url": "https://artifacts.example.com/claude-plugins/my-plugin-2.1.0.zip"
+  }
+}
+```
+
+zipは配下に`.claude-plugin/`を直接含む構成、または単一のトップレベルフォルダの中に`.claude-plugin/`を含む構成のどちらでもインストール可能です。それより深い階層にネストされたプラグインはインストールできません。アーカイブサイズの上限は256MiBです。
+
+> この節の制約（zipの構成・サイズ上限・URLの制約・`sha256`の形式）は公式ドキュメント [plugin-marketplaces](https://code.claude.com/docs/en/plugin-marketplaces) の Zip archives 節に基づきます。CHANGELOG本文だけでは裏付けられないため、出典を明記します。
+
+#### SHA-256ピン留め
+
+`sha256`フィールドでアーカイブのダイジェストを指定すると、ダウンロード時に検証され、不一致の場合はインストールが拒否されます:
+
+```json
+{
+  "name": "my-plugin",
+  "source": {
+    "source": "archive",
+    "url": "https://artifacts.example.com/claude-plugins/my-plugin-2.1.0.zip",
+    "sha256": "65b29a9fd3ff6a671e185d4deaeb5c42afb57ec1dd86f334b92f2e374f4344b5"
+  }
+}
+```
+
+| フィールド | 型 | 必須 | 説明 |
+|-----------|---|:---:|------|
+| `source` | string | ✓ | `"archive"` を指定 |
+| `url` | string | ✓ | zipアーカイブのHTTPS URL。`http://`は非対応。loopback/link-local/クラウドメタデータホストへのURLは拒否される。リダイレクトも同じ条件を満たす必要がある |
+| `sha256` | string | | アーカイブのSHA-256ダイジェスト（16進数64文字、大文字小文字問わず） |
+
 ## 予約済み名前（使用不可）
 
 - `claude-code-marketplace`
@@ -448,6 +507,31 @@ export CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS=300000
 
 これにより、プロジェクト固有の設定を`--add-dir`ディレクトリ内で管理できます。設定はプロジェクトルートの`.claude.json`と同様の形式で記述できます。
 
+`extraKnownMarketplaces`が他のtierと同名エントリを定義している場合のマージ挙動は次節を参照。
+
+## extraKnownMarketplacesの複数tier間マージ挙動
+
+`extraKnownMarketplaces`はmanaged settings（enterprise）・ユーザー設定・プロジェクト設定・`--add-dir`など複数のsettingsで定義できます（tierの優先順位は[plugin-manifest.md](plugin-manifest.md)の「エンタープライズ管理設定との優先順位」を参照）。
+
+同名のマーケットプレイスエントリが複数tierで定義されている場合、最も優先度の高いtierのエントリが**フィールド単位ではなくエントリ全体単位で**下位tierのエントリを上書きします。
+
+エントリには、マーケットプレイスソースの取得時に送信するカスタムリクエストヘッダー（認証トークン等）を指定する`headers`フィールドを含められます:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "my-marketplace": {
+      "source": { "source": "github", "repo": "org/repo" },
+      "headers": {
+        "Authorization": "Bearer ${TOKEN}"
+      }
+    }
+  }
+}
+```
+
+上位tierで同名エントリを再定義すると、下位tierで設定した`headers`は引き継がれず、上位tierのエントリで指定したフィールドのみが有効になります。カスタム`headers`を維持したい場合は、上位tierのエントリ内で`headers`を含めて完全な形でエントリを再定義する必要があります。
+
 ## マーケットプレイスURLの形式
 
 > **この節は `/plugin marketplace add <URL>` でマーケットプレイス自体を追加する場合の話です。**
@@ -501,6 +585,43 @@ TODO: 要確認 — 両方の綴りを同一ファイルに指定した場合に
 | `pathPattern` | string | ファイル/ディレクトリパスの正規表現パターン |
 
 > 公式ドキュメント [plugin-marketplaces](https://code.claude.com/docs/en/plugin-marketplaces) の「Common configurations」節には、`hostPattern` / `pathPattern` のエントリがそれぞれ `{"source": "hostPattern", "hostPattern": "^github\\.example\\.com$"}` / `{"source": "pathPattern", "pathPattern": "^/opt/approved/"}` の形で示されています。`source` を省略した形式や、`hostPattern` と `pathPattern` を1エントリに併記した形式は公式ドキュメントには見当たりません。
+
+## strictKnownMarketplaces / blockedMarketplacesのownerワイルドカード
+
+エンタープライズ管理設定の `strictKnownMarketplaces`（許可リスト）および `blockedMarketplaces`（プラグインマーケットプレイスソースをブロックするブロックリスト。`strictKnownMarketplaces`と対になる設定）では、GitHub sourceのエントリで `"owner/*"` のようなownerワイルドカードを指定できます。これにより、特定のGitHub org配下の全マーケットプレイスリポジトリを一括で許可・ブロックできます。
+
+`strictKnownMarketplaces` でorg配下のリポジトリのみを許可する例:
+
+```json
+{
+  "strictKnownMarketplaces": [
+    {
+      "source": "github",
+      "repo": "acme-corp/*"
+    }
+  ]
+}
+```
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `source` | string | `"github"` を指定するとGitHub repoベースのマッチングになる |
+| `repo` | string | `"owner/repo"`（単一リポジトリ）または `"owner/*"`（owner配下の全リポジトリを対象とするownerワイルドカード）形式 |
+
+単一リポジトリを指定する既存のエントリはそのまま併用できます:
+
+```json
+{
+  "strictKnownMarketplaces": [
+    {
+      "source": "github",
+      "repo": "acme-corp/approved-plugins"
+    }
+  ]
+}
+```
+
+TODO: 要確認 — ownerワイルドカードのマッチング挙動（大文字小文字を区別するか、ネストしたパスにマッチするかなど）は未調査。
 
 ## blockedMarketplacesによるマーケットプレイスのブロック
 
