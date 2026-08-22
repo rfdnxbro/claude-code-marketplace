@@ -205,6 +205,18 @@ GitHub sourceでは、fragment構文を使ってbranch、tag、またはcommit S
 }
 ```
 
+**GitLab のリポジトリURL**: `gitlab.com` のbareなリポジトリURLは `github.com` のURLと同様にクローンされます。ネストしたサブグループを含むURLも指定できます。
+
+```json
+{
+  "name": "gitlab-subgroup-plugin",
+  "source": {
+    "source": "url",
+    "url": "https://gitlab.com/team/subgroup/nested/plugin"
+  }
+}
+```
+
 **`.git` サフィックスは省略可能**: Azure DevOps や AWS CodeCommit など、`.git` サフィックスなしの URL も正式サポートされています。
 
 ```json
@@ -450,7 +462,9 @@ export CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS=300000
 
 ## strictKnownMarketplacesのpathPattern
 
-エンタープライズ管理設定の `strictKnownMarketplaces` の `pathPattern` フィールドにより、ファイル/ディレクトリマーケットプレイスソースの正規表現マッチングが可能です。`strictKnownMarketplaces` は `allowedMarketplaces` という別名でも指定できます（両方の綴りを同一ファイルに指定した場合、`strictKnownMarketplaces` 側の値が優先されます）。
+エンタープライズ管理設定の `strictKnownMarketplaces` の `pathPattern` フィールドにより、ファイル/ディレクトリマーケットプレイスソースの正規表現マッチングが可能です。`strictKnownMarketplaces` は `allowedMarketplaces` という別名でも指定できます。
+
+TODO: 要確認 — 両方の綴りを同一ファイルに指定した場合にどちらが優先されるかは未調査。
 
 `hostPattern` による制限に加えて、ローカルパスのパターンマッチングでマーケットプレイスソースを制限できます:
 
@@ -480,7 +494,10 @@ export CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS=300000
 ```json
 {
   "blockedMarketplaces": [
-    { "source": "github", "repo": "untrusted-org/plugins" }
+    {
+      "hostPattern": "github.com",
+      "pathPattern": "^/untrusted-org/.*"
+    }
   ]
 }
 ```
