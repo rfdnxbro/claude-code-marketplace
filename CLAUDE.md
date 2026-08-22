@@ -45,6 +45,9 @@ python3 scripts/validate_plugin.py plugins/my-plugin/**/*.md plugins/my-plugin/*
 - `hooks/hooks.json`（JSONスキーマ・イベント名・フックタイプ）
 - YAMLパースエラー（frontmatter構文の妥当性）
 - スキーマ違反（未知フィールドや不正な値）
+- Claude Desktopの管理マーケットプレイス同期で拒否されるマーケットプレイス名／プラグイン名（警告）
+
+TODO: 要確認 — Claude Desktopの管理マーケットプレイス同期がどのような名前を拒否するか（使用できない文字、長さの上限など）は未調査。
 
 ```bash
 # プラグインディレクトリを検証
