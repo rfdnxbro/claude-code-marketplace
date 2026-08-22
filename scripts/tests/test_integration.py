@@ -61,6 +61,25 @@ class TestIntegration:
             # 正常な場合は出力なし
             assert result == {} or not result.get("systemMessage")
 
+    def test_bom_prefixed_skill_file_is_valid(self):
+        """UTF-8 BOM付きスキルファイルでもfrontmatterが正しく解析されエラーにならない"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_path = Path(tmpdir) / "skills" / "test" / "SKILL.md"
+            skill_path.parent.mkdir(parents=True, exist_ok=True)
+            content = dedent("""
+                ---
+                name: test-skill
+                description: テストスキル。テスト時に使用する。
+                ---
+                スキル本文
+            """).strip()
+            # BOM（﻿）を先頭に付与したUTF-8バイト列として書き込む
+            skill_path.write_bytes(content.encode("utf-8-sig"))
+
+            result = self._run_validator("Write", str(skill_path))
+            # BOMがあってもfrontmatterのname/description欠落として誤検出されないこと
+            assert result == {} or not result.get("systemMessage")
+
     def test_invalid_skill_has_error(self):
         """無効なスキルファイルではエラーが出力される"""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -203,6 +222,23 @@ class TestCLIMode:
                 スキル本文
             """).strip()
             )
+
+            result = self._run_cli(str(skill_path))
+            assert result.returncode == 0
+
+    def test_cli_bom_prefixed_file_valid(self):
+        """UTF-8 BOM付きファイルでもexit code 0（frontmatter欠落として誤検出されない）"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            skill_path = Path(tmpdir) / "skills" / "test" / "SKILL.md"
+            skill_path.parent.mkdir(parents=True, exist_ok=True)
+            content = dedent("""
+                ---
+                name: test-skill
+                description: テストスキル。テスト時に使用する。
+                ---
+                スキル本文
+            """).strip()
+            skill_path.write_bytes(content.encode("utf-8-sig"))
 
             result = self._run_cli(str(skill_path))
             assert result.returncode == 0
