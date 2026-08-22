@@ -107,6 +107,10 @@ echo '{"Authorization": "Bearer '$(get-token)'"}'
 | `CLAUDE_CODE_MCP_SERVER_NAME` | 呼び出し元の MCP サーバー名 |
 | `CLAUDE_CODE_MCP_SERVER_URL` | 呼び出し元の MCP サーバー URL |
 
+#### `${user_config.*}` 展開の制限
+
+`headersHelper` はコマンド文字列として起動されるため、シェルインジェクション対策により起動コマンドの引数として `${user_config.*}` を渡すことはできません。`userConfig` で宣言した値をヘッダー生成に利用する場合は、ヘルパースクリプト内部で読み込む方式（設定ファイル経由等）に変更してください。
+
 1つのヘルパースクリプトで複数のサーバーに対応できます:
 
 ```bash

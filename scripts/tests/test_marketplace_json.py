@@ -930,6 +930,138 @@ class TestSourceTypeRequiredFields:
         assert result.has_errors()
         assert any("source.path" in e and "文字列が必要" in e for e in result.errors)
 
+    def test_plugin_source_archive(self):
+        """source: archiveが有効であることをテスト"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "archive",
+                            "url": "https://artifacts.example.com/my-plugin.zip",
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_plugin_source_archive_with_sha256(self):
+        """source: archiveでsha256ピン留めが有効"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "archive",
+                            "url": "https://artifacts.example.com/my-plugin.zip",
+                            "sha256": "65b29a9fd3ff6a671e185d4deaeb5c42afb57ec1dd86f334b92f2e374f4344b5",
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_source_archive_missing_url(self):
+        """source: archiveでurlが欠けている（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [{"name": "plugin-one", "source": {"source": "archive"}}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.url" in e and "必須" in e for e in result.errors)
+
+    def test_source_archive_url_not_string(self):
+        """source: archiveでurlが文字列でない（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [{"name": "plugin-one", "source": {"source": "archive", "url": 123}}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.url" in e and "文字列が必要" in e for e in result.errors)
+
+    def test_source_archive_sha256_not_string(self):
+        """source: archiveでsha256が文字列でない（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "archive",
+                            "url": "https://artifacts.example.com/my-plugin.zip",
+                            "sha256": 123,
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.sha256" in e and "文字列が必要" in e for e in result.errors)
+
+    def test_source_archive_sha256_invalid_format(self):
+        """source: archiveでsha256が16進数64文字でない（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "archive",
+                            "url": "https://artifacts.example.com/my-plugin.zip",
+                            "sha256": "not-a-valid-digest",
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.sha256" in e and "16進数64文字" in e for e in result.errors)
+
+    def test_source_archive_sha256_uppercase_valid(self):
+        """source: archiveでsha256が大文字16進数64文字でも有効"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "archive",
+                            "url": "https://artifacts.example.com/my-plugin.zip",
+                            "sha256": "65B29A9FD3FF6A671E185D4DEAEB5C42AFB57EC1DD86F334B92F2E374F4344B5",
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
     def test_plugin_source_settings_no_extra_fields_required(self):
         """source: settingsは追加フィールドなしで有効（回帰確認）"""
         content = json.dumps(

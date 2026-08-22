@@ -68,10 +68,13 @@ paths: plugins/*/monitors/monitors.json, monitors/monitors.json
 | `${CLAUDE_PLUGIN_ROOT}` | プラグインのインストールディレクトリへの絶対パス（プラグイン更新で変化する） |
 | `${CLAUDE_PLUGIN_DATA}` | 更新をまたいで永続する状態ディレクトリ（`~/.claude/plugins/data/{id}/`） |
 | `${CLAUDE_PROJECT_DIR}` | プロジェクトルートへの絶対パス |
-| `${user_config.<key>}` | `userConfig` で宣言した値 |
 | `${ENV_VAR}` | 任意の環境変数 |
 
 プラグインディレクトリで実行したい場合は、コマンド先頭に `cd "${CLAUDE_PLUGIN_ROOT}" &&` を付けて（末尾のスペース忘れに注意）コマンドを連結するパターンが推奨されています。
+
+### `${user_config.*}` 展開の制限
+
+`command` はシェル経由で実行される文字列であり（フックの `args` 配列指定のようなexec form相当の仕組みは存在しない）、シェルインジェクション対策のため `command` 文字列内での `${user_config.*}` の展開は拒否されます。`userConfig` で宣言した値をモニタースクリプトから利用する場合は、コマンド文字列に埋め込まず、スクリプト内部で読み込む方式（例: プラグインが `${CLAUDE_PLUGIN_DATA}` 配下に生成した設定ファイルを読む）に変更してください。
 
 ## ライフサイクル
 
@@ -95,18 +98,18 @@ paths: plugins/*/monitors/monitors.json, monitors/monitors.json
 ## セキュリティ考慮事項
 
 - モニターは非サンドボックスで実行されるため、コマンド内容はフックと同等の責任で扱うこと
-- `${user_config.<key>}` を参照する場合、sensitive な値はキーチェーンから展開されます。コマンドログに値が漏れないよう注意してください
+- `userConfig` の値をスクリプト内部で読み込む場合、sensitive な値はキーチェーンから展開されます。ログに値が漏れないよう注意してください
 - すべてのパスはプラグインルートからの相対表現（`./` 開始）にとどめ、path traversal は使用しないこと
 
 ## 実例
 
-公式 plugins-reference に掲載されている例（日本語コメント付き）:
+公式 plugins-reference に掲載されている例をもとに、`${user_config.*}` のcommand文字列への直接埋め込み（拒否される）を避けた構成（日本語コメント付き）:
 
 ```json
 [
   {
     "name": "deploy-status",
-    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/poll-deploy.sh ${user_config.api_endpoint}",
+    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/poll-deploy.sh",
     "description": "Deployment status changes"
   },
   {
@@ -118,7 +121,7 @@ paths: plugins/*/monitors/monitors.json, monitors/monitors.json
 ]
 ```
 
-- 1つ目: デプロイ状況の変化を監視するスクリプト。セッション開始時に自動起動し、`${user_config.api_endpoint}` がキーチェーン/設定から注入される
+- 1つ目: デプロイ状況の変化を監視するスクリプト。セッション開始時に自動起動し、`poll-deploy.sh` がスクリプト内部で設定ファイル（`${CLAUDE_PLUGIN_DATA}` 配下等）から `api_endpoint` を読み込む
 - 2つ目: `debug` スキルが呼ばれた初回のみ `tail -F` でエラーログを監視開始
 
 ## 公式ドキュメントで明示されていない項目
