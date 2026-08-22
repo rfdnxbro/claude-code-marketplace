@@ -395,6 +395,45 @@ gitリポジトリ内の特定サブディレクトリをプラグインソー�
 | `url` | string | ✓ | gitリポジトリのURL（fragment構文でbranch/tag/commit指定可） |
 | `path` | string | ✓ | リポジトリ内のサブディレクトリパス |
 
+### archive
+
+zipアーカイブをHTTPS経由でダウンロードしてインストールするソース種別です。ユーザー側にgit/npmが不要です:
+
+```json
+{
+  "name": "my-plugin",
+  "source": {
+    "source": "archive",
+    "url": "https://artifacts.example.com/claude-plugins/my-plugin-2.1.0.zip"
+  }
+}
+```
+
+zipは配下に`.claude-plugin/`を直接含む構成、または単一のトップレベルフォルダの中に`.claude-plugin/`を含む構成のどちらでもインストール可能です。それより深い階層にネストされたプラグインはインストールできません。アーカイブサイズの上限は256MiBです。
+
+> この節の制約（zipの構成・サイズ上限・URLの制約・`sha256`の形式）は公式ドキュメント [plugin-marketplaces](https://code.claude.com/docs/en/plugin-marketplaces) の Zip archives 節に基づきます。CHANGELOG本文だけでは裏付けられないため、出典を明記します。
+
+#### SHA-256ピン留め
+
+`sha256`フィールドでアーカイブのダイジェストを指定すると、ダウンロード時に検証され、不一致の場合はインストールが拒否されます:
+
+```json
+{
+  "name": "my-plugin",
+  "source": {
+    "source": "archive",
+    "url": "https://artifacts.example.com/claude-plugins/my-plugin-2.1.0.zip",
+    "sha256": "65b29a9fd3ff6a671e185d4deaeb5c42afb57ec1dd86f334b92f2e374f4344b5"
+  }
+}
+```
+
+| フィールド | 型 | 必須 | 説明 |
+|-----------|---|:---:|------|
+| `source` | string | ✓ | `"archive"` を指定 |
+| `url` | string | ✓ | zipアーカイブのHTTPS URL。`http://`は非対応。loopback/link-local/クラウドメタデータホストへのURLは拒否される。リダイレクトも同じ条件を満たす必要がある |
+| `sha256` | string | | アーカイブのSHA-256ダイジェスト（16進数64文字、大文字小文字問わず） |
+
 ## 予約済み名前（使用不可）
 
 - `claude-code-marketplace`
