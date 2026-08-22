@@ -292,7 +292,10 @@ Git URL sourceでも、URL末尾にfragment構文を使ってbranch、tag、ま�
 - 実行前にコマンド内容が表示され、`claude plugin install`/`update` で `[y/N]` の確認を要求（`-y` で省略可）
 - ヘルパースクリプトはJSON形式でヘッダーを出力する。書式は `.mcp.json` の `headersHelper` と同様（[mcp-servers.md](mcp-servers.md#headershelper)を参照）
 
-TODO: 要確認 — `github` ソース（`source: "github"`）のカタログエントリでも `headersHelper` が利用できるかは現時点で未確認。
+TODO: 要確認 — 以下は現時点で未確認。
+
+- `github` ソース（`source: "github"`）のカタログエントリでも `headersHelper` が利用できるか
+- `headersHelper` の配置。CHANGELOGは「url マーケットプレイスまたはカタログエントリの `headersHelper`」とのみ述べており、`source` オブジェクトの中か、`source` と同階層かを特定できていない。ここでは `source` の中として記載している
 
 ### npm
 
