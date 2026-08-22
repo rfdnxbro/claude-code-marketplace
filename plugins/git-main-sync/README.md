@@ -11,6 +11,11 @@
 
 git 管理下でない / `origin` リモートが無い場合は静かに終了する。pull/fetch に失敗してもセッション開始はブロックしない(`exit 0`)。
 
+## 必要な環境
+
+- `git`
+- `jq` — フック入力JSONからイベント種別と追加ディレクトリのパスを読み取るために使用する。無い場合はイベントを判別できないため、何もせず静かに終了する
+
 ## インストール
 
 このマーケットプレイス([rfdnxbro/claude-code-marketplace](https://github.com/rfdnxbro/claude-code-marketplace))を追加した上で:

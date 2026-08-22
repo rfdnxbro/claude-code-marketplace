@@ -31,7 +31,15 @@ silent_exit() {
   exit 0
 }
 
+# jq が無いと hook_event_name が空になり、DirectoryAdded が else 分岐に落ちて
+# SessionStart 扱いになる。追加ディレクトリではなく CLAUDE_PROJECT_DIR を再同期する
+# 誤動作になるため、イベントを判別できない時点で何もせず抜ける。
+command -v jq >/dev/null 2>&1 || silent_exit
+
 hook_event_name="$(printf '%s' "${input}" | jq -r '.hook_event_name // empty' 2>/dev/null)"
+
+# jq はあるが値が取れない場合も同様に、イベント種別を推測せず抜ける
+[ -n "${hook_event_name}" ] || silent_exit
 
 # DirectoryAdded の入力JSONは追加されたディレクトリの絶対パスを `directory` フィールドで渡す
 # （SessionStart のような sessionTitle 設定はサポートされないため付与しない）。
