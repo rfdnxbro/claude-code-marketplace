@@ -468,6 +468,31 @@ export CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS=300000
 
 これにより、プロジェクト固有の設定を`--add-dir`ディレクトリ内で管理できます。設定はプロジェクトルートの`.claude.json`と同様の形式で記述できます。
 
+`extraKnownMarketplaces`が他のtierと同名エントリを定義している場合のマージ挙動は次節を参照。
+
+## extraKnownMarketplacesの複数tier間マージ挙動
+
+`extraKnownMarketplaces`はmanaged settings（enterprise）・ユーザー設定・プロジェクト設定・`--add-dir`など複数のsettingsで定義できます（tierの優先順位は[plugin-manifest.md](plugin-manifest.md)の「エンタープライズ管理設定との優先順位」を参照）。
+
+同名のマーケットプレイスエントリが複数tierで定義されている場合、最も優先度の高いtierのエントリが**フィールド単位ではなくエントリ全体単位で**下位tierのエントリを上書きします。
+
+エントリには、マーケットプレイスソースの取得時に送信するカスタムリクエストヘッダー（認証トークン等）を指定する`headers`フィールドを含められます:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "my-marketplace": {
+      "source": { "source": "github", "repo": "org/repo" },
+      "headers": {
+        "Authorization": "Bearer ${TOKEN}"
+      }
+    }
+  }
+}
+```
+
+上位tierで同名エントリを再定義すると、下位tierで設定した`headers`は引き継がれず、上位tierのエントリで指定したフィールドのみが有効になります。カスタム`headers`を維持したい場合は、上位tierのエントリ内で`headers`を含めて完全な形でエントリを再定義する必要があります。
+
 ## strictKnownMarketplacesのpathPattern
 
 エンタープライズ管理設定の `strictKnownMarketplaces` の `pathPattern` フィールドにより、ファイル/ディレクトリマーケットプレイスソースの正規表現マッチングが可能です。
