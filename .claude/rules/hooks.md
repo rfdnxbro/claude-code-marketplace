@@ -657,6 +657,14 @@ EOF
 - `${CLAUDE_PLUGIN_DATA}` - プラグインの永続データディレクトリへの絶対パス。プラグインのアップデートを超えて永続化される。`/plugin uninstall` 実行時は削除前に確認プロンプトが表示される
 - `$ARGUMENTS` - フック入力JSON（prompt型で使用）
 - `$CLAUDE_EFFORT` - 現在のエフォートレベル（`low` / `medium` / `high` / `xhigh` / `max`）
+- `$CLAUDE_PLUGIN_OPTION_<KEY>` - `userConfig` で宣言した値。キー名を大文字スネークケースに変換した環境変数として、フックスクリプトのプロセス環境に自動的に注入される（例: `apiKey` → `$CLAUDE_PLUGIN_OPTION_API_KEY`）
+
+### `${user_config.*}` 展開の制限
+
+シェルインジェクション対策のため、`command` フィールドをshell-form（`args` 省略）で実行する場合、コマンド文字列内での `${user_config.*}` の展開は拒否されます。`userConfig` で宣言した値をフックから利用する場合は、以下のいずれかの方法を使用してください:
+
+- `args`（文字列配列、exec form）の要素としてコマンド引数に渡す
+- スクリプト内部で `$CLAUDE_PLUGIN_OPTION_<KEY>` を読み込む
 
 ## フック入力JSON
 
