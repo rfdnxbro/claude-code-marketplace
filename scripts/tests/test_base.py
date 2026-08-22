@@ -7,6 +7,7 @@ from textwrap import dedent
 
 from scripts.validators.base import (
     WARNING_BROAD_BASH_WILDCARD,
+    WARNING_UNSCOPED_PATH_TOOL,
     ValidationResult,
     add_yaml_warnings,
     is_valid_boolean_value,
@@ -415,6 +416,33 @@ class TestValidateAllowedTools:
         fm = {"allowed-tools": ["Agent(model:opus)", "Bash(git:*)"]}
         validate_allowed_tools(result, Path("test.md"), fm, set())
         assert not result.has_errors()
+        assert len(result.warnings) == 0
+
+    def test_unscoped_path_tool_warning(self):
+        """Write(path)のようなパス指定パターンで警告が出ることを確認"""
+        result = ValidationResult()
+        fm = {"allowed-tools": "Write(src/**)"}
+        validate_allowed_tools(result, Path("test.md"), fm, set())
+        assert any("Write" in w for w in result.warnings)
+
+    def test_unscoped_path_tool_multiple(self):
+        """複数のパス指定不可ツールが検出された場合、まとめて警告されることを確認"""
+        result = ValidationResult()
+        fm = {"allowed-tools": ["NotebookEdit(notebooks/**)", "Glob(src/**)"]}
+        validate_allowed_tools(result, Path("test.md"), fm, set())
+        assert any("Glob" in w and "NotebookEdit" in w for w in result.warnings)
+
+    def test_unscoped_path_tool_disabled(self):
+        result = ValidationResult()
+        fm = {"allowed-tools": "Write(src/**)"}
+        validate_allowed_tools(result, Path("test.md"), fm, {WARNING_UNSCOPED_PATH_TOOL})
+        assert len(result.warnings) == 0
+
+    def test_bare_write_no_warning(self):
+        """括弧なしのWrite/NotebookEdit/Globは警告されないことを確認"""
+        result = ValidationResult()
+        fm = {"allowed-tools": ["Write", "NotebookEdit", "Glob"]}
+        validate_allowed_tools(result, Path("test.md"), fm, set())
         assert len(result.warnings) == 0
 
 
