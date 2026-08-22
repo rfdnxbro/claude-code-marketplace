@@ -1056,6 +1056,80 @@ class TestCommandSource:
         result = validate_marketplace_json(Path("marketplace.json"), content)
         assert not result.has_errors()
 
+    def _command_source(self, command):
+        """commandソース1件だけを持つmarketplace.jsonを組み立てる"""
+        return json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {"source": "command", "command": command},
+                    }
+                ],
+            }
+        )
+
+    def test_command_at_max_length(self):
+        """commandが500文字ちょうどなら有効（境界値）"""
+        content = self._command_source("e" * 500)
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_command_too_long(self):
+        """commandが500文字を超える（エラー）"""
+        content = self._command_source("e" * 501)
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("500文字以内" in e for e in result.errors)
+
+    def test_command_non_ascii(self):
+        """commandに印字可能なASCII以外が含まれる（エラー）"""
+        content = self._command_source("my-ide-tool ディレクトリ表示")
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("印字可能なASCII文字" in e for e in result.errors)
+
+    def test_command_control_character(self):
+        """commandに制御文字（タブ）が含まれる（エラー）"""
+        content = self._command_source("my-ide-tool\tprint-dir")
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("印字可能なASCII文字" in e for e in result.errors)
+
+    def test_command_four_consecutive_spaces(self):
+        """commandに4個連続する空白が含まれる（エラー）"""
+        content = self._command_source("my-ide-tool    print-dir")
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("4個以上連続する空白" in e for e in result.errors)
+
+    def test_command_three_consecutive_spaces(self):
+        """commandの3個連続する空白は許容される（境界値）"""
+        content = self._command_source("my-ide-tool   print-dir")
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_command_non_string_skips_content_checks(self):
+        """commandが文字列でない場合は型エラーのみで内容チェックは行わない"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {"source": "command", "command": 123},
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("文字列が必要" in e for e in result.errors)
+        assert not any("印字可能なASCII文字" in e for e in result.errors)
+
     def test_source_command_missing_command(self):
         """source: commandでcommandが欠けている（エラー）"""
         content = json.dumps(

@@ -29,6 +29,9 @@ REQUIRED_FIELDS_BY_SOURCE_TYPE = {
 # command source_type の mode フィールドで許可される値
 VALID_COMMAND_MODES = {"copy", "link"}
 
+# commandソースのcommandは実行前にユーザーへ提示されるため、全体を目視できる長さに制限される
+MAX_COMMAND_LENGTH = 500
+
 
 def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult:
     """marketplace.jsonを検証する"""
@@ -171,6 +174,27 @@ def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult
 
                     # commandソースのtimeout/modeフィールドの検証
                     if source_type == "command":
+                        # commandは実行前にユーザーへ提示され承認を求めるため、
+                        # 全体を目視できる形式に制限されている
+                        command = source.get("command")
+                        if isinstance(command, str):
+                            if len(command) > MAX_COMMAND_LENGTH:
+                                result.add_error(
+                                    f"{file_path.name}: plugins[{i}].source.commandは"
+                                    f"{MAX_COMMAND_LENGTH}文字以内である必要があります"
+                                    f"（現在: {len(command)}文字）"
+                                )
+                            if not all(" " <= c <= "~" for c in command):
+                                result.add_error(
+                                    f"{file_path.name}: plugins[{i}].source.commandは"
+                                    "印字可能なASCII文字のみである必要があります"
+                                )
+                            if "    " in command:
+                                result.add_error(
+                                    f"{file_path.name}: plugins[{i}].source.commandに"
+                                    "4個以上連続する空白は使用できません"
+                                )
+
                         timeout = source.get("timeout")
                         if timeout is not None:
                             if isinstance(timeout, bool) or not isinstance(timeout, int):
