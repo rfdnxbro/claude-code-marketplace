@@ -49,9 +49,13 @@ def validate_file(file_path: Path) -> ValidationResult:
     result = ValidationResult()
 
     def read_file_content(path: Path) -> str | None:
-        """ファイルをUTF-8で読み込む。エラー時はNoneを返す"""
+        """ファイルをUTF-8で読み込む。エラー時はNoneを返す
+
+        BOM（バイト順マーク）付きファイルもBOMなしファイルと同様に扱うため、
+        `utf-8-sig` でデコードする（先頭にBOMがあれば除去、なければそのまま読める）。
+        """
         try:
-            return path.read_text(encoding="utf-8")
+            return path.read_text(encoding="utf-8-sig")
         except UnicodeDecodeError:
             result.add_error(f"{path.name}: ファイルがUTF-8でエンコードされていません")
             return None

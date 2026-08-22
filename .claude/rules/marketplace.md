@@ -127,6 +127,26 @@ paths: .claude-plugin/marketplace.json
 
 ## ソース指定
 
+### `metadata.pluginRoot`による裸のソース名解決
+
+`metadata.pluginRoot` を設定すると、`./`や`../`で始まらない裸のプラグインソース名（例: `"source": "my-plugin"`）が、そのディレクトリ配下で解決されます。
+
+```json
+{
+  "metadata": {
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "my-plugin",
+      "source": "my-plugin"
+    }
+  ]
+}
+```
+
+上記の例では `source: "my-plugin"` は `./plugins/my-plugin` として解決されます。`./plugins/my-plugin` のような相対パス指定や、GitHub/Git URL/npm等のオブジェクト形式のsourceには影響しません。
+
 ### 相対パス
 
 ```json
