@@ -460,7 +460,7 @@ export CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS=300000
 |--------|:---:|------|
 | `github.com` / `gitlab.com` | 任意 | どちらの形式でもリポジトリとして認識しクローンする |
 | Azure DevOps | 付けない | パスに `/_git/` を含むURLをクローンする。`.git` を付けるとクローンに失敗する |
-| 上記以外（自己管理のGitLabサーバーを含む） | 必要 | 付けないと `marketplace.json` への直接リンクとして扱われる |
+| 上記以外（自己管理のGitLabサーバーを含む） | 必要 | 付けないと `marketplace.json` への直接リンクとして扱われる。ただしAWS CodeCommitのようにクローンURLがサフィックスを持たないホストは `.git` を付けられないため、後述の `extraKnownMarketplaces` を使う |
 
 `gitlab.com` については、ネストしたサブグループを含むURL（例: `https://gitlab.com/group/subgroup/project`）もクローンされます。
 
@@ -501,16 +501,14 @@ TODO: 要確認 — 両方の綴りを同一ファイルに指定した場合に
 
 ## blockedMarketplacesによるマーケットプレイスのブロック
 
-エンタープライズ管理設定の `blockedMarketplaces` フィールドにより、組織で特定のマーケットプレイスソースをブロックできます。`strictKnownMarketplaces`（許可リスト）と対になるブロックリストで、エントリはソース種別ごとに書き分けます。
+エンタープライズ管理設定の `blockedMarketplaces` フィールドにより、組織で特定のマーケットプレイスソースをブロックできます。`strictKnownMarketplaces`（許可リスト）と対になるブロックリストで、エントリは `source` の値ごとに書き分けます。
 
-| 種別 | 指定するフィールド |
-|------|------------------|
-| GitHub | `repo`（`owner/*` のownerワイルドカード形式も可） |
-| URL | 完全一致するURL |
-| ホスト | `hostPattern`（正規表現） |
-| パス | `pathPattern`（正規表現） |
-
-あるGitHub ownerの配下すべてをブロックする場合:
+| `source` | 併記するフィールド | 説明 |
+|----------|------------------|------|
+| `github` | `repo` | `owner/repo` 形式。`owner/*` のownerワイルドカード形式も可 |
+| `url` | `url` | 完全一致で照合される |
+| `hostPattern` | `hostPattern` | ホスト名の正規表現パターン |
+| `pathPattern` | `pathPattern` | ファイル/ディレクトリパスの正規表現パターン |
 
 ```json
 {
@@ -518,6 +516,18 @@ TODO: 要確認 — 両方の綴りを同一ファイルに指定した場合に
     {
       "source": "github",
       "repo": "untrusted-org/*"
+    },
+    {
+      "source": "url",
+      "url": "https://plugins.example.com/marketplace.json"
+    },
+    {
+      "source": "hostPattern",
+      "hostPattern": "^plugins\\.untrusted\\.example\\.com$"
+    },
+    {
+      "source": "pathPattern",
+      "pathPattern": "^/tmp/"
     }
   ]
 }
