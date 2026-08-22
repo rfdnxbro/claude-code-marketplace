@@ -205,18 +205,6 @@ GitHub sourceでは、fragment構文を使ってbranch、tag、またはcommit S
 }
 ```
 
-**GitLab のリポジトリURL**: `gitlab.com` のbareなリポジトリURLは `github.com` のURLと同様にクローンされます。ネストしたサブグループを含むURLも指定できます。
-
-```json
-{
-  "name": "gitlab-subgroup-plugin",
-  "source": {
-    "source": "url",
-    "url": "https://gitlab.com/team/subgroup/nested/plugin"
-  }
-}
-```
-
 **`.git` サフィックスは省略可能**: Azure DevOps や AWS CodeCommit など、`.git` サフィックスなしの URL も正式サポートされています。
 
 ```json
@@ -460,6 +448,24 @@ export CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS=300000
 
 これにより、プロジェクト固有の設定を`--add-dir`ディレクトリ内で管理できます。設定はプロジェクトルートの`.claude.json`と同様の形式で記述できます。
 
+## マーケットプレイスURLの形式
+
+`/plugin marketplace add <URL>` でマーケットプレイス自体を追加する場合、`.git` サフィックスの要否はホストによって異なります。サフィックスが無いURLは、リポジトリのクローンではなく、ホストされた `marketplace.json` への直接リンクとして扱われることがあるためです。
+
+| ホスト | `.git` サフィックス | 挙動 |
+|--------|:---:|------|
+| `github.com` / `gitlab.com` | 任意 | どちらの形式でもリポジトリとして認識しクローンする |
+| Azure DevOps | 付けない | パスに `/_git/` を含むURLをクローンする。`.git` を付けるとクローンに失敗する |
+| 上記以外（自己管理のGitLabサーバーを含む） | 必要 | 付けないと `marketplace.json` への直接リンクとして扱われる |
+
+`gitlab.com` については、ネストしたサブグループを含むURL（例: `https://gitlab.com/group/subgroup/project`）もクローンされます。
+
+AWS CodeCommit のようにクローンURLがサフィックスを持たないホストは、`extraKnownMarketplaces` のgitエントリとして追加してください。gitエントリはURLが `.git` で終わるかどうかに関わらずクローンされます。
+
+URLには `https://` プレフィックスが必要です。`gitlab.com/company/plugins.git` のようにホスト名から書くと、GitHubの `owner/repo` 短縮形として解釈され拒否されます。
+
+> この節は公式ドキュメント [discover-plugins](https://code.claude.com/docs/en/discover-plugins) の「Add from other Git hosts」節に基づきます。
+
 ## strictKnownMarketplacesのpathPattern
 
 エンタープライズ管理設定の `strictKnownMarketplaces` の `pathPattern` フィールドにより、ファイル/ディレクトリマーケットプレイスソースの正規表現マッチングが可能です。`strictKnownMarketplaces` は `allowedMarketplaces` という別名でも指定できます。
@@ -489,16 +495,33 @@ TODO: 要確認 — 両方の綴りを同一ファイルに指定した場合に
 
 ## blockedMarketplacesによるマーケットプレイスのブロック
 
-エンタープライズ管理設定の `blockedMarketplaces` フィールドにより、組織で特定のマーケットプレイスソースをブロックできます。`strictKnownMarketplaces`（許可リスト）と対になるブロックリストです。
+エンタープライズ管理設定の `blockedMarketplaces` フィールドにより、組織で特定のマーケットプレイスソースをブロックできます。`strictKnownMarketplaces`（許可リスト）と対になるブロックリストで、エントリはソース種別ごとに書き分けます。
 
-ユーザーが `.git` サフィックスなしのbareなリポジトリURL（例: `https://github.com/owner/repo` や `https://gitlab.com/owner/repo`）をマーケットプレイスとして追加しようとし、CLIがそのURLをgit cloneとして分類した場合でも、url型のブロックエントリは同じURLを引き続きブロックします。
+| 種別 | 指定するフィールド |
+|------|------------------|
+| GitHub | `repo`（`owner/*` のownerワイルドカード形式も可） |
+| URL | 完全一致するURL |
+| ホスト | `hostPattern`（正規表現） |
+| パス | `pathPattern`（正規表現） |
 
-TODO: 要確認 — 以下は現時点で未確認。CHANGELOGは「bareなリポジトリURLに対するurl型の `blockedMarketplaces` エントリは、CLIがそのURLをgit cloneとして分類した場合もブロックし続ける」とのみ述べており、エントリの書式には触れていない。
+あるGitHub ownerの配下すべてをブロックする場合:
 
-- エントリの書式。`strictKnownMarketplaces` と同じ `hostPattern` / `pathPattern` 形式なのか、
-  上記の「url型」に対応する別のフィールド（`url` など）が存在するのかを特定できていない。
-  書式が確認できるまで、このドキュメントには例を載せない
-- URL比較で `.git` サフィックスや `#` 以降のref指定が無視されるか
+```json
+{
+  "blockedMarketplaces": [
+    {
+      "source": "github",
+      "repo": "untrusted-org/*"
+    }
+  ]
+}
+```
+
+ユーザーが `.git` サフィックスなしのbareなリポジトリURL（例: `https://github.com/owner/repo` や `https://gitlab.com/owner/repo`）をマーケットプレイスとして追加しようとし、Claude Codeがそれをフェッチではなくクローンとして扱う場合でも、`url` エントリとの照合が行われます。エントリが同じURLを指していれば追加はブロックされます。この比較では `.git` サフィックスと `#` 以降のref指定は無視されます。
+
+ブロックの検査はネットワークアクセスやファイルシステム操作より前に行われます。マーケットプレイスの追加時に加えて、プラグインのインストール・更新・リフレッシュ・自動更新のたびに実行されます。
+
+> この節は公式ドキュメント [plugin-marketplaces](https://code.claude.com/docs/en/plugin-marketplaces) の「How restrictions work」節に基づきます。
 
 ## pluginTrustMessageマネージド設定
 
