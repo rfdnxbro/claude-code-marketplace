@@ -17,6 +17,12 @@ DISABLE_PATTERN = re.compile(r"<!--\s*validator-disable\s+([\w-]+)\s*-->")
 # 警告ID定数
 WARNING_DANGEROUS_OPERATION = "dangerous-operation"
 WARNING_BROAD_BASH_WILDCARD = "broad-bash-wildcard"
+WARNING_UNSCOPED_PATH_TOOL = "unscoped-path-tool"
+
+# allowed-toolsで `Tool(path)` 形式のパス指定を書いてもパス単位の絞り込みが
+# 機能しないツール。代わりにEdit(path)やRead(path)を使う必要がある。
+UNSCOPED_PATH_TOOLS = ("Write", "NotebookEdit", "Glob")
+_UNSCOPED_PATH_TOOL_PATTERN = re.compile(r"\b(" + "|".join(UNSCOPED_PATH_TOOLS) + r")\(")
 
 # ブール値として有効な文字列表現（true/false に加え、大文字小文字区別なしで許可）
 BOOLEAN_LIKE_STRINGS = {"true", "false", "yes", "no", "on", "off", "1", "0"}
@@ -355,7 +361,13 @@ def validate_allowed_tools(
     frontmatter: dict[str, Any],
     disabled_warnings: set[str],
 ) -> None:
-    """allowed-toolsフィールドを検証する（Bash(*)の広範なワイルドカードを警告）"""
+    """
+    allowed-toolsフィールドを検証する
+
+    - Bash(*)の広範なワイルドカードを警告
+    - Write(path)/NotebookEdit(path)/Glob(path)のパス指定パターンを警告
+      （これらのツールはパス単位の絞り込みに対応していない）
+    """
     allowed_tools = frontmatter.get("allowed-tools")
     if allowed_tools is not None:
         tools_str = ""
@@ -370,6 +382,15 @@ def validate_allowed_tools(
                     f"{file_path.name}: allowed-toolsにBash(*)が指定。"
                     "v2.1.20以降Bash(*)はBashと同等に扱われますが、具体的なパターンを推奨"
                 )
+
+        unscoped_tools = sorted(set(_UNSCOPED_PATH_TOOL_PATTERN.findall(tools_str)))
+        if unscoped_tools and WARNING_UNSCOPED_PATH_TOOL not in disabled_warnings:
+            tools_display = "/".join(unscoped_tools)
+            result.add_warning(
+                f"{file_path.name}: allowed-toolsに{tools_display}(...)のパス指定パターンが検出。"
+                f"{tools_display}はパス単位の絞り込みに対応していません。"
+                "代わりにEdit(path)やRead(path)を使用してください"
+            )
 
 
 def validate_effort_field(

@@ -2,6 +2,7 @@
 marketplace.json のバリデーター
 """
 
+import re
 from pathlib import Path
 
 from .base import ValidationResult, parse_json_safe, validate_kebab_case
@@ -24,6 +25,7 @@ REQUIRED_FIELDS_BY_SOURCE_TYPE = {
     "npm": ["package"],
     "git-subdir": ["url", "path"],
     "command": ["command"],
+    "archive": ["url"],
 }
 
 # command source_type の mode フィールドで許可される値
@@ -31,6 +33,9 @@ VALID_COMMAND_MODES = {"copy", "link"}
 
 # commandソースのcommandは実行前にユーザーへ提示されるため、全体を目視できる長さに制限される
 MAX_COMMAND_LENGTH = 500
+
+# sha256フィールドの形式（16進数64文字、大文字小文字を許容）
+SHA256_PATTERN = re.compile(r"^[0-9a-fA-F]{64}$")
 
 
 def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult:
@@ -140,7 +145,15 @@ def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult
             elif isinstance(source, dict):
                 # オブジェクト形式のsourceタイプを検証
                 source_type = source.get("source")
-                valid_source_types = ["github", "url", "npm", "git-subdir", "settings", "command"]
+                valid_source_types = [
+                    "github",
+                    "url",
+                    "npm",
+                    "git-subdir",
+                    "settings",
+                    "command",
+                    "archive",
+                ]
                 if not source_type:
                     result.add_error(f"{file_path.name}: plugins[{i}].source.sourceは必須です")
                 elif source_type not in valid_source_types:
@@ -156,6 +169,19 @@ def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult
                         if not isinstance(skip_lfs, bool):
                             result.add_error(
                                 f"{file_path.name}: plugins[{i}].source.skipLfsはbooleanが必要です"
+                            )
+
+                    # sha256フィールドの検証（archiveソースのみ対応）
+                    sha256 = source.get("sha256")
+                    if sha256 is not None and source_type == "archive":
+                        if not isinstance(sha256, str):
+                            result.add_error(
+                                f"{file_path.name}: plugins[{i}].source.sha256は文字列が必要です"
+                            )
+                        elif not SHA256_PATTERN.match(sha256):
+                            result.add_error(
+                                f"{file_path.name}: plugins[{i}].source.sha256は"
+                                "16進数64文字である必要があります"
                             )
 
                     # source_type別の必須サブフィールドの検証

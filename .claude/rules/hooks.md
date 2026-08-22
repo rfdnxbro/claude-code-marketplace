@@ -78,7 +78,7 @@ hooks:
 | `ConfigChange` | セッション中に設定ファイルが変更された時 | ✓ |
 | `CwdChanged` | カレントディレクトリが変更された時（direnvなどのリアクティブ環境管理用） | ✓ |
 | `FileChanged` | ファイルが変更された時（direnvなどのリアクティブ環境管理用） | ✓ |
-| `DirectoryAdded` | `/add-dir`またはSDKの`register_repo_root`でセッション中に新しい作業ディレクトリが登録された時 | × |
+| `DirectoryAdded` | `/add-dir`またはSDKの`register_repo_root`でセッション中に新しい作業ディレクトリが登録された時 | ✓ |
 | `WorktreeCreate` | エージェントworktree分離でworktreeが作成された時 | × |
 | `WorktreeRemove` | エージェントworktree分離でworktreeが削除された時 | × |
 | `InstructionsLoaded` | CLAUDE.mdまたは`.claude/rules/*.md`がコンテキストに読み込まれた時 | × |
@@ -657,6 +657,14 @@ EOF
 - `${CLAUDE_PLUGIN_DATA}` - プラグインの永続データディレクトリへの絶対パス。プラグインのアップデートを超えて永続化される。`/plugin uninstall` 実行時は削除前に確認プロンプトが表示される
 - `$ARGUMENTS` - フック入力JSON（prompt型で使用）
 - `$CLAUDE_EFFORT` - 現在のエフォートレベル（`low` / `medium` / `high` / `xhigh` / `max`）
+- `$CLAUDE_PLUGIN_OPTION_<KEY>` - `userConfig` で宣言した値。キー名を大文字スネークケースに変換した環境変数として、フックスクリプトのプロセス環境に自動的に注入される（例: `apiKey` → `$CLAUDE_PLUGIN_OPTION_API_KEY`）
+
+### `${user_config.*}` 展開の制限
+
+シェルインジェクション対策のため、`command` フィールドをshell-form（`args` 省略）で実行する場合、コマンド文字列内での `${user_config.*}` の展開は拒否されます。`userConfig` で宣言した値をフックから利用する場合は、以下のいずれかの方法を使用してください:
+
+- `args`（文字列配列、exec form）の要素としてコマンド引数に渡す
+- スクリプト内部で `$CLAUDE_PLUGIN_OPTION_<KEY>` を読み込む
 
 ## フック入力JSON
 
@@ -1037,6 +1045,8 @@ echo '{"continue": false, "stopReason": "タスクは完了しました。これ
 
 マルチエージェントワークフロー環境で、タスクが完了したときに実行されるフック。
 
+**注意**: `TaskCreated`と同様、一部モデル（Opus 4.8、Sonnet 5、Fable 5、Mythos 5以降）ではTodo/タスク管理ツールがデフォルトで無効化されているため、`CLAUDE_CODE_ENABLE_TODO_TOOLS=1`環境変数を設定しない限りこのフックも発火しない。
+
 **使用例:**
 
 ```json
@@ -1076,6 +1086,8 @@ echo '{"continue": false, "stopReason": "タスクが完了しました。後続
 ### TaskCreated
 
 `TaskCreate` でタスクが作成された時に実行されるフック。
+
+**注意**: `TaskCreate`/`TaskGet`/`TaskUpdate`/`TaskList`、`TodoWrite`といったTodo/タスク管理ツールは、一部モデル（Opus 4.8、Sonnet 5、Fable 5、Mythos 5以降）ではデフォルトで無効化されている。対象モデルでは`CLAUDE_CODE_ENABLE_TODO_TOOLS=1`環境変数を設定しない限り`TaskCreate`が呼び出されないため、このフックも発火しない。
 
 **使用例:**
 
@@ -1182,7 +1194,16 @@ exit 2
 
 ### DirectoryAdded
 
-`/add-dir` コマンド実行後、またはSDKの `register_repo_root` コントロールリクエストによって、セッション中に新しい作業ディレクトリが登録された後に実行されるフック。
+`/add-dir` コマンド実行後、またはSDKの `register_repo_root` コントロールリクエストによって、セッション中に新しい作業ディレクトリが登録された後に実行されるフック。サンドボックス設定が再読み込みされた後に発火するため、サンドボックス化されたツールやパーミッション状態はすでに新しいディレクトリを認識している状態で実行される。
+
+**マッチャー**: 入力JSONの `source` フィールド（ディレクトリの追加方法）に対してマッチします。有効な値:
+
+| matcher値 | 発火タイミング |
+|-----------|--------------|
+| `slash_command` | `/add-dir` コマンド実行時 |
+| `register_repo_root` | SDKの `register_repo_root` コントロールリクエスト経由 |
+
+省略または `"*"` は両方の追加方法にマッチします。
 
 **使用例:**
 
@@ -1204,12 +1225,19 @@ exit 2
 }
 ```
 
+**入力JSON（固有フィールド）:**
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `directory` | string | 追加された作業ディレクトリの絶対パス |
+| `source` | string | ディレクトリの追加方法。`"slash_command"`（`/add-dir`）/ `"register_repo_root"`（SDKのcontrol request）。matcherはこの値に対して評価される |
+
 **ユースケース:**
 
 - 新しく追加された作業ディレクトリの初期化処理・監査ログ記録
 - 追加ディレクトリの権限・信頼性チェック
 
-**TODO: 要確認** — マッチャー対応の有無、フックが受け取る入力JSONの固有フィールド（追加されたディレクトリパス等）の詳細は、現状のCHANGELOG記述からは不明。実装または公式ドキュメントを確認して正確な仕様を記載すること。
+**注意**: 既に登録済みの作業ディレクトリ（以前のリクエストと重複するものを含む）を再度追加しようとするとエラーになり拒否される。この場合、登録パイプラインおよび `DirectoryAdded` フックは再実行されない。
 
 ### WorktreeCreate
 
