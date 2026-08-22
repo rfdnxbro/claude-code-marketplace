@@ -78,7 +78,7 @@ hooks:
 | `ConfigChange` | セッション中に設定ファイルが変更された時 | ✓ |
 | `CwdChanged` | カレントディレクトリが変更された時（direnvなどのリアクティブ環境管理用） | ✓ |
 | `FileChanged` | ファイルが変更された時（direnvなどのリアクティブ環境管理用） | ✓ |
-| `DirectoryAdded` | `/add-dir`またはSDKの`register_repo_root`でセッション中に新しい作業ディレクトリが登録された時 | × |
+| `DirectoryAdded` | `/add-dir`またはSDKの`register_repo_root`でセッション中に新しい作業ディレクトリが登録された時 | ✓ |
 | `WorktreeCreate` | エージェントworktree分離でworktreeが作成された時 | × |
 | `WorktreeRemove` | エージェントworktree分離でworktreeが削除された時 | × |
 | `InstructionsLoaded` | CLAUDE.mdまたは`.claude/rules/*.md`がコンテキストに読み込まれた時 | × |
@@ -1182,7 +1182,16 @@ exit 2
 
 ### DirectoryAdded
 
-`/add-dir` コマンド実行後、またはSDKの `register_repo_root` コントロールリクエストによって、セッション中に新しい作業ディレクトリが登録された後に実行されるフック。
+`/add-dir` コマンド実行後、またはSDKの `register_repo_root` コントロールリクエストによって、セッション中に新しい作業ディレクトリが登録された後に実行されるフック。サンドボックス設定が再読み込みされた後に発火するため、サンドボックス化されたツールやパーミッション状態はすでに新しいディレクトリを認識している状態で実行される。
+
+**マッチャー**: 入力JSONの `source` フィールド（ディレクトリの追加方法）に対してマッチします。有効な値:
+
+| matcher値 | 発火タイミング |
+|-----------|--------------|
+| `slash_command` | `/add-dir` コマンド実行時 |
+| `register_repo_root` | SDKの `register_repo_root` コントロールリクエスト経由 |
+
+省略または `"*"` は両方の追加方法にマッチします。
 
 **使用例:**
 
@@ -1204,12 +1213,19 @@ exit 2
 }
 ```
 
+**入力JSON（固有フィールド）:**
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `directory` | string | 追加された作業ディレクトリの絶対パス |
+| `source` | string | ディレクトリの追加方法。`"slash_command"`（`/add-dir`）/ `"register_repo_root"`（SDKのcontrol request）。matcherはこの値に対して評価される |
+
 **ユースケース:**
 
 - 新しく追加された作業ディレクトリの初期化処理・監査ログ記録
 - 追加ディレクトリの権限・信頼性チェック
 
-**TODO: 要確認** — マッチャー対応の有無、フックが受け取る入力JSONの固有フィールド（追加されたディレクトリパス等）の詳細は、現状のCHANGELOG記述からは不明。実装または公式ドキュメントを確認して正確な仕様を記載すること。
+**注意**: 既に登録済みの作業ディレクトリ（以前のリクエストと重複するものを含む）を再度追加しようとするとエラーになり拒否される。この場合、登録パイプラインおよび `DirectoryAdded` フックは再実行されない。
 
 ### WorktreeCreate
 
