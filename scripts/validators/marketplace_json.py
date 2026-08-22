@@ -151,6 +151,15 @@ def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult
                                 f"{file_path.name}: plugins[{i}].source.skipLfsはbooleanが必要です"
                             )
 
+                    # headersHelperフィールドの検証（urlソースのみ対応）
+                    headers_helper = source.get("headersHelper")
+                    if headers_helper is not None and source_type == "url":
+                        if not isinstance(headers_helper, str):
+                            result.add_error(
+                                f"{file_path.name}: plugins[{i}].source.headersHelperは"
+                                "文字列が必要です"
+                            )
+
                     # source_type別の必須サブフィールドの検証
                     for field in REQUIRED_FIELDS_BY_SOURCE_TYPE.get(source_type, []):
                         field_value = source.get(field)
