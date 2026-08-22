@@ -521,7 +521,7 @@ export CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS=300000
 }
 ```
 
-TODO: 要確認 — ownerワイルドカードのマッチング挙動（大文字小文字の扱いなど）は許可リスト（`strictKnownMarketplaces`）とブロックリスト（`blockedMarketplaces`）で異なる場合があるとされているが、具体的な差異の内容は現時点では未確認。
+TODO: 要確認 — ownerワイルドカードのマッチング挙動（大文字小文字を区別するか、ネストしたパスにマッチするかなど）は未調査。
 
 ## pluginTrustMessageマネージド設定
 
