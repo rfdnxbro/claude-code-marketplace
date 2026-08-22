@@ -478,16 +478,17 @@ URLには `https://` プレフィックスが必要です。`gitlab.com/company/
 
 TODO: 要確認 — 両方の綴りを同一ファイルに指定した場合にどちらが優先されるかは未調査。
 
-`hostPattern` による制限に加えて、ローカルパスのパターンマッチングでマーケットプレイスソースを制限できます:
+`hostPattern` による制限に加えて、ローカルパスのパターンマッチングでマーケットプレイスソースを制限できます。エントリは `source` の値ごとに1つずつ書きます:
 
 ```json
 {
   "strictKnownMarketplaces": [
     {
-      "hostPattern": "github.com",
-      "pathPattern": "^/myorg/.*-plugins$"
+      "source": "hostPattern",
+      "hostPattern": "^github\\.example\\.com$"
     },
     {
+      "source": "pathPattern",
       "pathPattern": "^/opt/company/plugins/.*"
     }
   ]
@@ -498,6 +499,8 @@ TODO: 要確認 — 両方の綴りを同一ファイルに指定した場合に
 |-----------|---|------|
 | `hostPattern` | string | ホスト名のパターン（gitソースに使用） |
 | `pathPattern` | string | ファイル/ディレクトリパスの正規表現パターン |
+
+> 公式ドキュメント [plugin-marketplaces](https://code.claude.com/docs/en/plugin-marketplaces) の「Common configurations」節には、`hostPattern` / `pathPattern` のエントリがそれぞれ `{"source": "hostPattern", "hostPattern": "^github\\.example\\.com$"}` / `{"source": "pathPattern", "pathPattern": "^/opt/approved/"}` の形で示されています。`source` を省略した形式や、`hostPattern` と `pathPattern` を1エントリに併記した形式は公式ドキュメントには見当たりません。
 
 ## blockedMarketplacesによるマーケットプレイスのブロック
 
@@ -537,7 +540,7 @@ TODO: 要確認 — 両方の綴りを同一ファイルに指定した場合に
 
 ブロックの検査はネットワークアクセスやファイルシステム操作より前に行われます。マーケットプレイスの追加時に加えて、プラグインのインストール・更新・リフレッシュ・自動更新のたびに実行されます。
 
-> この節は公式ドキュメント [plugin-marketplaces](https://code.claude.com/docs/en/plugin-marketplaces) の「How restrictions work」節に基づきます。
+> この節は公式ドキュメント [plugin-marketplaces](https://code.claude.com/docs/en/plugin-marketplaces) に基づきます。ブロックの検査タイミングとownerワイルドカード・bare URLの照合は「How restrictions work」節、`source` の値ごとのエントリ形式は同ドキュメント「Common configurations」節の `strictKnownMarketplaces` の例（`github` / `url` / `hostPattern` / `pathPattern` の4種がいずれも `source` を持つ）に基づきます。両者はエントリ形式を共有します。
 
 ## pluginTrustMessageマネージド設定
 
