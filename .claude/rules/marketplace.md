@@ -473,6 +473,56 @@ export CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS=300000
 | `hostPattern` | string | ホスト名のパターン（gitソースに使用） |
 | `pathPattern` | string | ファイル/ディレクトリパスの正規表現パターン |
 
+## strictKnownMarketplaces / blockedMarketplacesのownerワイルドカード
+
+エンタープライズ管理設定の `strictKnownMarketplaces`（許可リスト）および `blockedMarketplaces`（プラグインマーケットプレイスソースをブロックするブロックリスト。`strictKnownMarketplaces`と対になる設定）では、GitHub sourceのエントリで `"owner/*"` のようなownerワイルドカードを指定できます。これにより、特定のGitHub org配下の全マーケットプレイスリポジトリを一括で許可・ブロックできます。
+
+`strictKnownMarketplaces` でorg配下のリポジトリのみを許可する例:
+
+```json
+{
+  "strictKnownMarketplaces": [
+    {
+      "source": "github",
+      "repo": "acme-corp/*"
+    }
+  ]
+}
+```
+
+`blockedMarketplaces` でorg配下のリポジトリを一括ブロックする例:
+
+```json
+{
+  "blockedMarketplaces": [
+    {
+      "source": "github",
+      "repo": "untrusted-org/*"
+    }
+  ]
+}
+```
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `source` | string | `"github"` を指定するとGitHub repoベースのマッチングになる |
+| `repo` | string | `"owner/repo"`（単一リポジトリ）または `"owner/*"`（owner配下の全リポジトリを対象とするownerワイルドカード）形式 |
+
+単一リポジトリを指定する既存のエントリはそのまま併用できます:
+
+```json
+{
+  "strictKnownMarketplaces": [
+    {
+      "source": "github",
+      "repo": "acme-corp/approved-plugins"
+    }
+  ]
+}
+```
+
+TODO: 要確認 — ownerワイルドカードのマッチング挙動（大文字小文字の扱いなど）は許可リスト（`strictKnownMarketplaces`）とブロックリスト（`blockedMarketplaces`）で異なる場合があるとされているが、具体的な差異の内容は現時点では未確認。
+
 ## pluginTrustMessageマネージド設定
 
 エンタープライズ管理設定の `pluginTrustMessage` フィールドにより、プラグインインストール前に表示される信頼警告に組織固有のコンテキストを追記できます。
