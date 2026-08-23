@@ -9,8 +9,8 @@
     {
       "name": "claude-code-workflow",
       "source": "./plugins/claude-code-workflow",
-      "description": "Claude Code を使う際の個人的な作業スタイル（エージェント編成パターン、文体ガイド、判断ルール等）をスキルとして集約するプラグイン",
-      "version": "0.1.0",
+      "description": "Claude Code を使う際の個人的な作業スタイル（文体ガイド、判断ルール等）をスキルとして集約するプラグイン",
+      "version": "0.2.0",
       "author": {
         "name": "rfdnxbro"
       },
@@ -19,33 +19,10 @@
       "license": "MIT",
       "keywords": [
         "workflow",
-        "agent-team",
-        "orchestration",
         "writing-style",
         "personal"
       ],
       "category": "workflow"
-    },
-    {
-      "name": "pr-auto-fix",
-      "source": "./plugins/pr-auto-fix",
-      "defaultEnabled": false,
-      "description": "PR 作成後に CI 失敗・レビュー・コンフリクトを自動検知し、自明な修正は commit & push、判断要は PR コメントでエスカレーションするプラグイン",
-      "version": "0.2.0",
-      "author": {
-        "name": "rfdnxbro"
-      },
-      "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/pr-auto-fix",
-      "repository": "https://github.com/rfdnxbro/claude-code-marketplace",
-      "license": "MIT",
-      "keywords": [
-        "pull-request",
-        "ci",
-        "automation",
-        "github",
-        "monitor"
-      ],
-      "category": "automation"
     },
     {
       "name": "git-main-sync",
