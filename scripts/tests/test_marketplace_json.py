@@ -669,6 +669,49 @@ class TestValidateMarketplaceJson:
         assert result.has_errors()
         assert any("skipLfs" in e and "boolean" in e for e in result.errors)
 
+    def test_plugin_source_url_headers_helper_valid(self):
+        """urlソースでheadersHelperが文字列なら有効（v2.1.238以降）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "url",
+                            "url": "https://gitlab.com/team/plugin.git",
+                            "headersHelper": "./scripts/get-auth-headers.sh",
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+
+    def test_plugin_source_url_headers_helper_invalid_type(self):
+        """urlソースでheadersHelperが文字列でない（エラー）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "url",
+                            "url": "https://gitlab.com/team/plugin.git",
+                            "headersHelper": 123,
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("headersHelper" in e and "文字列が必要" in e for e in result.errors)
+
 
 class TestSourceTypeRequiredFields:
     """source_type別の必須サブフィールド検証のテスト"""

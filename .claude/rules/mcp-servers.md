@@ -126,6 +126,14 @@ case "$CLAUDE_CODE_MCP_SERVER_NAME" in
 esac
 ```
 
+#### headersHelperの実行環境とセキュリティ
+
+- プロジェクトの `.mcp.json`、プラグイン、またはエージェントファイル由来の `headersHelper` は、継承された認証情報の環境変数（APIキー等）を受け取らずに実行される
+- ユーザー・マネージド・claude.aiスコープの `headersHelper` はClaude Codeの設定ディレクトリから実行される
+- プロジェクトの `.mcp.json` に設定されたMCPサーバー、およびプロジェクトまたは `--add-dir` のエージェントファイル内のインラインMCPサーバーは、`headersHelper` の実行にそのフォルダのtrust dialogが承認済みであることを要求する（`claude -p` 使用時も同様）
+
+TODO: 要確認 — プラグインの `.mcp.json` に設定された `headersHelper` についても、上記のtrust dialog要件（フォルダの信頼承認）が適用されるかは現時点で未確認。
+
 ### WebSocket
 
 | フィールド | 必須 | 説明 |
