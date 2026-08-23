@@ -24,8 +24,15 @@ REQUIRED_FIELDS_BY_SOURCE_TYPE = {
     "url": ["url"],
     "npm": ["package"],
     "git-subdir": ["url", "path"],
+    "command": ["command"],
     "archive": ["url"],
 }
+
+# command source_type の mode フィールドで許可される値
+VALID_COMMAND_MODES = {"copy", "link"}
+
+# commandソースのcommandは実行前にユーザーへ提示されるため、全体を目視できる長さに制限される
+MAX_COMMAND_LENGTH = 500
 
 # sha256フィールドの形式（16進数64文字、大文字小文字を許容）
 SHA256_PATTERN = re.compile(r"^[0-9a-fA-F]{64}$")
@@ -144,6 +151,7 @@ def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult
                     "npm",
                     "git-subdir",
                     "settings",
+                    "command",
                     "archive",
                 ]
                 if not source_type:
@@ -189,5 +197,48 @@ def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult
                                 f"{file_path.name}: plugins[{i}].source.{field}は文字列が必要です"
                             )
                     # source_type == "settings" の場合、追加の必須フィールドなし
+
+                    # commandソースのtimeout/modeフィールドの検証
+                    if source_type == "command":
+                        # commandは実行前にユーザーへ提示され承認を求めるため、
+                        # 全体を目視できる形式に制限されている
+                        command = source.get("command")
+                        if isinstance(command, str):
+                            if len(command) > MAX_COMMAND_LENGTH:
+                                result.add_error(
+                                    f"{file_path.name}: plugins[{i}].source.commandは"
+                                    f"{MAX_COMMAND_LENGTH}文字以内である必要があります"
+                                    f"（現在: {len(command)}文字）"
+                                )
+                            if not all(" " <= c <= "~" for c in command):
+                                result.add_error(
+                                    f"{file_path.name}: plugins[{i}].source.commandは"
+                                    "印字可能なASCII文字のみである必要があります"
+                                )
+                            if "    " in command:
+                                result.add_error(
+                                    f"{file_path.name}: plugins[{i}].source.commandに"
+                                    "4個以上連続する空白は使用できません"
+                                )
+
+                        timeout = source.get("timeout")
+                        if timeout is not None:
+                            if isinstance(timeout, bool) or not isinstance(timeout, int):
+                                result.add_error(
+                                    f"{file_path.name}: plugins[{i}].source.timeoutは整数が必要です"
+                                )
+                            elif not (0 < timeout <= 600):
+                                result.add_error(
+                                    f"{file_path.name}: plugins[{i}].source.timeoutは"
+                                    "1〜600の範囲である必要があります"
+                                )
+
+                        mode = source.get("mode")
+                        if mode is not None and mode not in VALID_COMMAND_MODES:
+                            modes_str = "/".join(sorted(VALID_COMMAND_MODES))
+                            result.add_error(
+                                f"{file_path.name}: plugins[{i}].source.modeは無効な値です: "
+                                f"{mode}（{modes_str}）"
+                            )
 
     return result
