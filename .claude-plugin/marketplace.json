@@ -9,8 +9,8 @@
     {
       "name": "claude-code-workflow",
       "source": "./plugins/claude-code-workflow",
-      "description": "Claude Code を使う際の個人的な作業スタイル（エージェント編成パターン、文体ガイド、判断ルール等）をスキルとして集約するプラグイン",
-      "version": "0.1.0",
+      "description": "Claude Code を使う際の個人的な作業スタイル（文体ガイド、判断ルール等）をスキルとして集約するプラグイン",
+      "version": "0.2.0",
       "author": {
         "name": "rfdnxbro"
       },
@@ -19,8 +19,6 @@
       "license": "MIT",
       "keywords": [
         "workflow",
-        "agent-team",
-        "orchestration",
         "writing-style",
         "personal"
       ],
