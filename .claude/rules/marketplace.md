@@ -252,6 +252,7 @@ GitHub sourceでは、fragment構文を使ってbranch、tag、またはcommit S
 | `source` | string | ✓ | `"url"` を指定 |
 | `url` | string | ✓ | gitリポジトリのURL（fragment構文でbranch/tag/commit指定可） |
 | `skipLfs` | boolean | | `true` に設定すると Git LFS のダウンロードをスキップ |
+| `headersHelper` | string | | HTTPヘッダーを動的生成するコマンド。詳細は[headersHelper（カタログエントリ）](#headershelperカタログエントリ)を参照 |
 
 #### branch/tag/commit SHA指定
 
@@ -291,6 +292,30 @@ Git URL sourceでも、URL末尾にfragment構文を使ってbranch、tag、ま�
 >
 > - 安定性重視 → commit SHA指定（例: `https://gitlab.com/team/plugin.git#abc123def456789`）
 > - 常に最新を使用 → branch/tag指定（例: `https://gitlab.com/team/plugin.git#main`）
+
+#### headersHelper（カタログエントリ）
+
+`url` ソースのプラグインエントリ（カタログエントリ）には `headersHelper` を設定できます。そのプラグインをインストール・更新する際にコマンドを実行し、生成したHTTPヘッダー（短命トークンなど）をカタログ取得・同一オリジンのアーカイブ取得に使用します。
+
+```json
+{
+  "name": "private-plugin",
+  "source": {
+    "source": "url",
+    "url": "https://plugins.example.com/private-plugin.git",
+    "headersHelper": "./scripts/get-auth-headers.sh"
+  }
+}
+```
+
+- `headersHelper` はそのプラグインをインストール／更新する時にのみ実行される
+- 実行前にコマンド内容が表示され、`claude plugin install`/`update` で `[y/N]` の確認を要求（`-y` で省略可）
+- ヘルパースクリプトはJSON形式でヘッダーを出力する。書式は `.mcp.json` の `headersHelper` と同様（[mcp-servers.md](mcp-servers.md#headershelper)を参照）
+
+TODO: 要確認 — 以下は現時点で未確認。
+
+- `github` ソース（`source: "github"`）のカタログエントリでも `headersHelper` が利用できるか
+- `headersHelper` の配置。CHANGELOGは「url マーケットプレイスまたはカタログエントリの `headersHelper`」とのみ述べており、`source` オブジェクトの中か、`source` と同階層かを特定できていない。ここでは `source` の中として記載している
 
 ### npm
 
@@ -394,6 +419,45 @@ gitリポジトリ内の特定サブディレクトリをプラグインソー�
 | `source` | string | ✓ | `"git-subdir"` を指定 |
 | `url` | string | ✓ | gitリポジトリのURL（fragment構文でbranch/tag/commit指定可） |
 | `path` | string | ✓ | リポジトリ内のサブディレクトリパス |
+
+### command
+
+ローカルにインストールされたツール（例: 選択中のSDK用プラグインを出力するIDE）が生成するプラグインディレクトリをソースとして指定:
+
+```json
+{
+  "name": "ide-plugin",
+  "source": {
+    "source": "command",
+    "command": "my-ide-tool print-plugin-dir"
+  }
+}
+```
+
+`command` に指定したシェルコマンドは、プラグインディレクトリの絶対パスを1行で標準出力し、終了コード0で終わる必要があります。コマンドはClaude Codeのサブプロセス環境下でプラットフォームのシェル（macOS/Linuxは`sh`、Windowsは`cmd.exe`）を通じてユーザーのホームディレクトリから実行されます。出力されたディレクトリはインストール・アップデートのたびに再解決されるほか、セッションごとに1回バックグラウンドで再実行され、再起動なしで変更が反映されます。
+
+| フィールド | 型 | 必須 | 説明 |
+|-----------|---|:---:|------|
+| `source` | string | ✓ | `"command"` を指定 |
+| `command` | string | ✓ | プラグインディレクトリの絶対パスを標準出力するシェルコマンド（印字可能なASCII文字のみ、500文字以内、4個以上連続する空白は不可）。実行前にユーザーへ提示され承認を求めるため、全体を目視できる形式に制限される |
+| `timeout` | number | | コマンドの完了を待つ秒数（1〜600、デフォルト60） |
+| `mode` | string | | `"copy"`（デフォルト）または `"link"` |
+
+#### mode: "copy" と "link"
+
+- `copy`（デフォルト）: コマンドが出力したディレクトリをプラグインキャッシュにコピーし、コンテンツハッシュを計算する。コピー後は元のディレクトリを削除してもよい
+- `link`: プラグインキャッシュのエントリが、コマンドの出力先ディレクトリをそのまま参照する（コピーなし、サイズ制限なし。macOS/Linuxのみ）。Claude Codeの実行中はそのディレクトリが有効な状態を保つ必要があり、出力パスが変化することが更新の合図になる
+
+```json
+{
+  "name": "ide-plugin-linked",
+  "source": {
+    "source": "command",
+    "command": "my-ide-tool print-plugin-dir",
+    "mode": "link"
+  }
+}
+```
 
 ### archive
 
@@ -506,7 +570,6 @@ export CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS=300000
 - `extraKnownMarketplaces`: 追加のマーケットプレイス定義（`additionalMarketplaces` という別名でも指定可能）
 
 これにより、プロジェクト固有の設定を`--add-dir`ディレクトリ内で管理できます。設定はプロジェクトルートの`.claude.json`と同様の形式で記述できます。
-
 `extraKnownMarketplaces`が他のtierと同名エントリを定義している場合のマージ挙動は次節を参照。
 
 ## extraKnownMarketplacesの複数tier間マージ挙動
@@ -531,6 +594,33 @@ export CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS=300000
 ```
 
 上位tierで同名エントリを再定義すると、下位tierで設定した`headers`は引き継がれず、上位tierのエントリで指定したフィールドのみが有効になります。カスタム`headers`を維持したい場合は、上位tierのエントリ内で`headers`を含めて完全な形でエントリを再定義する必要があります。
+
+## urlマーケットプレイスのheadersHelper
+
+`extraKnownMarketplaces` や `claude plugin marketplace add` でマーケットプレイス自体を `url` ソースとして登録する場合も、`headersHelper` を設定してカタログ（`marketplace.json`本体）取得時のHTTPヘッダーを動的生成できます。
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "internal-catalog": {
+      "source": {
+        "source": "url",
+        "url": "https://plugins.example.com/marketplace.json",
+        "headersHelper": "/path/to/mint-headers.sh"
+      }
+    }
+  }
+}
+```
+
+- 生成されたヘッダーは、カタログ（`marketplace.json`本体）の取得と、同一オリジン（スキーム・ホスト・ポートが一致）のアーカイブ取得に使用される
+- ヘルパースクリプトはJSON形式でヘッダーを出力する。書式は `.mcp.json` の `headersHelper` と同様（[mcp-servers.md](mcp-servers.md#headershelper)を参照）
+
+TODO: 要確認 — 以下は現時点で未確認。
+
+- 異なるオリジンへのアーカイブ取得や、オリジンを離れるリダイレクトでヘッダーが送信されるか。CHANGELOGは「カタログおよび同一オリジンのアーカイブ取得に使用される」とのみ述べており、それ以外の場合の挙動には触れていない。送信されないことを前提に設計しないこと
+- カタログエントリ（`claude plugin install`/`update`）と同様に、`claude plugin marketplace add` 実行時にもコマンド内容の表示・`[y/N]` 確認が行われるか
+- `headersHelper` の配置。上記の例では `source` オブジェクトの中として記載しているが、`source` と同階層の可能性もある（[headersHelper（カタログエントリ）](#headershelperカタログエントリ)の同じ注記を参照）
 
 ## マーケットプレイスURLの形式
 
