@@ -479,8 +479,8 @@ class TestValidatePluginJson:
         assert result.has_errors()
         assert any("dependencies" in e for e in result.errors)
 
-    def test_dependencies_item_not_string(self):
-        """dependenciesの要素が文字列以外の場合エラー（v2.1.110以降）"""
+    def test_dependencies_item_not_string_or_object(self):
+        """dependenciesの要素が文字列でもオブジェクトでもない場合エラー"""
         content = json.dumps({"name": "my-plugin", "dependencies": [123]})
         result = validate_plugin_json(Path("plugin.json"), content)
         assert result.has_errors()
@@ -500,6 +500,62 @@ class TestValidatePluginJson:
         result = validate_plugin_json(Path("plugin.json"), content)
         assert result.has_errors()
         assert any("dependencies" in e for e in result.errors)
+
+    def test_dependencies_object_valid(self):
+        """dependenciesの要素がオブジェクト形式（name/version/marketplace）の場合エラーなし"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "dependencies": [
+                    "base-plugin",
+                    {"name": "shared-tools", "version": "~2.1.0"},
+                    {"name": "audit-logger", "marketplace": "acme-shared"},
+                ],
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+
+    def test_dependencies_object_missing_name(self):
+        """dependenciesのオブジェクト要素にnameがない場合エラー"""
+        content = json.dumps({"name": "my-plugin", "dependencies": [{"version": "~2.1.0"}]})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("dependencies[0].name" in e for e in result.errors)
+
+    def test_dependencies_object_name_not_string(self):
+        """dependenciesのオブジェクト要素のnameが文字列以外の場合エラー"""
+        content = json.dumps({"name": "my-plugin", "dependencies": [{"name": 123}]})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("dependencies[0].name" in e for e in result.errors)
+
+    def test_dependencies_object_name_not_kebab_case(self):
+        """dependenciesのオブジェクト要素のnameがkebab-caseでない場合に警告"""
+        content = json.dumps({"name": "my-plugin", "dependencies": [{"name": "MyPlugin"}]})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert any("dependencies[0].name" in w for w in result.warnings)
+
+    def test_dependencies_object_version_not_string(self):
+        """dependenciesのオブジェクト要素のversionが文字列以外の場合エラー"""
+        content = json.dumps(
+            {"name": "my-plugin", "dependencies": [{"name": "base-plugin", "version": 2}]}
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("dependencies[0].version" in e for e in result.errors)
+
+    def test_dependencies_object_marketplace_not_string(self):
+        """dependenciesのオブジェクト要素のmarketplaceが文字列以外の場合エラー"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "dependencies": [{"name": "base-plugin", "marketplace": 123}],
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("dependencies[0].marketplace" in e for e in result.errors)
 
     # channels フィールドのテスト（v2.1.80以降）
 

@@ -169,13 +169,16 @@ my-plugin/
 ```json
 {
   "name": "my-plugin",
-  "dependencies": ["base-plugin", "shared-tools"]
+  "dependencies": [
+    "base-plugin",
+    { "name": "shared-tools", "version": "~2.1.0" }
+  ]
 }
 ```
 
 | フィールド | 型 | 説明 |
 |-----------|---|------|
-| `dependencies` | array | 依存プラグインのリスト（プラグイン名を配列で指定） |
+| `dependencies` | array | 依存プラグインのリスト。各要素はプラグイン名の文字列、または後述のオブジェクト形式で指定 |
 
 **動作:**
 
@@ -184,6 +187,19 @@ my-plugin/
 - プラグイン名は kebab-case で指定します
 - **`claude plugin enable` 実行時**: 宣言した依存プラグインがトランザクティブに強制有効化されます
 - **`claude plugin disable` 実行時**: 他の有効なプラグインが対象プラグインに依存している場合、無効化が拒否されます（コピー可能な無効化チェーンのヒントが表示されます）
+
+### オブジェクト形式（バージョン制約・マーケットプレイス指定）
+
+`dependencies` の各要素は、プラグイン名のみの文字列（例: `"base-plugin"`）に加えて、以下のフィールドを持つオブジェクトでも指定できます。
+
+| フィールド | 型 | 必須 | 説明 |
+|-----------|---|------|------|
+| `name` | string | Yes | プラグイン名。宣言元プラグインと同じマーケットプレイス内で解決される |
+| `version` | string | No | [semver range](https://github.com/npm/node-semver#ranges)（例: `~2.1.0`, `^2.0`, `>=1.4`, `=2.1.0`）。この範囲を満たす最も新しいタグ付きバージョンが取得される |
+| `marketplace` | string | No | `name` を解決する別のマーケットプレイス。クロスマーケットプレイス依存は、依存先マーケットプレイスがルートマーケットプレイスの `marketplace.json` の `allowCrossMarketplaceDependenciesOn` に列挙されていない限りブロックされる |
+
+- `version` を省略した場合、依存先マーケットプレイスが提供する最新バージョンを追跡します
+- `marketplace` を指定してもルートマーケットプレイスの許可リストに含まれない場合、`cross-marketplace` エラーでインストールが失敗します
 
 ## パーミッション設定
 
