@@ -12,6 +12,36 @@ from .monitors_json import validate_monitors_entries
 USER_CONFIG_TYPES = {"string", "number", "boolean", "directory", "file"}
 
 
+def _validate_dependency_object(
+    result: ValidationResult,
+    file_path: Path,
+    dep: dict[str, Any],
+    index: int,
+) -> None:
+    """dependencies配列内のオブジェクト形式エントリを検証する"""
+    label = f"dependencies[{index}]"
+    dep_name = dep.get("name")
+    if "name" not in dep:
+        result.add_error(f"{file_path.name}: {label}.nameが必須です")
+    elif not isinstance(dep_name, str) or not dep_name:
+        result.add_error(f"{file_path.name}: {label}.nameは文字列が必要です")
+    else:
+        dep_error = validate_kebab_case(dep_name)
+        if dep_error:
+            msg = f"{label}.nameはkebab-case（小文字とハイフン）のみ: {dep_name}"
+            result.add_warning(f"{file_path.name}: {msg}")
+
+    dep_version = dep.get("version")
+    if dep_version is not None and (not isinstance(dep_version, str) or not dep_version):
+        result.add_error(f"{file_path.name}: {label}.versionは文字列が必要です")
+
+    dep_marketplace = dep.get("marketplace")
+    if dep_marketplace is not None and (
+        not isinstance(dep_marketplace, str) or not dep_marketplace
+    ):
+        result.add_error(f"{file_path.name}: {label}.marketplaceは文字列が必要です")
+
+
 def _validate_user_config_mapping(
     result: ValidationResult,
     file_path: Path,
@@ -163,22 +193,27 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
             f"settings.jsonはプラグインルート直下に配置すれば自動検出されます"
         )
 
-    # dependenciesの確認（v2.1.110以降）
+    # dependenciesの確認
     dependencies = data.get("dependencies")
     if dependencies is not None:
         if not isinstance(dependencies, list):
             result.add_error(f"{file_path.name}: dependenciesは配列が必要です")
         else:
             for i, dep in enumerate(dependencies):
-                if not isinstance(dep, str):
-                    result.add_error(f"{file_path.name}: dependencies[{i}]は文字列が必要です")
-                elif not dep:
-                    result.add_error(f"{file_path.name}: dependencies[{i}]は空文字列です")
+                if isinstance(dep, str):
+                    if not dep:
+                        result.add_error(f"{file_path.name}: dependencies[{i}]は空文字列です")
+                    else:
+                        dep_error = validate_kebab_case(dep)
+                        if dep_error:
+                            msg = f"dependencies[{i}]はkebab-case（小文字とハイフン）のみ: {dep}"
+                            result.add_warning(f"{file_path.name}: {msg}")
+                elif isinstance(dep, dict):
+                    _validate_dependency_object(result, file_path, dep, i)
                 else:
-                    dep_error = validate_kebab_case(dep)
-                    if dep_error:
-                        msg = f"dependencies[{i}]はkebab-case（小文字とハイフン）のみ: {dep}"
-                        result.add_warning(f"{file_path.name}: {msg}")
+                    result.add_error(
+                        f"{file_path.name}: dependencies[{i}]は文字列またはオブジェクトが必要です"
+                    )
 
     # monitors がインライン配列の場合はエントリを検証（v2.1.105以降）
     monitors = data.get("monitors")
