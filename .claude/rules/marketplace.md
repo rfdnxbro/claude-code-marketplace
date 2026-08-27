@@ -508,6 +508,28 @@ zipは配下に`.claude-plugin/`を直接含む構成、または単一のトッ
 - `agent-skills`
 - `life-sciences`
 
+## 禁止文字（制御文字・不可視文字）
+
+マーケットプレイス名・プラグイン名に制御文字や不可視文字を含めると拒否されます。
+
+> CHANGELOGより: "Improved plugin marketplace hardening: names containing control or invisible
+> characters are rejected, and marketplace-supplied text in `/plugin` and `claude plugin` output
+> is escape-safe"
+
+本リポジトリのバリデーター（`scripts/validators/base.py` の `validate_kebab_case`）は
+kebab-case形式（`^[a-z0-9]+(-[a-z0-9]+)*$`）を要求しており、制御文字・不可視文字は
+この時点で構造的に弾かれる。そのため、この変更に伴う本リポジトリのバリデーターの
+追加実装は不要と判断した。
+
+TODO: 要確認 — 以下は現時点で未確認。
+
+- この拒否ロジックがマーケットプレイス名（`marketplace.json`の`name`）、プラグインエントリ名
+  （`marketplace.json`の`plugins[].name`）、プラグイン自身の識別子（`plugin.json`の`name`）の
+  うちどれに適用されるか
+- 「制御文字・不可視文字」の具体的な文字コード範囲の定義
+- `claude plugin validate` で警告として検出されるのか、`/plugin` の管理マーケットプレイス
+  同期時のみ拒否されるのか（[CLAUDE.md](../../CLAUDE.md)の関連TODOも参照）
+
 ## シードディレクトリの複数指定
 
 `CLAUDE_CODE_PLUGIN_SEED_DIR` 環境変数を使用してプラグインのシードディレクトリを指定できます。複数のディレクトリをプラットフォームのパス区切り文字で区切って指定できます。
