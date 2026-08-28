@@ -127,6 +127,12 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
     # allow/askのツール名位置グロブを検証（v2.1.166以降）
     validate_allow_ask_glob_fields(result, file_path, frontmatter)
 
+    # experimental.cacheTtlの確認（v2.1.248以降: プロンプトキャッシュTTL "5m"/"1h"）
+    # experimentalはネストされたオブジェクトのため、本リポジトリの簡易パーサー
+    # （base.py の _FrontmatterParser）では値を取得できず、解析時に
+    # 「ネストされたオブジェクトはサポートされていません」警告が出る（hooks/metadataと同じ制限・非致命的）。
+    # そのため frontmatter["experimental"] の値を使ったcacheTtlの値検証はできない。
+
     # toolsの確認（リスト形式検証）
     tools = frontmatter.get("tools")
     validate_string_or_list_field(result, file_path, "tools", tools)
