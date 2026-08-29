@@ -95,6 +95,8 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
         "StopFailure",
         "PermissionDenied",
         "MessageDisplay",
+        "PreModelSwitch",
+        "PostModelSwitch",
     ]
 
     for event_name, event_hooks in hooks.items():

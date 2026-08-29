@@ -2,6 +2,7 @@
 plugin.json のバリデーター
 """
 
+import os
 import re
 from pathlib import Path
 from typing import Any
@@ -10,6 +11,27 @@ from .base import ValidationResult, parse_json_safe, validate_kebab_case
 from .monitors_json import validate_monitors_entries
 
 USER_CONFIG_TYPES = {"string", "number", "boolean", "directory", "file"}
+
+
+def _is_path_traversal(path_str: str) -> bool:
+    """パスがプラグインディレクトリ外を指すか（パストラバーサル）を判定する"""
+    normalized = os.path.normpath(path_str)
+    return normalized == ".." or normalized.startswith(f"..{os.sep}")
+
+
+def _validate_commands_no_path_traversal(
+    result: ValidationResult, file_path: Path, commands_value: Any
+) -> None:
+    """commandsフィールドのパスがプラグインディレクトリ外を指していないか検証する"""
+    paths = [commands_value] if isinstance(commands_value, str) else commands_value
+    if not isinstance(paths, list):
+        return
+    for p in paths:
+        if isinstance(p, str) and _is_path_traversal(p):
+            result.add_error(
+                f"{file_path.name}: commandsはプラグインディレクトリ外を指すパスを"
+                f"指定できません（パストラバーサル）: {p}"
+            )
 
 
 def _validate_user_config_mapping(
@@ -215,6 +237,11 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
                         f"{file_path.name}: experimental.{field}"
                         f"はデフォルトパス（{value}）と同一のため指定不要です。削除してください"
                     )
+
+    # commandsのパストラバーサル確認（プラグインディレクトリ外を指すパスは拒否）
+    commands_value = data.get("commands")
+    if commands_value is not None:
+        _validate_commands_no_path_traversal(result, file_path, commands_value)
 
     # パスの確認
     path_fields = [
