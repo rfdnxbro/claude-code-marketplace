@@ -372,9 +372,18 @@ model: sonnet
 
 1. Agent ツール呼び出し時の `model` パラメータ（最優先）
 2. エージェント定義 frontmatter の `model` フィールド
-3. `inherit`（親スレッドのモデルを継承）
+3. `CLAUDE_CODE_SUBAGENT_MODEL` 環境変数（デフォルトのサブエージェントモデルを設定）
+4. `inherit`（親スレッドのモデルを継承）
 
 この機能により、通常は軽量なモデルを使いながら、複雑なタスクのみ高性能なモデルに切り替えるといったコスト最適化が可能です。
+
+### `CLAUDE_CODE_SUBAGENT_MODEL` 環境変数
+
+`CLAUDE_CODE_SUBAGENT_MODEL` を設定すると、サブエージェントのデフォルトモデルを指定できます。エージェント定義の `model` フィールドや、Agent ツール呼び出し時の `model` パラメータで明示的にモデルを指定した場合は、そちらが優先されます（上記「優先順位」参照）。
+
+```bash
+export CLAUDE_CODE_SUBAGENT_MODEL=haiku
+```
 
 ## CLIコマンド
 

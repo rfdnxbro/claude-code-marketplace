@@ -32,7 +32,7 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 
 | フィールド | 型 | 説明 | デフォルトディレクトリ |
 |-----------|---|------|----------------------|
-| `commands` | string/array | コマンドファイル/ディレクトリ | `commands/` |
+| `commands` | string/array | コマンドファイル/ディレクトリ。**プラグインディレクトリ外を指すパス（`../`によるパストラバーサル）はエラーとして拒否される** | `commands/` |
 | `agents` | string/array | エージェントファイル/ディレクトリ | `agents/` |
 | `skills` | string/array | スキルディレクトリ（**ディレクトリパスのみ**。ファイルパスを指定するとエラー） | `skills/` |
 | `hooks` | string/object | フック設定パスまたはインライン | `hooks/hooks.json` |
@@ -139,6 +139,7 @@ my-plugin/
 - `commands/`, `agents/`, `skills/` は `.claude-plugin/` 内ではなく、プラグインルート直下に配置
 - `skills` にはディレクトリパスのみ指定可能（ファイルパスを指定するとエラー）
 - `skills: ["./"]` または `skills: ["."]` でプラグインルート自体をスキルディレクトリとして指定可能
+- `commands` に指定したパスがプラグインディレクトリ外を指す場合（`../`によるパストラバーサル）はエラーとして拒否される
 
 ### ルートレベルの SKILL.md 構成例
 

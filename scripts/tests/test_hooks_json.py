@@ -77,6 +77,8 @@ class TestValidateHooksJson:
             "StopFailure",
             "PermissionDenied",
             "MessageDisplay",
+            "PreModelSwitch",
+            "PostModelSwitch",
         ]
         for event in valid_events:
             content = json.dumps(
@@ -1316,6 +1318,48 @@ class TestValidateHooksJson:
                                 {
                                     "type": "command",
                                     "command": "${CLAUDE_PLUGIN_ROOT}/scripts/filter-message.sh",
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_pre_model_switch_event(self):
+        """PreModelSwitchイベントが有効であることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PreModelSwitch": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on-model-switch.sh",
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_post_model_switch_event(self):
+        """PostModelSwitchイベントが有効であることをテスト"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PostModelSwitch": [
+                        {
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/after-model-switch.sh",
                                 }
                             ]
                         }

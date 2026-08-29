@@ -117,6 +117,34 @@ class TestValidatePluginJson:
         result = validate_plugin_json(Path("plugin.json"), content)
         assert any("デフォルトパス" in w for w in result.warnings)
 
+    def test_commands_path_traversal_rejected(self):
+        """commandsがプラグインディレクトリ外を指す場合エラー（パストラバーサル）"""
+        content = json.dumps({"name": "my-plugin", "commands": "../outside/commands/"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("パストラバーサル" in e for e in result.errors)
+
+    def test_commands_path_traversal_rejected_in_array(self):
+        """commandsが配列でパストラバーサルを含む場合エラー"""
+        content = json.dumps(
+            {"name": "my-plugin", "commands": ["./commands/", "../../etc/commands/"]}
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("パストラバーサル" in e for e in result.errors)
+
+    def test_commands_non_string_non_list_skips_traversal_check(self):
+        """commandsが文字列でも配列でもない場合、パストラバーサル検証はスキップされる"""
+        content = json.dumps({"name": "my-plugin", "commands": 123})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not any("パストラバーサル" in e for e in result.errors)
+
+    def test_commands_path_within_plugin_root_no_error(self):
+        """commandsがプラグインディレクトリ内を指す場合はパストラバーサルエラーなし"""
+        content = json.dumps({"name": "my-plugin", "commands": "./nested/../commands/"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not any("パストラバーサル" in e for e in result.errors)
+
     def test_redundant_default_path_commands(self):
         """commandsにデフォルトパスを指定した場合に警告が出ることを確認"""
         content = json.dumps({"name": "my-plugin", "commands": "./commands/"})

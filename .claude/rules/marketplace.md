@@ -125,6 +125,8 @@ paths: .claude-plugin/marketplace.json
 | `strict` | boolean | `plugin.json`必須（デフォルト: true） |
 | `defaultEnabled` | boolean | `false` を指定するとマーケットプレイスからインストール時にデフォルト無効になる。`/plugin` または `claude plugin enable` で有効化できる。有効化済みプラグインの依存として指定された場合は自動的に有効化される |
 
+**注意**: マーケットプレイスエントリが参照するプラグインの`commands`フィールド（`plugin.json`で宣言）にプラグインディレクトリ外を指すパス（`../`によるパストラバーサル）を指定した場合はエラーとして拒否される。詳細は[plugin-manifest.md](plugin-manifest.md)の`commands`フィールドを参照。
+
 ## ソース指定
 
 ### `metadata.pluginRoot`による裸のソース名解決
