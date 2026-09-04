@@ -456,6 +456,45 @@ class TestValidateSlashCommand:
         result = validate_slash_command(Path("test.md"), content)
         assert not result.has_errors()
 
+    def test_allowed_tools_trailing_text_after_paren_warning(self):
+        """閉じ括弧の後に余分な文字列があるパターンで警告が出ることを確認"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            allowed-tools: Bash(ls) x
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert any("Bash(ls) x" in w for w in result.warnings)
+
+    def test_disallowed_tools_trailing_text_after_paren_warning(self):
+        """disallowed-toolsでも閉じ括弧の後に余分な文字列があるパターンを検出することを確認"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            disallowed-tools: Bash(ls) x
+            ---
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not result.has_errors()
+        assert any("Bash(ls) x" in w for w in result.warnings)
+
+    def test_allowed_tools_trailing_text_warning_disabled(self):
+        """validator-disableコメントでtrailing-text-after-paren警告を無効化できることを確認"""
+        content = dedent("""
+            ---
+            description: テストコマンド
+            allowed-tools: Bash(ls) x
+            ---
+            <!-- validator-disable trailing-text-after-paren -->
+            本文
+        """).strip()
+        result = validate_slash_command(Path("test.md"), content)
+        assert not any("Bash(ls) x" in w for w in result.warnings)
+
     def test_valid_effort_low(self):
         """effort: lowが有効であることを確認（v2.1.80以降）"""
         content = dedent("""

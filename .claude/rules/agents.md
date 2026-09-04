@@ -167,6 +167,8 @@ content-level（具体的パターン）の`ask`設定は、tool-level（ツー�
 
 この仕組みにより、ツール全体を許可しつつ、危険な操作のみ個別に制限できます。
 
+**`Tool(pattern)`構文に関する注意点**: `tools`/`disallowedTools`の`Tool(pattern)`形式は、スラッシュコマンド/スキルの`allowed-tools`と共通の構文です。閉じ括弧の後に余分な文字列を書かない等の注意点は[slash-commands.md](slash-commands.md)の「`Tool(pattern)`構文に関する注意点」を参照してください。
+
 ## memory
 
 エージェントに永続的なメモリを付与し、セッション間で情報を保持できます。
