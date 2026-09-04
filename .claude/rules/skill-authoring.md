@@ -232,6 +232,8 @@ content-level（具体的パターン）の`ask`設定は、tool-level（ツー�
 
 この仕組みにより、ツール全体を許可しつつ、危険な操作のみ個別に制限できます。
 
+**`Tool(pattern)`構文に関する注意点**: 閉じ括弧の後に余分な文字列を書かない等の注意点は[slash-commands.md](slash-commands.md)の「`Tool(pattern)`構文に関する注意点」を参照してください。
+
 **disallowed-tools**:
 
 スキルがアクティブな間、モデルから除外するツールを指定。省略時はツールの除外なし。
@@ -510,6 +512,21 @@ Claude Codeは`.claude/skills`ディレクトリ内のスキルを自動的に�
 - **プラグインルートレベルのスキル**: `skills/` サブディレクトリがなくても、プラグインルートに `SKILL.md` を配置するだけでスキルとして認識される。`plugin.json` の `skills: ["./"]` または `skills: ["."]` と組み合わせて使用する
 - **ネストされたスキルの名前衝突時の動作**: サブディレクトリの `.claude/skills` に同名のスキルが存在する場合、ネストされた側は `<dir>:<name>` 形式で利用可能になり、両方のスキルが共存できる（例: `subdir:my-skill`）
 - **バンドルスキルとの名前衝突時の動作**: `/checkup`、`/review` 等の組み込みバンドルスキルのエイリアスと同名のユーザー/プロジェクトスキルを定義した場合、ユーザー/プロジェクトスキル側が優先され、バンドルスキルをシャドーイングする。この優先順位は `-p` モードやプラグイン/MCP読み込み時も含めて一貫して適用される
+
+### パーミッションルールでのスキル指定（`Skill(name)`）
+
+`allowed-tools`/`disallowed-tools`等のパーミッションルールで、`Skill(name)`形式を使うと特定のスキルを対象にallow/denyを指定できます（構文の詳細は[slash-commands.md](slash-commands.md)の`Tool(param:value)`構文を参照）。
+
+```yaml
+disallowed-tools: Skill(dangerous-skill)
+```
+
+上記の「ネストされたスキルの名前衝突時の動作」により `<dir>:name` 形式で公開されているスキルを対象にする場合は、`Skill()`にもその完全修飾名を指定します。
+
+```yaml
+# subdir配下にネストされ、subdir:my-skillとして公開されているスキルを対象にする場合
+disallowed-tools: Skill(subdir:my-skill)
+```
 
 検出されるスキルの例:
 

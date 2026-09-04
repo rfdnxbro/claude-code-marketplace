@@ -280,6 +280,34 @@ class TestValidateAgent:
         assert result.has_errors()
         assert any("disallowedTools" in e for e in result.errors)
 
+    def test_tools_trailing_text_after_paren_warning(self):
+        """toolsで閉じ括弧の後に余分な文字列があるパターンで警告が出ることを確認"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            tools: Bash(ls) x
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()
+        assert any("Bash(ls) x" in w for w in result.warnings)
+
+    def test_disallowed_tools_trailing_text_after_paren_warning(self):
+        """disallowedToolsでも閉じ括弧の後に余分な文字列があるパターンを検出することを確認"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            disallowedTools: Bash(ls) x
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()
+        assert any("Bash(ls) x" in w for w in result.warnings)
+
     def test_skills_string_format(self):
         """skillsが文字列形式で指定できることを確認"""
         content = dedent("""

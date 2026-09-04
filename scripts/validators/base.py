@@ -18,6 +18,7 @@ DISABLE_PATTERN = re.compile(r"<!--\s*validator-disable\s+([\w-]+)\s*-->")
 WARNING_DANGEROUS_OPERATION = "dangerous-operation"
 WARNING_BROAD_BASH_WILDCARD = "broad-bash-wildcard"
 WARNING_UNSCOPED_PATH_TOOL = "unscoped-path-tool"
+WARNING_TRAILING_TEXT_AFTER_PAREN = "trailing-text-after-paren"
 
 # allowed-toolsで `Tool(path)` 形式のパス指定を書いてもパス単位の絞り込みが
 # 機能しないツール。代わりにEdit(path)やRead(path)を使う必要がある。
@@ -391,6 +392,98 @@ def validate_allowed_tools(
                 f"{tools_display}はパス単位の絞り込みに対応していません。"
                 "代わりにEdit(path)やRead(path)を使用してください"
             )
+
+
+def _split_top_level_commas(text: str) -> list[str]:
+    """カンマ区切り文字列を、括弧の外側のカンマのみで分割する
+
+    `Bash(git add:*, git commit:*)` のように、括弧内のカンマで
+    誤って分割しないようにする。
+    """
+    items = []
+    depth = 0
+    current: list[str] = []
+    for ch in text:
+        if ch == "(":
+            depth += 1
+            current.append(ch)
+        elif ch == ")":
+            depth = max(0, depth - 1)
+            current.append(ch)
+        elif ch == "," and depth == 0:
+            items.append("".join(current))
+            current = []
+        else:
+            current.append(ch)
+    if current:
+        items.append("".join(current))
+    return items
+
+
+def _tool_pattern_items(value: Any) -> list[str]:
+    """allowed-tools等のフィールド値を個々のツールパターン文字列のリストに分解する"""
+    if isinstance(value, list):
+        return [str(v) for v in value]
+    if isinstance(value, str):
+        return _split_top_level_commas(value)
+    return []
+
+
+def find_trailing_text_after_paren(items: list[str]) -> list[str]:
+    """`Bash(ls) x` のように、閉じ括弧の後に余分な文字列が続くパターンを検出する
+
+    Args:
+        items: ツールパターン文字列のリスト（`_tool_pattern_items` の戻り値等）
+
+    Returns:
+        閉じ括弧の後に余分な文字列があったパターンのリスト（元の表記のまま）
+    """
+    found = []
+    for raw_item in items:
+        item = raw_item.strip()
+        open_idx = item.find("(")
+        if open_idx == -1:
+            continue
+        depth = 0
+        close_idx = -1
+        for i in range(open_idx, len(item)):
+            if item[i] == "(":
+                depth += 1
+            elif item[i] == ")":
+                depth -= 1
+                if depth == 0:
+                    close_idx = i
+                    break
+        if close_idx == -1:
+            # 閉じ括弧がない場合は別の問題であり、ここでは検出しない
+            continue
+        if item[close_idx + 1 :].strip():
+            found.append(item)
+    return found
+
+
+def validate_tool_pattern_field(
+    result: ValidationResult,
+    file_path: Path,
+    field_name: str,
+    value: Any,
+    disabled_warnings: set[str],
+) -> None:
+    """
+    `Tool(pattern)` 構文を使うフィールド（allowed-tools/disallowed-tools/tools/
+    disallowedTools）で、閉じ括弧の後に余分な文字列が続くパターン
+    （例: `Bash(ls) x`）を検出する。このようなルールは無効な設定として扱われ、
+    意図したマッチングは行われない。
+    """
+    if value is None:
+        return
+    bad_items = find_trailing_text_after_paren(_tool_pattern_items(value))
+    if bad_items and WARNING_TRAILING_TEXT_AFTER_PAREN not in disabled_warnings:
+        bad_display = ", ".join(bad_items)
+        result.add_warning(
+            f"{file_path.name}: {field_name}に閉じ括弧の後に余分な文字列があるパターンを検出: "
+            f"{bad_display}（無効な設定として扱われます）"
+        )
 
 
 def validate_effort_field(

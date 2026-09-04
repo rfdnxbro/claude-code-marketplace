@@ -393,6 +393,34 @@ description: 説明
         result = validate_skill(Path("SKILL.md"), content)
         assert not result.has_errors()
 
+    def test_allowed_tools_trailing_text_after_paren_warning(self):
+        """閉じ括弧の後に余分な文字列があるパターンで警告が出ることを確認"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            allowed-tools: Bash(ls) x
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+        assert any("Bash(ls) x" in w for w in result.warnings)
+
+    def test_disallowed_tools_trailing_text_after_paren_warning(self):
+        """disallowed-toolsでも閉じ括弧の後に余分な文字列があるパターンを検出することを確認"""
+        content = dedent("""
+            ---
+            name: test-skill
+            description: テストスキルの説明
+            disallowed-tools: Bash(ls) x
+            ---
+            本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert not result.has_errors()
+        assert any("Bash(ls) x" in w for w in result.warnings)
+
     def test_valid_model_sonnet(self):
         """model: sonnetが有効であることを確認"""
         content = dedent("""

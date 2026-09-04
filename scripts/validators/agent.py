@@ -8,12 +8,14 @@ from pathlib import Path
 from .base import (
     ValidationResult,
     add_yaml_warnings,
+    get_disabled_warnings,
     parse_frontmatter,
     to_str,
     validate_allow_ask_glob_fields,
     validate_effort_field,
     validate_kebab_case,
     validate_string_or_list_field,
+    validate_tool_pattern_field,
 )
 
 
@@ -47,6 +49,7 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
         return result
 
     add_yaml_warnings(result, file_path, yaml_warnings)
+    disabled_warnings = get_disabled_warnings(content)
 
     # kebab-case（小文字とハイフンのみ）チェック
     kebab_error = validate_kebab_case(name_str)
@@ -130,6 +133,7 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
     # toolsの確認（リスト形式検証）
     tools = frontmatter.get("tools")
     validate_string_or_list_field(result, file_path, "tools", tools)
+    validate_tool_pattern_field(result, file_path, "tools", tools, disabled_warnings)
     # Task(agent_type) 構文の検証
     if tools is not None:
         tools_str = (
@@ -141,8 +145,10 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
             )
 
     # disallowedToolsの確認（リスト形式検証）
-    validate_string_or_list_field(
-        result, file_path, "disallowedTools", frontmatter.get("disallowedTools")
+    disallowed_tools = frontmatter.get("disallowedTools")
+    validate_string_or_list_field(result, file_path, "disallowedTools", disallowed_tools)
+    validate_tool_pattern_field(
+        result, file_path, "disallowedTools", disallowed_tools, disabled_warnings
     )
 
     # skillsの確認（リスト形式検証）
