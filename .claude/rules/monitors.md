@@ -132,6 +132,7 @@ paths: plugins/*/monitors/monitors.json, monitors/monitors.json
 - プロセスが異常終了した場合の自動再起動挙動（LSP の `restartOnCrash` に相当する仕組みの有無）
 - 並列起動可能な monitor 数の上限
 - 出力レート制限や通知のバッチング有無
+- デフォルトの `monitors/monitors.json` が壊れている（不正なJSON、読み込み権限がない等）場合に、エラー表示・警告・無視のいずれになるか。`claude plugin validate .` でJSON構文エラーや読み込み権限エラーを再現しても診断メッセージは出力されなかったが、これが `claude plugin validate` の仕様（monitorsの内容を検証対象としていない）なのか、実際のプラグインロード時の挙動と異なるのかは未確認
 
 ## 出典
 
