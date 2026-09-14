@@ -19,6 +19,7 @@ Markdown + YAML Frontmatter形式で記述します。
 - `.claude/agents/`ディレクトリ内には、エージェント定義以外のMarkdownファイル（README.mdなど）も配置できます
 - エージェント定義として認識されるのは、frontmatterに`name`フィールドを持つMarkdownファイルのみです
 - ドキュメント用のMarkdownファイルには警告は表示されません
+- プラグインの`agents`フィールドで指定するエージェントファイルへのパスがシンボリックリンクで、リンク先がプラグインディレクトリ外を指している場合、エラーで拒否されます（詳細は[plugin-manifest.md](plugin-manifest.md)の「パスの重要なルール」を参照）
 
 ## 形式
 
