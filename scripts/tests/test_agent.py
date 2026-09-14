@@ -732,6 +732,26 @@ class TestValidateAgent:
         assert result.has_errors()
         assert any("allow" in e and "グロブ" in e for e in result.errors)
 
+    def test_experimental_cache_ttl_nested_parser_warning(self):
+        """experimental.cacheTtlのネスト構造は簡易パーサーの制限で非致命的な警告が出る（v2.1.248以降）
+
+        本リポジトリのフロントマターパーサーはネストされたオブジェクトを
+        サポートしないため、experimentalのサブキー行ごとに警告が出る（エラーではない）。
+        hooks/metadataフィールドと同じ制限。
+        """
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            experimental:
+              cacheTtl: 1h
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()
+        assert any("ネストされたオブジェクト" in w for w in result.warnings)
+
     def test_ask_content_pattern_valid(self):
         """askにコンテンツパターン（括弧あり）は有効（v2.1.166以降）"""
         content = dedent("""
