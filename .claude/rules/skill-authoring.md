@@ -509,7 +509,7 @@ Claude Codeは`.claude/skills`ディレクトリ内のスキルを自動的に�
 - **プラグイン内のスキル**: プラグインの`skills/`ディレクトリ内のスキルも同様に検出される
 - **追加ディレクトリ内のスキル**: `--add-dir`で追加したディレクトリ内の`.claude/skills/`も自動的にロードされる
 - **gitignoreディレクトリの除外**: `node_modules`などの`.gitignore`で除外されたディレクトリからはスキルが読み込まれない
-- **プラグインルートレベルのスキル**: `skills/` サブディレクトリがなくても、プラグインルートに `SKILL.md` を配置するだけでスキルとして認識される。`plugin.json` の `skills: ["./"]` または `skills: ["."]` と組み合わせて使用する
+- **プラグインルートレベルのスキル**: `skills/` サブディレクトリがなく、`plugin.json` に `skills` マニフェストフィールドの指定もない場合、プラグインルートに配置した `SKILL.md` は単一スキルのプラグインとして自動的にロードされる（`plugin.json` での明示指定は不要）。`skills: ["./"]` または `skills: ["."]` を明示的に指定しても同じ挙動になる
 - **ネストされたスキルの名前衝突時の動作**: サブディレクトリの `.claude/skills` に同名のスキルが存在する場合、ネストされた側は `<dir>:<name>` 形式で利用可能になり、両方のスキルが共存できる（例: `subdir:my-skill`）
 - **バンドルスキルとの名前衝突時の動作**: `/checkup`、`/review` 等の組み込みバンドルスキルのエイリアスと同名のユーザー/プロジェクトスキルを定義した場合、ユーザー/プロジェクトスキル側が優先され、バンドルスキルをシャドーイングする。この優先順位は `-p` モードやプラグイン/MCP読み込み時も含めて一貫して適用される
 
@@ -553,10 +553,12 @@ project/
 ```text
 my-plugin/
 ├── .claude-plugin/
-│   └── plugin.json   # skills: ["./"] を指定
+│   └── plugin.json   # skills フィールドは省略可能（skills: ["./"] を明示してもよい）
 └── SKILL.md          # ルートに直接配置（skills/ 不要）
 ```
 
+> 出典: [Plugins reference](https://code.claude.com/docs/en/plugins-reference) 「A plugin that has a `SKILL.md` at its root, no `skills/` subdirectory, and no `skills` manifest field is automatically loaded as a single-skill plugin. You do not need to set `"skills": ["./"]` in `plugin.json` for this layout.」
+>
 > **注意**: `plugin.json` の `skills:` フィールドにはディレクトリパスのみ指定可能です。ファイルパスを指定すると `claude plugin validate` がエラーを出力します。例: `"skills": ["./"]`、`"skills": ["."]`、`"skills": ["./skills/"]` は有効ですが、`"skills": ["./my-skill.md"]` はエラーになります。
 >
 > **注意**: `claude plugin validate` は、`plugin.json` の `skills:` フィールドを経由しない素の `.claude/skills` ディレクトリ配下のスキルも検証対象とします。frontmatterのパースに失敗した `SKILL.md` はエラーとして報告されます。

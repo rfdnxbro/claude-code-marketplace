@@ -54,7 +54,7 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 - `plugin.json` でコンポーネントキー（例: `commands`）を設定した際に、対応するデフォルトフォルダ（例: `commands/`）が存在する場合、`/doctor`・`claude plugin list`・`/plugin` で警告が表示される
 - **デフォルトパスと同じパスの明示指定は禁止**: 冗長な指定を避けるため、デフォルトパスと一致するコンポーネント参照は記述しないこと（例: `"hooks": "./hooks/hooks.json"` はデフォルトと同一のため不要）
 - **`skills` はディレクトリパスのみ有効**: `skills` フィールドにはディレクトリパスを指定すること。ファイルパスを指定するとエラーになる
-- **ルートレベルのスキル宣言**: `skills: ["./"]` または `skills: ["."]` を指定すると、プラグインルートに配置した `SKILL.md` をスキルとして認識できる（`./` と `.` はどちらも同じくプラグインルートを指し、挙動に差はない）。`skills/` サブディレクトリなしでの運用が可能
+- **ルートレベルのスキル宣言**: `skills/` サブディレクトリが存在せず、`plugin.json` に `skills` マニフェストフィールドも指定されていない場合、プラグインルートに配置した `SKILL.md` は単一スキルのプラグインとして自動的にロードされる（`skills: ["./"]` の明示指定は不要）。`skills: ["./"]` または `skills: ["."]` を明示的に指定しても同じ挙動になる（`./` と `.` はどちらも同じくプラグインルートを指し、挙動に差はない）
 
 **`bin/` ディレクトリ**:
 
@@ -138,17 +138,16 @@ my-plugin/
 - 複数パスは配列で指定可能
 - `commands/`, `agents/`, `skills/` は `.claude-plugin/` 内ではなく、プラグインルート直下に配置
 - `skills` にはディレクトリパスのみ指定可能（ファイルパスを指定するとエラー）
-- `skills: ["./"]` または `skills: ["."]` でプラグインルート自体をスキルディレクトリとして指定可能
+- `skills: ["./"]` または `skills: ["."]` でプラグインルート自体をスキルディレクトリとして明示的に指定可能（未指定でも下記の条件を満たせば自動認識される）
 - 宣言するコンポーネントパス（`commands`/`agents`/`skills`/`hooks`等）がシンボリックリンクで、リンク先がプラグインディレクトリ外を指している場合、エラーで拒否される（プラグインディレクトリ外のファイルを読み取れてしまうことを防ぐため）
 
 ### ルートレベルの SKILL.md 構成例
 
-`skills/` サブディレクトリなしで、プラグインルートに直接 `SKILL.md` を配置できます:
+`skills/` サブディレクトリなしで、プラグインルートに直接 `SKILL.md` を配置できます。`skills/` サブディレクトリが存在せず、`plugin.json` に `skills` マニフェストフィールドも指定されていない場合、この `SKILL.md` は単一スキルのプラグインとして自動的にロードされる（`skills: ["./"]` の指定は不要）:
 
 ```json
 {
-  "name": "my-plugin",
-  "skills": ["./"]
+  "name": "my-plugin"
 }
 ```
 
@@ -157,11 +156,13 @@ my-plugin/
 ```text
 my-plugin/
 ├── .claude-plugin/
-│   └── plugin.json   # skills: ["./"] を指定
+│   └── plugin.json   # skills フィールドは省略可能
 └── SKILL.md          # ルートに直接配置（skills/ 不要）
 ```
 
-`skills: ["."]`（`./` の代わりに `.`）も同様に有効で、どちらもプラグインルートを指す。プラグインルート以外の場所に `SKILL.md` を配置した場合のバリデーションエラーメッセージは、プラグインルートへの配置（`skills: ["."]` または `skills: ["./"]`）の利用を提案する内容になっている。
+`skills: ["./"]` または `skills: ["."]`（`./` の代わりに `.`）を明示的に指定しても同じ挙動になり、どちらもプラグインルートを指す。プラグインルート以外の場所に `SKILL.md` を配置した場合のバリデーションエラーメッセージは、プラグインルートへの配置（`skills: ["."]` または `skills: ["./"]`）の利用を提案する内容になっている。
+
+> 出典: [Plugins reference](https://code.claude.com/docs/en/plugins-reference) 「A plugin that has a `SKILL.md` at its root, no `skills/` subdirectory, and no `skills` manifest field is automatically loaded as a single-skill plugin. You do not need to set `"skills": ["./"]` in `plugin.json` for this layout.」
 
 ## 依存関係（dependencies）
 
