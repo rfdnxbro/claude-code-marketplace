@@ -7,9 +7,11 @@ from textwrap import dedent
 
 from scripts.validators.base import (
     WARNING_BROAD_BASH_WILDCARD,
+    WARNING_TRAILING_TEXT_AFTER_PAREN,
     WARNING_UNSCOPED_PATH_TOOL,
     ValidationResult,
     add_yaml_warnings,
+    find_trailing_text_after_paren,
     is_valid_boolean_value,
     normalize_path,
     parse_frontmatter,
@@ -20,6 +22,7 @@ from scripts.validators.base import (
     validate_context_field,
     validate_effort_field,
     validate_string_or_list_field,
+    validate_tool_pattern_field,
 )
 
 
@@ -443,6 +446,89 @@ class TestValidateAllowedTools:
         result = ValidationResult()
         fm = {"allowed-tools": ["Write", "NotebookEdit", "Glob"]}
         validate_allowed_tools(result, Path("test.md"), fm, set())
+        assert len(result.warnings) == 0
+
+
+class TestFindTrailingTextAfterParen:
+    """find_trailing_text_after_parenのテスト"""
+
+    def test_no_parens(self):
+        assert find_trailing_text_after_paren(["Read", "Bash"]) == []
+
+    def test_clean_pattern(self):
+        assert find_trailing_text_after_paren(["Bash(git add:*)", "Read(src/**)"]) == []
+
+    def test_trailing_text_detected(self):
+        assert find_trailing_text_after_paren(["Bash(ls) x"]) == ["Bash(ls) x"]
+
+    def test_trailing_text_no_space(self):
+        assert find_trailing_text_after_paren(["Bash(ls)x"]) == ["Bash(ls)x"]
+
+    def test_unclosed_paren_not_reported(self):
+        """閉じ括弧がない場合はここでは検出しない（別種の問題）"""
+        assert find_trailing_text_after_paren(["Bash(ls"]) == []
+
+    def test_nested_parens_handled(self):
+        """括弧を含む値（例: コミットメッセージ内の括弧）でも誤検出しない"""
+        item = 'Bash(git commit -m "fix: closes (#123)")'
+        assert find_trailing_text_after_paren([item]) == []
+
+    def test_trailing_comma_split_item_not_reported(self):
+        """カンマ区切り文字列の各アイテムは正しく分割され、他アイテムの影響を受けない"""
+        items = ["Bash(git add:*)", " Bash(git commit:*)"]
+        assert find_trailing_text_after_paren(items) == []
+
+
+class TestValidateToolPatternField:
+    """validate_tool_pattern_fieldのテスト"""
+
+    def test_not_specified(self):
+        result = ValidationResult()
+        validate_tool_pattern_field(result, Path("test.md"), "allowed-tools", None, set())
+        assert len(result.warnings) == 0
+
+    def test_clean_string_value(self):
+        result = ValidationResult()
+        validate_tool_pattern_field(
+            result, Path("test.md"), "allowed-tools", "Bash(git add:*), Bash(git commit:*)", set()
+        )
+        assert len(result.warnings) == 0
+
+    def test_clean_list_value(self):
+        result = ValidationResult()
+        validate_tool_pattern_field(
+            result, Path("test.md"), "allowed-tools", ["Read", "Bash(git:*)"], set()
+        )
+        assert len(result.warnings) == 0
+
+    def test_comma_inside_parens_not_split(self):
+        """括弧内のカンマは分割対象にならないことを確認"""
+        result = ValidationResult()
+        validate_tool_pattern_field(
+            result, Path("test.md"), "allowed-tools", "Bash(git add:*, git commit:*)", set()
+        )
+        assert len(result.warnings) == 0
+
+    def test_non_str_list_value_ignored(self):
+        """文字列/リスト以外の値では検出処理を行わないことを確認"""
+        result = ValidationResult()
+        validate_tool_pattern_field(result, Path("test.md"), "allowed-tools", True, set())
+        assert len(result.warnings) == 0
+
+    def test_trailing_text_warning(self):
+        result = ValidationResult()
+        validate_tool_pattern_field(result, Path("test.md"), "allowed-tools", "Bash(ls) x", set())
+        assert any("Bash(ls) x" in w for w in result.warnings)
+
+    def test_trailing_text_warning_disabled(self):
+        result = ValidationResult()
+        validate_tool_pattern_field(
+            result,
+            Path("test.md"),
+            "allowed-tools",
+            "Bash(ls) x",
+            {WARNING_TRAILING_TEXT_AFTER_PAREN},
+        )
         assert len(result.warnings) == 0
 
 
