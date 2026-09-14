@@ -521,9 +521,12 @@ zipは配下に`.claude-plugin/`を直接含む構成、または単一のトッ
 > is escape-safe"
 
 本リポジトリのバリデーター（`scripts/validators/base.py` の `validate_kebab_case`）は
-kebab-case形式（`^[a-z0-9]+(-[a-z0-9]+)*$`）を要求しており、制御文字・不可視文字は
+kebab-case形式（`[a-z0-9]+(-[a-z0-9]+)*` への完全一致）を要求しており、制御文字・不可視文字は
 この時点で構造的に弾かれる。そのため、この変更に伴う本リポジトリのバリデーターの
 追加実装は不要と判断した。
+
+照合には `re.match` ではなく `re.fullmatch` を使う。Pythonの `re.match` は `$` が文字列末尾の
+改行の直前にもマッチするため、`"my-plugin\n"` のように末尾に改行を含む名前を通してしまう。
 
 TODO: 要確認 — 以下は現時点で未確認。
 

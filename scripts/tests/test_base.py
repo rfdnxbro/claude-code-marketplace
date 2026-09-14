@@ -21,6 +21,7 @@ from scripts.validators.base import (
     validate_allowed_tools,
     validate_context_field,
     validate_effort_field,
+    validate_kebab_case,
     validate_string_or_list_field,
     validate_tool_pattern_field,
 )
@@ -669,3 +670,26 @@ class TestIsValidBooleanValue:
         assert not is_valid_boolean_value(None)
         assert not is_valid_boolean_value(1.5)
         assert not is_valid_boolean_value(["true"])
+
+
+class TestValidateKebabCase:
+    """validate_kebab_caseのテスト"""
+
+    def test_valid_names(self):
+        assert validate_kebab_case("my-plugin") is None
+        assert validate_kebab_case("plugin") is None
+        assert validate_kebab_case("my-plugin-2") is None
+
+    def test_invalid_characters(self):
+        assert validate_kebab_case("MyPlugin") is not None
+        assert validate_kebab_case("my_plugin") is not None
+        assert validate_kebab_case("my plugin") is not None
+        assert validate_kebab_case("") is not None
+
+    def test_control_and_invisible_characters_are_rejected(self):
+        # 末尾改行は re.match では通ってしまうため fullmatch で弾く
+        assert validate_kebab_case("my-plugin\n") is not None
+        assert validate_kebab_case("my-plugin\r\n") is not None
+        assert validate_kebab_case("my\nplugin") is not None
+        assert validate_kebab_case("my-plugin\u200b") is not None
+        assert validate_kebab_case("my-plugin\t") is not None
