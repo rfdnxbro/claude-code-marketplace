@@ -8,12 +8,14 @@ from pathlib import Path
 from .base import (
     ValidationResult,
     add_yaml_warnings,
+    get_disabled_warnings,
     parse_frontmatter,
     to_str,
     validate_allow_ask_glob_fields,
     validate_effort_field,
     validate_kebab_case,
     validate_string_or_list_field,
+    validate_tool_pattern_field,
 )
 
 
@@ -47,6 +49,7 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
         return result
 
     add_yaml_warnings(result, file_path, yaml_warnings)
+    disabled_warnings = get_disabled_warnings(content)
 
     # kebab-case（小文字とハイフンのみ）チェック
     kebab_error = validate_kebab_case(name_str)
@@ -127,9 +130,16 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
     # allow/askのツール名位置グロブを検証（v2.1.166以降）
     validate_allow_ask_glob_fields(result, file_path, frontmatter)
 
+    # experimental.cacheTtlの確認（v2.1.248以降: プロンプトキャッシュTTL "5m"/"1h"）
+    # experimentalはネストされたオブジェクトのため、本リポジトリの簡易パーサー
+    # （base.py の _FrontmatterParser）では値を取得できず、解析時に
+    # 「ネストされたオブジェクトはサポートされていません」警告が出る（hooks/metadataと同じ制限・非致命的）。
+    # そのため frontmatter["experimental"] の値を使ったcacheTtlの値検証はできない。
+
     # toolsの確認（リスト形式検証）
     tools = frontmatter.get("tools")
     validate_string_or_list_field(result, file_path, "tools", tools)
+    validate_tool_pattern_field(result, file_path, "tools", tools, disabled_warnings)
     # Task(agent_type) 構文の検証
     if tools is not None:
         tools_str = (
@@ -141,8 +151,10 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
             )
 
     # disallowedToolsの確認（リスト形式検証）
-    validate_string_or_list_field(
-        result, file_path, "disallowedTools", frontmatter.get("disallowedTools")
+    disallowed_tools = frontmatter.get("disallowedTools")
+    validate_string_or_list_field(result, file_path, "disallowedTools", disallowed_tools)
+    validate_tool_pattern_field(
+        result, file_path, "disallowedTools", disallowed_tools, disabled_warnings
     )
 
     # skillsの確認（リスト形式検証）

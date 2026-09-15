@@ -19,6 +19,7 @@ Markdown + YAML Frontmatter形式で記述します。
 - `.claude/agents/`ディレクトリ内には、エージェント定義以外のMarkdownファイル（README.mdなど）も配置できます
 - エージェント定義として認識されるのは、frontmatterに`name`フィールドを持つMarkdownファイルのみです
 - ドキュメント用のMarkdownファイルには警告は表示されません
+- プラグインの`agents`フィールドで指定するエージェントファイルへのパスがシンボリックリンクで、リンク先がプラグインディレクトリ外を指している場合、エラーで拒否されます（詳細は[plugin-manifest.md](plugin-manifest.md)の「パスの重要なルール」を参照）
 
 ## 形式
 
@@ -54,6 +55,7 @@ skills: skill-name
 | `mcpServers` | No | エージェントが利用可能なMCPサーバーを制限（カンマ/YAML形式） |
 | `isolation` | No | 実行分離モード：`worktree` |
 | `background` | No | バックグラウンドタスクとして常に実行：`true`/`false` |
+| `experimental` | No | 実験的なエージェント別オプション（ネストされたオブジェクト。未知キーは無視される）。[experimental.cacheTtl](#experimentalcachettl)参照 |
 
 ## description のベストプラクティス
 
@@ -166,6 +168,8 @@ content-level（具体的パターン）の`ask`設定は、tool-level（ツー�
 - `rm`コマンドは確認プロンプトが表示されます（`ask`が優先）
 
 この仕組みにより、ツール全体を許可しつつ、危険な操作のみ個別に制限できます。
+
+**`Tool(pattern)`構文に関する注意点**: `tools`/`disallowedTools`の`Tool(pattern)`形式は、スラッシュコマンド/スキルの`allowed-tools`と共通の構文です。閉じ括弧の後に余分な文字列を書かない等の注意点は[slash-commands.md](slash-commands.md)の「`Tool(pattern)`構文に関する注意点」を参照してください。
 
 ## memory
 
@@ -327,6 +331,25 @@ background: true
 - 長時間かかる処理を非同期で実行する
 - メインの会話フローをブロックせずにタスクを実行する
 - 監視・ログ収集などの常駐型タスク
+
+## experimental.cacheTtl
+
+エージェントごとのプロンプトキャッシュTTL（有効期間）を設定します。
+
+```yaml
+---
+name: cache-aware-agent
+description: プロンプトキャッシュを長時間維持したいエージェント
+experimental:
+  cacheTtl: 1h
+---
+```
+
+- 値: `5m` または `1h`
+- `subagentPromptCacheTtl` 設定（または対応する環境変数）が別途構成されていない場合にのみ使用される
+- Claudeサブスクリプションがオーバーレージ（利用上限超過）状態の間は、`1h`を指定していても無視される
+
+> **注（パーサーの制限）**: `experimental` はネストされたオブジェクトのため、本リポジトリの簡易フロントマターパーサー（`scripts/validators/base.py`）はその値を取得できず、検証時に「ネストされたオブジェクトはサポートされていません」という**非致命的な警告**を出します（`hooks`/`metadata`フィールドと同じ制限）。この警告はエラーではなく、`experimental.cacheTtl`の記述自体は有効です。
 
 ## hooks
 

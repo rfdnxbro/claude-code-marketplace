@@ -125,7 +125,13 @@ paths: .claude-plugin/marketplace.json
 | `strict` | boolean | `plugin.json`必須（デフォルト: true） |
 | `defaultEnabled` | boolean | `false` を指定するとマーケットプレイスからインストール時にデフォルト無効になる。`/plugin` または `claude plugin enable` で有効化できる。有効化済みプラグインの依存として指定された場合は自動的に有効化される |
 
+<<<<<<< HEAD
 **注意**: マーケットプレイスエントリが参照するプラグインの`commands`フィールド（`plugin.json`で宣言）にプラグインディレクトリ外を指すパス（`../`によるパストラバーサル）を指定した場合はエラーとして拒否される。詳細は[plugin-manifest.md](plugin-manifest.md)の`commands`フィールドを参照。
+=======
+## 表示メタデータの優先順位
+
+「Installed」タブや `claude plugin details`、`/plugin` の Discover/Browse、`claude plugin list --json --available` などのUI表示に使われる `description` 等の表示用メタデータは、マーケットプレイスエントリ側の値が優先されます。マーケットプレイスエントリに値がない場合は `plugin.json` 側の値で補完されます。
+>>>>>>> origin/main
 
 ## ソース指定
 
@@ -780,6 +786,27 @@ claude --plugin-dir ./my-plugin
 # .zip アーカイブを指定
 claude --plugin-dir ./my-plugin.zip
 ```
+
+## `--plugin-dir` でのフォルダ一括指定
+
+`--plugin-dir` には、単一のプラグインディレクトリだけでなく、`.claude-plugin/plugin.json`（manifest）を持つ子フォルダを複数含む親フォルダも指定できます。この場合、親フォルダ配下の各子フォルダが個別のプラグインとして読み込まれます。
+
+```bash
+# 複数プラグインを含む親フォルダを指定
+claude --plugin-dir ./my-plugins/
+```
+
+```text
+my-plugins/
+├── plugin-a/
+│   └── .claude-plugin/
+│       └── plugin.json
+└── plugin-b/
+    └── .claude-plugin/
+        └── plugin.json
+```
+
+Claude Codeの実行中に親フォルダ配下の子フォルダが追加・削除されると、その変更が動的に反映されます。
 
 ## `--plugin-dir` のローカル開発優先
 
