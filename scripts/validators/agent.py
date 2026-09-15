@@ -71,11 +71,12 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
     model_str = to_str(model)
     valid_shorthand_models = ["sonnet", "opus", "haiku", "inherit"]
     # フルモデルID（例: claude-opus-4-5, claude-sonnet-4-6, claude-haiku-4-5-20251001）のパターン
-    full_model_id_pattern = re.compile(r"^claude-[a-z]+-[0-9][a-z0-9-]*$")
+    # 照合には fullmatch を使う（match だと末尾改行を通してしまうため）
+    full_model_id_pattern = re.compile(r"claude-[a-z]+-[0-9][a-z0-9-]*")
     if (
         model_str
         and model_str not in valid_shorthand_models
-        and not full_model_id_pattern.match(model_str)
+        and not full_model_id_pattern.fullmatch(model_str)
     ):
         result.add_warning(
             f"{file_path.name}: modelが不正: {model_str}"
