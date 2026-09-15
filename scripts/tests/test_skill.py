@@ -900,3 +900,16 @@ description: 説明
         """).strip()
         result = validate_skill(Path("SKILL.md"), content)
         assert not result.has_errors()
+
+    def test_name_with_trailing_newline_rejected(self):
+        """末尾に改行を含むnameは拒否される（fullmatchで照合）"""
+        content = dedent("""
+            ---
+            name: "my-skill\\n"
+            description: PDFファイルを処理する。ユーザーがPDFについて言及した時に使用。
+            ---
+            スキル本文
+        """).strip()
+        result = validate_skill(Path("SKILL.md"), content)
+        assert result.has_errors()
+        assert any("小文字、数字、ハイフン" in e for e in result.errors)

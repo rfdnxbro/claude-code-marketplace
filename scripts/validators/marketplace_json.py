@@ -35,7 +35,8 @@ VALID_COMMAND_MODES = {"copy", "link"}
 MAX_COMMAND_LENGTH = 500
 
 # sha256フィールドの形式（16進数64文字、大文字小文字を許容）
-SHA256_PATTERN = re.compile(r"^[0-9a-fA-F]{64}$")
+# 照合には fullmatch を使う（match だと末尾改行を通してしまうため）
+SHA256_PATTERN = re.compile(r"[0-9a-fA-F]{64}")
 
 
 def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult:
@@ -187,7 +188,7 @@ def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult
                             result.add_error(
                                 f"{file_path.name}: plugins[{i}].source.sha256は文字列が必要です"
                             )
-                        elif not SHA256_PATTERN.match(sha256):
+                        elif not SHA256_PATTERN.fullmatch(sha256):
                             result.add_error(
                                 f"{file_path.name}: plugins[{i}].source.sha256は"
                                 "16進数64文字である必要があります"

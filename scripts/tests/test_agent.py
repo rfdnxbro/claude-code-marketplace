@@ -793,3 +793,16 @@ class TestValidateAgent:
         """).strip()
         result = validate_agent(Path("agent.md"), content)
         assert not result.has_errors()
+
+    def test_full_model_id_with_trailing_newline_warns(self):
+        """末尾に改行を含むフルモデルIDは警告される（fullmatchで照合）"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            model: "claude-opus-4-5\\n"
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert any("model" in w for w in result.warnings)
