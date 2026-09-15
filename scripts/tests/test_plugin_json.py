@@ -117,6 +117,109 @@ class TestValidatePluginJson:
         result = validate_plugin_json(Path("plugin.json"), content)
         assert any("デフォルトパス" in w for w in result.warnings)
 
+    def test_commands_path_traversal_rejected(self):
+        """commandsがプラグインディレクトリ外を指す場合エラー（パストラバーサル）"""
+        content = json.dumps({"name": "my-plugin", "commands": "../outside/commands/"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("パストラバーサル" in e for e in result.errors)
+
+    def test_commands_path_traversal_rejected_in_array(self):
+        """commandsが配列でパストラバーサルを含む場合エラー"""
+        content = json.dumps(
+            {"name": "my-plugin", "commands": ["./commands/", "../../etc/commands/"]}
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("パストラバーサル" in e for e in result.errors)
+
+    def test_commands_windows_path_traversal_rejected(self):
+        """Windows形式（バックスラッシュ区切り）のパストラバーサルもエラー"""
+        content = json.dumps({"name": "my-plugin", "commands": "..\\outside\\commands"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("パストラバーサル" in e for e in result.errors)
+
+    def test_commands_mixed_separator_path_traversal_rejected(self):
+        """バックスラッシュとスラッシュが混在するパストラバーサルもエラー"""
+        content = json.dumps({"name": "my-plugin", "commands": "sub\\..\\../etc/commands"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("パストラバーサル" in e for e in result.errors)
+
+    def test_commands_absolute_posix_path_rejected(self):
+        """POSIXの絶対パスもプラグインディレクトリ外としてエラー"""
+        content = json.dumps({"name": "my-plugin", "commands": "/etc/commands"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("パストラバーサル" in e for e in result.errors)
+
+    def test_commands_absolute_windows_path_rejected(self):
+        """Windowsのドライブレター付き絶対パスもエラー"""
+        content = json.dumps({"name": "my-plugin", "commands": "C:\\commands"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("パストラバーサル" in e for e in result.errors)
+
+    def test_commands_unc_path_rejected(self):
+        """UNCパスもエラー"""
+        content = json.dumps({"name": "my-plugin", "commands": "\\\\server\\share\\commands"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("パストラバーサル" in e for e in result.errors)
+
+    def test_commands_plugin_root_variable_not_rejected(self):
+        """${CLAUDE_PLUGIN_ROOT} を使ったパスはエラーにしない"""
+        content = json.dumps({"name": "my-plugin", "commands": "${CLAUDE_PLUGIN_ROOT}/commands"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not any("パストラバーサル" in e for e in result.errors)
+
+    def test_commands_plugin_root_variable_with_traversal_rejected(self):
+        """${CLAUDE_PLUGIN_ROOT} の後ろに ../ が続く場合はエラー"""
+        content = json.dumps({"name": "my-plugin", "commands": "${CLAUDE_PLUGIN_ROOT}/../outside"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("パストラバーサル" in e for e in result.errors)
+
+    def test_commands_bare_variable_with_traversal_rejected(self):
+        """ブレースなしの $CLAUDE_PLUGIN_ROOT でも ../ が続く場合はエラー"""
+        content = json.dumps({"name": "my-plugin", "commands": "$CLAUDE_PLUGIN_ROOT/../outside"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("パストラバーサル" in e for e in result.errors)
+
+    def test_commands_plugin_root_variable_only_not_rejected(self):
+        """${CLAUDE_PLUGIN_ROOT} 単体はエラーにしない"""
+        content = json.dumps({"name": "my-plugin", "commands": "${CLAUDE_PLUGIN_ROOT}"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not any("パストラバーサル" in e for e in result.errors)
+
+    def test_commands_absolute_path_with_trailing_variable_rejected(self):
+        """変数トークンを含んでいても先頭が絶対パスならエラー"""
+        content = json.dumps({"name": "my-plugin", "commands": "/etc/passwd${X}"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("パストラバーサル" in e for e in result.errors)
+
+    def test_commands_absolute_path_of_only_variable_rejected(self):
+        """スラッシュ始まりで残りが変数だけでもエラー"""
+        content = json.dumps({"name": "my-plugin", "commands": "/${FOO}"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("パストラバーサル" in e for e in result.errors)
+
+    def test_commands_non_string_non_list_skips_traversal_check(self):
+        """commandsが文字列でも配列でもない場合、パストラバーサル検証はスキップされる"""
+        content = json.dumps({"name": "my-plugin", "commands": 123})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not any("パストラバーサル" in e for e in result.errors)
+
+    def test_commands_path_within_plugin_root_no_error(self):
+        """commandsがプラグインディレクトリ内を指す場合はパストラバーサルエラーなし"""
+        content = json.dumps({"name": "my-plugin", "commands": "./nested/../commands/"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not any("パストラバーサル" in e for e in result.errors)
+
     def test_redundant_default_path_commands(self):
         """commandsにデフォルトパスを指定した場合に警告が出ることを確認"""
         content = json.dumps({"name": "my-plugin", "commands": "./commands/"})

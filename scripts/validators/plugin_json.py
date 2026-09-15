@@ -2,6 +2,7 @@
 plugin.json のバリデーター
 """
 
+import os
 import re
 from pathlib import Path
 from typing import Any
@@ -10,6 +11,58 @@ from .base import ValidationResult, parse_json_safe, validate_kebab_case
 from .monitors_json import validate_monitors_entries
 
 USER_CONFIG_TYPES = {"string", "number", "boolean", "directory", "file"}
+
+# パス先頭の環境変数プレースホルダ（${VAR} / $VAR）
+LEADING_VARIABLE_PATTERN = re.compile(r"^(?:\$\{[^}]*\}|\$[A-Za-z_][A-Za-z0-9_]*)")
+
+
+def _is_path_traversal(path_str: str) -> bool:
+    r"""パスがプラグインディレクトリ外を指すか（パストラバーサル）を判定する
+
+    `../` による上位参照に加えて、絶対パスもプラグインディレクトリ外を指すものとして
+    扱う。POSIXの `/etc/commands` だけでなく、Windowsのドライブレター付きパス
+    （`C:\commands`）とUNCパス（`\\server\share`）も対象になる。
+
+    Windowsではバックスラッシュもパス区切りとして扱われる。区切り文字を `/` に
+    寄せてから判定しないと、Linux上の検証で `..\outside` のようなWindows形式の
+    パストラバーサルを見逃してしまう。
+
+    先頭の `${CLAUDE_PLUGIN_ROOT}` のような変数はランタイムで絶対パスに展開されるため、
+    プラグインルートを指す基点として扱う。字句的に正規化すると
+    `${CLAUDE_PLUGIN_ROOT}/../outside` の `..` が変数セグメントを相殺して `outside`
+    になり、実際には親ディレクトリを指すパスを見逃してしまう。
+
+    基点として扱うのは先頭にある変数だけに限る。文字列のどこかに変数があれば基点扱い
+    にすると、`/etc/passwd${X}` のような絶対パスが変数トークン1つで絶対パス判定を
+    すり抜けてしまう。
+    """
+    unified = path_str.replace("\\", "/")
+    leading_variable = LEADING_VARIABLE_PATTERN.match(unified)
+    if leading_variable:
+        # 先頭の変数を基点とみなし、それ以降の相対移動だけを見る
+        unified = unified[leading_variable.end() :].lstrip("/")
+        if not unified:
+            return False
+    elif unified.startswith("/") or re.match(r"^[A-Za-z]:/", unified):
+        # 絶対パス（POSIX / UNC / Windowsドライブレター）
+        return True
+    normalized = os.path.normpath(unified).replace("\\", "/")
+    return normalized == ".." or normalized.startswith("../")
+
+
+def _validate_commands_no_path_traversal(
+    result: ValidationResult, file_path: Path, commands_value: Any
+) -> None:
+    """commandsフィールドのパスがプラグインディレクトリ外を指していないか検証する"""
+    paths = [commands_value] if isinstance(commands_value, str) else commands_value
+    if not isinstance(paths, list):
+        return
+    for p in paths:
+        if isinstance(p, str) and _is_path_traversal(p):
+            result.add_error(
+                f"{file_path.name}: commandsはプラグインディレクトリ外を指すパスを"
+                f"指定できません（パストラバーサル）: {p}"
+            )
 
 
 def _validate_dependency_object(
@@ -250,6 +303,11 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
                         f"{file_path.name}: experimental.{field}"
                         f"はデフォルトパス（{value}）と同一のため指定不要です。削除してください"
                     )
+
+    # commandsのパストラバーサル確認（プラグインディレクトリ外を指すパスは拒否）
+    commands_value = data.get("commands")
+    if commands_value is not None:
+        _validate_commands_no_path_traversal(result, file_path, commands_value)
 
     # パスの確認
     path_fields = [

@@ -62,6 +62,7 @@
 | `CLAUDECODE` | `1` に設定済み（Stdio MCPサーバーのサブプロセス環境で利用可能） | mcp-servers |
 | `${CLAUDE_EFFORT}` | 現在のエフォートレベル。値: `low` / `medium` / `high` / `xhigh`（対応モデルでのみ利用可能。非対応モデルでは `high` にフォールバック） / `max` | skills, hooks |
 | `CLAUDE_CODE_ENABLE_TODO_TOOLS` | `1` を設定すると、一部モデルでデフォルト無効化されたTodo/タスク管理ツール（`TaskCreate`/`Get`/`Update`/`List`, `TodoWrite`）を復活させる | hooks |
+| `CLAUDE_CODE_SUBAGENT_MODEL` | デフォルトのサブエージェントモデルを設定。エージェント定義の`model`フィールドや呼び出し時の明示的なモデル指定が優先される | agents |
 | `COLUMNS` | ステータスラインコマンド実行時のターミナルの列数 | statusline |
 | `LINES` | ステータスラインコマンド実行時のターミナルの行数 | statusline |
 

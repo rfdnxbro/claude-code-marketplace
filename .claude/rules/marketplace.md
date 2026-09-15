@@ -125,6 +125,8 @@ paths: .claude-plugin/marketplace.json
 | `strict` | boolean | `plugin.json`必須（デフォルト: true） |
 | `defaultEnabled` | boolean | `false` を指定するとマーケットプレイスからインストール時にデフォルト無効になる。`/plugin` または `claude plugin enable` で有効化できる。有効化済みプラグインの依存として指定された場合は自動的に有効化される |
 
+**注意**: マーケットプレイスエントリが参照するプラグインの`commands`フィールド（`plugin.json`で宣言）にプラグインディレクトリ外を指すパス（`../`によるパストラバーサル、絶対パス）を指定した場合はエラーとして拒否される。詳細は[plugin-manifest.md](plugin-manifest.md)の`commands`フィールドを参照。
+
 ## 表示メタデータの優先順位
 
 「Installed」タブや `claude plugin details`、`/plugin` の Discover/Browse、`claude plugin list --json --available` などのUI表示に使われる `description` 等の表示用メタデータは、マーケットプレイスエントリ側の値が優先されます。マーケットプレイスエントリに値がない場合は `plugin.json` 側の値で補完されます。
