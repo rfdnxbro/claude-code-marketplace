@@ -12,8 +12,8 @@ from .monitors_json import validate_monitors_entries
 
 USER_CONFIG_TYPES = {"string", "number", "boolean", "directory", "file"}
 
-# パス中の環境変数プレースホルダ（${VAR} / $VAR）
-VARIABLE_PATTERN = re.compile(r"\$\{[^}]*\}|\$[A-Za-z_][A-Za-z0-9_]*")
+# パス先頭の環境変数プレースホルダ（${VAR} / $VAR）
+LEADING_VARIABLE_PATTERN = re.compile(r"^(?:\$\{[^}]*\}|\$[A-Za-z_][A-Za-z0-9_]*)")
 
 
 def _is_path_traversal(path_str: str) -> bool:
@@ -27,15 +27,20 @@ def _is_path_traversal(path_str: str) -> bool:
     寄せてから判定しないと、Linux上の検証で `..\outside` のようなWindows形式の
     パストラバーサルを見逃してしまう。
 
-    `${CLAUDE_PLUGIN_ROOT}` のような変数はランタイムで絶対パスに展開されるため、
+    先頭の `${CLAUDE_PLUGIN_ROOT}` のような変数はランタイムで絶対パスに展開されるため、
     プラグインルートを指す基点として扱う。字句的に正規化すると
     `${CLAUDE_PLUGIN_ROOT}/../outside` の `..` が変数セグメントを相殺して `outside`
     になり、実際には親ディレクトリを指すパスを見逃してしまう。
+
+    基点として扱うのは先頭にある変数だけに限る。文字列のどこかに変数があれば基点扱い
+    にすると、`/etc/passwd${X}` のような絶対パスが変数トークン1つで絶対パス判定を
+    すり抜けてしまう。
     """
     unified = path_str.replace("\\", "/")
-    if VARIABLE_PATTERN.search(unified):
-        # 変数部分を基点とみなし、それ以降の相対移動だけを見る
-        unified = VARIABLE_PATTERN.sub("", unified).lstrip("/")
+    leading_variable = LEADING_VARIABLE_PATTERN.match(unified)
+    if leading_variable:
+        # 先頭の変数を基点とみなし、それ以降の相対移動だけを見る
+        unified = unified[leading_variable.end() :].lstrip("/")
         if not unified:
             return False
     elif unified.startswith("/") or re.match(r"^[A-Za-z]:/", unified):

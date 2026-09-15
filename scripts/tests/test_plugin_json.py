@@ -194,6 +194,20 @@ class TestValidatePluginJson:
         result = validate_plugin_json(Path("plugin.json"), content)
         assert not any("パストラバーサル" in e for e in result.errors)
 
+    def test_commands_absolute_path_with_trailing_variable_rejected(self):
+        """変数トークンを含んでいても先頭が絶対パスならエラー"""
+        content = json.dumps({"name": "my-plugin", "commands": "/etc/passwd${X}"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("パストラバーサル" in e for e in result.errors)
+
+    def test_commands_absolute_path_of_only_variable_rejected(self):
+        """スラッシュ始まりで残りが変数だけでもエラー"""
+        content = json.dumps({"name": "my-plugin", "commands": "/${FOO}"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("パストラバーサル" in e for e in result.errors)
+
     def test_commands_non_string_non_list_skips_traversal_check(self):
         """commandsが文字列でも配列でもない場合、パストラバーサル検証はスキップされる"""
         content = json.dumps({"name": "my-plugin", "commands": 123})
