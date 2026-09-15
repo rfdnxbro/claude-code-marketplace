@@ -147,6 +147,33 @@ class TestValidatePluginJson:
         assert result.has_errors()
         assert any("パストラバーサル" in e for e in result.errors)
 
+    def test_commands_absolute_posix_path_rejected(self):
+        """POSIXの絶対パスもプラグインディレクトリ外としてエラー"""
+        content = json.dumps({"name": "my-plugin", "commands": "/etc/commands"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("パストラバーサル" in e for e in result.errors)
+
+    def test_commands_absolute_windows_path_rejected(self):
+        """Windowsのドライブレター付き絶対パスもエラー"""
+        content = json.dumps({"name": "my-plugin", "commands": "C:\\commands"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("パストラバーサル" in e for e in result.errors)
+
+    def test_commands_unc_path_rejected(self):
+        """UNCパスもエラー"""
+        content = json.dumps({"name": "my-plugin", "commands": "\\\\server\\share\\commands"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("パストラバーサル" in e for e in result.errors)
+
+    def test_commands_plugin_root_variable_not_rejected(self):
+        """${CLAUDE_PLUGIN_ROOT} を使ったパスはエラーにしない"""
+        content = json.dumps({"name": "my-plugin", "commands": "${CLAUDE_PLUGIN_ROOT}/commands"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not any("パストラバーサル" in e for e in result.errors)
+
     def test_commands_non_string_non_list_skips_traversal_check(self):
         """commandsが文字列でも配列でもない場合、パストラバーサル検証はスキップされる"""
         content = json.dumps({"name": "my-plugin", "commands": 123})

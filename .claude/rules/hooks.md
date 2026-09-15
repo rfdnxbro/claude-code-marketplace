@@ -85,8 +85,8 @@ hooks:
 | `Elicitation` | MCPエリシテーションのレスポンス送信前 | ✓ |
 | `ElicitationResult` | MCPエリシテーションのレスポンス結果 | ✓ |
 | `MessageDisplay` | アシスタントのメッセージテキストが表示される際（変換・非表示に利用可能） | × |
-| `PreModelSwitch` | モデル切り替え前（ブロック・確認が可能） | TODO: 要確認 |
-| `PostModelSwitch` | モデル切り替え後（注釈付与が可能） | TODO: 要確認 |
+| `PreModelSwitch` | モデル切り替え前（ブロック・確認が可能）。TODO: 要確認 - マッチャー対応の可否は未調査 | |
+| `PostModelSwitch` | モデル切り替え後（注釈付与が可能）。TODO: 要確認 - マッチャー対応の可否は未調査 | |
 
 > **フックソース表示**: パーミッションプロンプトでフックの確認が必要な場合、フックのソース（`settings` / `plugin` / `skill`）が表示されます。
 

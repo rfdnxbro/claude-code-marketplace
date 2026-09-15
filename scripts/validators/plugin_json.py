@@ -16,11 +16,19 @@ USER_CONFIG_TYPES = {"string", "number", "boolean", "directory", "file"}
 def _is_path_traversal(path_str: str) -> bool:
     r"""パスがプラグインディレクトリ外を指すか（パストラバーサル）を判定する
 
+    `../` による上位参照に加えて、絶対パスもプラグインディレクトリ外を指すものとして
+    扱う。POSIXの `/etc/commands` だけでなく、Windowsのドライブレター付きパス
+    （`C:\commands`）とUNCパス（`\\server\share`）も対象になる。
+
     Windowsではバックスラッシュもパス区切りとして扱われる。区切り文字を `/` に
     寄せてから判定しないと、Linux上の検証で `..\outside` のようなWindows形式の
     パストラバーサルを見逃してしまう。
     """
-    normalized = os.path.normpath(path_str.replace("\\", "/")).replace("\\", "/")
+    unified = path_str.replace("\\", "/")
+    # 絶対パス（POSIX / UNC / Windowsドライブレター）
+    if unified.startswith("/") or re.match(r"^[A-Za-z]:/", unified):
+        return True
+    normalized = os.path.normpath(unified).replace("\\", "/")
     return normalized == ".." or normalized.startswith("../")
 
 
