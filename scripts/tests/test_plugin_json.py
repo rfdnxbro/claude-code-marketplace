@@ -176,18 +176,14 @@ class TestValidatePluginJson:
 
     def test_commands_plugin_root_variable_with_traversal_rejected(self):
         """${CLAUDE_PLUGIN_ROOT} の後ろに ../ が続く場合はエラー"""
-        content = json.dumps(
-            {"name": "my-plugin", "commands": "${CLAUDE_PLUGIN_ROOT}/../outside"}
-        )
+        content = json.dumps({"name": "my-plugin", "commands": "${CLAUDE_PLUGIN_ROOT}/../outside"})
         result = validate_plugin_json(Path("plugin.json"), content)
         assert result.has_errors()
         assert any("パストラバーサル" in e for e in result.errors)
 
     def test_commands_bare_variable_with_traversal_rejected(self):
         """ブレースなしの $CLAUDE_PLUGIN_ROOT でも ../ が続く場合はエラー"""
-        content = json.dumps(
-            {"name": "my-plugin", "commands": "$CLAUDE_PLUGIN_ROOT/../outside"}
-        )
+        content = json.dumps({"name": "my-plugin", "commands": "$CLAUDE_PLUGIN_ROOT/../outside"})
         result = validate_plugin_json(Path("plugin.json"), content)
         assert result.has_errors()
         assert any("パストラバーサル" in e for e in result.errors)
