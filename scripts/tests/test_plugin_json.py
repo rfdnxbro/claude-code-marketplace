@@ -174,6 +174,30 @@ class TestValidatePluginJson:
         result = validate_plugin_json(Path("plugin.json"), content)
         assert not any("パストラバーサル" in e for e in result.errors)
 
+    def test_commands_plugin_root_variable_with_traversal_rejected(self):
+        """${CLAUDE_PLUGIN_ROOT} の後ろに ../ が続く場合はエラー"""
+        content = json.dumps(
+            {"name": "my-plugin", "commands": "${CLAUDE_PLUGIN_ROOT}/../outside"}
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("パストラバーサル" in e for e in result.errors)
+
+    def test_commands_bare_variable_with_traversal_rejected(self):
+        """ブレースなしの $CLAUDE_PLUGIN_ROOT でも ../ が続く場合はエラー"""
+        content = json.dumps(
+            {"name": "my-plugin", "commands": "$CLAUDE_PLUGIN_ROOT/../outside"}
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("パストラバーサル" in e for e in result.errors)
+
+    def test_commands_plugin_root_variable_only_not_rejected(self):
+        """${CLAUDE_PLUGIN_ROOT} 単体はエラーにしない"""
+        content = json.dumps({"name": "my-plugin", "commands": "${CLAUDE_PLUGIN_ROOT}"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not any("パストラバーサル" in e for e in result.errors)
+
     def test_commands_non_string_non_list_skips_traversal_check(self):
         """commandsが文字列でも配列でもない場合、パストラバーサル検証はスキップされる"""
         content = json.dumps({"name": "my-plugin", "commands": 123})

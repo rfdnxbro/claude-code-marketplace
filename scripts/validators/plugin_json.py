@@ -12,6 +12,9 @@ from .monitors_json import validate_monitors_entries
 
 USER_CONFIG_TYPES = {"string", "number", "boolean", "directory", "file"}
 
+# パス中の環境変数プレースホルダ（${VAR} / $VAR）
+VARIABLE_PATTERN = re.compile(r"\$\{[^}]*\}|\$[A-Za-z_][A-Za-z0-9_]*")
+
 
 def _is_path_traversal(path_str: str) -> bool:
     r"""パスがプラグインディレクトリ外を指すか（パストラバーサル）を判定する
@@ -23,10 +26,20 @@ def _is_path_traversal(path_str: str) -> bool:
     Windowsではバックスラッシュもパス区切りとして扱われる。区切り文字を `/` に
     寄せてから判定しないと、Linux上の検証で `..\outside` のようなWindows形式の
     パストラバーサルを見逃してしまう。
+
+    `${CLAUDE_PLUGIN_ROOT}` のような変数はランタイムで絶対パスに展開されるため、
+    プラグインルートを指す基点として扱う。字句的に正規化すると
+    `${CLAUDE_PLUGIN_ROOT}/../outside` の `..` が変数セグメントを相殺して `outside`
+    になり、実際には親ディレクトリを指すパスを見逃してしまう。
     """
     unified = path_str.replace("\\", "/")
-    # 絶対パス（POSIX / UNC / Windowsドライブレター）
-    if unified.startswith("/") or re.match(r"^[A-Za-z]:/", unified):
+    if VARIABLE_PATTERN.search(unified):
+        # 変数部分を基点とみなし、それ以降の相対移動だけを見る
+        unified = VARIABLE_PATTERN.sub("", unified).lstrip("/")
+        if not unified:
+            return False
+    elif unified.startswith("/") or re.match(r"^[A-Za-z]:/", unified):
+        # 絶対パス（POSIX / UNC / Windowsドライブレター）
         return True
     normalized = os.path.normpath(unified).replace("\\", "/")
     return normalized == ".." or normalized.startswith("../")
