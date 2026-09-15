@@ -1533,3 +1533,25 @@ class TestDefaultEnabled:
         result = validate_marketplace_json(Path("marketplace.json"), content)
         assert result.has_errors()
         assert any("defaultEnabled" in e and "ブール値" in e for e in result.errors)
+
+    def test_source_archive_sha256_trailing_newline(self):
+        """sha256の末尾に改行が付く場合はエラー（fullmatchで照合）"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": {
+                            "source": "archive",
+                            "url": "https://artifacts.example.com/my-plugin.zip",
+                            "sha256": "65b29a9fd3ff6a671e185d4deaeb5c42afb57ec1dd86f334b92f2e374f4344b5\n",
+                        },
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("source.sha256" in e and "16進数64文字" in e for e in result.errors)

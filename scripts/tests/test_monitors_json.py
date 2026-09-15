@@ -233,3 +233,19 @@ class TestValidateMonitorsJson:
         result = validate_monitors_json(Path("monitors.json"), content)
         assert result.has_errors()
         assert any("when" in e and "空文字列" in e for e in result.errors)
+
+    def test_on_skill_invoke_with_trailing_newline(self):
+        """whenの末尾に改行が付く場合は警告（fullmatchで照合）"""
+        content = json.dumps(
+            [
+                {
+                    "name": "mon",
+                    "command": "echo hi",
+                    "description": "desc",
+                    "when": "on-skill-invoke:my-skill\n",
+                }
+            ]
+        )
+        result = validate_monitors_json(Path("monitors.json"), content)
+        assert not result.has_errors()
+        assert any("when" in w for w in result.warnings)

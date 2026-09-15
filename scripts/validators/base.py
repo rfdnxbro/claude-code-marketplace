@@ -8,7 +8,9 @@ from pathlib import Path
 from typing import Any
 
 # kebab-case検証用の正規表現（プリコンパイル）
-KEBAB_CASE_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+# 照合には fullmatch を使う。match だと `$` が末尾改行の直前にもマッチするため
+# "my-plugin\n" のような制御文字付きの名前を通してしまう
+KEBAB_CASE_PATTERN = re.compile(r"[a-z0-9]+(-[a-z0-9]+)*")
 
 # 警告スキップコメントの正規表現
 # 形式: <!-- validator-disable warning-id -->
@@ -235,7 +237,7 @@ def validate_kebab_case(name: str) -> str | None:
     Returns:
         エラーメッセージ。問題なければNone
     """
-    if not KEBAB_CASE_PATTERN.match(name):
+    if not KEBAB_CASE_PATTERN.fullmatch(name):
         return f"nameはkebab-case（小文字とハイフン）のみ: {name}"
     return None
 

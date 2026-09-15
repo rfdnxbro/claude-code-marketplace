@@ -12,7 +12,8 @@ VALID_WHEN_ALWAYS = "always"
 # when の on-skill-invoke:<skill-name> パターン
 # 公式はスキル名の書式制約を明示していないが、既存ルール（kebab-case）に合わせて
 # 一致しないものを警告扱いとする
-ON_SKILL_INVOKE_PATTERN = re.compile(r"^on-skill-invoke:[a-z0-9]+(-[a-z0-9]+)*$")
+# 照合には fullmatch を使う（match だと末尾改行を通してしまうため）
+ON_SKILL_INVOKE_PATTERN = re.compile(r"on-skill-invoke:[a-z0-9]+(-[a-z0-9]+)*")
 
 # 既知のフィールド
 KNOWN_FIELDS = {"name", "command", "description", "when"}
@@ -25,7 +26,7 @@ def _validate_when_value(when: str) -> bool:
     """when の値が有効な形式かどうかを判定する"""
     if when == VALID_WHEN_ALWAYS:
         return True
-    return bool(ON_SKILL_INVOKE_PATTERN.match(when))
+    return bool(ON_SKILL_INVOKE_PATTERN.fullmatch(when))
 
 
 def validate_monitors_entries(

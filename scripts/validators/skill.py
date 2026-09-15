@@ -44,7 +44,9 @@ def validate_skill(file_path: Path, content: str) -> ValidationResult:
             result.add_error(
                 f"{file_path.name}: nameは64文字以内にしてください: {len(name_str)}文字"
             )
-        if not re.match(r"^[a-z0-9-]+$", name_str):
+        # fullmatch を使う。match だと `$` が末尾改行の直前にもマッチし、
+        # "my-skill\n" のような制御文字付きの名前を通してしまう
+        if not re.fullmatch(r"[a-z0-9-]+", name_str):
             result.add_error(f"{file_path.name}: nameは小文字、数字、ハイフンのみ使用可能です")
         # 予約語チェック
         if "anthropic" in name_str.lower() or "claude" in name_str.lower():
