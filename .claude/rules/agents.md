@@ -55,6 +55,7 @@ skills: skill-name
 | `mcpServers` | No | エージェントが利用可能なMCPサーバーを制限（カンマ/YAML形式） |
 | `isolation` | No | 実行分離モード：`worktree` |
 | `background` | No | バックグラウンドタスクとして常に実行：`true`/`false` |
+| `omitClaudeMd` | No | `true`にすると、ユーザー・プロジェクト・ローカルのCLAUDE.mdを読み込まずにエージェントを実行する：`true`/`false`。管理ポリシーファイルは`omitClaudeMd`指定時も読み込まれる |
 | `experimental` | No | 実験的なエージェント別オプション（ネストされたオブジェクト。未知キーは無視される）。[experimental.cacheTtl](#experimentalcachettl)参照 |
 
 ## description のベストプラクティス
@@ -331,6 +332,24 @@ background: true
 - 長時間かかる処理を非同期で実行する
 - メインの会話フローをブロックせずにタスクを実行する
 - 監視・ログ収集などの常駐型タスク
+
+## omitClaudeMd
+
+`omitClaudeMd: true` を指定すると、エージェントはユーザー・プロジェクト・ローカルのCLAUDE.mdファイルを読み込まずに実行されます。管理ポリシーファイルは`omitClaudeMd`指定時も読み込まれます。
+
+```yaml
+---
+name: isolated-context-agent
+description: CLAUDE.mdの内容に影響されずに動作させたいエージェント
+omitClaudeMd: true
+---
+
+CLAUDE.mdの指示を継承せず、このエージェント自身のシステムプロンプトのみに従って動作します。
+```
+
+**ユースケース:**
+
+- カスタム・プラグインサブエージェントを、親プロジェクトのCLAUDE.mdの指示に影響されずに動作させる
 
 ## experimental.cacheTtl
 

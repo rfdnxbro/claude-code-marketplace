@@ -570,6 +570,46 @@ class TestValidateAgent:
         assert result.has_errors()
         assert any("background" in e for e in result.errors)
 
+    def test_omit_claude_md_valid_true(self):
+        """omitClaudeMd: trueが有効であることを確認"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            omitClaudeMd: true
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()
+
+    def test_omit_claude_md_valid_false(self):
+        """omitClaudeMd: falseが有効であることを確認"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            omitClaudeMd: false
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert not result.has_errors()
+
+    def test_omit_claude_md_invalid_string(self):
+        """omitClaudeMd: にブール値以外の文字列が指定された場合エラー"""
+        content = dedent("""
+            ---
+            name: test-agent
+            description: これは十分に長い説明です
+            omitClaudeMd: yes
+            ---
+            本文
+        """).strip()
+        result = validate_agent(Path("agent.md"), content)
+        assert result.has_errors()
+        assert any("omitClaudeMd" in e for e in result.errors)
+
     def test_isolation_and_background_combined(self):
         """isolationとbackgroundを同時に指定できることを確認"""
         content = dedent("""
