@@ -255,6 +255,7 @@ export MAX_MCP_OUTPUT_TOKENS=50000
 | `timeout`（`.mcp.json` のサーバーエントリ） | そのサーバーのツール実行タイムアウト（ミリ秒）。例: `"timeout": 600000`（10分）。そのサーバーに限り `MCP_TOOL_TIMEOUT` を上書きする。ツール呼び出しごとの厳密な wall-clock 上限で、進捗通知では延長されない。1000未満の値は無視され `MCP_TOOL_TIMEOUT`（未設定時は約28時間）にフォールバックする |
 | `MCP_TIMEOUT`（環境変数） | MCPサーバーの起動タイムアウト（ミリ秒）。例: `MCP_TIMEOUT=10000 claude` |
 | `MCP_TOOL_TIMEOUT`（環境変数） | ツール実行タイムアウトのデフォルト（ミリ秒）。サーバー個別の `timeout` で上書き可能 |
+| `CLAUDE_CODE_MCP_STARTUP_WAIT_MS`（環境変数） | 非対話（headless）セッションの最初のターンが、接続中のMCPサーバーを待つ時間の上限（ミリ秒）。`0` を指定すると待たない |
 
 ```json
 {
