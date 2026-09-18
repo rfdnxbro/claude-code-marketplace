@@ -372,6 +372,10 @@ npmレジストリからプラグインをインストール:
 | `version` | string | | バージョン指定（省略時は最新版） |
 | `registry` | string | | カスタムレジストリURL（省略時はデフォルトのnpmレジストリ） |
 
+#### インストール時の制約
+
+npmパッケージの取得には `npm pack --ignore-scripts` 相当の方式が使われ、整合性検証（integrity-verified）も行われる。そのため、`preinstall`/`postinstall` などのnpm lifecycleスクリプトはインストール時に実行されない。ビルドが必要なプラグインをnpmソースで配布する場合は、ビルド成果物をあらかじめnpmパッケージに含めておく必要がある（postinstallでのビルドには依存できない）。
+
 ### settings
 
 `settings.json` 内にインラインでプラグインエントリを宣言できるソース種別です。マーケットプレイスファイルを別途用意せずに、Claude Code の設定ファイルに直接プラグインを埋め込む場合に使用します:
