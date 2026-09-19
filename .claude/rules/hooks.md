@@ -31,6 +31,17 @@ paths: plugins/*/hooks/hooks.json
 }
 ```
 
+トップレベルに `$schema` キー（エディタ補完用のJSON Schema参照）を置いても「unknown key」警告は出ない:
+
+```json
+{
+  "$schema": "https://example.com/hooks-schema.json",
+  "hooks": {
+    "PreToolUse": []
+  }
+}
+```
+
 ## Frontmatter形式
 
 エージェント、スキル、スラッシュコマンドのfrontmatter内でフックを定義できます:

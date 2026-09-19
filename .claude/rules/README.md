@@ -56,6 +56,7 @@
 | `CLAUDE_CODE_PLUGIN_SEED_DIR` | プラグインのシードディレクトリ。複数ディレクトリをパス区切り文字（Unix: `:`, Windows: `;`）で区切って指定可能 | marketplace |
 | `CLAUDE_CODE_MCP_SERVER_NAME` | `headersHelper` スクリプト内で利用可能。呼び出し元の MCP サーバー名 | mcp-servers |
 | `CLAUDE_CODE_MCP_SERVER_URL` | `headersHelper` スクリプト内で利用可能。呼び出し元の MCP サーバー URL | mcp-servers |
+| `CLAUDE_CODE_MCP_STARTUP_WAIT_MS` | 非対話（headless）セッションの最初のターンが接続中のMCPサーバーを待つ時間の上限（ミリ秒）。`0`で待たない | mcp-servers |
 | `CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE` | `git pull` 失敗時に既存マーケットプレイスキャッシュを保持 | marketplace |
 | `CLAUDE_CODE_PLUGIN_PREFER_HTTPS` | GitHubプラグインソースをSSHの代わりにHTTPSでクローン・更新する（add/update操作を含む）。SSH鍵がない環境（CI・企業ネットワーク等）向け | marketplace |
 | `CLAUDE_CODE_SESSION_ID` | 現在のセッションID（Stdio MCPサーバーのサブプロセス環境で利用可能） | mcp-servers |

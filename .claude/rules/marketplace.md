@@ -174,11 +174,13 @@ paths: .claude-plugin/marketplace.json
 }
 ```
 
+> **Git LFSファイルの既定挙動**: マーケットプレイス/プラグインのクローン時、Git LFSファイルは既定でポインタのまま取得され、実体はダウンロードされない。実体が必要な場合は、チェックアウト後に `git lfs pull` を実行する。
+
 | フィールド | 型 | 必須 | 説明 |
 |-----------|---|:---:|------|
 | `source` | string | ✓ | `"github"` を指定 |
 | `repo` | string | ✓ | `"owner/repo"` 形式（fragment構文でbranch/tag/commit指定可） |
-| `skipLfs` | boolean | | `true` に設定すると Git LFS のダウンロードをスキップ |
+| `skipLfs` | boolean | | TODO: 要確認 — Git LFSファイルは既定でポインタのまま取得され実体はダウンロードされなくなったため、`true`指定時に現在何が変わるのか（意味・要否）は未確認 |
 
 #### branch/tag/commit SHA指定
 
@@ -253,11 +255,13 @@ GitHub sourceでは、fragment構文を使ってbranch、tag、またはcommit S
 }
 ```
 
+> **Git LFSファイルの既定挙動**: マーケットプレイス/プラグインのクローン時、Git LFSファイルは既定でポインタのまま取得され、実体はダウンロードされない。実体が必要な場合は、チェックアウト後に `git lfs pull` を実行する。
+
 | フィールド | 型 | 必須 | 説明 |
 |-----------|---|:---:|------|
 | `source` | string | ✓ | `"url"` を指定 |
 | `url` | string | ✓ | gitリポジトリのURL（fragment構文でbranch/tag/commit指定可） |
-| `skipLfs` | boolean | | `true` に設定すると Git LFS のダウンロードをスキップ |
+| `skipLfs` | boolean | | TODO: 要確認 — Git LFSファイルは既定でポインタのまま取得され実体はダウンロードされなくなったため、`true`指定時に現在何が変わるのか（意味・要否）は未確認 |
 | `headersHelper` | string | | HTTPヘッダーを動的生成するコマンド。詳細は[headersHelper（カタログエントリ）](#headershelperカタログエントリ)を参照 |
 
 #### branch/tag/commit SHA指定
