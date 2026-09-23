@@ -522,6 +522,18 @@ zipは配下に`.claude-plugin/`を直接含む構成、または単一のトッ
 - `agent-skills`
 - `life-sciences`
 
+上記の予約済み名前と完全一致する場合に加え、予約済み名前を「模倣（imitate）」するマーケットプレイス名も、追加時に拒否され、既に追加済みの場合はロードが停止するようになった。
+
+> CHANGELOGより: "Changed plugin marketplaces whose name imitates a reserved marketplace name to be
+> refused when added, and to stop loading if one was already added"
+
+TODO: 要確認 — 「模倣」の具体的な判定基準（タイポスクワッティング、部分一致、編集距離など）は
+CHANGELOGの記述からは不明。
+
+本リポジトリのバリデーターはkebab-case形式チェックのみを行っており、予約済み名前との
+類似度判定（模倣チェック）は行っていない。判定基準がCHANGELOGから特定できないため、
+本リポジトリのバリデーターへの実装は見送っている。
+
 ## 禁止文字（制御文字・不可視文字）
 
 マーケットプレイス名・プラグイン名に制御文字や不可視文字を含めると拒否されます。

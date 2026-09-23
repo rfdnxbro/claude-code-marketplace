@@ -15,6 +15,7 @@ DISALLOWED_HOOK_TYPES_BY_EVENT = {
     "SessionStart": ({"prompt", "agent", "http"}, "command/mcp_toolタイプ"),
     "Setup": ({"prompt", "agent", "http"}, "command/mcp_toolタイプ"),
     "SubagentStart": ({"prompt", "agent"}, "command/http/mcp_toolタイプ"),
+    "PermissionRequest": ({"agent"}, "command/httpタイプ"),
 }
 
 

@@ -185,6 +185,8 @@ LLMを使用してプロンプトを評価:
 | `prompt` | string | ✓ | エージェントに渡すタスク記述 |
 | `timeout` | number | | タイムアウト（秒単位、省略時: 60秒） |
 
+**注意**: `PermissionRequest` イベントには `agent` 型フックを指定できない（エージェントの応答は許可・拒否の判断に使えないため）。指定するとエラーになり、`command` または `http` 型フックの使用を促すメッセージが表示される。
+
 ### mcp_tool（MCPツール呼び出し）
 
 MCPツールをフック内から直接呼び出す:
@@ -297,12 +299,15 @@ HTTPフックのレスポンスでJSONを返さない場合（200以外のステ
 
 `SessionStart`・`Setup`・`SubagentStart` イベントでは、`prompt` 型および `agent` 型のフックは使用できません。有効なフックタイプは下表の通りイベントごとに異なります（`SessionStart`/`Setup` は `command`/`mcp_tool`、`SubagentStart` は `command`/`http`/`mcp_tool`）。誤った設定時は「use a command-type hook instead」というエラーが表示されます。
 
+`PermissionRequest` イベントでは `agent` 型フックは使用できません。エージェントの応答は許可・拒否の判断に使えないため、`command` または `http` 型フックの使用を促すエラーが表示されます。
+
 | イベント | command | prompt | agent | http | mcp_tool |
 |---------|:-------:|:------:|:-----:|:----:|:--------:|
 | `SessionStart` | ✓ | ✗ | ✗ | ✗ | ✓ |
 | `Setup` | ✓ | ✗ | ✗ | ✗ | ✓ |
 | `SubagentStart` | ✓ | ✗ | ✗ | ✓ | ✓ |
 | `PostCompact` | ✓ | ✗ | ✗ | ✗ | ✗ |
+| `PermissionRequest` | ✓ | ✓ | ✗ | ✓ | ✓ |
 | その他のイベント | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 ```json
