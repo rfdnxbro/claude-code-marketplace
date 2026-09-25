@@ -381,6 +381,12 @@ allowed-tools:
 
 この仕組みにより、シンプルなプロンプト展開のみを行うスキルはスムーズに実行され、権限を必要とするスキルのみ承認フローを経ることになります。
 
+### 管理設定 `allowManagedPermissionRulesOnly` 下での`allowed-tools`
+
+管理設定で `allowManagedPermissionRulesOnly` が有効な環境では、リポジトリ/ユーザー/`--add-dir` のスキル・コマンドおよびskills-directoryのプラグインマニフェストが、自身の `allowed-tools` で宣言したツールを自動的に事前承認することはない（管理側の許可ルールが別途必要）。
+
+TODO: 要確認 — サブエージェント（`.claude/agents/**/*.md`）の`tools`フィールドについても、`allowManagedPermissionRulesOnly`下で同様の制約が適用されるかは未確認。
+
 ## 環境変数
 
 スキル内で使用可能な環境変数:
@@ -512,6 +518,7 @@ Claude Codeは`.claude/skills`ディレクトリ内のスキルを自動的に�
 - **プラグインルートレベルのスキル**: `skills/` サブディレクトリがなく、`plugin.json` に `skills` マニフェストフィールドの指定もない場合、プラグインルートに配置した `SKILL.md` は単一スキルのプラグインとして自動的にロードされる（`plugin.json` での明示指定は不要）。`skills: ["./"]` または `skills: ["."]` を明示的に指定しても同じ挙動になる
 - **ネストされたスキルの名前衝突時の動作**: サブディレクトリの `.claude/skills` に同名のスキルが存在する場合、ネストされた側は `<dir>:<name>` 形式で利用可能になり、両方のスキルが共存できる（例: `subdir:my-skill`）
 - **バンドルスキルとの名前衝突時の動作**: `/checkup`、`/review` 等の組み込みバンドルスキルのエイリアスと同名のユーザー/プロジェクトスキルを定義した場合、ユーザー/プロジェクトスキル側が優先され、バンドルスキルをシャドーイングする。この優先順位は `-p` モードやプラグイン/MCP読み込み時も含めて一貫して適用される
+- **`anthropic-skills`/`claude-ai` 名前空間との衝突時の動作**: `anthropic-skills` または `claude-ai` という名前のプラグイン配下に置かれたスキルフォルダ・コマンドファイル・workflowコマンドは読み込まれない。プラグイン自体（`anthropic-skills`/`claude-ai` という名前のプラグイン）は通常通りロードされるが、claude.aiから同期されたスキルとの名前の衝突（name ties）が生じる
 
 ### パーミッションルールでのスキル指定（`Skill(name)`）
 
@@ -527,6 +534,8 @@ disallowed-tools: Skill(dangerous-skill)
 # subdir配下にネストされ、subdir:my-skillとして公開されているスキルを対象にする場合
 disallowed-tools: Skill(subdir:my-skill)
 ```
+
+**`Skill(anthropic-skills:*)`/`Skill(claude-ai:*)`の対象範囲**: `Skill(anthropic-skills:*)`・`Skill(claude-ai:*)`のallow/denyルールは、claude.aiから同期されたスキルのみを対象とする。同名（`anthropic-skills`/`claude-ai`）のプラグイン・スキルがこれらの名前を使用しているだけの場合は、このルールの対象外になる。
 
 検出されるスキルの例:
 

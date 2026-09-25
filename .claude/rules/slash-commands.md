@@ -327,6 +327,8 @@ CLAUDE.md が Claude に自動注入される際、`<!-- ... -->` 形式の HTML
 
 Claude Codeには組み込みのバンドルコマンド（`/clear`, `/model`, `/memory`, `/code-review`, `/batch` 等）が存在します。バンドルコマンドとユーザー定義コマンドで名前が衝突した場合の動作は保証されないため、これらと同名のコマンドをプラグインで定義することは避けてください。
 
+**`anthropic-skills`/`claude-ai` 名前空間との衝突**: `anthropic-skills` または `claude-ai` という名前のプラグイン配下に置かれたコマンドファイル・workflowコマンドは読み込まれません。詳細は[skill-authoring.md](skill-authoring.md#スキルの自動検出)の該当節を参照してください。
+
 ## frontmatterフィールドにYAMLブール値キーワードを使う場合の注意
 
 YAMLのブール値として解釈されるキーワード（`true`、`false`、`on`、`off`、`yes`、`no` 等）をfrontmatterの文字列フィールドに使用する場合は、文字列として引用符で囲む必要があります。
