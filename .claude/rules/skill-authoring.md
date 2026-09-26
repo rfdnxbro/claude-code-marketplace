@@ -528,6 +528,8 @@ disallowed-tools: Skill(dangerous-skill)
 disallowed-tools: Skill(subdir:my-skill)
 ```
 
+`Skill(name)` 形式のdenyルールは、スキルのエイリアスや表示名にもマッチする。また、`Skill(<marketplace>:<name>)` のようにマーケットプレイス修飾名を指定したdenyルールは、Claude Desktopがそのスキルをプラグイン経由で配信した場合もブロック対象に含まれる。
+
 検出されるスキルの例:
 
 ```text
