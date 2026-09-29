@@ -1559,6 +1559,7 @@ MCPエリシテーション機能のレスポンスをインターセプト・�
 - `action`: `accept`（承認しフォーム値を送信）、`decline`（拒否）、`cancel`（キャンセル）
 - `content`: `action`が`accept`の場合のみ有効。フォームフィールドの値
 - exit code 2でエリシテーションを拒否可能
+- `{"decision":"block"}` を出力した場合も、exit code 2と同様にエリシテーションを拒否する
 
 **ユースケース:**
 
@@ -1618,6 +1619,7 @@ MCPエリシテーションのレスポンス結果を受け取るフック。
 
 - `action`/`content`でユーザーの応答をオーバーライド可能
 - exit code 2で応答をブロック（actionが`decline`に変更される）
+- `{"decision":"block"}` を出力した場合も、exit code 2と同様に応答を拒否する
 
 **ユースケース:**
 

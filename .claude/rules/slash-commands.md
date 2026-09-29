@@ -127,6 +127,12 @@ allowed-tools:
 
 ## allowed-tools のベストプラクティス
 
+**管理設定 `allowManagedPermissionRulesOnly` 下での事前承認:**
+
+管理設定 `allowManagedPermissionRulesOnly` が有効な場合、マーケットプレイス、claude.ai、npm 由来のプラグインは `allowed-tools` で自身のツールを事前承認できません。公式Anthropic由来のプラグインと、管理設定が信頼を認めたソースのプラグインだけが事前承認を維持します。
+
+TODO: 要確認 - 管理設定で「信頼を認めたソース」をどのように指定するかは未確認。
+
 **必要最小限のツールのみ指定**（セキュリティ向上）:
 
 カンマ区切り形式:
