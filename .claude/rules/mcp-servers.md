@@ -400,6 +400,20 @@ MCPサーバーのツール数が多い場合、ツール説明がコンテキ�
 |-----------|---|------|
 | `alwaysLoad` | boolean | `true` にするとツール検索による遅延ロードを無効化し、常にツールをロードする。省略時は従来通り遅延ロードが適用される |
 
+MCPツール自身が `_meta['anthropic/alwaysLoad']` を `false` に設定している場合、そのツールはサーバー設定の `alwaysLoad: true` よりも優先され、遅延ロードのままになります。これは `--mcp-config`・Agent SDK・プラグインのサーバーのいずれにも当てはまります。
+
+## 設定が必要な同梱 `.mcpb` MCPサーバー
+
+プラグインに同梱された `.mcpb` のMCPサーバーが設定を必要とする場合、そのサーバーは黙ってスキップされません。`/plugin`・インストール時のメッセージ・`claude plugin install` が設定の要否を案内し、Configure へ誘導します。
+
+`claude plugin install` の `--config` オプションに `<server>.<key>=<value>` 形式を指定すると、同梱 `.mcpb` MCPサーバー自身の設定をインストール時に渡せます。これにより `/plugin` → Configure を経由せずにサーバーを起動できます。
+
+```bash
+claude plugin install <plugin> --config <server>.<key>=<value>
+```
+
+TODO: 要確認 — `--config` の複数指定方法、値の型や機密値の扱い、`plugin.json` の `userConfig` との関係はCHANGELOGに記載がなく未確認。
+
 ## 予約済みサーバー名
 
 以下のサーバー名は予約済みです。これらの名前を `.mcp.json` の `mcpServers` キーに使用すると、警告が表示されてスキップされます:
@@ -409,6 +423,8 @@ MCPサーバーのツール数が多い場合、ツール説明がコンテキ�
 | `workspace` |
 | `Claude Browser` |
 | `Claude Preview` |
+
+加えて、クラウドセッションおよびセルフホストランナーでは、サーバー名 `widgets` が予約されています。`widgets` や `widgets_` のような近い綴りのサーバー名もロードされません。ローカル環境での扱いはCHANGELOGに記載がなく未確認のため、`scripts/validators/mcp_json.py` の `RESERVED_SERVER_NAMES` には含めていません（TODO: 要確認 — 「近い綴り」の正確な判定規則、およびローカル環境で予約されるか）。
 
 ## セキュリティ注意事項
 
