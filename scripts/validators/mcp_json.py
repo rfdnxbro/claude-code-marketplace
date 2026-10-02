@@ -61,4 +61,11 @@ def validate_mcp_json(file_path: Path, content: str) -> ValidationResult:
         if always_load is not None and not isinstance(always_load, bool):
             result.add_error(f"{file_path.name}: {server_name}: alwaysLoadはブール値が必要です")
 
+        # bareElicitationCapability はブール値のみ有効
+        bare_elicitation = config.get("bareElicitationCapability")
+        if bare_elicitation is not None and not isinstance(bare_elicitation, bool):
+            result.add_error(
+                f"{file_path.name}: {server_name}: bareElicitationCapabilityはブール値が必要です"
+            )
+
     return result

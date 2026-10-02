@@ -398,7 +398,29 @@ MCPサーバーのツール数が多い場合、ツール説明がコンテキ�
 
 | フィールド | 型 | 説明 |
 |-----------|---|------|
-| `alwaysLoad` | boolean | `true` にするとツール検索による遅延ロードを無効化し、常にツールをロードする。省略時は従来通り遅延ロードが適用される |
+| `alwaysLoad` | boolean | `true` にするとツール検索による遅延ロードを無効化し、常にツールをロードする。`false` にすると、そのサーバーの全ツールをツール検索の背後に遅延ロードする。省略時は従来通り遅延ロードが適用される |
+
+### bareElicitationCapability オプション
+
+2025-11-25プロトコルのMCPサーバーからのURLプロンプト（サインイン等）に対応したことで、一部のMCPサーバーに接続できなくなった場合は、そのMCP設定エントリに `"bareElicitationCapability": true` を追加します。
+
+```json
+{
+  "mcpServers": {
+    "server-name": {
+      "type": "http",
+      "url": "https://example.com/mcp",
+      "bareElicitationCapability": true
+    }
+  }
+}
+```
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `bareElicitationCapability` | boolean | 接続できなくなったサーバーのエントリに `true` を指定する |
+
+TODO: 要確認 — `bareElicitationCapability: true` が具体的にクライアントのどの挙動を変えるか（宣言するelicitation capabilityの内容など）、および `false` / 省略時の挙動は、CHANGELOGからは確認できていない。
 
 ## 予約済みサーバー名
 
