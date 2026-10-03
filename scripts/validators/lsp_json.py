@@ -69,7 +69,7 @@ def validate_lsp_json(file_path: Path, content: str) -> ValidationResult:
             result.add_error(f"{file_path.name}: {server_name}: argsは配列が必要")
 
         # 数値フィールドのバリデーション
-        for field in ["startupTimeout", "shutdownTimeout", "maxRestarts"]:
+        for field in ["startupTimeout", "shutdownTimeout", "requestTimeout", "maxRestarts"]:
             value = config.get(field)
             if value is not None and not isinstance(value, int | float):
                 result.add_error(f"{file_path.name}: {server_name}: {field}は数値が必要")
