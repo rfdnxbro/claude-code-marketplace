@@ -56,6 +56,7 @@ skills: skill-name
 | `isolation` | No | 実行分離モード：`worktree` |
 | `background` | No | バックグラウンドタスクとして常に実行：`true`/`false` |
 | `omitClaudeMd` | No | `true`にすると、ユーザー・プロジェクト・ローカルのCLAUDE.mdを読み込まずにエージェントを実行する：`true`/`false`。管理ポリシーファイルは`omitClaudeMd`指定時も読み込まれる |
+| `autoCompactWindow` | No | サブエージェントがメイン会話のウィンドウより早くauto-compactできるようにするフィールド。`--agents` 定義でも指定可能。TODO: 要確認 — 値の型・単位・許容範囲・省略時の挙動は公式ドキュメントに記載がなく未確認（バリデーターも値の検証は行わない） |
 | `experimental` | No | 実験的なエージェント別オプション（ネストされたオブジェクト。未知キーは無視される）。[experimental.cacheTtl](#experimentalcachettl)参照 |
 
 ## description のベストプラクティス
