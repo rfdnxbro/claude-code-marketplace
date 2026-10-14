@@ -307,6 +307,12 @@ hooks:
           command: "${CLAUDE_PLUGIN_ROOT}/scripts/validate.sh"
 ```
 
+**スキル名・フォルダ名の制限**:
+
+隠し文字、文字方向を変える文字、空白に見える文字、`<`、`>` を含むファイル名／フォルダ名のスキルは、リネームするまで提供されません。そのような `name:` は無視されます。詳細は[slash-commands.md](slash-commands.md)を参照。
+
+**frontmatter の `UserPromptSubmit` フック**: スキルを呼び出したプロンプトの次のプロンプトから初めて実行されます。詳細は[hooks.md](hooks.md)を参照。
+
 ## スキルの発見性
 
 Claude Codeは `/skills` メニューとスキル説明にプラグイン名を自動的に表示し、ユーザーがスキルの出所を簡単に識別できるようにします。
