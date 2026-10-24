@@ -220,6 +220,82 @@ class TestValidatePluginJson:
         result = validate_plugin_json(Path("plugin.json"), content)
         assert not any("パストラバーサル" in e for e in result.errors)
 
+    def test_output_styles_path_traversal_rejected(self):
+        """outputStylesがプラグインディレクトリ外を指す場合エラー（パストラバーサル）"""
+        content = json.dumps({"name": "my-plugin", "outputStyles": "../outside/styles/"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("outputStyles" in e and "パストラバーサル" in e for e in result.errors)
+
+    def test_output_styles_path_within_plugin_root_no_error(self):
+        """outputStylesがプラグインディレクトリ内を指す場合はエラーなし"""
+        content = json.dumps({"name": "my-plugin", "outputStyles": "./styles/"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not any("パストラバーサル" in e for e in result.errors)
+
+    def test_themes_path_traversal_rejected(self):
+        """themesがプラグインディレクトリ外を指す場合エラー（パストラバーサル）"""
+        content = json.dumps({"name": "my-plugin", "themes": "/etc/themes"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("themes" in e and "パストラバーサル" in e for e in result.errors)
+
+    def test_experimental_themes_path_traversal_rejected(self):
+        """experimental.themesがプラグインディレクトリ外を指す場合エラー（パストラバーサル）"""
+        content = json.dumps(
+            {"name": "my-plugin", "experimental": {"themes": "../outside/themes/"}}
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("experimental.themes" in e and "パストラバーサル" in e for e in result.errors)
+
+    def test_monitors_path_traversal_rejected(self):
+        """monitorsが文字列パスでプラグインディレクトリ外を指す場合エラー（パストラバーサル）"""
+        content = json.dumps({"name": "my-plugin", "monitors": "../outside/monitors.json"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("monitors" in e and "パストラバーサル" in e for e in result.errors)
+
+    def test_experimental_monitors_path_traversal_rejected(self):
+        """experimental.monitorsが文字列パスでプラグインディレクトリ外を指す場合エラー"""
+        content = json.dumps(
+            {"name": "my-plugin", "experimental": {"monitors": "../outside/monitors.json"}}
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("experimental.monitors" in e and "パストラバーサル" in e for e in result.errors)
+
+    def test_monitors_inline_array_not_treated_as_path(self):
+        """monitorsがインライン配列（モニター定義オブジェクト）の場合パストラバーサル検証対象外"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "monitors": [
+                    {"name": "deploy", "command": "./scripts/poll.sh", "description": "d"}
+                ],
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not any("パストラバーサル" in e for e in result.errors)
+
+    def test_lsp_servers_string_path_traversal_rejected(self):
+        """lspServersが文字列パスでプラグインディレクトリ外を指す場合エラー（パストラバーサル）"""
+        content = json.dumps({"name": "my-plugin", "lspServers": "../outside/.lsp.json"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("lspServers" in e and "パストラバーサル" in e for e in result.errors)
+
+    def test_lsp_servers_inline_object_not_treated_as_path(self):
+        """lspServersがインラインオブジェクトの場合パストラバーサル検証対象外"""
+        content = json.dumps(
+            {
+                "name": "my-plugin",
+                "lspServers": {"go": {"command": "gopls", "extensionToLanguage": {".go": "go"}}},
+            }
+        )
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not any("パストラバーサル" in e for e in result.errors)
+
     def test_redundant_default_path_commands(self):
         """commandsにデフォルトパスを指定した場合に警告が出ることを確認"""
         content = json.dumps({"name": "my-plugin", "commands": "./commands/"})

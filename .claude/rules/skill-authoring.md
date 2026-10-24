@@ -512,6 +512,7 @@ Claude Codeは`.claude/skills`ディレクトリ内のスキルを自動的に�
 - **プラグインルートレベルのスキル**: `skills/` サブディレクトリがなく、`plugin.json` に `skills` マニフェストフィールドの指定もない場合、プラグインルートに配置した `SKILL.md` は単一スキルのプラグインとして自動的にロードされる（`plugin.json` での明示指定は不要）。`skills: ["./"]` または `skills: ["."]` を明示的に指定しても同じ挙動になる
 - **ネストされたスキルの名前衝突時の動作**: サブディレクトリの `.claude/skills` に同名のスキルが存在する場合、ネストされた側は `<dir>:<name>` 形式で利用可能になり、両方のスキルが共存できる（例: `subdir:my-skill`）
 - **バンドルスキルとの名前衝突時の動作**: `/checkup`、`/review` 等の組み込みバンドルスキルのエイリアスと同名のユーザー/プロジェクトスキルを定義した場合、ユーザー/プロジェクトスキル側が優先され、バンドルスキルをシャドーイングする。この優先順位は `-p` モードやプラグイン/MCP読み込み時も含めて一貫して適用される
+- **`anthropic-skills` 名前空間は予約済み**: 名前空間が `anthropic-skills` になるスキルフォルダ・コマンドファイル・workflowコマンドは読み込まれない。`anthropic-skills` という名前のプラグイン自体はロードされるが、claude.ai から同期されたスキルと名前が同じ場合は同期スキルが優先される。プラグイン名やスキルのディレクトリ名に `anthropic-skills` を使わないこと
 
 ### パーミッションルールでのスキル指定（`Skill(name)`）
 
@@ -527,6 +528,12 @@ disallowed-tools: Skill(dangerous-skill)
 # subdir配下にネストされ、subdir:my-skillとして公開されているスキルを対象にする場合
 disallowed-tools: Skill(subdir:my-skill)
 ```
+
+`Skill()` のdenyルールは、スキルのエイリアスや表示名にもマッチする。
+
+TODO: 要確認 — CHANGELOGの原文は `Skill(skill:<name>)` と表記しており、`skill:` が文字どおりの接頭辞かプレースホルダーかは不明。
+
+**`anthropic-skills` 名前空間のルール**: `Skill(anthropic-skills:*)` などの allow ルールは、claude.ai から同期されたスキルだけを対象にし、同じ名前を使っているだけのプラグインやスキルには適用されない。一方、`Skill(anthropic-skills:<name>)` の deny ルールは、Claude Desktop がそのスキルをプラグインとして配信した場合もブロックする。
 
 検出されるスキルの例:
 
