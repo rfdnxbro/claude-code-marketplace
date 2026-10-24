@@ -10,6 +10,10 @@
 #   current-changelog.md            最新のCHANGELOG（ワークフローが取得したもの）
 #
 # 各パスは環境変数で差し替えられる（ローカルでの動作確認用）。
+#
+# 認証の前提: gh は claude-code-action が Claude の実行環境に渡す GitHub App のトークンで動く。
+# GITHUB_TOKEN で作った Issue やラベル付与では auto-implement.yml（issues: labeled）が起動しないため、
+# このスクリプトをワークフローのシェルステップから GITHUB_TOKEN で呼ぶ形に変えてはならない。
 set -euo pipefail
 
 TITLE_FILE="${CHANGELOG_ISSUE_TITLE_FILE:-/tmp/changelog-issue-title.txt}"
@@ -59,3 +63,6 @@ fi
 
 echo "版数 ${VERSION} の見出しを ${CHANGELOG_FILE} で確認しました。Issueを作成します。"
 gh issue create --title "$TITLE" --label "$LABEL" --body-file "$BODY_FILE"
+
+# 続けて別のIssueを起票するときに、前のタイトル・本文を使い回さないよう消しておく
+rm -f "$TITLE_FILE" "$BODY_FILE"

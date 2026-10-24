@@ -94,8 +94,15 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          # yamllint disable-line rule:line-length
-          claude_args: '--max-turns 40 --allowed-tools "Bash(bash .github/scripts/create-changelog-issue.sh:*),Bash(gh issue list:*),Read,Write,Grep,Glob"'
+          # allowed-tools: Issueは検証付きの起票スクリプト経由でしか作れないよう、gh issue create は許可しない。
+          # disallowed-tools: 起票スクリプトと、スクリプトが照合する current-changelog.md を書き換えて
+          #   検証を素通りさせられないよう塞ぐ。Edit ルールは Write を含む全ファイル編集ツールに効く
+          #   （Write(path) ではパスを絞れない）。Write が要るのは /tmp のタイトル・本文だけ。
+          claude_args: >-
+            --max-turns 40
+            --allowed-tools "Bash(bash .github/scripts/create-changelog-issue.sh:*),Bash(gh issue list:*),
+            Read,Write,Grep,Glob"
+            --disallowed-tools "Edit(/.github/**),Edit(/current-changelog.md)"
           prompt: |
             あなたはClaude Codeマーケットプレイスのメンテナーです。
 
