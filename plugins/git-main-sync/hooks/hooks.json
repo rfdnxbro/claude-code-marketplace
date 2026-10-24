@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/sync-main.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/sync-main.sh",
             "timeout": 30,
             "statusMessage": "main ブランチを最新化中..."
           }
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/sync-main.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/sync-main.sh",
             "timeout": 30,
             "statusMessage": "追加ディレクトリの main ブランチを最新化中..."
           }

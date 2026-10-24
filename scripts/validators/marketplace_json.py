@@ -5,7 +5,7 @@ marketplace.json のバリデーター
 import re
 from pathlib import Path
 
-from .base import ValidationResult, parse_json_safe, validate_kebab_case
+from .base import LISTING_FIELDS, ValidationResult, parse_json_safe, validate_kebab_case
 
 # 予約済み名前（完全一致で使用不可）
 # 公式・コミュニティ・プラグインディレクトリの名前は github.com/anthropics/ 配下から
@@ -196,6 +196,14 @@ def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult
                 kebab_error = validate_kebab_case(plugin_name)
                 if kebab_error:
                     result.add_error(f"{file_path.name}: plugins[{i}]: {kebab_error}")
+
+            # ディレクトリ掲載用フィールドは plugin.json にだけ書く（エントリ側は未知フィールド扱い）
+            for field in LISTING_FIELDS:
+                if field in plugin:
+                    result.add_warning(
+                        f"{file_path.name}: plugins[{i}].{field}はマーケットプレイスのエントリでは"
+                        "未知のフィールドです。plugin.json に記述してください"
+                    )
 
             # defaultEnabled の確認（v2.1.154以降）
             default_enabled = plugin.get("defaultEnabled")

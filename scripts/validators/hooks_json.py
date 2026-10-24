@@ -10,6 +10,53 @@ from .base import ValidationResult, parse_json_safe
 # httpタイプのheaders値内の環境変数プレースホルダー（${VAR_NAME}形式）を抽出する正規表現
 ENV_VAR_PLACEHOLDER_PATTERN = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
 
+# シェル形式のフックでクォートが必要なプラグイン変数
+PLUGIN_PATH_VARIABLES = ("CLAUDE_PLUGIN_ROOT", "CLAUDE_PLUGIN_DATA", "CLAUDE_PROJECT_DIR")
+
+
+def _plugin_variable_at(command: str, i: int) -> str | None:
+    """位置 i から始まるプラグイン変数（`${NAME}` または `$NAME`）の名前を返す"""
+    for name in PLUGIN_PATH_VARIABLES:
+        if command.startswith("${" + name + "}", i):
+            return name
+        if command.startswith("$" + name, i):
+            following = command[i + 1 + len(name) : i + 2 + len(name)]
+            if not (following.isalnum() or following == "_"):
+                return name
+    return None
+
+
+def find_plugin_variable_quoting_issues(command: str) -> tuple[list[str], list[str]]:
+    """シェル形式のコマンドで、クォートに問題があるプラグイン変数名を返す
+
+    シェル形式では変数をシェルが展開するため、`${CLAUDE_PLUGIN_ROOT}` などは
+    ダブルクォートで囲む必要がある。クォートしないと空白を含むパスで複数の語に分かれ、
+    シングルクォートで囲むと展開されない。
+
+    戻り値は（クォートされていない変数名, シングルクォート内の変数名）。
+    """
+    unquoted: list[str] = []
+    single_quoted: list[str] = []
+    quote = ""
+    i = 0
+    while i < len(command):
+        ch = command[i]
+        if ch == "\\" and quote != "'":
+            i += 2
+            continue
+        if quote and ch == quote:
+            quote = ""
+        elif not quote and ch in ("'", '"'):
+            quote = ch
+        elif ch == "$" and quote != '"':
+            name = _plugin_variable_at(command, i)
+            target = single_quoted if quote == "'" else unquoted
+            if name and name not in target:
+                target.append(name)
+        i += 1
+    return unquoted, single_quoted
+
+
 # イベントごとに使用できないhookタイプと、使用可能なタイプの案内文言
 DISALLOWED_HOOK_TYPES_BY_EVENT = {
     "SessionStart": ({"prompt", "agent", "http"}, "command/mcp_toolタイプ"),
@@ -237,6 +284,27 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
                         ):
                             result.add_error(
                                 f"{file_path.name}: commandタイプのargsは文字列の配列が必要です"
+                            )
+                    # シェル形式（args なし）でプラグイン変数がクォートされていない場合は警告
+                    # （PowerShell はパスを1つの語として扱うため対象外）
+                    command = h.get("command")
+                    if (
+                        args_field is None
+                        and isinstance(command, str)
+                        and h.get("shell") != "powershell"
+                    ):
+                        unquoted, single_quoted = find_plugin_variable_quoting_issues(command)
+                        for name in unquoted:
+                            result.add_warning(
+                                f"{file_path.name}: シェル形式のコマンドで ${{{name}}} が"
+                                "クォートされていません。空白を含むパスで壊れるため"
+                                f'"${{{name}}}" のようにダブルクォートで囲んでください'
+                            )
+                        for name in single_quoted:
+                            result.add_warning(
+                                f"{file_path.name}: シェル形式のコマンドで ${{{name}}} が"
+                                "シングルクォート内にあるため展開されません。"
+                                f'"${{{name}}}" のようにダブルクォートで囲んでください'
                             )
 
                 if hook_type == "prompt" and not h.get("prompt"):

@@ -98,6 +98,8 @@ claude --dangerously-load-development-channels server:telegram
 
 **重要**: `.mcp.json` への登録だけではチャンネルからのプッシュは有効化されません。必ず `--channels` での明示指定が必要です。
 
+`--channels` の `plugin:<name>@<marketplace>` は、インストール済みプラグインのマーケットプレイスと**プラグイン名の両方**が一致した場合にだけ有効になる。プラグインの `name` を変えた場合は、`--channels` の指定や組織の `allowedChannelPlugins` も合わせて更新すること。
+
 ## MCPサーバー側の実装要件
 
 プラグインが提供する MCP サーバーがチャンネルとして振る舞うには、以下を実装します:
@@ -160,6 +162,7 @@ Claude 側の tool 実行承認プロンプトをチャンネル経由で中継�
 - `[]`（空配列）= すべてのチャンネルプラグインをブロック
   - ただし `--dangerously-load-development-channels` は bypass できる
 - 各エントリ: `{ marketplace: string, plugin: string }`
+- リストに無いプラグインを `--channels` で指定すると、Claude Code は通常どおり起動するがチャンネルは登録されず、起動時の通知で理由が示される
 
 ### JSON例
 
@@ -196,7 +199,7 @@ Claude 側の tool 実行承認プロンプトをチャンネル経由で中継�
 以下は公式ドキュメントに記載が見当たらず、本ドキュメントでも保証しません:
 
 - macOS plist / Windows Registry における具体的なキー名・パス・値フォーマット
-- `plugin.json` の `channels` と `--channels` / `allowedChannelPlugins` の整合性チェック（不整合時の挙動、エラー表示）の詳細
+- `plugin.json` の `channels` 宣言と `--channels` の指定が食い違う場合の挙動・エラー表示の詳細（`--channels` の照合ルールと、`allowedChannelPlugins` に無いプラグインを指定した場合の挙動は上記のとおり）
 
 ## 出典
 

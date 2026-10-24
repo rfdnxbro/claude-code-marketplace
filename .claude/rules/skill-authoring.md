@@ -714,7 +714,7 @@ bash scripts/validate.sh
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/generate-skills.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/generate-skills.sh"
           }
         ]
       }

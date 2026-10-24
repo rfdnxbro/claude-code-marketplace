@@ -104,7 +104,7 @@ paths: plugins/*/monitors/monitors.json, monitors/monitors.json
 [
   {
     "name": "deploy-status",
-    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/poll-deploy.sh",
+    "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/poll-deploy.sh",
     "description": "Deployment status changes"
   },
   {

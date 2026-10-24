@@ -1216,6 +1216,80 @@ class TestDefaultEnabled:
         assert any("defaultEnabled" in e and "ブール値" in e for e in result.errors)
 
 
+class TestInlineMcpServers:
+    """plugin.json に直接書いた mcpServers の検証"""
+
+    def _result(self, mcp_servers, user_config=None):
+        data = {"name": "my-plugin", "mcpServers": mcp_servers}
+        if user_config is not None:
+            data["userConfig"] = user_config
+        return validate_plugin_json(Path("plugin.json"), json.dumps(data))
+
+    def test_declared_user_config_reference_ok(self):
+        result = self._result(
+            {"api": {"command": "node", "env": {"TOKEN": "${user_config.token}"}}},
+            {"token": {"type": "string", "title": "Token", "description": "API token"}},
+        )
+        assert not any("user_config" in e for e in result.errors)
+
+    def test_undeclared_user_config_reference_error(self):
+        result = self._result({"api": {"command": "node", "args": ["${user_config.region}"]}})
+        assert any("user_config.region" in e for e in result.errors)
+
+    def test_inline_remote_url_checked(self):
+        result = self._result({"remote": {"type": "http", "url": "example.com/mcp"}})
+        assert any("絶対URL" in e for e in result.errors)
+
+    def test_array_form_inline_entries_checked(self):
+        """配列で指定した mcpServers のうちインライン設定も検証する"""
+        result = self._result(
+            [
+                "./.mcp.json",
+                {"remote": {"type": "http", "url": "not-a-url"}},
+                {"api": {"command": "node", "env": {"K": "${user_config.missing}"}}},
+            ]
+        )
+        assert any("mcpServers.remote" in e and "絶対URL" in e for e in result.errors)
+        assert any("user_config.missing" in e for e in result.errors)
+
+    def test_non_dict_entries_ignored(self):
+        result = self._result({"bad": "not-an-object"})
+        assert not any("user_config" in e or "絶対URL" in e for e in result.errors)
+        result = validate_plugin_json(
+            Path("plugin.json"), json.dumps({"name": "my-plugin", "mcpServers": "./.mcp.json"})
+        )
+        assert not result.has_errors()
+
+
+class TestListingFields:
+    """ディレクトリ掲載用フィールド（icon / *Url）の検証"""
+
+    def _warnings(self, **fields):
+        content = json.dumps({"name": "my-plugin", **fields})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+        return result.warnings
+
+    def test_valid_listing_fields(self):
+        warnings = self._warnings(
+            icon="./logo.png",
+            documentationUrl="https://example.com/docs",
+            supportUrl="https://example.com/support",
+            privacyPolicyUrl="https://example.com/privacy",
+            termsOfServiceUrl="https://example.com/terms",
+        )
+        assert not warnings
+
+    def test_icon_must_be_plugin_relative_path(self):
+        for icon in ("https://example.com/logo.png", 123):
+            assert any("icon" in w for w in self._warnings(icon=icon)), icon
+
+    def test_url_fields_must_be_https(self):
+        for value in ("http://example.com/privacy", ["https://example.com"]):
+            warnings = self._warnings(privacyPolicyUrl=value)
+            assert any("privacyPolicyUrl" in w for w in warnings), value
+
+
 class TestModTypes:
     """Mod の types フィールドのテスト"""
 

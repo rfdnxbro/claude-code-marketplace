@@ -610,3 +610,8 @@ def name_dirs_under(file_path: Path, anchor: str) -> list[str]:
         index = len(parts) - 1 - parts[::-1].index(anchor)
         return list(parts[index + 1 :])
     return [file_path.parent.name] if file_path.parent.name else []
+
+
+# Anthropic のディレクトリ掲載用に plugin.json だけで使うフィールド（Claude Code 本体は読まない）
+LISTING_URL_FIELDS = ("documentationUrl", "supportUrl", "privacyPolicyUrl", "termsOfServiceUrl")
+LISTING_FIELDS = ("icon", *LISTING_URL_FIELDS)

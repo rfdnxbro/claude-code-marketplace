@@ -21,7 +21,7 @@ paths: plugins/*/hooks/hooks.json
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/validate.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/validate.sh",
             "timeout": 30
           }
         ]
@@ -155,6 +155,8 @@ Bashコマンドを実行:
 `timeout`は秒単位で指定。省略時のデフォルトは600秒（10分）。
 
 `args`（オプション）: 文字列の配列でコマンド引数を指定。`args`を指定するとシェルを介さずコマンドを直接起動する（exec形式）。パス指定にクォートが不要になる。省略時は引数なしでシェル経由で実行される。
+
+**シェル形式でのクォート**: `args` を省略したシェル形式では、コマンド文字列をシェルが解釈し、`${CLAUDE_PLUGIN_ROOT}`・`${CLAUDE_PLUGIN_DATA}`・`${CLAUDE_PROJECT_DIR}` もシェルが環境変数として展開する。そのため、これらはダブルクォートで囲む（例: `"command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/check.sh"`）。囲まないと空白を含むプラグインパスで複数の引数に分かれ、シングルクォートで囲むと展開されない。`claude plugin validate` は hooks ファイル内のクォートされていない変数を警告する（`shell` が `"powershell"` のフックは対象外。出典: 公式 plugins-reference の「Quoting and path separators」）。本リポジトリのバリデーターは、クォートされていない変数（`$CLAUDE_PLUGIN_ROOT` のような波括弧なしの形も含む）と、シングルクォート内の変数を警告する。
 
 `async`（オプション）: `true`を指定するとフックを非同期で実行し、結果を待たずにツール実行を続行します。
 
@@ -434,7 +436,7 @@ hooks:
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/audit.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/audit.sh"
           }
         ]
       }
@@ -462,7 +464,7 @@ hooks:
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/git-check.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/git-check.sh"
           }
         ]
       }
@@ -649,7 +651,7 @@ printf '{"continue": true, "terminalSequence": "\a"}'
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/context.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/context.sh"
           }
         ]
       }
@@ -866,7 +868,7 @@ fi
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/session-init.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/session-init.sh",
             "timeout": 30
           }
         ]
@@ -940,7 +942,7 @@ Claude Codeが通知を発行した際に実行されるフック。通知のロ
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/notify.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/notify.sh",
             "timeout": 10
           }
         ]
@@ -997,7 +999,7 @@ export CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS=5000
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/session-cleanup.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/session-cleanup.sh",
             "timeout": 30
           }
         ]
@@ -1032,7 +1034,7 @@ export CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS=5000
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/setup.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/setup.sh",
             "timeout": 60
           }
         ]
@@ -1062,7 +1064,7 @@ export CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS=5000
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/generate-skills.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/generate-skills.sh",
             "timeout": 60
           }
         ]
@@ -1088,7 +1090,7 @@ export CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS=5000
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/notify-idle.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/notify-idle.sh",
             "timeout": 10
           }
         ]
@@ -1130,7 +1132,7 @@ echo '{"continue": false, "stopReason": "タスクは完了しました。これ
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/task-notification.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/task-notification.sh",
             "timeout": 10
           }
         ]
@@ -1172,7 +1174,7 @@ echo '{"continue": false, "stopReason": "タスクが完了しました。後続
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on-task-created.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/on-task-created.sh",
             "timeout": 10
           }
         ]
@@ -1223,7 +1225,7 @@ echo '{"continue": false, "stopReason": "タスクが完了しました。後続
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/audit-config.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/audit-config.sh",
             "timeout": 30
           }
         ]
@@ -1288,7 +1290,7 @@ exit 2
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on-directory-added.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/on-directory-added.sh",
             "timeout": 10
           }
         ]
@@ -1326,7 +1328,7 @@ exit 2
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/worktree-setup.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/worktree-setup.sh",
             "timeout": 60
           }
         ]
@@ -1383,7 +1385,7 @@ exit 2
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/worktree-cleanup.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/worktree-cleanup.sh",
             "timeout": 30
           }
         ]
@@ -1414,7 +1416,7 @@ CLAUDE.mdまたは`.claude/rules/*.md`ファイルがコンテキストに読み
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on-instructions-loaded.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/on-instructions-loaded.sh",
             "timeout": 10
           }
         ]
@@ -1447,7 +1449,7 @@ CLAUDE.mdまたは`.claude/rules/*.md`ファイルがコンテキストに読み
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/pre-compact.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/pre-compact.sh",
             "timeout": 10
           }
         ]
@@ -1516,7 +1518,7 @@ exit 0
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/post-compact.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/post-compact.sh",
             "timeout": 10
           }
         ]
@@ -1568,7 +1570,7 @@ MCPエリシテーション機能のレスポンスをインターセプト・�
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/handle-elicitation.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/handle-elicitation.sh",
             "timeout": 30
           }
         ]
@@ -1630,7 +1632,7 @@ MCPエリシテーションのレスポンス結果を受け取るフック。
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/elicitation-result.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/elicitation-result.sh",
             "timeout": 30
           }
         ]
@@ -1687,7 +1689,7 @@ autoモード（自動モード）のクラシファイアーがツール実行�
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/handle-denied.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/handle-denied.sh",
             "timeout": 30
           }
         ]
@@ -1722,7 +1724,7 @@ autoモード（自動モード）のクラシファイアーがツール実行�
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on-prompt-submit.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/on-prompt-submit.sh",
             "timeout": 10
           }
         ]
