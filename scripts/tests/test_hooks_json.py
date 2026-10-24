@@ -1482,6 +1482,76 @@ class TestValidateHooksJson:
         result = validate_hooks_json(Path("hooks.json"), content)
         assert not result.has_errors()
 
+    # --- PermissionRequestのagentタイプ制約のテスト ---
+
+    def test_permission_request_rejects_agent_type(self):
+        """PermissionRequestフックでagentタイプがエラーになることをテスト（v2.1.280）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PermissionRequest": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [
+                                {
+                                    "type": "agent",
+                                    "agent": "permission-checker",
+                                    "prompt": "この操作を許可すべきか判断してください",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("PermissionRequest" in e and "command" in e for e in result.errors)
+
+    def test_permission_request_allows_command_type(self):
+        """PermissionRequestフックでcommandタイプは有効であることをテスト（v2.1.280）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PermissionRequest": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-permission.sh",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_permission_request_allows_http_type(self):
+        """PermissionRequestフックでhttpタイプは有効であることをテスト（v2.1.280）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PermissionRequest": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [
+                                {
+                                    "type": "http",
+                                    "url": "https://example.com/permission-check",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
     # --- httpタイプのallowedEnvVars検証のテスト ---
 
     def test_http_headers_without_placeholder_valid(self):

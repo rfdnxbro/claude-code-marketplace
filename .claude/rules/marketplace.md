@@ -522,6 +522,18 @@ zipは配下に`.claude-plugin/`を直接含む構成、または単一のトッ
 - `agent-skills`
 - `life-sciences`
 
+上記の予約済み名前と完全一致する場合に加え、予約済み名前を「模倣（imitate）」するマーケットプレイス名も、追加時に拒否され、既に追加済みの場合はロードされません。
+
+> CHANGELOGより: "Changed plugin marketplaces whose name imitates a reserved marketplace name to be
+> refused when added, and to stop loading if one was already added"
+
+公式ドキュメントでは、模倣と判定される名前として次を挙げている:
+
+- 公式マーケットプレイスを装う名前（例: `official-claude-plugins`、`claude-plugins-v2`）と、非ASCII文字を含む名前。エラーは `Marketplace name impersonates an official Anthropic/Claude marketplace`
+- 予約済み名前の別表記（末尾にドットを付けたもの、ハイフンをアンダースコア以外の記号に置き換えたもの。例: `claude.code.plugins` は `claude-code-plugins` とみなされる）
+
+TODO: 要確認 — 「公式を装う名前」の網羅的な判定規則は公式ドキュメントにも記載がない。本リポジトリのバリデーターは kebab-case 形式チェックのみで、模倣チェックは行っていない。
+
 ## 禁止文字（制御文字・不可視文字）
 
 マーケットプレイス名・プラグイン名に制御文字や不可視文字を含めると拒否されます。

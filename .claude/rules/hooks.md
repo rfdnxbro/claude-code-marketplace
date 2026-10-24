@@ -297,12 +297,15 @@ HTTPフックのレスポンスでJSONを返さない場合（200以外のステ
 
 `SessionStart`・`Setup`・`SubagentStart` イベントでは、`prompt` 型および `agent` 型のフックは使用できません。有効なフックタイプは下表の通りイベントごとに異なります（`SessionStart`/`Setup` は `command`/`mcp_tool`、`SubagentStart` は `command`/`http`/`mcp_tool`）。誤った設定時は「use a command-type hook instead」というエラーが表示されます。
 
+`PermissionRequest` イベントでは `agent` 型フックは使用できません。エージェントの応答は許可・拒否の判断に使えないため、`command` または `http` 型フックの使用を促すエラーが表示されます。
+
 | イベント | command | prompt | agent | http | mcp_tool |
 |---------|:-------:|:------:|:-----:|:----:|:--------:|
 | `SessionStart` | ✓ | ✗ | ✗ | ✗ | ✓ |
 | `Setup` | ✓ | ✗ | ✗ | ✗ | ✓ |
 | `SubagentStart` | ✓ | ✗ | ✗ | ✓ | ✓ |
 | `PostCompact` | ✓ | ✗ | ✗ | ✗ | ✗ |
+| `PermissionRequest` | ✓ | ✓ | ✗ | ✓ | ✓ |
 | その他のイベント | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 ```json
