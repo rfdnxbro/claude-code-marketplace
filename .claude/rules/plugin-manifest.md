@@ -26,7 +26,14 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 | `repository` | string | ソースコードURL |
 | `license` | string | SPDXライセンス識別子（`MIT`, `Apache-2.0`等） |
 | `keywords` | array | 検索用タグ |
+| `icon` | string | Anthropic のディレクトリ掲載用。プラグイン内の画像ファイルへのパス（例: `./logo.png`） |
+| `documentationUrl` | string | ディレクトリ掲載用のドキュメントURL（`https://`） |
+| `supportUrl` | string | ディレクトリ掲載用のサポートURL（`https://`） |
+| `privacyPolicyUrl` | string | ディレクトリ掲載用のプライバシーポリシーURL（`https://`） |
+| `termsOfServiceUrl` | string | ディレクトリ掲載用の利用規約URL（`https://`） |
 | `defaultEnabled` | boolean | `false` を指定するとプラグインをデフォルト無効でインストール。`/plugin` または `claude plugin enable` で有効化する。依存プラグインは有効化済みプラグインの依存関係として自動有効化される |
+
+`icon`・`documentationUrl`・`supportUrl`・`privacyPolicyUrl`・`termsOfServiceUrl` は、プラグインを Anthropic のディレクトリに提出したときの掲載情報として使われ、Claude Code 本体はロード時に読まない。`plugin.json` にだけ記述する。マーケットプレイスのエントリ（`marketplace.json` の `plugins[]`）に書くと、`claude plugin validate` は未知のフィールドとして報告する。本リポジトリのバリデーターは、値の形式（`icon` は `./` で始まるパス、他は `https://` の URL）とマーケットプレイスのエントリへの記述を警告する。
 
 ## コンポーネント参照
 

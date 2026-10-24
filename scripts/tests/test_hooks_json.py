@@ -97,7 +97,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/handle-denied.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/handle-denied.sh',
                                 }
                             ]
                         }
@@ -250,7 +250,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/setup.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/setup.sh',
                                     "timeout": 60,
                                 }
                             ]
@@ -306,7 +306,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/audit-config.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/audit-config.sh',
                                     "timeout": 30,
                                 }
                             ]
@@ -346,7 +346,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on-directory-added.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/on-directory-added.sh',
                                     "timeout": 10,
                                 }
                             ]
@@ -368,7 +368,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/worktree-setup.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/worktree-setup.sh',
                                     "timeout": 60,
                                 }
                             ]
@@ -390,7 +390,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/worktree-cleanup.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/worktree-cleanup.sh',
                                     "timeout": 30,
                                 }
                             ]
@@ -512,7 +512,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on-instructions.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/on-instructions.sh',
                                     "timeout": 10,
                                 }
                             ]
@@ -557,7 +557,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/post-compact.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/post-compact.sh',
                                     "timeout": 10,
                                 }
                             ],
@@ -580,7 +580,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/post-compact.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/post-compact.sh',
                                 }
                             ]
                         }
@@ -673,7 +673,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/elicitation.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/elicitation.sh',
                                     "timeout": 30,
                                 }
                             ],
@@ -696,7 +696,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/elicitation.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/elicitation.sh',
                                 }
                             ]
                         }
@@ -719,7 +719,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/elicit-result.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/elicit-result.sh',
                                     "timeout": 30,
                                 }
                             ],
@@ -742,7 +742,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/elicit-result.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/elicit-result.sh',
                                 }
                             ]
                         }
@@ -765,7 +765,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on-cwd-change.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/on-cwd-change.sh',
                                     "timeout": 10,
                                 }
                             ],
@@ -788,7 +788,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on-cwd-change.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/on-cwd-change.sh',
                                 }
                             ]
                         }
@@ -811,7 +811,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on-file-change.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/on-file-change.sh',
                                     "timeout": 10,
                                 }
                             ],
@@ -834,7 +834,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on-file-change.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/on-file-change.sh',
                                 }
                             ]
                         }
@@ -1067,7 +1067,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/audit.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/audit.sh',
                                 }
                             ],
                         }
@@ -1272,7 +1272,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/session-init.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/session-init.sh',
                                     "timeout": 30,
                                 }
                             ]
@@ -1294,7 +1294,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/setup.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/setup.sh',
                                     "timeout": 60,
                                 }
                             ]
@@ -1317,7 +1317,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on-subagent-start.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/on-subagent-start.sh',
                                     "timeout": 10,
                                 }
                             ],
@@ -1339,7 +1339,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/filter-message.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/filter-message.sh',
                                 }
                             ]
                         }
@@ -1360,7 +1360,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/on-model-switch.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/on-model-switch.sh',
                                 }
                             ]
                         }
@@ -1381,7 +1381,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/after-model-switch.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/after-model-switch.sh',
                                 }
                             ]
                         }
@@ -1541,7 +1541,7 @@ class TestValidateHooksJson:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-permission.sh",
+                                    "command": '"${CLAUDE_PLUGIN_ROOT}"/scripts/check-permission.sh',
                                 }
                             ],
                         }
@@ -1703,3 +1703,48 @@ class TestValidateHooksJson:
         # allowedEnvVarsの型エラーが出た場合、後続の未許可変数チェックは
         # 行わずエラー1件に留めることを確認（同一設定ミスの二重報告防止）
         assert len(result.errors) == 1
+
+
+class TestUnquotedPluginVariables:
+    """シェル形式のフックでクォートされていないプラグイン変数の警告テスト"""
+
+    def _result(self, hook):
+        content = json.dumps({"hooks": {"Stop": [{"hooks": [hook]}]}})
+        return validate_hooks_json(Path("hooks.json"), content)
+
+    def _warned(self, result, name):
+        return any(name in w and "クォート" in w for w in result.warnings)
+
+    def test_unquoted_plugin_root_warns(self):
+        result = self._result({"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/a.sh"})
+        assert not result.has_errors()
+        assert self._warned(result, "CLAUDE_PLUGIN_ROOT")
+
+    def test_quoted_variables_no_warning(self):
+        for command in (
+            '"${CLAUDE_PLUGIN_ROOT}"/a.sh',
+            'bash "${CLAUDE_PLUGIN_DATA}/run.sh"',
+            "cat '${CLAUDE_PROJECT_DIR}/x'",
+        ):
+            result = self._result({"type": "command", "command": command})
+            assert not any("クォート" in w for w in result.warnings), command
+
+    def test_unquoted_data_and_project_dir_warn_once_each(self):
+        command = 'bash "${CLAUDE_PLUGIN_ROOT}/a.sh" ${CLAUDE_PLUGIN_DATA} ${CLAUDE_PLUGIN_DATA}'
+        command += ' \\"${CLAUDE_PROJECT_DIR}'
+        result = self._result({"type": "command", "command": command})
+        assert self._warned(result, "CLAUDE_PLUGIN_DATA")
+        assert self._warned(result, "CLAUDE_PROJECT_DIR")
+        assert not self._warned(result, "CLAUDE_PLUGIN_ROOT")
+        assert sum("CLAUDE_PLUGIN_DATA" in w for w in result.warnings) == 1
+
+    def test_exec_form_and_powershell_excluded(self):
+        for hook in (
+            {"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/a.sh", "args": ["x"]},
+            {"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/a.ps1", "shell": "powershell"},
+        ):
+            assert not any("クォート" in w for w in self._result(hook).warnings), hook
+
+    def test_other_placeholder_not_warned(self):
+        result = self._result({"type": "command", "command": "${HOME}/a.sh"})
+        assert not any("クォート" in w for w in result.warnings)

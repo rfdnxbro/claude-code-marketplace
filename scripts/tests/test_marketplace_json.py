@@ -1612,3 +1612,25 @@ class TestDefaultEnabled:
         result = validate_marketplace_json(Path("marketplace.json"), content)
         assert result.has_errors()
         assert any("source.sha256" in e and "16進数64文字" in e for e in result.errors)
+
+
+class TestListingFieldsInMarketplaceEntry:
+    """掲載用フィールドをマーケットプレイスのエントリに書いた場合の警告"""
+
+    def test_listing_field_in_entry_warns(self):
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {
+                        "name": "plugin-one",
+                        "source": "./plugins/plugin-one",
+                        "supportUrl": "https://example.com/support",
+                    }
+                ],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not result.has_errors()
+        assert any("supportUrl" in w and "plugin.json" in w for w in result.warnings)

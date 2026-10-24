@@ -459,6 +459,19 @@ claude plugin install <plugin> --config <server>.<key>=<value>
 
 `--config` は繰り返し指定できる。`<server>.` を付けない `--config <key>=<value>` は、プラグインの `userConfig` の値を設定する。
 
+## `claude plugin validate` による検査
+
+`claude plugin validate` は、プラグインが宣言する MCP サーバー（プラグインルートの `.mcp.json`、`mcpServers` で指定した `.json` ファイル、`plugin.json` に直接書いた設定）を次の観点で検査する。
+
+| 種別 | 内容 |
+|------|------|
+| エラー | 読み込み時に捨てられる設定、`userConfig` で宣言していない `${user_config.KEY}` の参照、有効な絶対URLでないリモートの `url` |
+| 警告 | ループバック以外のホストへの `http://`・`ws://` の URL、資格情報そのものに見えるヘッダー値 |
+
+本リポジトリのバリデーターは、`url` の絶対URL検査と `http://`・`ws://` の警告（`.mcp.json` と `plugin.json` の直接記述の両方）、および `plugin.json` に直接書いた設定での未宣言の `${user_config.KEY}` 参照を検出する。`.mcp.json` 側の `${user_config.KEY}` は `plugin.json` と突き合わせられないため検査しない。ハードコードされた資格情報は既存の機密情報検出で警告する。
+
+TODO: 要確認 — 「読み込み時に捨てられる設定」の具体的な条件は公式ドキュメントにも記載がない。
+
 ## 予約済みサーバー名
 
 `anthropic-skills` という名前で設定したMCPサーバーは、ツールは動作するが、そのサーバーが提供するスキル・プロンプトは一覧に表示されない。スキル・プロンプトを公開したい場合は別の名前を使うこと。

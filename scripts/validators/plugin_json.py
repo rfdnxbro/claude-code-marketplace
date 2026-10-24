@@ -7,7 +7,8 @@ import re
 from pathlib import Path
 from typing import Any
 
-from .base import ValidationResult, parse_json_safe, validate_kebab_case
+from .base import LISTING_FIELDS, ValidationResult, parse_json_safe, validate_kebab_case
+from .mcp_json import find_user_config_references, validate_server_url
 from .monitors_json import validate_monitors_entries
 
 USER_CONFIG_TYPES = {"string", "number", "boolean", "directory", "file"}
@@ -199,6 +200,25 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
     if user_config is not None:
         _validate_user_config_mapping(result, file_path, user_config, "userConfig")
 
+    # ディレクトリ掲載用フィールドの確認（icon はプラグイン内の画像パス、他は https URL）
+    for field in LISTING_FIELDS:
+        value = data.get(field)
+        if value is None:
+            continue
+        if field == "icon":
+            if not isinstance(value, str) or not value.startswith("./"):
+                result.add_warning(
+                    f"{file_path.name}: iconはプラグイン内の画像ファイルへのパス（./で始まる）を"
+                    f"指定してください: {value}"
+                )
+        elif not isinstance(value, str) or not value.startswith("https://"):
+            result.add_warning(
+                f"{file_path.name}: {field}はhttps://のURLを指定してください: {value}"
+            )
+
+    # plugin.json に直接書いた MCP サーバー設定の確認
+    _validate_inline_mcp_servers(result, file_path, data.get("mcpServers"), user_config)
+
     # channelsの確認（v2.1.80以降）
     channels = data.get("channels")
     if channels is not None:
@@ -381,3 +401,22 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
             )
 
     return result
+
+
+def _validate_inline_mcp_servers(
+    result: ValidationResult, file_path: Path, mcp_servers: Any, user_config: Any
+) -> None:
+    """インラインの mcpServers について、url と ${user_config.KEY} の参照を検証する"""
+    if not isinstance(mcp_servers, dict):
+        return
+    declared = set(user_config) if isinstance(user_config, dict) else set()
+    for server_name, config in mcp_servers.items():
+        if not isinstance(config, dict):
+            continue
+        if config.get("type") in ("http", "sse", "ws"):
+            validate_server_url(result, file_path, f"mcpServers.{server_name}", config.get("url"))
+        for key in sorted(find_user_config_references(config) - declared):
+            result.add_error(
+                f"{file_path.name}: mcpServers.{server_name}: userConfigで宣言されていない"
+                f"${{user_config.{key}}} を参照しています"
+            )

@@ -10,6 +10,37 @@ from .base import ValidationResult, parse_json_safe
 # httpタイプのheaders値内の環境変数プレースホルダー（${VAR_NAME}形式）を抽出する正規表現
 ENV_VAR_PLACEHOLDER_PATTERN = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
 
+# シェル形式のフックでクォートが必要なプラグイン変数
+PLUGIN_PATH_VARIABLES = ("CLAUDE_PLUGIN_ROOT", "CLAUDE_PLUGIN_DATA", "CLAUDE_PROJECT_DIR")
+
+
+def find_unquoted_plugin_variables(command: str) -> list[str]:
+    """シェル形式のコマンドでクォートされずに使われているプラグイン変数名を返す
+
+    空白を含むパスに置換されると複数の語に分かれてしまうため、
+    `${CLAUDE_PLUGIN_ROOT}` などはダブルクォート（またはシングルクォート）で囲む必要がある。
+    """
+    found: list[str] = []
+    quote = ""
+    i = 0
+    while i < len(command):
+        ch = command[i]
+        if ch == "\\" and quote != "'":
+            i += 2
+            continue
+        if quote:
+            if ch == quote:
+                quote = ""
+        elif ch in ("'", '"'):
+            quote = ch
+        elif command.startswith("${", i):
+            for name in PLUGIN_PATH_VARIABLES:
+                if command.startswith("${" + name + "}", i) and name not in found:
+                    found.append(name)
+        i += 1
+    return found
+
+
 # イベントごとに使用できないhookタイプと、使用可能なタイプの案内文言
 DISALLOWED_HOOK_TYPES_BY_EVENT = {
     "SessionStart": ({"prompt", "agent", "http"}, "command/mcp_toolタイプ"),
@@ -209,6 +240,20 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
                         ):
                             result.add_error(
                                 f"{file_path.name}: commandタイプのargsは文字列の配列が必要です"
+                            )
+                    # シェル形式（args なし）でプラグイン変数がクォートされていない場合は警告
+                    # （PowerShell はパスを1つの語として扱うため対象外）
+                    command = h.get("command")
+                    if (
+                        args_field is None
+                        and isinstance(command, str)
+                        and h.get("shell") != "powershell"
+                    ):
+                        for name in find_unquoted_plugin_variables(command):
+                            result.add_warning(
+                                f"{file_path.name}: シェル形式のコマンドで ${{{name}}} が"
+                                "クォートされていません。空白を含むパスで壊れるため"
+                                f'"${{{name}}}" のようにダブルクォートで囲んでください'
                             )
 
                 if hook_type == "prompt" and not h.get("prompt"):

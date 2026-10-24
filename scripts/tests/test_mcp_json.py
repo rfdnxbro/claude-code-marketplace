@@ -365,3 +365,55 @@ class TestValidateMcpJson:
         result = validate_mcp_json(Path(".mcp.json"), content)
         assert any("予約済みサーバー名" in e for e in result.errors)
         assert any("設定はオブジェクトが必要" in e for e in result.errors)
+
+
+class TestRemoteServerUrl:
+    """リモートMCPサーバーの url 検証（claude plugin validate と同じ観点）"""
+
+    def _result(self, url, server_type="http"):
+        content = json.dumps({"mcpServers": {"remote": {"type": server_type, "url": url}}})
+        return validate_mcp_json(Path(".mcp.json"), content)
+
+    def test_https_and_loopback_ok(self):
+        for url in (
+            "https://example.com/mcp",
+            "wss://example.com/mcp",
+            "http://localhost:3000/mcp",
+            "http://127.0.0.1/mcp",
+            "ws://[::1]:8080",
+            "http://app.localhost/mcp",
+            "${MCP_URL}",
+        ):
+            result = self._result(url)
+            assert not result.has_errors(), url
+            assert not result.warnings, url
+
+    def test_non_absolute_url_error(self):
+        for url in ("example.com/mcp", "/mcp", "ftp://example.com", "https://"):
+            result = self._result(url)
+            assert any("絶対URL" in e for e in result.errors), url
+
+    def test_plain_http_or_ws_to_remote_host_warns(self):
+        for url, server_type in (("http://example.com/mcp", "http"), ("ws://10.0.0.5/mcp", "ws")):
+            result = self._result(url, server_type)
+            assert not result.has_errors()
+            assert any("暗号化されていない" in w for w in result.warnings), url
+
+    def test_non_string_url_ignored(self):
+        result = self._result(123)
+        assert not any("絶対URL" in e for e in result.errors)
+
+
+class TestFindUserConfigReferences:
+    """${user_config.KEY} 参照の収集"""
+
+    def test_nested_values(self):
+        from scripts.validators.mcp_json import find_user_config_references
+
+        config = {
+            "env": {"TOKEN": "${user_config.api_token}"},
+            "args": ["--region", "${user_config.region}", 3],
+            "url": "https://${user_config.host}/mcp",
+            "timeout": 10,
+        }
+        assert find_user_config_references(config) == {"api_token", "region", "host"}
