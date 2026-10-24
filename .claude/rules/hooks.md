@@ -44,7 +44,7 @@ paths: plugins/*/hooks/hooks.json
 
 ## Mods（hooks モジュール）
 
-`hooks/hooks.json` に `modules` キーを置いたプラグインは Mod になる。Mod は JavaScript / TypeScript のイベントハンドラーで Claude Code の UI や挙動（ツール呼び出し、プロンプト、描画など）を変更する仕組みで、このドキュメントの `hooks`（Mod の文脈では「settings hook」と呼ばれる）とは別物。API やイベントの詳細は公式の [Mods overview](https://code.claude.com/docs/en/plugins/mods.md) と [Mods reference](https://code.claude.com/docs/en/plugins/mods/reference.md) を参照する。
+`hooks/hooks.json` に `modules` キーを置いたプラグインは Mod になる。Mod は JavaScript / TypeScript のイベントハンドラーで Claude Code の UI や挙動（ツール呼び出し、プロンプト、描画など）を変更する仕組みで、このドキュメントの `hooks`（Mod の文脈では「settings hook」と呼ばれる）とは別物。API やイベントの詳細は公式の [Mods overview](https://code.claude.com/docs/en/plugins/mods) と [Mods reference](https://code.claude.com/docs/en/plugins/mods/reference) を参照する。
 
 ```json
 {

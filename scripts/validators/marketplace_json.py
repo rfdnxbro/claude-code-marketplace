@@ -40,6 +40,7 @@ RESERVED_NAMES = {
     "synced",
     "claude-plugin-test",
     # すべての JavaScript オブジェクトが持つメンバー名
+    # 大文字を含むものは先に kebab-case チェックで弾かれるが、公式一覧との対応を保つため残す
     "constructor",
     "hasOwnProperty",
     "isPrototypeOf",
