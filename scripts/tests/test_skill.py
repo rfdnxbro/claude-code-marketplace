@@ -913,3 +913,30 @@ description: 説明
         result = validate_skill(Path("SKILL.md"), content)
         assert result.has_errors()
         assert any("小文字、数字、ハイフン" in e for e in result.errors)
+
+
+class TestSkillFolderNameChars:
+    """スキルのフォルダ名に使用できない文字のテスト"""
+
+    CONTENT = (
+        "---\nname: my-skill\ndescription: PDFファイルを処理する。PDFの話題で使用。\n---\n本文"
+    )
+
+    def test_valid_folder_name(self):
+        result = validate_skill(Path("plugins/p/skills/my-skill/SKILL.md"), self.CONTENT)
+        assert not result.has_errors()
+
+    def test_folder_name_with_bidi_char(self):
+        """文字方向を変える文字を含むフォルダ名はエラー"""
+        result = validate_skill(Path("plugins/p/skills/my\u202eskill/SKILL.md"), self.CONTENT)
+        assert any("U+202E" in e for e in result.errors)
+
+    def test_nested_folder_name_with_angle_bracket(self):
+        """skills より下のネストしたフォルダ名も検査する"""
+        result = validate_skill(Path("plugins/p/skills/bad<dir/my-skill/SKILL.md"), self.CONTENT)
+        assert any("U+003C" in e for e in result.errors)
+
+    def test_folder_name_without_skills_dir(self):
+        """skills ディレクトリ外では親フォルダ名だけを検査する"""
+        result = validate_skill(Path("my\u200bskill/SKILL.md"), self.CONTENT)
+        assert any("U+200B" in e for e in result.errors)

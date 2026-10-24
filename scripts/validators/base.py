@@ -4,6 +4,7 @@
 
 import json
 import re
+import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -565,3 +566,47 @@ def validate_allow_ask_glob_fields(
                     f'"{tool_str}"（v2.1.166以降、非MCPツール。'
                     f"Bash(rm *)のようなコンテンツパターンは有効）"
                 )
+
+
+# 空白に見えるがUnicodeの空白カテゴリに属さない文字
+_BLANK_LIKE_CHARS = {"\u115f", "\u1160", "\u2800", "\u3164", "\uffa0"}
+
+
+def find_unsafe_name_chars(name: str) -> list[str]:
+    """スキル・コマンドの名前として提供されなくなる文字を U+XXXX 形式で返す
+
+    隠し文字・制御文字（Cc/Cf。文字方向を変える文字やゼロ幅文字を含む）、
+    通常の半角スペース以外の空白、空白に見える文字、`<`、`>` が対象。
+    """
+    found = []
+    for ch in name:
+        category = unicodedata.category(ch)
+        if (
+            category in ("Cc", "Cf", "Zl", "Zp")
+            or (category == "Zs" and ch != " ")
+            or ch in _BLANK_LIKE_CHARS
+            or ch in "<>"
+        ):
+            code = f"U+{ord(ch):04X}"
+            if code not in found:
+                found.append(code)
+    return found
+
+
+def validate_name_chars(result: ValidationResult, file_path: Path, label: str, value: str) -> None:
+    """名前に使用できない文字が含まれていればエラーを追加する"""
+    unsafe = find_unsafe_name_chars(value)
+    if unsafe:
+        result.add_error(
+            f"{file_path.name}: {label}に使用できない文字が含まれています"
+            f"（隠し文字・文字方向を変える文字・空白に見える文字・<・>）: {', '.join(unsafe)}"
+        )
+
+
+def name_dirs_under(file_path: Path, anchor: str) -> list[str]:
+    """anchor ディレクトリ（skills/commands）より下にあるディレクトリ名の一覧を返す"""
+    parts = file_path.parts[:-1]
+    if anchor in parts:
+        index = len(parts) - 1 - parts[::-1].index(anchor)
+        return list(parts[index + 1 :])
+    return [file_path.parent.name] if file_path.parent.name else []

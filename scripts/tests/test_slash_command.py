@@ -788,3 +788,36 @@ class TestValidateSlashCommand:
         result = validate_slash_command(Path("test.md"), content)
         assert result.has_errors()
         assert any("allow" in e and "グロブ" in e for e in result.errors)
+
+
+class TestCommandNameChars:
+    """コマンドのファイル名・フォルダ名・nameに使用できない文字のテスト"""
+
+    CONTENT = "---\ndescription: テスト用のコマンド\n---\n本文"
+
+    def test_valid_names(self):
+        content = "---\nname: safe-name\ndescription: テスト用のコマンド\n---\n本文"
+        result = validate_slash_command(Path("plugins/p/commands/sub/deploy.md"), content)
+        assert not result.has_errors()
+
+    def test_file_name_with_angle_bracket(self):
+        result = validate_slash_command(Path("plugins/p/commands/bad<name>.md"), self.CONTENT)
+        assert any("ファイル名" in e and "U+003C" in e for e in result.errors)
+
+    def test_folder_name_with_blank_like_char(self):
+        """空白に見える文字（U+3164）を含むフォルダ名はエラー"""
+        result = validate_slash_command(Path("plugins/p/commands/a\u3164b/run.md"), self.CONTENT)
+        assert any("フォルダ名" in e and "U+3164" in e for e in result.errors)
+
+    def test_name_with_non_ascii_space(self):
+        """通常の半角スペース以外の空白を含む name はエラー"""
+        content = "---\nname: my\u3000command\ndescription: テスト用のコマンド\n---\n本文"
+        result = validate_slash_command(Path("commands/run.md"), content)
+        assert any("name" in e and "U+3000" in e for e in result.errors)
+
+    def test_file_name_with_control_char_reports_once(self):
+        """同じ文字が複数回現れてもコードは1回だけ表示する"""
+        result = validate_slash_command(Path("a\u0007b\u0007.md"), self.CONTENT)
+        errors = [e for e in result.errors if "U+0007" in e]
+        assert len(errors) == 1
+        assert errors[0].count("U+0007") == 1
