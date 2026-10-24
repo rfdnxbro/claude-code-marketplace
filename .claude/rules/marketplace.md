@@ -372,13 +372,27 @@ npmレジストリからプラグインをインストール:
 | フィールド | 型 | 必須 | 説明 |
 |-----------|---|:---:|------|
 | `source` | string | ✓ | `"npm"` を指定 |
-| `package` | string | ✓ | npmパッケージ名（スコープ付きも可: `@scope/package`） |
-| `version` | string | | バージョン指定（省略時は最新版） |
+| `package` | string | ✓ | レジストリのパッケージ名（スコープ付きも可: `@scope/package`）、バージョン付きの名前（`@scope/package@2.0.0`）、またはパッケージのtarballへの `https` リンク |
+| `version` | string | | バージョン・semver範囲・dist-tag。`package` がバージョンなしのパッケージ名の場合に使われる（省略時は `latest`） |
 | `registry` | string | | カスタムレジストリURL（省略時はデフォルトのnpmレジストリ） |
 
 #### インストール時の制約
 
 npmパッケージの取得には `npm pack --ignore-scripts` 相当の方式が使われ、整合性検証（integrity-verified）も行われる。そのため、`preinstall`/`postinstall` などのnpm lifecycleスクリプトはインストール時に実行されない。ビルドが必要なプラグインをnpmソースで配布する場合は、ビルド成果物をあらかじめnpmパッケージに含めておく必要がある（postinstallでのビルドには依存できない）。
+
+#### ソースとして指定できるもの
+
+Claude Code は取得前に `package` の値を検査し、次の値はインストール時に拒否する（値と理由を示すエラーになる）:
+
+- gitアドレス、フォルダ／`file:` パス、`npm:` エイリアス。gitリポジトリには `github`・`url`・`git-subdir` ソース、マーケットプレイス内のフォルダには相対パス、エイリアスにはパッケージ自身の名前を使う
+- github.com・gist.github.com・gitlab.com・bitbucket.org・git.sr.ht 上の tarball リンク（GitHub のリリースダウンロードも含む。`gitlab.com/api/v4/` 配下の GitLab npm レジストリのリンクは除く）
+- `http` の tarball リンク（インストールするユーザー自身のデフォルト npm レジストリを指す場合を除く）
+
+`package` に `..` を含めることもできない。`registry` の URL も、ユーザー自身のデフォルト npm レジストリでない限り `https` である必要がある。
+
+npmパッケージ自身の Node.js 依存（`package.json` の依存）は取得時にはインストールされない。対応する lockfile が `package.json` と同じ場所にある場合に限り、別ステップでレジストリのパッケージからインストールされる（このときもスクリプトは実行されない）。
+
+本リポジトリのバリデーターは、上記の拒否される `package` の値をエラー（`http` の tarball リンクは警告）として検出する。
 
 ### settings
 
@@ -532,6 +546,20 @@ zipは配下に`.claude-plugin/`を直接含む構成、または単一のトッ
 
 本リポジトリのバリデーター（`scripts/validators/marketplace_json.py`）は、上の表の名前と `claudeai-` プレフィックスをエラーとして検出する。ソースの種類はマーケットプレイス追加時に決まるため、`github.com/anthropics/` 配下かどうかは区別せず一律にエラーとする。ダウンロードフォルダ名との衝突は静的には判定できないため検出しない。
 
+上記の予約済み名前と完全一致する場合に加え、予約済み名前を「模倣（imitate）」するマーケットプレイス名も、追加時に拒否され、既に追加済みの場合はロードされません。
+
+> CHANGELOGより: "Changed plugin marketplaces whose name imitates a reserved marketplace name to be
+> refused when added, and to stop loading if one was already added"
+
+公式ドキュメントでは、模倣と判定される名前として次を挙げている:
+
+- 公式マーケットプレイスを装う名前（例: `official-claude-plugins`、`claude-plugins-v2`）と、非ASCII文字を含む名前。エラーは `Marketplace name impersonates an official Anthropic/Claude marketplace`
+- 予約済み名前の別表記（末尾にドットを付けたもの、ハイフンをアンダースコア以外の記号に置き換えたもの。例: `claude.code.plugins` は `claude-code-plugins` とみなされる）
+
+本リポジトリのバリデーターは kebab-case を要求するため、ドットなどの記号や非ASCII文字を含む別表記はこの時点で弾かれる。一方、「公式を装う名前」の判定（模倣チェック）は行っていない。
+
+TODO: 要確認 — 「公式を装う名前」の網羅的な判定規則は公式ドキュメントにも記載がない。
+
 ## 禁止文字（制御文字・不可視文字）
 
 マーケットプレイス名・プラグイン名に制御文字や不可視文字を含めると拒否されます。
@@ -542,6 +570,9 @@ zipは配下に`.claude-plugin/`を直接含む構成、または単一のトッ
 
 名前の末尾に改行などの制御文字が付く場合も拒否対象に含まれる。
 
+`claude plugin validate` は、予約済み名前・禁止文字など Claude Code がインストールを拒否する
+マーケットプレイス名／プラグイン名を `marketplace.json` 内で検出すると、バリデーションエラーとして報告する。
+
 本リポジトリのバリデーター（`scripts/validators/base.py` の `validate_kebab_case`）は
 kebab-case形式（`[a-z0-9]+(-[a-z0-9]+)*` への完全一致）を要求しており、制御文字・不可視文字は
 この時点で構造的に弾かれる。そのため、この変更に伴う本リポジトリのバリデーターの
@@ -549,12 +580,10 @@ kebab-case形式（`[a-z0-9]+(-[a-z0-9]+)*` への完全一致）を要求して
 
 TODO: 要確認 — 以下は現時点で未確認。
 
-- この拒否ロジックがマーケットプレイス名（`marketplace.json`の`name`）、プラグインエントリ名
-  （`marketplace.json`の`plugins[].name`）、プラグイン自身の識別子（`plugin.json`の`name`）の
-  うちどれに適用されるか
+- この拒否ロジックが `marketplace.json` の `name`（マーケットプレイス名）と
+  `plugins[].name`（プラグインエントリ名）のどちらか一方のみに適用されるか、
+  両方に適用されるか
 - 「制御文字・不可視文字」の具体的な文字コード範囲の定義
-- `claude plugin validate` で警告として検出されるのか、`/plugin` の管理マーケットプレイス
-  同期時のみ拒否されるのか（[CLAUDE.md](../../CLAUDE.md)の関連TODOも参照）
 
 ## シードディレクトリの複数指定
 

@@ -77,6 +77,18 @@ class TestValidateAgent:
         assert result.has_errors()
         assert any("kebab-case" in e for e in result.errors)
 
+    def test_name_too_long(self):
+        name = "a" * 257
+        content = f"---\nname: {name}\ndescription: 説明があります\n---\n本文"
+        result = validate_agent(Path("agent.md"), content)
+        assert any("256文字以内" in e for e in result.errors)
+
+    def test_name_max_length_ok(self):
+        name = "a" * 256
+        content = f"---\nname: {name}\ndescription: 説明があります\n---\n本文"
+        result = validate_agent(Path("agent.md"), content)
+        assert not any("256文字" in e for e in result.errors)
+
     def test_missing_description(self):
         content = dedent("""
             ---
@@ -595,6 +607,20 @@ class TestValidateAgent:
         """).strip()
         result = validate_agent(Path("agent.md"), content)
         assert not result.has_errors()
+
+    def test_auto_compact_window_valid_bounds(self):
+        """autoCompactWindow は 100000 と 1000000 の境界値を含めて有効"""
+        for value in ("100000", "1000000"):
+            content = f"---\nname: test-agent\ndescription: これは十分に長い説明です\nautoCompactWindow: {value}\n---\n本文"
+            result = validate_agent(Path("agent.md"), content)
+            assert not any("autoCompactWindow" in e for e in result.errors), value
+
+    def test_auto_compact_window_invalid(self):
+        """autoCompactWindow の範囲外・200k 表記・真偽値はエラー"""
+        for value in ("99999", "1000001", "200k", "true"):
+            content = f"---\nname: test-agent\ndescription: これは十分に長い説明です\nautoCompactWindow: {value}\n---\n本文"
+            result = validate_agent(Path("agent.md"), content)
+            assert any("autoCompactWindow" in e for e in result.errors), value
 
     def test_omit_claude_md_invalid_string(self):
         """omitClaudeMd: にブール値以外の文字列が指定された場合エラー"""

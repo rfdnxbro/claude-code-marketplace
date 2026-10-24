@@ -40,7 +40,7 @@ skills: skill-name
 
 | フィールド | 必須 | 説明 |
 |-----------|------|------|
-| `name` | Yes | 識別子（小文字・ハイフンのみ） |
+| `name` | Yes | 識別子（小文字・ハイフンのみ）。最大256文字で、超過するとエージェントは拒否される |
 | `description` | Yes | 目的と使用タイミングを説明 |
 | `tools` | No | アクセス可能なツール（カンマ/YAML形式）。省略時は全ツール継承。`--print` モードでも尊重される |
 | `disallowedTools` | No | 使用禁止ツール（カンマ/YAML形式）。`--print` モードでも尊重される |
@@ -56,6 +56,7 @@ skills: skill-name
 | `isolation` | No | 実行分離モード：`worktree` |
 | `background` | No | バックグラウンドタスクとして常に実行：`true`/`false` |
 | `omitClaudeMd` | No | `true`にすると、ユーザー・プロジェクト・ローカルのCLAUDE.mdを読み込まずにエージェントを実行する：`true`/`false`。管理ポリシーファイルは`omitClaudeMd`指定時も読み込まれる |
+| `autoCompactWindow` | No | このサブエージェントの auto-compact ウィンドウをトークン数で指定し、メイン会話より早く compact させる。`100000`〜`1000000` の整数で書く（`200k` は 200 と読まれて範囲外になる）。範囲外の値は無視され、フィールドが無いのと同じ扱いになる。環境変数 `CLAUDE_CODE_AUTO_COMPACT_WINDOW` が設定されている場合はそちらが優先される。`--agents` 定義でも指定可能 |
 | `experimental` | No | 実験的なエージェント別オプション（ネストされたオブジェクト。未知キーは無視される）。[experimental.cacheTtl](#experimentalcachettl)参照 |
 
 ## description のベストプラクティス
@@ -103,6 +104,15 @@ tools:
 
 - `tools: Glob` や `tools: Grep` を指定した場合、ネイティブビルドではこれらのツールが利用できません
 - クロスプラットフォームで動作するプラグインを作成する場合は、`Glob`/`Grep` の代わりに `Bash` ツールを使用することを推奨します
+
+### MCPサーバーの指定
+
+`tools` リストでMCPサーバーを指定した場合、そのサーバーのツールのみが対象になります。名前に `__` を含むサーバーは、`mcp__<正規化された完全なサーバー名>__*` の形式で指定してください。
+
+```yaml
+# github サーバーと、名前に __ を含む my__server サーバーのツール
+tools: Read, mcp__github__*, mcp__my__server__*
+```
 
 ### 未知のツール名のみを指定した場合
 

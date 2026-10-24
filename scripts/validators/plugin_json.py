@@ -50,17 +50,25 @@ def _is_path_traversal(path_str: str) -> bool:
     return normalized == ".." or normalized.startswith("../")
 
 
-def _validate_commands_no_path_traversal(
-    result: ValidationResult, file_path: Path, commands_value: Any
+def _validate_no_path_traversal(
+    result: ValidationResult, file_path: Path, field_label: str, value: Any
 ) -> None:
-    """commandsフィールドのパスがプラグインディレクトリ外を指していないか検証する"""
-    paths = [commands_value] if isinstance(commands_value, str) else commands_value
-    if not isinstance(paths, list):
+    """パス指定フィールドがプラグインディレクトリ外を指していないか検証する
+
+    文字列または文字列の配列のみを対象とする。オブジェクト（`lspServers`/`hooks`の
+    インライン設定、`monitors`のインライン定義エントリ等）はファイルパスではないため
+    対象外とする。
+    """
+    if isinstance(value, str):
+        candidates = [value]
+    elif isinstance(value, list):
+        candidates = [v for v in value if isinstance(v, str)]
+    else:
         return
-    for p in paths:
-        if isinstance(p, str) and _is_path_traversal(p):
+    for p in candidates:
+        if _is_path_traversal(p):
             result.add_error(
-                f"{file_path.name}: commandsはプラグインディレクトリ外を指すパスを"
+                f"{file_path.name}: {field_label}はプラグインディレクトリ外を指すパスを"
                 f"指定できません（パストラバーサル）: {p}"
             )
 
@@ -283,9 +291,10 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
             exp_monitors = experimental.get("monitors")
             if isinstance(exp_monitors, list):
                 validate_monitors_entries(exp_monitors, file_path, result)
-            # experimental 内パスの./プレフィックスチェック
+            # experimental 内パスのパストラバーサル確認・./プレフィックスチェック
             for field in ["monitors", "themes"]:
                 value = experimental.get(field)
+                _validate_no_path_traversal(result, file_path, f"experimental.{field}", value)
                 if value and isinstance(value, str) and not value.startswith("./"):
                     result.add_warning(
                         f"{file_path.name}: experimental.{field}"
@@ -304,10 +313,10 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
                         f"はデフォルトパス（{value}）と同一のため指定不要です。削除してください"
                     )
 
-    # commandsのパストラバーサル確認（プラグインディレクトリ外を指すパスは拒否）
-    commands_value = data.get("commands")
-    if commands_value is not None:
-        _validate_commands_no_path_traversal(result, file_path, commands_value)
+    # パス指定フィールドのパストラバーサル確認（プラグインディレクトリ外を指すパスは拒否）
+    # lspServersはstring/objectの両方が有効だが、objectの場合はインライン設定のため対象外
+    for field in ["commands", "outputStyles", "themes", "monitors", "lspServers"]:
+        _validate_no_path_traversal(result, file_path, field, data.get(field))
 
     # types（Mod の型宣言 .d.ts ファイル）はパス文字列のみ
     types_value = data.get("types")
@@ -332,6 +341,9 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
         if value and isinstance(value, str) and not value.startswith("./"):
             # skills はプラグインルートを指す "." も正式に許容されるパス
             if field == "skills" and value == ".":
+                continue
+            # mcpServers は .mcpb/.dxt バンドルの https URL も指定できる
+            if field == "mcpServers" and value.startswith("https://"):
                 continue
             result.add_warning(f"{file_path.name}: {field}のパスは./で始めることを推奨: {value}")
 

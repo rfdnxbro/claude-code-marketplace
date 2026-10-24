@@ -248,6 +248,22 @@ MCPサーバーが提供するプロンプトはスラッシュコマンドと�
 export MAX_MCP_OUTPUT_TOKENS=50000
 ```
 
+## ツール説明・サーバーinstructionsの文字数上限
+
+MCPツールの説明文およびMCPサーバーのinstructionsには、セッション内のすべてのMCPサーバーに対して
+既定で4,096文字の上限が設定されています（上限を超えた部分は切り詰められます）。
+
+`CLAUDE_CODE_MAX_MCP_DESCRIPTION_LENGTH` 環境変数でこの上限文字数を変更できます:
+
+```bash
+export CLAUDE_CODE_MAX_MCP_DESCRIPTION_LENGTH=8192
+```
+
+TODO: 要確認 — 以下は現時点で未確認。
+
+- 設定可能な値の上限・下限
+- `.mcp.json` の個別サーバー設定で上書きできるか（本環境変数はセッション全体に適用されると読める）
+
 ## タイムアウト
 
 | 設定 | 説明 |
@@ -255,7 +271,7 @@ export MAX_MCP_OUTPUT_TOKENS=50000
 | `timeout`（`.mcp.json` のサーバーエントリ） | そのサーバーのツール実行タイムアウト（ミリ秒）。例: `"timeout": 600000`（10分）。そのサーバーに限り `MCP_TOOL_TIMEOUT` を上書きする。ツール呼び出しごとの厳密な wall-clock 上限で、進捗通知では延長されない。1000未満の値は無視され `MCP_TOOL_TIMEOUT`（未設定時は約28時間）にフォールバックする |
 | `MCP_TIMEOUT`（環境変数） | MCPサーバーの起動タイムアウト（ミリ秒）。例: `MCP_TIMEOUT=10000 claude` |
 | `MCP_TOOL_TIMEOUT`（環境変数） | ツール実行タイムアウトのデフォルト（ミリ秒）。サーバー個別の `timeout` で上書き可能 |
-| `CLAUDE_CODE_MCP_STARTUP_WAIT_MS`（環境変数） | 非対話（headless）セッションの最初のターンが、接続中のMCPサーバーを待つ時間の上限（ミリ秒）。`0` を指定すると待たない |
+| `CLAUDE_CODE_MCP_STARTUP_WAIT_MS`（環境変数） | 非対話（headless）セッションの最初のターンが、接続中のMCPサーバーを待つ時間の上限（ミリ秒）。`0` を指定すると待たない。ただし `0` でも、最初のターンは `--allowedTools` または `mcp_tool` フックで指定された接続中のMCPサーバーを最大2秒待つ |
 
 ```json
 {
@@ -288,6 +304,10 @@ allowed-tools:
   - mcp__github__list_issues
   - mcp__slack__*
 ```
+
+### サーバー名の指定範囲
+
+`mcp__a` のようにサーバー名のみを指定したallowルールは、`a__b` や `a_` という名前のサーバーを許可しません。サーバー単位で許可する場合は、`mcp__<server>__*` の形式で、サーバーの正規化後の完全な名前を使って記述してください。
 
 ## 動的更新通知
 
@@ -398,9 +418,50 @@ MCPサーバーのツール数が多い場合、ツール説明がコンテキ�
 
 | フィールド | 型 | 説明 |
 |-----------|---|------|
-| `alwaysLoad` | boolean | `true` にするとツール検索による遅延ロードを無効化し、常にツールをロードする。省略時は従来通り遅延ロードが適用される |
+| `alwaysLoad` | boolean | `true`: `ENABLE_TOOL_SEARCH` の設定に関係なく、そのサーバーの全ツールを常にロードする。`false`: ツール側が先読みを指定しているものも含め、そのサーバーの全ツールをツール検索の背後に遅延ロードする。省略時: `ENABLE_TOOL_SEARCH` の設定に従い、ツール側の `_meta` で先読みを指定したツールだけが先にロードされる |
+
+## bareElicitationCapability オプション
+
+Claude Code は 2025-11-25 プロトコルの URL elicitation（サーバーからのサインイン等の URL プロンプト）に対応しています。これが原因で接続できないMCPサーバーがある場合は、そのMCP設定エントリに `"bareElicitationCapability": true` を指定します。
+
+```json
+{
+  "mcpServers": {
+    "server-name": {
+      "type": "http",
+      "url": "https://example.com/mcp",
+      "bareElicitationCapability": true
+    }
+  }
+}
+```
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `bareElicitationCapability` | boolean | URL elicitation が原因で接続できないサーバーのエントリに `true` を指定する |
+
+TODO: 要確認 — `bareElicitationCapability: true` が具体的にクライアントのどの挙動を変えるか（宣言するelicitation capabilityの内容など）、および `false` / 省略時の挙動は、CHANGELOGからは確認できていない。
+
+MCPツール自身が `_meta['anthropic/alwaysLoad']` を `false` に設定している場合、`--mcp-config` で渡されたサーバー・Agent SDK が提供するサーバー・プラグインが提供するサーバーでは、サーバー設定の `alwaysLoad: true` よりツール側の指定が優先され、そのツールは遅延ロードのままになります。それ以外のサーバー（ユーザー自身の `.mcp.json` 等）では、サーバー設定の `alwaysLoad: true` に従って先にロードされます。
+
+## 設定が必要な同梱 `.mcpb` MCPサーバー
+
+`plugin.json` の `mcpServers` には、`.mcpb`（または `.dxt`）バンドルのパス（`"./bundle.mcpb"`）や https URL も指定できる（→ [plugin-manifest.md](plugin-manifest.md)）。バンドルのマニフェストが `user_config` ブロックで必須の設定を宣言していて、その値が未保存の場合、そのサーバーは起動しない。`/plugin` の Errors タブ・インストール時のメッセージ・`claude plugin install` がその旨を表示し、Configure へ誘導する。
+
+ユーザーは次のどちらかで値を設定する:
+
+- `/plugin` の Installed タブでプラグインを選び、Configure を選ぶ
+- インストール時に `claude plugin install` の `--config <server>.<key>=<value>` で渡す（プラグイン内に同梱したバンドルファイルの場合のみ）
+
+```bash
+claude plugin install <plugin> --config <server>.<key>=<value>
+```
+
+`--config` は繰り返し指定できる。`<server>.` を付けない `--config <key>=<value>` は、プラグインの `userConfig` の値を設定する。
 
 ## 予約済みサーバー名
+
+`anthropic-skills` という名前で設定したMCPサーバーは、ツールは動作するが、そのサーバーが提供するスキル・プロンプトは一覧に表示されない。スキル・プロンプトを公開したい場合は別の名前を使うこと。
 
 以下のサーバー名は予約済みです。これらの名前を `.mcp.json` の `mcpServers` キーに使用すると、警告が表示されてスキップされます:
 
@@ -409,6 +470,10 @@ MCPサーバーのツール数が多い場合、ツール説明がコンテキ�
 | `workspace` |
 | `Claude Browser` |
 | `Claude Preview` |
+
+加えて、クラウドセッションおよびセルフホストランナーでは、サーバー名 `widgets` が予約されています。`widgets` や `widgets_` のような近い綴りのサーバー名もロードされません。本リポジトリのバリデーターは `widgets` を警告として検出します。
+
+TODO: 要確認 — 「近い綴り」の正確な判定規則、およびローカル環境で予約されるか。
 
 ## セキュリティ注意事項
 

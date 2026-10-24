@@ -36,8 +36,8 @@ JSON形式で記述します。配置場所はプラグインルートの `.lsp.
 | `args` | array | コマンドライン引数 |
 | `transport` | string | 通信方式（`"stdio"` または `"socket"`、デフォルト: `"stdio"`） |
 | `env` | object | 環境変数 |
-| `initializationOptions` | object | サーバー初期化オプション |
-| `settings` | object | ワークスペース設定 |
+| `initializationOptions` | object | サーバー初期化オプション。`${user_config.*}` と `${CLAUDE_PLUGIN_ROOT}` が展開される |
+| `settings` | object | ワークスペース設定。`${user_config.*}` と `${CLAUDE_PLUGIN_ROOT}` が展開される |
 | `workspaceFolder` | string | ワークスペースフォルダパス |
 | `startupTimeout` | number | サーバー起動タイムアウト（ミリ秒、正の整数） |
 | `shutdownTimeout` | number | 正常終了を待つ時間（ミリ秒、正の整数）。過ぎるとサーバープロセスを終了させる。未指定ならタイムアウトなし |
@@ -129,6 +129,7 @@ JSON形式で記述します。配置場所はプラグインルートの `.lsp.
 - `${VAR}` - 環境変数を展開
 - `${VAR:-default}` - デフォルト値付き
 - `${CLAUDE_PLUGIN_ROOT}` - プラグインルートへの絶対パス
+- `${user_config.KEY}` - `plugin.json` の `userConfig` で宣言した値（LSPサーバー設定内で展開される）
 
 ```json
 {

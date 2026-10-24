@@ -54,9 +54,10 @@
 | `${CLAUDE_PLUGIN_DATA}` | プラグインの永続データディレクトリへの絶対パス。アップデートを超えて永続化される | hooks, monitors |
 | `$CLAUDE_PLUGIN_OPTION_<KEY>` | `userConfig` で宣言した値。キー名を大文字スネークケースに変換した環境変数として注入される（例: `apiKey` → `$CLAUDE_PLUGIN_OPTION_API_KEY`） | hooks |
 | `CLAUDE_CODE_PLUGIN_SEED_DIR` | プラグインのシードディレクトリ。複数ディレクトリをパス区切り文字（Unix: `:`, Windows: `;`）で区切って指定可能 | marketplace |
+| `CLAUDE_CODE_MAX_MCP_DESCRIPTION_LENGTH` | MCPツールの説明文・サーバーinstructionsの文字数上限（デフォルト4,096文字）をセッション全体に対して変更 | mcp-servers |
 | `CLAUDE_CODE_MCP_SERVER_NAME` | `headersHelper` スクリプト内で利用可能。呼び出し元の MCP サーバー名 | mcp-servers |
 | `CLAUDE_CODE_MCP_SERVER_URL` | `headersHelper` スクリプト内で利用可能。呼び出し元の MCP サーバー URL | mcp-servers |
-| `CLAUDE_CODE_MCP_STARTUP_WAIT_MS` | 非対話（headless）セッションの最初のターンが接続中のMCPサーバーを待つ時間の上限（ミリ秒）。`0`で待たない | mcp-servers |
+| `CLAUDE_CODE_MCP_STARTUP_WAIT_MS` | 非対話（headless）セッションの最初のターンが接続中のMCPサーバーを待つ時間の上限（ミリ秒）。`0`で待たない（ただし `--allowedTools` または `mcp_tool` フックで指定された接続中のMCPサーバーは、`0` でも最大2秒待つ） | mcp-servers |
 | `CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE` | `git pull` 失敗時に既存マーケットプレイスキャッシュを保持 | marketplace |
 | `CLAUDE_CODE_PLUGIN_PREFER_HTTPS` | GitHubプラグインソースをSSHの代わりにHTTPSでクローン・更新する（add/update操作を含む）。SSH鍵がない環境（CI・企業ネットワーク等）向け | marketplace |
 | `CLAUDE_CODE_SESSION_ID` | 現在のセッションID（Stdio MCPサーバーのサブプロセス環境で利用可能） | mcp-servers |

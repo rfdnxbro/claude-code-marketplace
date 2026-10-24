@@ -15,6 +15,7 @@ DISALLOWED_HOOK_TYPES_BY_EVENT = {
     "SessionStart": ({"prompt", "agent", "http"}, "command/mcp_toolタイプ"),
     "Setup": ({"prompt", "agent", "http"}, "command/mcp_toolタイプ"),
     "SubagentStart": ({"prompt", "agent"}, "command/http/mcp_toolタイプ"),
+    "PermissionRequest": ({"agent"}, "command/httpタイプ"),
 }
 
 # Mod の hooks モジュールとして使える拡張子
@@ -251,6 +252,13 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
                     if not h.get("prompt"):
                         result.add_error(
                             f"{file_path.name}: agentタイプにpromptフィールドがありません"
+                        )
+
+                # prompt/agent タイプの model は文字列（エイリアス可）
+                if hook_type in ("prompt", "agent") and "model" in h:
+                    if not isinstance(h["model"], str) or not h["model"]:
+                        result.add_error(
+                            f"{file_path.name}: {hook_type}タイプのmodelは空でない文字列が必要です"
                         )
 
                 if hook_type == "http":

@@ -155,6 +155,28 @@ class TestValidateHooksJson:
         result = validate_hooks_json(Path("hooks.json"), content)
         assert not result.has_errors()
 
+    def _model_hook_result(self, hook):
+        content = json.dumps({"hooks": {"Stop": [{"hooks": [hook]}]}})
+        return validate_hooks_json(Path("hooks.json"), content)
+
+    def test_agent_and_prompt_model_string(self):
+        """agent/promptタイプのmodelに文字列（エイリアス）を指定できる"""
+        for hook in (
+            {"type": "agent", "agent": "reviewer", "prompt": "確認", "model": "haiku"},
+            {"type": "prompt", "prompt": "確認", "model": "haiku"},
+        ):
+            assert not self._model_hook_result(hook).has_errors()
+
+    def test_agent_and_prompt_model_invalid(self):
+        """agent/promptタイプのmodelが文字列でない・空の場合はエラー"""
+        for model in (123, True, ""):
+            for hook in (
+                {"type": "agent", "agent": "reviewer", "prompt": "確認", "model": model},
+                {"type": "prompt", "prompt": "確認", "model": model},
+            ):
+                result = self._model_hook_result(hook)
+                assert any("model" in e for e in result.errors), hook
+
     def test_missing_agent_field(self):
         """agentタイプでagentフィールドが無い場合のテスト"""
         content = json.dumps(
@@ -1472,6 +1494,76 @@ class TestValidateHooksJson:
                                 {
                                     "type": "http",
                                     "url": "https://example.com/subagent-start",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    # --- PermissionRequestのagentタイプ制約のテスト ---
+
+    def test_permission_request_rejects_agent_type(self):
+        """PermissionRequestフックでagentタイプがエラーになることをテスト（v2.1.280）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PermissionRequest": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [
+                                {
+                                    "type": "agent",
+                                    "agent": "permission-checker",
+                                    "prompt": "この操作を許可すべきか判断してください",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert result.has_errors()
+        assert any("PermissionRequest" in e and "command" in e for e in result.errors)
+
+    def test_permission_request_allows_command_type(self):
+        """PermissionRequestフックでcommandタイプは有効であることをテスト（v2.1.280）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PermissionRequest": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-permission.sh",
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_permission_request_allows_http_type(self):
+        """PermissionRequestフックでhttpタイプは有効であることをテスト（v2.1.280）"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PermissionRequest": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [
+                                {
+                                    "type": "http",
+                                    "url": "https://example.com/permission-check",
                                 }
                             ],
                         }

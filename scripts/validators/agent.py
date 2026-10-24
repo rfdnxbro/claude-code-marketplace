@@ -56,6 +56,10 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
     if kebab_error:
         result.add_error(f"{file_path.name}: {kebab_error}")
 
+    # 256文字を超えるnameはエージェントが拒否される
+    if len(name_str) > 256:
+        result.add_error(f"{file_path.name}: nameは256文字以内にしてください: {len(name_str)}文字")
+
     # descriptionの確認
     description = frontmatter.get("description", "")
     description_str = to_str(description)
@@ -133,6 +137,18 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
     if omit_claude_md is not None and not isinstance(omit_claude_md, bool):
         result.add_error(
             f"{file_path.name}: omitClaudeMdはブール値（true/false）が必要です: {omit_claude_md}"
+        )
+
+    # autoCompactWindowの値チェック（100000〜1000000 の整数。範囲外は無視される）
+    auto_compact_window = frontmatter.get("autoCompactWindow")
+    if auto_compact_window is not None and (
+        isinstance(auto_compact_window, bool)
+        or not isinstance(auto_compact_window, int)
+        or not (100000 <= auto_compact_window <= 1000000)
+    ):
+        result.add_error(
+            f"{file_path.name}: autoCompactWindowは100000〜1000000の整数が必要です"
+            f"（範囲外の値は無視されます）: {auto_compact_window}"
         )
 
     # allow/askのツール名位置グロブを検証（v2.1.166以降）

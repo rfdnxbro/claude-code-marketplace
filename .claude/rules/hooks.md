@@ -85,6 +85,12 @@ hooks:
 ---
 ```
 
+### スキルfrontmatterフックの登録上限
+
+同一ソース（リポジトリ・個人フォルダ・プラグイン）のスキルが、セッションあたりに登録できるフックは最大1,024個、matcherの合計文字数は最大16,384文字です。
+
+TODO: 要確認 — 上限を超えた場合の挙動（超過分が無視されるか、エラーになるか）は確認できていません。
+
 ## 対応イベント
 
 | イベント | 説明 | マッチャー |
@@ -205,7 +211,14 @@ LLMを使用してプロンプトを評価:
 | `type` | string | ✓ | `"agent"` を指定 |
 | `agent` | string | ✓ | 起動するエージェント名 |
 | `prompt` | string | ✓ | エージェントに渡すタスク記述 |
+| `model` | string | | 評価に使うモデル。`haiku` などのエイリアスも指定できる |
 | `timeout` | number | | タイムアウト（秒単位、省略時: 60秒） |
+
+`model` の挙動:
+
+- `haiku` などのエイリアスは解決される
+- サブエージェント定義側のモデルは `model` を上書きしない
+- 指定モデルが利用できない場合は、呼び出し元のモデルで評価される（評価を省略してアクションを許可することはない）
 
 ### mcp_tool（MCPツール呼び出し）
 
@@ -319,12 +332,15 @@ HTTPフックのレスポンスでJSONを返さない場合（200以外のステ
 
 `SessionStart`・`Setup`・`SubagentStart` イベントでは、`prompt` 型および `agent` 型のフックは使用できません。有効なフックタイプは下表の通りイベントごとに異なります（`SessionStart`/`Setup` は `command`/`mcp_tool`、`SubagentStart` は `command`/`http`/`mcp_tool`）。誤った設定時は「use a command-type hook instead」というエラーが表示されます。
 
+`PermissionRequest` イベントでは `agent` 型フックは使用できません。エージェントの応答は許可・拒否の判断に使えないため、`command` または `http` 型フックの使用を促すエラーが表示されます。
+
 | イベント | command | prompt | agent | http | mcp_tool |
 |---------|:-------:|:------:|:-----:|:----:|:--------:|
 | `SessionStart` | ✓ | ✗ | ✗ | ✗ | ✓ |
 | `Setup` | ✓ | ✗ | ✗ | ✗ | ✓ |
 | `SubagentStart` | ✓ | ✗ | ✗ | ✓ | ✓ |
 | `PostCompact` | ✓ | ✗ | ✗ | ✗ | ✗ |
+| `PermissionRequest` | ✓ | ✓ | ✗ | ✓ | ✓ |
 | その他のイベント | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 ```json
@@ -595,6 +611,13 @@ printf '{"continue": true, "terminalSequence": "\a"}'
 > **注意**: `permissionDecision: "ask"` を返しても、`permissions.deny` ルールが設定されている場合は **deny が優先** されます。
 >
 > **注意**: `PermissionRequest` フックが `updatedInput` を返した場合も、`permissions.deny` ルールによる再チェックが行われ、deny が優先されます。
+
+### updatedInput の検証
+
+`PreToolUse` / `PermissionRequest` フックが返す `updatedInput` は、Claude 自身のツール入力と同様に検証されます。
+
+- ツールの入力に存在しない未知のキーは破棄される
+- ツールが拒否する入力になった場合、そのツール呼び出しは deny になる
 
 ### setMode フィールド
 
@@ -1581,6 +1604,7 @@ MCPエリシテーション機能のレスポンスをインターセプト・�
 - `action`: `accept`（承認しフォーム値を送信）、`decline`（拒否）、`cancel`（キャンセル）
 - `content`: `action`が`accept`の場合のみ有効。フォームフィールドの値
 - exit code 2でエリシテーションを拒否可能
+- `{"decision":"block"}` を出力した場合も、exit code 2と同様にエリシテーションを拒否する
 
 **ユースケース:**
 
@@ -1640,6 +1664,7 @@ MCPエリシテーションのレスポンス結果を受け取るフック。
 
 - `action`/`content`でユーザーの応答をオーバーライド可能
 - exit code 2で応答をブロック（actionが`decline`に変更される）
+- `{"decision":"block"}` を出力した場合も、exit code 2と同様に応答を拒否する
 
 **ユースケース:**
 
@@ -1706,6 +1731,11 @@ autoモード（自動モード）のクラシファイアーがツール実行�
   }
 }
 ```
+
+**実行タイミング:**
+
+- `UserPromptSubmit` フックは、スキル／カスタムスラッシュコマンドの展開前に実行されます。プロンプトをブロックした場合、埋め込みシェルコマンドも実行されません（[slash-commands.md](slash-commands.md)を参照）。
+- スキルのfrontmatterで定義した `UserPromptSubmit` フックは、そのスキルを呼び出したプロンプトの次のプロンプトから初めて実行されます（[skill-authoring.md](skill-authoring.md)を参照）。
 
 **出力JSON:**
 
