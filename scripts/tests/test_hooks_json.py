@@ -1611,3 +1611,57 @@ class TestValidateHooksJson:
         # allowedEnvVarsの型エラーが出た場合、後続の未許可変数チェックは
         # 行わずエラー1件に留めることを確認（同一設定ミスの二重報告防止）
         assert len(result.errors) == 1
+
+
+class TestHooksModules:
+    """Mod の modules（hooks モジュール指定）のテスト"""
+
+    def test_modules_only_no_warning(self):
+        """modulesだけのhooks.jsonは、hooksが空でも警告しない"""
+        content = json.dumps({"description": "mod", "modules": ["./register.js"]})
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+        assert not result.warnings
+
+    def test_modules_with_settings_hooks(self):
+        """modulesとsettings hook（hooks）を併記できる"""
+        content = json.dumps(
+            {
+                "modules": ["./register.ts"],
+                "hooks": {
+                    "Stop": [{"hooks": [{"type": "command", "command": "echo done"}]}],
+                },
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    def test_modules_not_list(self):
+        """modulesが配列でない場合はエラー"""
+        content = json.dumps({"modules": "./register.js"})
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert any("modulesは配列が必要" in e for e in result.errors)
+
+    def test_modules_multiple_paths_warns(self):
+        """modulesに複数パスを指定すると警告"""
+        content = json.dumps({"modules": ["./a.js", "./b.js"]})
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert any("1つだけ" in w for w in result.warnings)
+
+    def test_modules_empty_list_warns(self):
+        """modulesが空配列の場合も警告"""
+        content = json.dumps({"modules": []})
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert any("1つだけ" in w for w in result.warnings)
+
+    def test_modules_element_not_string(self):
+        """modulesの要素が文字列でない場合はエラー"""
+        content = json.dumps({"modules": [123]})
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert any("空でない文字列" in e for e in result.errors)
+
+    def test_modules_invalid_extension(self):
+        """hooksモジュールの拡張子がJS/TS以外ならエラー"""
+        content = json.dumps({"modules": ["./register.py"]})
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert any("拡張子が不正" in e and "register.py" in e for e in result.errors)

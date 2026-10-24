@@ -5,6 +5,8 @@ lsp_json.py のテスト
 import json
 from pathlib import Path
 
+import pytest
+
 from scripts.validators.lsp_json import validate_lsp_json
 
 
@@ -285,3 +287,73 @@ class TestValidateLspJson:
         result = validate_lsp_json(Path(".lsp.json"), content)
         assert result.has_errors()
         assert any("diagnostics" in e and "ブール" in e for e in result.errors)
+
+    def test_valid_all_known_fields(self):
+        """公式に定義された全フィールドを含む設定（エラーなし）"""
+        content = json.dumps(
+            {
+                "rust": {
+                    "command": "rust-analyzer",
+                    "extensionToLanguage": {".rs": "rust"},
+                    "args": [],
+                    "transport": "stdio",
+                    "env": {},
+                    "initializationOptions": {},
+                    "settings": {},
+                    "workspaceFolder": "/workspace",
+                    "startupTimeout": 30000,
+                    "shutdownTimeout": 5000,
+                    "requestTimeout": 60000,
+                    "restartOnCrash": False,
+                    "maxRestarts": 0,
+                    "diagnostics": False,
+                }
+            }
+        )
+        result = validate_lsp_json(Path(".lsp.json"), content)
+        assert not result.has_errors()
+
+    def test_unknown_field(self):
+        """未知のフィールドはエラー（サーバー設定は strict object）"""
+        content = json.dumps(
+            {
+                "go": {
+                    "command": "gopls",
+                    "extensionToLanguage": {".go": "go"},
+                    "loggingConfig": {},
+                    "Diagnostics": True,
+                }
+            }
+        )
+        result = validate_lsp_json(Path(".lsp.json"), content)
+        assert any(
+            "不明なフィールド" in e and "Diagnostics, loggingConfig" in e for e in result.errors
+        )
+
+    @pytest.mark.parametrize("field", ["startupTimeout", "shutdownTimeout", "requestTimeout"])
+    @pytest.mark.parametrize("value", [0, -1, 1.5, True, "1000"])
+    def test_timeout_requires_positive_integer(self, field, value):
+        """タイムアウト系は正の整数でなければエラー"""
+        content = json.dumps(
+            {"go": {"command": "gopls", "extensionToLanguage": {".go": "go"}, field: value}}
+        )
+        result = validate_lsp_json(Path(".lsp.json"), content)
+        assert any(field in e and "正の整数" in e for e in result.errors)
+
+    def test_timeout_accepts_integral_float(self):
+        """JSON の 30000.0 は整数として扱う（エラーなし）"""
+        content = (
+            '{"go": {"command": "gopls", "extensionToLanguage": {".go": "go"},'
+            ' "startupTimeout": 30000.0}}'
+        )
+        result = validate_lsp_json(Path(".lsp.json"), content)
+        assert not result.has_errors()
+
+    @pytest.mark.parametrize("value", [-1, 2.5, False, "3"])
+    def test_max_restarts_requires_non_negative_integer(self, value):
+        """maxRestartsは0以上の整数でなければエラー"""
+        content = json.dumps(
+            {"go": {"command": "gopls", "extensionToLanguage": {".go": "go"}, "maxRestarts": value}}
+        )
+        result = validate_lsp_json(Path(".lsp.json"), content)
+        assert any("maxRestarts" in e and "0以上の整数" in e for e in result.errors)

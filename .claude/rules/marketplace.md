@@ -514,13 +514,23 @@ zipは配下に`.claude-plugin/`を直接含む構成、または単一のトッ
 
 ## 予約済み名前（使用不可）
 
-- `claude-code-marketplace`
-- `claude-code-plugins`
-- `claude-plugins-official`
-- `anthropic-marketplace`
-- `anthropic-plugins`
-- `agent-skills`
-- `life-sciences`
+マーケットプレイス名（`marketplace.json` の `name`）には次の名前を使えない。
+
+| 種別 | 名前 |
+|------|------|
+| 公式マーケットプレイス名 | `claude-code-marketplace`、`claude-code-plugins`、`claude-plugins-official`、`anthropic-marketplace`、`anthropic-plugins`、`agent-skills`、`anthropic-agent-skills`、`life-sciences`、`knowledge-work-plugins`、`claude-for-legal`、`claude-for-financial-services`、`financial-services-plugins`、`first-party-plugins`、`claude-tag-plugins` |
+| コミュニティマーケットプレイス名 | `claude-community`、`claude-plugins-community`、`healthcare` |
+| プラグインディレクトリ名 | `anthropic-plugin-directory`、`claude-plugin-directory` |
+| マーケットプレイス以外から来るプラグインに Claude Code が使う名前 | `inline`（`--plugin-dir` で読み込んだプラグイン）、`builtin`（組み込みプラグイン）、`skills-dir`（`.claude/skills/` から自動読み込みしたプラグイン）、`synced`（claude.ai アカウントから同期したプラグイン）、`claude-plugin-test` |
+| パッケージマネージャー・GitHub 関連（大文字小文字を問わない） | `npm`、`pip`、`uv`、`cargo`、`github`、`gh` |
+| すべての JavaScript オブジェクトが持つメンバー名 | `constructor`、`hasOwnProperty`、`isPrototypeOf`、`propertyIsEnumerable`、`toLocaleString`、`toString`、`valueOf` |
+| claude.ai がホストするマーケットプレイス用 | `claudeai-` で始まる名前すべて |
+
+公式・コミュニティ・プラグインディレクトリの名前は、`github.com/anthropics/` 配下の `github` / `git` ソースから追加したマーケットプレイスに限って使える。
+
+このほか、登録済みの GitHub マーケットプレイスのダウンロードフォルダ名（`<owner>-<repo>`。例: `acme/x-tools` なら `acme-x-tools`）も、そのマーケットプレイスが別名で登録されている間は、別のマーケットプレイスの名前として使えない。これはユーザー環境に何が登録されているかで決まる。
+
+本リポジトリのバリデーター（`scripts/validators/marketplace_json.py`）は、上の表の名前と `claudeai-` プレフィックスをエラーとして検出する。ソースの種類はマーケットプレイス追加時に決まるため、`github.com/anthropics/` 配下かどうかは区別せず一律にエラーとする。ダウンロードフォルダ名との衝突は静的には判定できないため検出しない。
 
 ## 禁止文字（制御文字・不可視文字）
 

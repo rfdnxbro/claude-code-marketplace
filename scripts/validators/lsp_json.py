@@ -10,6 +10,36 @@ from .secret_detection import detect_hardcoded_secrets
 # 有効なtransport値
 VALID_TRANSPORTS = {"stdio", "socket"}
 
+# サーバー設定は strict object のため、これ以外のキーがあるとプラグインがロードされない
+KNOWN_SERVER_FIELDS = {
+    "command",
+    "extensionToLanguage",
+    "args",
+    "transport",
+    "env",
+    "initializationOptions",
+    "settings",
+    "workspaceFolder",
+    "startupTimeout",
+    "shutdownTimeout",
+    "requestTimeout",
+    "restartOnCrash",
+    "maxRestarts",
+    "diagnostics",
+}
+
+# 正の整数が必要なフィールド（ミリ秒）
+POSITIVE_INT_FIELDS = ["startupTimeout", "shutdownTimeout", "requestTimeout"]
+
+
+def _is_integer(value: object) -> bool:
+    """JSON の数値が整数かを判定する（bool は int のサブクラスなので除外する）"""
+    if isinstance(value, bool):
+        return False
+    if isinstance(value, int):
+        return True
+    return isinstance(value, float) and value.is_integer()
+
 
 def validate_lsp_json(file_path: Path, content: str) -> ValidationResult:
     """LSPサーバー設定を検証する"""
@@ -33,6 +63,14 @@ def validate_lsp_json(file_path: Path, content: str) -> ValidationResult:
         if not isinstance(config, dict):
             result.add_error(f"{file_path.name}: {server_name}: 設定はオブジェクトが必要")
             continue
+
+        # 未知キーのチェック
+        unknown_fields = sorted(set(config) - KNOWN_SERVER_FIELDS)
+        if unknown_fields:
+            result.add_error(
+                f"{file_path.name}: {server_name}: 不明なフィールド: {', '.join(unknown_fields)}"
+                "（LSPサーバー設定は未知のキーがあるとロードされません）"
+            )
 
         # 必須フィールド: command
         if not config.get("command"):
@@ -69,10 +107,18 @@ def validate_lsp_json(file_path: Path, content: str) -> ValidationResult:
             result.add_error(f"{file_path.name}: {server_name}: argsは配列が必要")
 
         # 数値フィールドのバリデーション
-        for field in ["startupTimeout", "shutdownTimeout", "maxRestarts"]:
+        for field in POSITIVE_INT_FIELDS:
             value = config.get(field)
-            if value is not None and not isinstance(value, int | float):
-                result.add_error(f"{file_path.name}: {server_name}: {field}は数値が必要")
+            if value is not None and not (_is_integer(value) and value > 0):
+                result.add_error(
+                    f"{file_path.name}: {server_name}: {field}は数値（正の整数）が必要"
+                )
+
+        max_restarts = config.get("maxRestarts")
+        if max_restarts is not None and not (_is_integer(max_restarts) and max_restarts >= 0):
+            result.add_error(
+                f"{file_path.name}: {server_name}: maxRestartsは数値（0以上の整数）が必要"
+            )
 
         # ブールフィールドのバリデーション
         restart_on_crash = config.get("restartOnCrash")

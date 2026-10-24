@@ -42,6 +42,28 @@ paths: plugins/*/hooks/hooks.json
 }
 ```
 
+## Mods（hooks モジュール）
+
+`hooks/hooks.json` に `modules` キーを置いたプラグインは Mod になる。Mod は JavaScript / TypeScript のイベントハンドラーで Claude Code の UI や挙動（ツール呼び出し、プロンプト、描画など）を変更する仕組みで、このドキュメントの `hooks`（Mod の文脈では「settings hook」と呼ばれる）とは別物。API やイベントの詳細は公式の [Mods overview](https://code.claude.com/docs/en/plugins/mods.md) と [Mods reference](https://code.claude.com/docs/en/plugins/mods/reference.md) を参照する。
+
+```json
+{
+  "description": "The first-mod hooks module",
+  "modules": ["./register.js"]
+}
+```
+
+| フィールド | 説明 |
+|-----------|------|
+| `modules` | hooks モジュール（Mod のエントリーポイント）のパスを1つだけ入れた配列。パスは `hooks.json` からの相対パス。拡張子は `.js` / `.mjs` / `.cjs` / `.jsx` / `.ts` / `.mts` / `.cts` / `.tsx` |
+
+- hooks モジュールは ES module で、`register(on, options)` をエクスポートする
+- 同じ `hooks.json` に `hooks` キーで settings hook を併記できる
+- `$.state` を使う、または Mods API に名前空間を追加する Mod は、`plugin.json` の `types` で `.d.ts` ファイルを指定する（→ [plugin-manifest.md](plugin-manifest.md)）
+- `claude plugin validate` は、Mod が処理するイベントと Mods API の呼び出しを `hooks:` / `calls:` 行に一覧表示する
+
+本リポジトリのバリデーター（`scripts/validators/hooks_json.py`）は `modules` の形式（文字列の配列、パス1つ、拡張子）を検証し、`modules` があれば `hooks` が空でも警告しない。
+
 ## Frontmatter形式
 
 エージェント、スキル、スラッシュコマンドのfrontmatter内でフックを定義できます:

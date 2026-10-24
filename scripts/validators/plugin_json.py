@@ -309,6 +309,11 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
     if commands_value is not None:
         _validate_commands_no_path_traversal(result, file_path, commands_value)
 
+    # types（Mod の型宣言 .d.ts ファイル）はパス文字列のみ
+    types_value = data.get("types")
+    if types_value is not None and not isinstance(types_value, str):
+        result.add_error(f"{file_path.name}: typesは文字列（.d.tsファイルのパス）が必要です")
+
     # パスの確認
     path_fields = [
         "commands",
@@ -320,6 +325,7 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
         "outputStyles",
         "monitors",
         "themes",
+        "types",
     ]
     for field in path_fields:
         value = data.get(field)

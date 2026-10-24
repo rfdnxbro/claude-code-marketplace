@@ -43,6 +43,7 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 | `channels` | array | チャンネル（Telegram/Discord等のMCPイベント注入）宣言。`server`（必須、`mcpServers` のキーと一致）と per-channel `userConfig` を持つ（→ [channels.md](channels.md)） | なし |
 | `themes` | string/array | カスタムテーマ定義ファイル/ディレクトリ。**`experimental` ブロック配下に宣言を推奨**（トップレベル宣言も動作するが `claude plugin validate` が警告を出す） | `themes/` |
 | `userConfig` | object | プラグイン有効化時にユーザー入力を要求する設定項目。**インライン定義のみ**（外部ファイル参照は不可）（→「ユーザー設定オプション」節） | なし |
+| `types` | string | Mod の `$.state` の値と `$` に追加する名前空間を宣言する `.d.ts` ファイルのパス（例: `"./types/index.d.ts"`）。Mod 自体は `hooks/hooks.json` の `modules` で定義する（→ [hooks.md](hooks.md) の「Mods（hooks モジュール）」節） | なし |
 
 **注意**: プラグイン同梱の `settings.json` はプラグインルート直下に配置すれば自動検出されます。`plugin.json` のコンポーネント参照フィールドとしては**公式に定義されていない**ため、上記の表には含まれません。詳細は本ドキュメント下部の「デフォルト設定ファイル（settings.json）」節を参照してください。
 

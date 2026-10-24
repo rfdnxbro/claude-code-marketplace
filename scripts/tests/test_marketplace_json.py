@@ -5,6 +5,8 @@ marketplace_json.py のテスト
 import json
 from pathlib import Path
 
+import pytest
+
 from scripts.validators.marketplace_json import validate_marketplace_json
 
 
@@ -95,6 +97,73 @@ class TestValidateMarketplaceJson:
         result = validate_marketplace_json(Path("marketplace.json"), content)
         assert result.has_errors()
         assert any("予約済み" in e for e in result.errors)
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "anthropic-agent-skills",
+            "knowledge-work-plugins",
+            "claude-community",
+            "healthcare",
+            "claude-plugin-directory",
+            "inline",
+            "builtin",
+            "skills-dir",
+            "synced",
+            "claude-plugin-test",
+            "constructor",
+            "npm",
+            "gh",
+        ],
+    )
+    def test_reserved_name_variants(self, name):
+        """公式・コミュニティ名、内部用の名前、JSメンバー名、パッケージマネージャー名は予約済み"""
+        content = json.dumps(
+            {
+                "name": name,
+                "owner": {"name": "Team Name"},
+                "plugins": [{"name": "plugin-one", "source": "./plugins/plugin-one"}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert any("予約済み" in e and name in e for e in result.errors)
+
+    def test_reserved_name_case_insensitive(self):
+        """npm/pip/uv/cargo/github/gh は大文字小文字を問わず予約済み"""
+        content = json.dumps(
+            {
+                "name": "GitHub",
+                "owner": {"name": "Team Name"},
+                "plugins": [{"name": "plugin-one", "source": "./plugins/plugin-one"}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert any("予約済み" in e and "GitHub" in e for e in result.errors)
+
+    def test_reserved_name_claudeai_prefix(self):
+        """claudeai- で始まる名前は claude.ai ホスト用に予約済み"""
+        content = json.dumps(
+            {
+                "name": "claudeai-team-tools",
+                "owner": {"name": "Team Name"},
+                "plugins": [{"name": "plugin-one", "source": "./plugins/plugin-one"}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert any("claudeai-" in e and "予約済み" in e for e in result.errors)
+
+    @pytest.mark.parametrize("name", ["npm-tools", "my-github-plugins", "claude-ai-tools"])
+    def test_name_containing_reserved_word_is_allowed(self, name):
+        """予約名を一部に含むだけの名前は予約済み扱いしない"""
+        content = json.dumps(
+            {
+                "name": name,
+                "owner": {"name": "Team Name"},
+                "plugins": [{"name": "plugin-one", "source": "./plugins/plugin-one"}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert not any("予約済み" in e for e in result.errors)
 
     def test_missing_owner(self):
         """ownerがない（エラー）"""

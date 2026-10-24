@@ -7,16 +7,53 @@ from pathlib import Path
 
 from .base import ValidationResult, parse_json_safe, validate_kebab_case
 
-# 予約済み名前（使用不可）
+# 予約済み名前（完全一致で使用不可）
+# 公式・コミュニティ・プラグインディレクトリの名前は github.com/anthropics/ 配下から
+# 追加した場合だけ使えるが、静的検証ではソースが分からないため一律にエラーとする
 RESERVED_NAMES = {
+    # 公式マーケットプレイス名
     "claude-code-marketplace",
     "claude-code-plugins",
     "claude-plugins-official",
     "anthropic-marketplace",
     "anthropic-plugins",
     "agent-skills",
+    "anthropic-agent-skills",
     "life-sciences",
+    "knowledge-work-plugins",
+    "claude-for-legal",
+    "claude-for-financial-services",
+    "financial-services-plugins",
+    "first-party-plugins",
+    "claude-tag-plugins",
+    # コミュニティマーケットプレイス名
+    "claude-community",
+    "claude-plugins-community",
+    "healthcare",
+    # プラグインディレクトリ名
+    "anthropic-plugin-directory",
+    "claude-plugin-directory",
+    # マーケットプレイス以外から来るプラグインに Claude Code が使う名前
+    "inline",
+    "builtin",
+    "skills-dir",
+    "synced",
+    "claude-plugin-test",
+    # すべての JavaScript オブジェクトが持つメンバー名
+    "constructor",
+    "hasOwnProperty",
+    "isPrototypeOf",
+    "propertyIsEnumerable",
+    "toLocaleString",
+    "toString",
+    "valueOf",
 }
+
+# 大文字小文字を問わず予約済みの名前（パッケージマネージャー・GitHub 関連）
+RESERVED_NAMES_CASE_INSENSITIVE = {"npm", "pip", "uv", "cargo", "github", "gh"}
+
+# claude.ai がホストするマーケットプレイス用に予約されたプレフィックス
+RESERVED_NAME_PREFIX = "claudeai-"
 
 # source_type別の必須サブフィールド一覧（settingsは追加の必須フィールドなし）
 REQUIRED_FIELDS_BY_SOURCE_TYPE = {
@@ -63,8 +100,13 @@ def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult
         if kebab_error:
             result.add_error(f"{file_path.name}: {kebab_error}")
         # 予約語チェック
-        if name in RESERVED_NAMES:
+        if name in RESERVED_NAMES or name.lower() in RESERVED_NAMES_CASE_INSENSITIVE:
             result.add_error(f"{file_path.name}: nameは予約済みです: {name}")
+        elif name.startswith(RESERVED_NAME_PREFIX):
+            result.add_error(
+                f"{file_path.name}: {RESERVED_NAME_PREFIX}で始まる名前は"
+                f"claude.aiがホストするマーケットプレイス用に予約済みです: {name}"
+            )
 
     # 必須フィールド: owner
     owner = data.get("owner")

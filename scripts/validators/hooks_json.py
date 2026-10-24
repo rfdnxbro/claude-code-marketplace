@@ -17,6 +17,9 @@ DISALLOWED_HOOK_TYPES_BY_EVENT = {
     "SubagentStart": ({"prompt", "agent"}, "command/http/mcp_toolタイプ"),
 }
 
+# Mod の hooks モジュールとして使える拡張子
+HOOKS_MODULE_EXTENSIONS = {".js", ".mjs", ".cjs", ".jsx", ".ts", ".mts", ".cts", ".tsx"}
+
 
 def _validate_http_allowed_env_vars(h: dict, file_path: Path, result: ValidationResult) -> None:
     """httpタイプのheadersで使用される環境変数プレースホルダーが
@@ -48,6 +51,25 @@ def _validate_http_allowed_env_vars(h: dict, file_path: Path, result: Validation
         )
 
 
+def _validate_modules(modules: object, file_path: Path, result: ValidationResult) -> None:
+    """Mod の hooks モジュール指定（modules）を検証する"""
+    if not isinstance(modules, list):
+        result.add_error(f"{file_path.name}: modulesは配列が必要です")
+        return
+    if len(modules) != 1:
+        result.add_warning(
+            f"{file_path.name}: modulesにはhooksモジュールのパスを1つだけ指定してください"
+        )
+    for module_path in modules:
+        if not isinstance(module_path, str) or not module_path:
+            result.add_error(f"{file_path.name}: modulesの要素は空でない文字列が必要です")
+        elif Path(module_path).suffix not in HOOKS_MODULE_EXTENSIONS:
+            result.add_error(
+                f"{file_path.name}: hooksモジュールの拡張子が不正です: {module_path}"
+                f"（{'/'.join(sorted(HOOKS_MODULE_EXTENSIONS))}）"
+            )
+
+
 def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
     """hooks.jsonを検証する"""
     result = ValidationResult()
@@ -56,12 +78,18 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
     if data is None:
         return result
 
+    # modules があるプラグインは Mod。settings hook（hooks）は省略できる
+    modules = data.get("modules")
+    if modules is not None:
+        _validate_modules(modules, file_path, result)
+
     hooks = data.get("hooks", {})
     if not isinstance(hooks, dict):
         result.add_error(f"{file_path.name}: hooksはオブジェクトが必要です")
         return result
     if not hooks:
-        result.add_warning(f"{file_path.name}: hooksが空です")
+        if modules is None:
+            result.add_warning(f"{file_path.name}: hooksが空です")
         return result
 
     # 有効なイベント名
