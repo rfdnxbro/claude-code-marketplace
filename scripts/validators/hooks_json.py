@@ -226,6 +226,13 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
                             f"{file_path.name}: agentタイプにpromptフィールドがありません"
                         )
 
+                # prompt/agent タイプの model は文字列（エイリアス可）
+                if hook_type in ("prompt", "agent") and "model" in h:
+                    if not isinstance(h["model"], str) or not h["model"]:
+                        result.add_error(
+                            f"{file_path.name}: {hook_type}タイプのmodelは空でない文字列が必要です"
+                        )
+
                 if hook_type == "http":
                     if not h.get("url"):
                         result.add_error(f"{file_path.name}: httpタイプにurlフィールドがありません")
