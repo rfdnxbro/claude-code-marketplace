@@ -28,6 +28,33 @@ REQUIRED_FIELDS_BY_SOURCE_TYPE = {
     "archive": ["url"],
 }
 
+# npmソースの package に指定するとインストール時に拒否される接頭辞
+# （gitアドレス、フォルダ／file: パス、npm: エイリアス）
+NPM_REFUSED_PACKAGE_PREFIXES = (
+    "git+",
+    "git:",
+    "git@",
+    "github:",
+    "gitlab:",
+    "bitbucket:",
+    "gist:",
+    "file:",
+    "npm:",
+    "./",
+    "../",
+    "/",
+    "~",
+)
+
+# npmソースの package に tarball リンクとして指定すると拒否されるホスト
+NPM_REFUSED_TARBALL_HOSTS = {
+    "github.com",
+    "gist.github.com",
+    "gitlab.com",
+    "bitbucket.org",
+    "git.sr.ht",
+}
+
 # command source_type の mode フィールドで許可される値
 VALID_COMMAND_MODES = {"copy", "link"}
 
@@ -208,6 +235,9 @@ def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult
                             )
                     # source_type == "settings" の場合、追加の必須フィールドなし
 
+                    if source_type == "npm" and isinstance(source.get("package"), str):
+                        _validate_npm_package(result, f"{file_path.name}: plugins[{i}]", source)
+
                     # commandソースのtimeout/modeフィールドの検証
                     if source_type == "command":
                         # commandは実行前にユーザーへ提示され承認を求めるため、
@@ -252,3 +282,36 @@ def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult
                             )
 
     return result
+
+
+def _validate_npm_package(result: ValidationResult, prefix: str, source: dict) -> None:
+    """npmソースの package がインストール時に拒否される形式でないか検証する"""
+    package = source["package"]
+    label = f"{prefix}.source.package"
+    if ".." in package:
+        result.add_error(f"{label}に '..' は使用できません: {package}")
+        return
+    if package.startswith(NPM_REFUSED_PACKAGE_PREFIXES) or (
+        # "owner/repo" 形式は npm では GitHub リポジトリとして解釈される
+        "/" in package and not package.startswith(("@", "https://", "http://"))
+    ):
+        result.add_error(
+            f"{label}にgitアドレス・フォルダ・file:パス・npm:エイリアスは指定できません"
+            f"（レジストリのパッケージ名かhttpsのtarballリンクを指定）: {package}"
+        )
+        return
+    if package.startswith("http://"):
+        result.add_warning(
+            f"{label}のhttpのtarballリンクは、インストールするユーザーのデフォルト"
+            f"レジストリを指す場合を除き拒否されます: {package}"
+        )
+        return
+    if package.startswith("https://"):
+        host = package[len("https://") :].split("/", 1)[0].lower()
+        if host in NPM_REFUSED_TARBALL_HOSTS and not package.lower().startswith(
+            "https://gitlab.com/api/v4/"
+        ):
+            result.add_error(
+                f"{label}に{host}上のtarballリンクは指定できません"
+                f"（gitlab.com/api/v4/ のnpmレジストリは除く）: {package}"
+            )
