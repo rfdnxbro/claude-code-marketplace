@@ -39,10 +39,14 @@ JSON形式で記述します。配置場所はプラグインルートの `.lsp.
 | `initializationOptions` | object | サーバー初期化オプション。`${user_config.*}` と `${CLAUDE_PLUGIN_ROOT}` が展開される |
 | `settings` | object | ワークスペース設定。`${user_config.*}` と `${CLAUDE_PLUGIN_ROOT}` が展開される |
 | `workspaceFolder` | string | ワークスペースフォルダパス |
-| `startupTimeout` | number | サーバー起動タイムアウト（ミリ秒） |
+| `startupTimeout` | number | サーバー起動タイムアウト（ミリ秒、正の整数） |
+| `shutdownTimeout` | number | 正常終了を待つ時間（ミリ秒、正の整数）。過ぎるとサーバープロセスを終了させる。未指定ならタイムアウトなし |
 | `requestTimeout` | number | サーバーがリクエストに応答するまでの待ち時間（ミリ秒、正の整数、デフォルト: `60000`）。応答のないリクエストはこの時間で失敗する |
-| `maxRestarts` | number | 最大再起動回数（これを超えると再起動を諦める） |
+| `restartOnCrash` | boolean | クラッシュ後にサーバーを再起動するか（デフォルト: `true`）。`false` にするとクラッシュしたサーバーを停止したままにする |
+| `maxRestarts` | number | 最大再起動回数（0以上の整数。これを超えると再起動を諦める） |
 | `diagnostics` | boolean | 編集後に診断情報をClaudeのコンテキストへ注入するか（デフォルト: `true`）。`false` にすると診断の自動注入のみ抑制し、コードナビゲーションは維持する |
+
+各サーバー設定は strict object で、上の表にないキーがあると検証に失敗し、プラグインはロードされない（`claude plugin validate` も `Validation failed` を返す）。本リポジトリのバリデーター（`scripts/validators/lsp_json.py`）も未知のキーをエラーとして検出する。
 
 ## サンプル
 
