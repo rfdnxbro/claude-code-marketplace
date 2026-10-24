@@ -155,6 +155,28 @@ class TestValidateHooksJson:
         result = validate_hooks_json(Path("hooks.json"), content)
         assert not result.has_errors()
 
+    def _model_hook_result(self, hook):
+        content = json.dumps({"hooks": {"Stop": [{"hooks": [hook]}]}})
+        return validate_hooks_json(Path("hooks.json"), content)
+
+    def test_agent_and_prompt_model_string(self):
+        """agent/promptタイプのmodelに文字列（エイリアス）を指定できる"""
+        for hook in (
+            {"type": "agent", "agent": "reviewer", "prompt": "確認", "model": "haiku"},
+            {"type": "prompt", "prompt": "確認", "model": "haiku"},
+        ):
+            assert not self._model_hook_result(hook).has_errors()
+
+    def test_agent_and_prompt_model_invalid(self):
+        """agent/promptタイプのmodelが文字列でない・空の場合はエラー"""
+        for model in (123, True, ""):
+            for hook in (
+                {"type": "agent", "agent": "reviewer", "prompt": "確認", "model": model},
+                {"type": "prompt", "prompt": "確認", "model": model},
+            ):
+                result = self._model_hook_result(hook)
+                assert any("model" in e for e in result.errors), hook
+
     def test_missing_agent_field(self):
         """agentタイプでagentフィールドが無い場合のテスト"""
         content = json.dumps(
