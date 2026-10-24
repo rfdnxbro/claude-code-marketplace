@@ -37,7 +37,7 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 | `skills` | string/array | スキルディレクトリ（**ディレクトリパスのみ**。ファイルパスを指定するとエラー） | `skills/` |
 | `hooks` | string/object | フック設定パスまたはインライン | `hooks/hooks.json` |
 | `mcpServers` | string/object | MCP設定パスまたはインライン（→ [mcp-servers.md](mcp-servers.md)） | `.mcp.json` |
-| `lspServers` | string/object | LSP設定パスまたはインライン（→ [lsp-servers.md](lsp-servers.md)）。文字列パスの検証ルールは「パスの重要なルール」を参照 | `.lsp.json` |
+| `lspServers` | string/object | LSP設定パスまたはインライン（→ [lsp-servers.md](lsp-servers.md)） | `.lsp.json` |
 | `outputStyles` | string/array | 出力スタイルファイル/ディレクトリ（→ [output-styles.md](output-styles.md)）。パスの検証ルールは「パスの重要なルール」を参照 | なし |
 | `monitors` | string/array | バックグラウンドモニター設定。セッション開始時またはこのプラグイン内のスキル起動時に自動で有効化（→ [monitors.md](monitors.md)）。**`experimental` ブロック配下に宣言を推奨**（トップレベル宣言も動作するが `claude plugin validate` が警告を出す）。文字列パスの検証ルールは「パスの重要なルール」を参照 | `monitors/monitors.json` |
 | `channels` | array | チャンネル（Telegram/Discord等のMCPイベント注入）宣言。`server`（必須、`mcpServers` のキーと一致）と per-channel `userConfig` を持つ（→ [channels.md](channels.md)） | なし |
