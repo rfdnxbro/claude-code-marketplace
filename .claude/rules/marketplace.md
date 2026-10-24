@@ -372,8 +372,8 @@ npmレジストリからプラグインをインストール:
 | フィールド | 型 | 必須 | 説明 |
 |-----------|---|:---:|------|
 | `source` | string | ✓ | `"npm"` を指定 |
-| `package` | string | ✓ | npmパッケージ名（スコープ付きも可: `@scope/package`） |
-| `version` | string | | バージョン指定（省略時は最新版） |
+| `package` | string | ✓ | レジストリのパッケージ名（スコープ付きも可: `@scope/package`）、バージョン付きの名前（`@scope/package@2.0.0`）、またはパッケージのtarballへの `https` リンク |
+| `version` | string | | バージョン・semver範囲・dist-tag。`package` がバージョンなしのパッケージ名の場合に使われる（省略時は `latest`） |
 | `registry` | string | | カスタムレジストリURL（省略時はデフォルトのnpmレジストリ） |
 
 #### インストール時の制約
@@ -382,9 +382,17 @@ npmパッケージの取得には `npm pack --ignore-scripts` 相当の方式が
 
 #### ソースとして指定できるもの
 
-npmソースの `package` には、レジストリで公開されているパッケージを指定する。gitリポジトリやフォルダであるnpmソースはインストール時に拒否される。また、プラグインの依存関係はレジストリパッケージからのみインストールされる。
+Claude Code は取得前に `package` の値を検査し、次の値はインストール時に拒否する（値と理由を示すエラーになる）:
 
-TODO: 要確認 — 具体的にどの指定形式（`git+https://...`、`file:` 等）が拒否されるか、および拒否時のエラー内容は未確認。`scripts/validators/marketplace_json.py` は `package` の必須チェックのみ行い、これらの形式の検出は実装していない（拒否条件が未確認のため）。
+- gitアドレス、フォルダ／`file:` パス、`npm:` エイリアス。gitリポジトリには `github`・`url`・`git-subdir` ソース、マーケットプレイス内のフォルダには相対パス、エイリアスにはパッケージ自身の名前を使う
+- github.com・gist.github.com・gitlab.com・bitbucket.org・git.sr.ht 上の tarball リンク（GitHub のリリースダウンロードも含む。`gitlab.com/api/v4/` 配下の GitLab npm レジストリのリンクは除く）
+- `http` の tarball リンク（インストールするユーザー自身のデフォルト npm レジストリを指す場合を除く）
+
+`package` に `..` を含めることもできない。`registry` の URL も、ユーザー自身のデフォルト npm レジストリでない限り `https` である必要がある。
+
+npmパッケージ自身の Node.js 依存（`package.json` の依存）は取得時にはインストールされない。対応する lockfile が `package.json` と同じ場所にある場合に限り、別ステップでレジストリのパッケージからインストールされる（このときもスクリプトは実行されない）。
+
+本リポジトリのバリデーターは、上記の拒否される `package` の値をエラー（`http` の tarball リンクは警告）として検出する。
 
 ### settings
 

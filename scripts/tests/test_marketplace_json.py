@@ -833,6 +833,63 @@ class TestSourceTypeRequiredFields:
         assert result.has_errors()
         assert any("source.package" in e and "文字列が必要" in e for e in result.errors)
 
+    def _npm_package_result(self, package):
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [
+                    {"name": "plugin-one", "source": {"source": "npm", "package": package}}
+                ],
+            }
+        )
+        return validate_marketplace_json(Path("marketplace.json"), content)
+
+    def test_source_npm_package_valid_forms(self):
+        """レジストリのパッケージ名・バージョン付き・httpsのtarballリンクは有効"""
+        for package in (
+            "my-plugin",
+            "@scope/my-plugin",
+            "@scope/my-plugin@2.0.0",
+            "https://npm.example.com/my-plugin-1.0.0.tgz",
+            "https://gitlab.com/api/v4/projects/1/packages/npm/my-plugin-1.0.0.tgz",
+        ):
+            result = self._npm_package_result(package)
+            assert not result.has_errors(), package
+            assert not result.warnings, package
+
+    def test_source_npm_package_refused_forms(self):
+        """gitアドレス・フォルダ・file:・npm:エイリアス・owner/repo形式はエラー"""
+        for package in (
+            "git+https://github.com/owner/repo.git",
+            "github:owner/repo",
+            "file:plugin",
+            "./plugin",
+            "/abs/plugin",
+            "npm:other-package",
+            "owner/repo",
+        ):
+            result = self._npm_package_result(package)
+            assert any("gitアドレス" in e for e in result.errors), package
+
+    def test_source_npm_package_dotdot(self):
+        """packageに '..' を含む場合はエラー"""
+        result = self._npm_package_result("my..plugin")
+        assert any("'..'" in e for e in result.errors)
+
+    def test_source_npm_package_refused_tarball_host(self):
+        """github.com等のtarballリンクはエラー"""
+        result = self._npm_package_result(
+            "https://github.com/owner/repo/releases/download/v1/plugin.tgz"
+        )
+        assert any("github.com上のtarball" in e for e in result.errors)
+
+    def test_source_npm_package_http_tarball_warning(self):
+        """httpのtarballリンクは警告"""
+        result = self._npm_package_result("http://npm.example.com/my-plugin-1.0.0.tgz")
+        assert not result.has_errors()
+        assert any("http" in w for w in result.warnings)
+
     def test_source_git_subdir_missing_url(self):
         """source: git-subdirでurlが欠けている（エラー）"""
         content = json.dumps(
