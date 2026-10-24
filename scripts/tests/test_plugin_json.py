@@ -1276,3 +1276,26 @@ class TestListingFields:
         for value in ("http://example.com/privacy", ["https://example.com"]):
             warnings = self._warnings(privacyPolicyUrl=value)
             assert any("privacyPolicyUrl" in w for w in warnings), value
+
+
+class TestModTypes:
+    """Mod の types フィールドのテスト"""
+
+    def test_types_valid_path(self):
+        """typesに./始まりの.d.tsパスを指定（エラー・警告なし）"""
+        content = json.dumps({"name": "my-mod", "types": "./types/index.d.ts"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+        assert not any("types" in w for w in result.warnings)
+
+    def test_types_without_dot_slash_warns(self):
+        """typesが./で始まらない場合は推奨の警告"""
+        content = json.dumps({"name": "my-mod", "types": "types/index.d.ts"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert any("types" in w and "./で始めることを推奨" in w for w in result.warnings)
+
+    def test_types_not_string(self):
+        """typesが文字列でない場合はエラー"""
+        content = json.dumps({"name": "my-mod", "types": ["./types/index.d.ts"]})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert any("types" in e and "文字列" in e for e in result.errors)
