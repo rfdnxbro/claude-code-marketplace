@@ -88,7 +88,7 @@ argument-hint: "topic: foo | bar"
 
 **name**:
 
-- 最大64文字
+- 最大64文字（Agent Skills 仕様の上限。本リポジトリのバリデーターも64文字超をエラーにする）。なお Claude Code 本体は256文字を超える`name`を持つスキルを無視する
 - 小文字、数字、ハイフンのみ
 - 動名詞形を推奨（`processing-pdfs`）、名詞形も可（`pdf-processing`）
 - 予約語禁止: `anthropic`, `claude`

@@ -77,6 +77,18 @@ class TestValidateAgent:
         assert result.has_errors()
         assert any("kebab-case" in e for e in result.errors)
 
+    def test_name_too_long(self):
+        name = "a" * 257
+        content = f"---\nname: {name}\ndescription: 説明があります\n---\n本文"
+        result = validate_agent(Path("agent.md"), content)
+        assert any("256文字以内" in e for e in result.errors)
+
+    def test_name_max_length_ok(self):
+        name = "a" * 256
+        content = f"---\nname: {name}\ndescription: 説明があります\n---\n本文"
+        result = validate_agent(Path("agent.md"), content)
+        assert not any("256文字" in e for e in result.errors)
+
     def test_missing_description(self):
         content = dedent("""
             ---

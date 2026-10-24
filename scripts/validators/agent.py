@@ -56,6 +56,10 @@ def validate_agent(file_path: Path, content: str) -> ValidationResult:
     if kebab_error:
         result.add_error(f"{file_path.name}: {kebab_error}")
 
+    # 256文字を超えるnameはエージェントが拒否される
+    if len(name_str) > 256:
+        result.add_error(f"{file_path.name}: nameは256文字以内にしてください: {len(name_str)}文字")
+
     # descriptionの確認
     description = frontmatter.get("description", "")
     description_str = to_str(description)
