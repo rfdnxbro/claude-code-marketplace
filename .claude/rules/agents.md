@@ -109,10 +109,8 @@ tools:
 `tools` リストでMCPサーバーを指定した場合、そのサーバーのツールのみが対象になります。名前に `__` を含むサーバーは、`mcp__<正規化された完全なサーバー名>__*` の形式で指定してください。
 
 ```yaml
-# github サーバーのツールのみ
-tools: Read, mcp__github__*
-# 名前に __ を含むサーバー（例: my__server）は完全な名前で指定する
-tools: Read, mcp__my__server__*
+# github サーバーと、名前に __ を含む my__server サーバーのツール
+tools: Read, mcp__github__*, mcp__my__server__*
 ```
 
 ### 未知のツール名のみを指定した場合
