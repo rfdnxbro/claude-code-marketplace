@@ -522,6 +522,9 @@ zipは配下に`.claude-plugin/`を直接含む構成、または単一のトッ
 - `agent-skills`
 - `life-sciences`
 
+`claude plugin validate` は、予約済み名前・禁止文字など Claude Code がインストールを拒否する
+マーケットプレイス名／プラグイン名を `marketplace.json` 内で検出すると、バリデーションエラーとして報告する。
+
 ## 禁止文字（制御文字・不可視文字）
 
 マーケットプレイス名・プラグイン名に制御文字や不可視文字を含めると拒否されます。
@@ -531,10 +534,6 @@ zipは配下に`.claude-plugin/`を直接含む構成、または単一のトッ
 > is escape-safe"
 
 名前の末尾に改行などの制御文字が付く場合も拒否対象に含まれる。
-
-`claude plugin validate` は、実際にはインストールできない（Claude Codeが拒否する）
-マーケットプレイス名／プラグイン名を `marketplace.json` 内で検出した場合、
-バリデーションエラーとして報告する（かつては誤ってこれを通過させてしまうバグがあった）。
 
 本リポジトリのバリデーター（`scripts/validators/base.py` の `validate_kebab_case`）は
 kebab-case形式（`[a-z0-9]+(-[a-z0-9]+)*` への完全一致）を要求しており、制御文字・不可視文字は

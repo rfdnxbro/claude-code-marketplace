@@ -37,11 +37,11 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 | `skills` | string/array | スキルディレクトリ（**ディレクトリパスのみ**。ファイルパスを指定するとエラー） | `skills/` |
 | `hooks` | string/object | フック設定パスまたはインライン | `hooks/hooks.json` |
 | `mcpServers` | string/object | MCP設定パスまたはインライン（→ [mcp-servers.md](mcp-servers.md)） | `.mcp.json` |
-| `lspServers` | string/object | LSP設定パスまたはインライン（→ [lsp-servers.md](lsp-servers.md)）。**文字列でパスを指定する場合、プラグインディレクトリ外を指すパスはエラーとして拒否される**（インラインオブジェクトの場合は対象外） | `.lsp.json` |
-| `outputStyles` | string/array | 出力スタイルファイル/ディレクトリ（→ [output-styles.md](output-styles.md)）。**プラグインディレクトリ外を指すパスはエラーとして拒否される** | なし |
-| `monitors` | string/array | バックグラウンドモニター設定。セッション開始時またはこのプラグイン内のスキル起動時に自動で有効化（→ [monitors.md](monitors.md)）。**`experimental` ブロック配下に宣言を推奨**（トップレベル宣言も動作するが `claude plugin validate` が警告を出す）。**文字列パスで指定する場合、プラグインディレクトリ外を指すパスはエラーとして拒否される**（インライン配列のモニター定義は対象外） | `monitors/monitors.json` |
+| `lspServers` | string/object | LSP設定パスまたはインライン（→ [lsp-servers.md](lsp-servers.md)）。文字列パスの検証ルールは「パスの重要なルール」を参照 | `.lsp.json` |
+| `outputStyles` | string/array | 出力スタイルファイル/ディレクトリ（→ [output-styles.md](output-styles.md)）。パスの検証ルールは「パスの重要なルール」を参照 | なし |
+| `monitors` | string/array | バックグラウンドモニター設定。セッション開始時またはこのプラグイン内のスキル起動時に自動で有効化（→ [monitors.md](monitors.md)）。**`experimental` ブロック配下に宣言を推奨**（トップレベル宣言も動作するが `claude plugin validate` が警告を出す）。文字列パスの検証ルールは「パスの重要なルール」を参照 | `monitors/monitors.json` |
 | `channels` | array | チャンネル（Telegram/Discord等のMCPイベント注入）宣言。`server`（必須、`mcpServers` のキーと一致）と per-channel `userConfig` を持つ（→ [channels.md](channels.md)） | なし |
-| `themes` | string/array | カスタムテーマ定義ファイル/ディレクトリ。**`experimental` ブロック配下に宣言を推奨**（トップレベル宣言も動作するが `claude plugin validate` が警告を出す）。**プラグインディレクトリ外を指すパスはエラーとして拒否される** | `themes/` |
+| `themes` | string/array | カスタムテーマ定義ファイル/ディレクトリ。**`experimental` ブロック配下に宣言を推奨**（トップレベル宣言も動作するが `claude plugin validate` が警告を出す）。パスの検証ルールは「パスの重要なルール」を参照 | `themes/` |
 | `userConfig` | object | プラグイン有効化時にユーザー入力を要求する設定項目。**インライン定義のみ**（外部ファイル参照は不可）（→「ユーザー設定オプション」節） | なし |
 
 **注意**: プラグイン同梱の `settings.json` はプラグインルート直下に配置すれば自動検出されます。`plugin.json` のコンポーネント参照フィールドとしては**公式に定義されていない**ため、上記の表には含まれません。詳細は本ドキュメント下部の「デフォルト設定ファイル（settings.json）」節を参照してください。
@@ -139,10 +139,10 @@ my-plugin/
 - `commands/`, `agents/`, `skills/` は `.claude-plugin/` 内ではなく、プラグインルート直下に配置
 - `skills` にはディレクトリパスのみ指定可能（ファイルパスを指定するとエラー）
 - `skills: ["./"]` または `skills: ["."]` でプラグインルート自体をスキルディレクトリとして明示的に指定可能（未指定でも下記の条件を満たせば自動認識される）
-- `commands`/`outputStyles`/`themes`/`monitors`/`lspServers` に文字列パスを指定した場合、
-  プラグインディレクトリ外を指すパス（`../`によるパストラバーサル、絶対パス）はエラーとして
-  拒否される（`lspServers` はインラインオブジェクト指定の場合、`monitors` はインライン配列の
-  モニター定義の場合、いずれも対象外）
+- `commands` に指定したパスがプラグインディレクトリ外を指す場合（`../`によるパストラバーサル、絶対パス）はエラーとして拒否される
+- `claude plugin validate` は、`outputStyles`/`themes`/`monitors`/`lspServers` に文字列パスで指定したパスが
+  存在しない場合、またはプラグインディレクトリ外を指す場合にエラーにする（`lspServers` のインラインオブジェクト、
+  `monitors` のインライン配列によるモニター定義は対象外）
   - TODO: 要確認 — 絶対パス（`/etc/commands`、`C:\commands`、UNCパス）を指定した場合にClaude Code本体が拒否するかは未確認。本リポジトリのバリデーターは、配布先で成立しないパス指定として絶対パスも拒否する
 - 宣言するコンポーネントパス（`commands`/`agents`/`skills`/`hooks`等）がシンボリックリンクで、リンク先がプラグインディレクトリ外を指している場合、エラーで拒否される（プラグインディレクトリ外のファイルを読み取れてしまうことを防ぐため）
 
