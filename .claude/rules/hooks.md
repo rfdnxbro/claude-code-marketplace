@@ -1690,6 +1690,11 @@ autoモード（自動モード）のクラシファイアーがツール実行�
 }
 ```
 
+**実行タイミング:**
+
+- `UserPromptSubmit` フックは、スキル／カスタムスラッシュコマンドの展開前に実行されます。プロンプトをブロックした場合、埋め込みシェルコマンドも実行されません（[slash-commands.md](slash-commands.md)を参照）。
+- スキルのfrontmatterで定義した `UserPromptSubmit` フックは、そのスキルを呼び出したプロンプトの次のプロンプトから初めて実行されます（[skill-authoring.md](skill-authoring.md)を参照）。
+
 **出力JSON:**
 
 `UserPromptSubmit` フックは `hookSpecificOutput.sessionTitle` フィールドをサポートしています。これを使用すると、セッションのタイトルをカスタマイズできます。

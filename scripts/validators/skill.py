@@ -10,6 +10,7 @@ from .base import (
     add_yaml_warnings,
     get_disabled_warnings,
     is_valid_boolean_value,
+    name_dirs_under,
     parse_frontmatter,
     to_str,
     validate_agent_field,
@@ -17,6 +18,7 @@ from .base import (
     validate_allowed_tools,
     validate_context_field,
     validate_effort_field,
+    validate_name_chars,
     validate_string_or_list_field,
     validate_tool_pattern_field,
 )
@@ -51,6 +53,10 @@ def validate_skill(file_path: Path, content: str) -> ValidationResult:
         # 予約語チェック
         if "anthropic" in name_str.lower() or "claude" in name_str.lower():
             result.add_error(f"{file_path.name}: nameに予約語（anthropic, claude）は使用できません")
+
+    # フォルダ名の確認（使用できない文字を含むスキルは提供されない）
+    for dir_name in name_dirs_under(file_path, "skills"):
+        validate_name_chars(result, file_path, f"フォルダ名 '{dir_name}'", dir_name)
 
     # descriptionの確認
     description = frontmatter.get("description", "")

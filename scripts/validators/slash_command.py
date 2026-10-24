@@ -10,6 +10,7 @@ from .base import (
     ValidationResult,
     add_yaml_warnings,
     get_disabled_warnings,
+    name_dirs_under,
     parse_frontmatter,
     to_str,
     validate_agent_field,
@@ -17,6 +18,7 @@ from .base import (
     validate_allowed_tools,
     validate_context_field,
     validate_effort_field,
+    validate_name_chars,
     validate_string_or_list_field,
     validate_tool_pattern_field,
 )
@@ -90,6 +92,14 @@ def validate_slash_command(file_path: Path, content: str) -> ValidationResult:
             f"{file_path.name}: {field}にYAMLブール値キーワードが使用されています。"
             f'引用符で囲んでください（例: {field}: "{keyword}"）'
         )
+
+    # ファイル名・フォルダ名・nameの確認（使用できない文字を含むコマンドは提供されない）
+    validate_name_chars(result, file_path, f"ファイル名 '{file_path.stem}'", file_path.stem)
+    for dir_name in name_dirs_under(file_path, "commands"):
+        validate_name_chars(result, file_path, f"フォルダ名 '{dir_name}'", dir_name)
+    name = frontmatter.get("name")
+    if isinstance(name, str):
+        validate_name_chars(result, file_path, "name", name)
 
     # descriptionの確認
     description_raw = frontmatter.get("description")
