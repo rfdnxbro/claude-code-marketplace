@@ -327,6 +327,9 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
             # skills はプラグインルートを指す "." も正式に許容されるパス
             if field == "skills" and value == ".":
                 continue
+            # mcpServers は .mcpb/.dxt バンドルの https URL も指定できる
+            if field == "mcpServers" and value.startswith("https://"):
+                continue
             result.add_warning(f"{file_path.name}: {field}のパスは./で始めることを推奨: {value}")
 
     # skills フィールドはディレクトリパスのみ有効（ファイルパス指定はエラー、v2.1.145以降）

@@ -400,19 +400,22 @@ MCPサーバーのツール数が多い場合、ツール説明がコンテキ�
 |-----------|---|------|
 | `alwaysLoad` | boolean | `true` にするとツール検索による遅延ロードを無効化し、常にツールをロードする。省略時は従来通り遅延ロードが適用される |
 
-MCPツール自身が `_meta['anthropic/alwaysLoad']` を `false` に設定している場合、そのツールはサーバー設定の `alwaysLoad: true` よりも優先され、遅延ロードのままになります。これは `--mcp-config`・Agent SDK・プラグインのサーバーのいずれにも当てはまります。
+MCPツール自身が `_meta['anthropic/alwaysLoad']` を `false` に設定している場合、`--mcp-config` で渡されたサーバー・Agent SDK が提供するサーバー・プラグインが提供するサーバーでは、サーバー設定の `alwaysLoad: true` よりツール側の指定が優先され、そのツールは遅延ロードのままになります。それ以外のサーバー（ユーザー自身の `.mcp.json` 等）では、サーバー設定の `alwaysLoad: true` に従って先にロードされます。
 
 ## 設定が必要な同梱 `.mcpb` MCPサーバー
 
-プラグインに同梱された `.mcpb` のMCPサーバーが設定を必要とする場合、そのサーバーは黙ってスキップされません。`/plugin`・インストール時のメッセージ・`claude plugin install` が設定の要否を案内し、Configure へ誘導します。
+`plugin.json` の `mcpServers` には、`.mcpb`（または `.dxt`）バンドルのパス（`"./bundle.mcpb"`）や https URL も指定できる（→ [plugin-manifest.md](plugin-manifest.md)）。バンドルのマニフェストが `user_config` ブロックで必須の設定を宣言していて、その値が未保存の場合、そのサーバーは起動しない。`/plugin` の Errors タブ・インストール時のメッセージ・`claude plugin install` がその旨を表示し、Configure へ誘導する。
 
-`claude plugin install` の `--config` オプションに `<server>.<key>=<value>` 形式を指定すると、同梱 `.mcpb` MCPサーバー自身の設定をインストール時に渡せます。これにより `/plugin` → Configure を経由せずにサーバーを起動できます。
+ユーザーは次のどちらかで値を設定する:
+
+- `/plugin` の Installed タブでプラグインを選び、Configure を選ぶ
+- インストール時に `claude plugin install` の `--config <server>.<key>=<value>` で渡す（プラグイン内に同梱したバンドルファイルの場合のみ）
 
 ```bash
 claude plugin install <plugin> --config <server>.<key>=<value>
 ```
 
-TODO: 要確認 — `--config` の複数指定方法、値の型や機密値の扱い、`plugin.json` の `userConfig` との関係はCHANGELOGに記載がなく未確認。
+`--config` は繰り返し指定できる。`<server>.` を付けない `--config <key>=<value>` は、プラグインの `userConfig` の値を設定する。
 
 ## 予約済みサーバー名
 
@@ -424,7 +427,9 @@ TODO: 要確認 — `--config` の複数指定方法、値の型や機密値の�
 | `Claude Browser` |
 | `Claude Preview` |
 
-加えて、クラウドセッションおよびセルフホストランナーでは、サーバー名 `widgets` が予約されています。`widgets` や `widgets_` のような近い綴りのサーバー名もロードされません。ローカル環境での扱いはCHANGELOGに記載がなく未確認のため、`scripts/validators/mcp_json.py` の `RESERVED_SERVER_NAMES` には含めていません（TODO: 要確認 — 「近い綴り」の正確な判定規則、およびローカル環境で予約されるか）。
+加えて、クラウドセッションおよびセルフホストランナーでは、サーバー名 `widgets` が予約されています。`widgets` や `widgets_` のような近い綴りのサーバー名もロードされません。本リポジトリのバリデーターは `widgets` を警告として検出します。
+
+TODO: 要確認 — 「近い綴り」の正確な判定規則、およびローカル環境で予約されるか。
 
 ## セキュリティ注意事項
 

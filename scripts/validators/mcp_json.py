@@ -8,6 +8,8 @@ from .base import ValidationResult, parse_json_safe
 from .secret_detection import detect_hardcoded_secrets
 
 RESERVED_SERVER_NAMES = {"workspace", "Claude Browser", "Claude Preview"}
+# クラウドセッション・セルフホストランナーでのみ予約されるサーバー名
+CLOUD_RESERVED_SERVER_NAMES = {"widgets"}
 
 
 def validate_mcp_json(file_path: Path, content: str) -> ValidationResult:
@@ -33,6 +35,11 @@ def validate_mcp_json(file_path: Path, content: str) -> ValidationResult:
             result.add_error(
                 f"{file_path.name}: '{server_name}' は予約済みサーバー名です。"
                 "使用すると警告とともにスキップされます"
+            )
+        elif server_name in CLOUD_RESERVED_SERVER_NAMES:
+            result.add_warning(
+                f"{file_path.name}: '{server_name}' はクラウドセッションと"
+                "セルフホストランナーで予約済みのため、そこではロードされません"
             )
 
         if not isinstance(config, dict):
