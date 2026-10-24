@@ -95,7 +95,7 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           # yamllint disable-line rule:line-length
-          claude_args: '--max-turns 40 --allowed-tools "Bash(gh issue create:*),Bash(gh issue list:*),Read,Write,Grep,Glob"'
+          claude_args: '--max-turns 40 --allowed-tools "Bash(bash .github/scripts/create-changelog-issue.sh:*),Bash(gh issue list:*),Read,Write,Grep,Glob"'
           prompt: |
             あなたはClaude Codeマーケットプレイスのメンテナーです。
 
@@ -115,21 +115,51 @@ jobs:
             4. .claude/rules/README.md を読んで、現在のドキュメント構造を把握
             5. 必要に応じて .claude/rules/ 配下の関連ドキュメントを確認
             6. 追跡対象の変更がある場合:
-               a. gh issue create で変更内容をまとめたIssueを作成（ラベル: claude-code-update）
-               b. 【重要】PRは作成しないでください。Issueのみ作成し、実装は別のCIに任せます
+               a. 下の「バージョンの照合」に従い、Issueに挙げる各項目の版数を確定する
+               b. 下の「Issueの作成方法」に従い、変更内容をまとめたIssueを作成する
+               c. 【重要】PRは作成しないでください。Issueのみ作成し、実装は別のCIに任せます
             7. 追跡対象の変更がない場合:
                a. 「追跡対象のプラグイン関連変更なし」と報告して終了
+
+            ## バージョンの照合
+            起票時に版数を取り違える例があった（v2.1.290 の内容が v2.1.291 として起票された）。
+            Issueを書く前に、次の手順で版数を確かめること。
+
+            - current-changelog.md の見出しは「## 2.1.290」の形式で、新しいバージョンが上にある
+            - changelog-diff.txt は diff の出力なので、項目の行と見出しの行が離れていたり、
+              見出しが含まれていなかったりする。差分の並びから版数を推測しない
+            - Issueに挙げる項目ごとに、current-changelog.md の中でその項目の行を探し、
+              そこから上に遡って最初に現れる「## 」見出しをその項目の版数とする
+              （Grepで項目の文言と「^## 」を行番号付きで検索して突き合わせる）
+            - タイトルの版数は、Issueに挙げた項目が実際に属する見出しの版数にする
+              - 全項目が1つの見出しの下にある場合: 「v2.1.290」
+              - 複数の見出しにまたがる場合: 「v2.1.290-v2.1.291」（古い版-新しい版の順）
+            - Issue本文でも、各項目にその項目が属する見出しの版数を書く。
+              タイトルの版数と本文の版数が食い違わないこと
+            - タイトルを決めたら、Issueに挙げた全項目が本当にタイトルの版数の見出しの下に
+              あるかを、current-changelog.md でもう一度確かめる
+
+            ## Issueの作成方法
+            `gh issue create` は直接実行できない。必ず次の手順で作成する。
+
+            1. Writeツールで、Issueタイトルを1行で `/tmp/changelog-issue-title.txt` に書き込む
+               - 形式は「[CHANGELOG v2.1.290] 概要」または「[CHANGELOG v2.1.290-v2.1.291] 概要」
+            2. Writeツールで、Issue本文を `/tmp/changelog-issue.md` に書き込む
+            3. `bash .github/scripts/create-changelog-issue.sh` を実行する
+               - タイトルの形式と、版数の見出しが current-changelog.md に実在するかを確かめてから、
+                 ラベル claude-code-update を付けて `--body-file` でIssueを作成する
+                 （ラベルにより自動実装CIがトリガーされる。`--body` だとシェルエスケープの問題で
+                 本文が欠落するため、本文は必ずファイルで渡す）
+               - エラーが出たらIssueは作成されていない。メッセージに従って「バージョンの照合」を
+                 やり直し、タイトル・本文を直してから再実行する
+               - 見出しの実在は確かめられても、項目がその見出しの下にあるかまでは確かめられない。
+                 項目と見出しの対応は、実行前に自分で確かめること
 
             ## 重要
             - 変更があった場合のみIssueを作成（PRは作成しない）
             - Issueにはどのバージョンでどのような変更があったかを明記
             - Issueタイトルは「[CHANGELOG vX.X.X] 」で始める形式にする
             - 不明確な変更は「要確認」としてマーク
-            - ラベル claude-code-update は必ず付与する（これにより自動実装CIがトリガーされる）
-            - **Issue作成時は必ず`--body-file`オプションを使用する**:
-              1. Writeツールでissue本文を`/tmp/changelog-issue.md`に書き込む
-              2. `gh issue create --title "..." --label "..." --body-file /tmp/changelog-issue.md`を実行
-              - 理由: `--body`オプションだとシェルエスケープの問題で本文が欠落するため
 
       - name: スナップショットをキャッシュに保存
         if: steps.check-diff.outputs.is_first_run == 'true' || steps.claude-analysis.outcome == 'success'
