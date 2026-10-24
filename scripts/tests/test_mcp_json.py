@@ -183,6 +183,58 @@ class TestValidateMcpJson:
         assert result.has_errors()
         assert any("alwaysLoad" in e for e in result.errors)
 
+    def test_bare_elicitation_capability_boolean(self):
+        """bareElicitationCapability はブール値なら有効"""
+        for value in (True, False):
+            content = json.dumps(
+                {
+                    "mcpServers": {
+                        "test-server": {
+                            "type": "http",
+                            "url": "https://example.com/mcp",
+                            "bareElicitationCapability": value,
+                        }
+                    }
+                }
+            )
+            result = validate_mcp_json(Path(".mcp.json"), content)
+            assert not result.has_errors()
+
+    def test_bare_elicitation_capability_non_boolean(self):
+        """bareElicitationCapabilityがブール値以外の場合はエラー"""
+        content = json.dumps(
+            {
+                "mcpServers": {
+                    "test-server": {
+                        "type": "stdio",
+                        "command": "node",
+                        "bareElicitationCapability": "true",
+                    }
+                }
+            }
+        )
+        result = validate_mcp_json(Path(".mcp.json"), content)
+        assert result.has_errors()
+        assert any("bareElicitationCapability" in e for e in result.errors)
+
+    def test_boolean_fields_null(self):
+        """alwaysLoad・bareElicitationCapability に null を指定した場合はエラー"""
+        for field in ("alwaysLoad", "bareElicitationCapability"):
+            content = json.dumps(
+                {
+                    "mcpServers": {
+                        "test-server": {
+                            "type": "stdio",
+                            "command": "node",
+                            field: None,
+                        }
+                    }
+                }
+            )
+            result = validate_mcp_json(Path(".mcp.json"), content)
+            assert result.has_errors()
+            assert any(field in e for e in result.errors)
+
     def test_reserved_server_name_workspace(self):
         """予約済みサーバー名 'workspace' を使用するとエラー"""
         content = json.dumps(

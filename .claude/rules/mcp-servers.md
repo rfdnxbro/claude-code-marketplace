@@ -414,7 +414,29 @@ MCPサーバーのツール数が多い場合、ツール説明がコンテキ�
 
 | フィールド | 型 | 説明 |
 |-----------|---|------|
-| `alwaysLoad` | boolean | `true` にするとツール検索による遅延ロードを無効化し、常にツールをロードする。省略時は従来通り遅延ロードが適用される |
+| `alwaysLoad` | boolean | `true`: `ENABLE_TOOL_SEARCH` の設定に関係なく、そのサーバーの全ツールを常にロードする。`false`: ツール側が先読みを指定しているものも含め、そのサーバーの全ツールをツール検索の背後に遅延ロードする。省略時: `ENABLE_TOOL_SEARCH` の設定に従い、ツール側の `_meta` で先読みを指定したツールだけが先にロードされる |
+
+## bareElicitationCapability オプション
+
+Claude Code は 2025-11-25 プロトコルの URL elicitation（サーバーからのサインイン等の URL プロンプト）に対応しています。これが原因で接続できないMCPサーバーがある場合は、そのMCP設定エントリに `"bareElicitationCapability": true` を指定します。
+
+```json
+{
+  "mcpServers": {
+    "server-name": {
+      "type": "http",
+      "url": "https://example.com/mcp",
+      "bareElicitationCapability": true
+    }
+  }
+}
+```
+
+| フィールド | 型 | 説明 |
+|-----------|---|------|
+| `bareElicitationCapability` | boolean | URL elicitation が原因で接続できないサーバーのエントリに `true` を指定する |
+
+TODO: 要確認 — `bareElicitationCapability: true` が具体的にクライアントのどの挙動を変えるか（宣言するelicitation capabilityの内容など）、および `false` / 省略時の挙動は、CHANGELOGからは確認できていない。
 
 ## 予約済みサーバー名
 
