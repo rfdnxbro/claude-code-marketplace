@@ -156,7 +156,7 @@ Bashコマンドを実行:
 
 `args`（オプション）: 文字列の配列でコマンド引数を指定。`args`を指定するとシェルを介さずコマンドを直接起動する（exec形式）。パス指定にクォートが不要になる。省略時は引数なしでシェル経由で実行される。
 
-**シェル形式でのクォート**: `args` を省略したシェル形式では、`${CLAUDE_PLUGIN_ROOT}`・`${CLAUDE_PLUGIN_DATA}`・`${CLAUDE_PROJECT_DIR}` をダブルクォートで囲む（例: `"command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/check.sh"`）。囲まないと、空白を含むプラグインパスで複数の引数に分かれて壊れる。`claude plugin validate` は hooks ファイル内のクォートされていない変数を警告する（`shell` が `"powershell"` のフックは対象外）。本リポジトリのバリデーターも同じ警告を出す。
+**シェル形式でのクォート**: `args` を省略したシェル形式では、コマンド文字列をシェルが解釈し、`${CLAUDE_PLUGIN_ROOT}`・`${CLAUDE_PLUGIN_DATA}`・`${CLAUDE_PROJECT_DIR}` もシェルが環境変数として展開する。そのため、これらはダブルクォートで囲む（例: `"command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/check.sh"`）。囲まないと空白を含むプラグインパスで複数の引数に分かれ、シングルクォートで囲むと展開されない。`claude plugin validate` は hooks ファイル内のクォートされていない変数を警告する（`shell` が `"powershell"` のフックは対象外。出典: 公式 plugins-reference の「Quoting and path separators」）。本リポジトリのバリデーターは、クォートされていない変数（`$CLAUDE_PLUGIN_ROOT` のような波括弧なしの形も含む）と、シングルクォート内の変数を警告する。
 
 `async`（オプション）: `true`を指定するとフックを非同期で実行し、結果を待たずにツール実行を続行します。
 

@@ -1724,7 +1724,8 @@ class TestUnquotedPluginVariables:
         for command in (
             '"${CLAUDE_PLUGIN_ROOT}"/a.sh',
             'bash "${CLAUDE_PLUGIN_DATA}/run.sh"',
-            "cat '${CLAUDE_PROJECT_DIR}/x'",
+            '"$CLAUDE_PROJECT_DIR"/x',
+            "echo \\$CLAUDE_PLUGIN_ROOT $CLAUDE_PLUGIN_ROOTX",
         ):
             result = self._result({"type": "command", "command": command})
             assert not any("クォート" in w for w in result.warnings), command
@@ -1744,6 +1745,19 @@ class TestUnquotedPluginVariables:
             {"type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/a.ps1", "shell": "powershell"},
         ):
             assert not any("クォート" in w for w in self._result(hook).warnings), hook
+
+    def test_unbraced_variable_warns(self):
+        """波括弧なしの $CLAUDE_PLUGIN_ROOT もクォートされていなければ警告"""
+        result = self._result({"type": "command", "command": "$CLAUDE_PLUGIN_ROOT/a.sh"})
+        assert self._warned(result, "CLAUDE_PLUGIN_ROOT")
+
+    def test_single_quoted_variable_warns_not_expanded(self):
+        """シングルクォート内はシェルが展開しないため警告（同じ変数は1回だけ）"""
+        command = "cat '${CLAUDE_PLUGIN_ROOT}/x' '${CLAUDE_PLUGIN_ROOT}/y'"
+        result = self._result({"type": "command", "command": command})
+        warnings = [w for w in result.warnings if "展開されません" in w]
+        assert len(warnings) == 1
+        assert "CLAUDE_PLUGIN_ROOT" in warnings[0]
 
     def test_other_placeholder_not_warned(self):
         result = self._result({"type": "command", "command": "${HOME}/a.sh"})

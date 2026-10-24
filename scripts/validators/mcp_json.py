@@ -106,13 +106,19 @@ def validate_server_url(
     """
     if not isinstance(url, str) or "${" in url:
         return
-    parts = urlsplit(url)
-    if parts.scheme not in ("http", "https", "ws", "wss") or not parts.hostname:
+    try:
+        parts = urlsplit(url)
+        hostname = parts.hostname
+    except ValueError:
+        # 閉じていない IPv6 の角括弧などは解析時に例外になる
+        hostname = None
+        parts = None
+    if parts is None or parts.scheme not in ("http", "https", "ws", "wss") or not hostname:
         result.add_error(
             f"{file_path.name}: {server_name}: urlが有効な絶対URLではありません: {url}"
         )
         return
-    if parts.scheme in ("http", "ws") and not _is_loopback_host(parts.hostname):
+    if parts.scheme in ("http", "ws") and not _is_loopback_host(hostname):
         result.add_warning(
             f"{file_path.name}: {server_name}: ループバック以外のホストへの"
             f"暗号化されていない接続（{parts.scheme}://）です: {url}"

@@ -412,11 +412,19 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
 def _validate_inline_mcp_servers(
     result: ValidationResult, file_path: Path, mcp_servers: Any, user_config: Any
 ) -> None:
-    """インラインの mcpServers について、url と ${user_config.KEY} の参照を検証する"""
-    if not isinstance(mcp_servers, dict):
+    """インラインの mcpServers について、url と ${user_config.KEY} の参照を検証する
+
+    mcpServers は配列でも指定でき、その中のインライン設定（オブジェクト）も対象にする。
+    パス文字列やバンドルの指定は対象外。
+    """
+    if isinstance(mcp_servers, dict):
+        server_maps = [mcp_servers]
+    elif isinstance(mcp_servers, list):
+        server_maps = [item for item in mcp_servers if isinstance(item, dict)]
+    else:
         return
     declared = set(user_config) if isinstance(user_config, dict) else set()
-    for server_name, config in mcp_servers.items():
+    for server_name, config in (pair for m in server_maps for pair in m.items()):
         if not isinstance(config, dict):
             continue
         if config.get("type") in ("http", "sse", "ws"):

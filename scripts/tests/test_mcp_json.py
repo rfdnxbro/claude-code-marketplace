@@ -389,7 +389,7 @@ class TestRemoteServerUrl:
             assert not result.warnings, url
 
     def test_non_absolute_url_error(self):
-        for url in ("example.com/mcp", "/mcp", "ftp://example.com", "https://"):
+        for url in ("example.com/mcp", "/mcp", "ftp://example.com", "https://", "http://[::1"):
             result = self._result(url)
             assert any("絶対URL" in e for e in result.errors), url
 

@@ -1240,6 +1240,18 @@ class TestInlineMcpServers:
         result = self._result({"remote": {"type": "http", "url": "example.com/mcp"}})
         assert any("絶対URL" in e for e in result.errors)
 
+    def test_array_form_inline_entries_checked(self):
+        """配列で指定した mcpServers のうちインライン設定も検証する"""
+        result = self._result(
+            [
+                "./.mcp.json",
+                {"remote": {"type": "http", "url": "not-a-url"}},
+                {"api": {"command": "node", "env": {"K": "${user_config.missing}"}}},
+            ]
+        )
+        assert any("mcpServers.remote" in e and "絶対URL" in e for e in result.errors)
+        assert any("user_config.missing" in e for e in result.errors)
+
     def test_non_dict_entries_ignored(self):
         result = self._result({"bad": "not-an-object"})
         assert not any("user_config" in e or "絶対URL" in e for e in result.errors)
