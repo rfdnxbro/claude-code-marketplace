@@ -156,6 +156,21 @@ class TestValidateLspJson:
         assert result.has_errors()
         assert any("startupTimeout" in e and "数値" in e for e in result.errors)
 
+    def test_numeric_fields_reject_boolean(self):
+        """数値フィールドに真偽値を指定した場合はエラー"""
+        for field in ("startupTimeout", "shutdownTimeout", "requestTimeout", "maxRestarts"):
+            content = json.dumps(
+                {
+                    "go": {
+                        "command": "gopls",
+                        "extensionToLanguage": {".go": "go"},
+                        field: False,
+                    }
+                }
+            )
+            result = validate_lsp_json(Path(".lsp.json"), content)
+            assert any(field in e for e in result.errors), field
+
     def test_invalid_request_timeout_type(self):
         """requestTimeoutが数値でない（エラー）"""
         content = json.dumps(

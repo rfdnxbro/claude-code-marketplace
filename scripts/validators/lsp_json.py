@@ -71,7 +71,10 @@ def validate_lsp_json(file_path: Path, content: str) -> ValidationResult:
         # 数値フィールドのバリデーション
         for field in ["startupTimeout", "shutdownTimeout", "requestTimeout", "maxRestarts"]:
             value = config.get(field)
-            if value is not None and not isinstance(value, int | float):
+            # bool は int のサブクラスなので明示的に除外する
+            if value is not None and (
+                isinstance(value, bool) or not isinstance(value, int | float)
+            ):
                 result.add_error(f"{file_path.name}: {server_name}: {field}は数値が必要")
 
         # ブールフィールドのバリデーション

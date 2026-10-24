@@ -40,11 +40,9 @@ JSON形式で記述します。配置場所はプラグインルートの `.lsp.
 | `settings` | object | ワークスペース設定。`${user_config.*}` と `${CLAUDE_PLUGIN_ROOT}` が展開される |
 | `workspaceFolder` | string | ワークスペースフォルダパス |
 | `startupTimeout` | number | サーバー起動タイムアウト（ミリ秒） |
-| `requestTimeout` | number | LSPリクエストのタイムアウト（デフォルト: 60秒。サーバーごとに指定）。TODO: 要確認 — 指定時の単位（`startupTimeout` と同じミリ秒か）は未確認 |
+| `requestTimeout` | number | サーバーがリクエストに応答するまでの待ち時間（ミリ秒、正の整数、デフォルト: `60000`）。応答のないリクエストはこの時間で失敗する |
 | `maxRestarts` | number | 最大再起動回数（これを超えると再起動を諦める） |
 | `diagnostics` | boolean | 編集後に診断情報をClaudeのコンテキストへ注入するか（デフォルト: `true`）。`false` にすると診断の自動注入のみ抑制し、コードナビゲーションは維持する |
-
-`initializationOptions` / `settings` 内のプレースホルダーが、`command` / `args` / `env` 等の他フィールドと同じ展開規則（`${VAR}` / `${VAR:-default}` を含む）に従うかは未確認（TODO: 要確認）。
 
 ## サンプル
 
@@ -127,6 +125,7 @@ JSON形式で記述します。配置場所はプラグインルートの `.lsp.
 - `${VAR}` - 環境変数を展開
 - `${VAR:-default}` - デフォルト値付き
 - `${CLAUDE_PLUGIN_ROOT}` - プラグインルートへの絶対パス
+- `${user_config.KEY}` - `plugin.json` の `userConfig` で宣言した値（LSPサーバー設定内で展開される）
 
 ```json
 {
