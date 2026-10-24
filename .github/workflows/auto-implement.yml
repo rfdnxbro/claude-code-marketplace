@@ -185,6 +185,22 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # Issueに引用されたCHANGELOGは対象バージョンの抜粋だけなので、
+      # 後のバージョンで取り消された・変わった内容をそのまま書く事故が起きていた。
+      # 最新の全文を渡し、新しいバージョンの項目とPRタイトルの版数を照合させる。
+      # 作業ツリーに置くと git add -A でコミットされるため /tmp に保存する。
+      - name: 最新のCHANGELOGを取得（claude-code-update）
+        if: env.TARGET_LABEL == 'claude-code-update'
+        run: |
+          if curl --retry 3 --retry-delay 5 -fsSL \
+               https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md \
+               -o /tmp/claude-code-changelog.md; then
+            echo "取得完了: $(wc -l < /tmp/claude-code-changelog.md) 行"
+          else
+            echo "::error::CHANGELOGの取得に失敗しました"
+            exit 1
+          fi
+
       - name: Claudeで実装を実行（claude-code-update）
         if: env.TARGET_LABEL == 'claude-code-update'
         id: claude-implement-docs
@@ -205,24 +221,36 @@ jobs:
             ## 実行手順
 
             1. issue-title.txtとissue-body.mdを読んで、Issueの内容を把握
-            2. CLAUDE.mdを読んで、プロジェクトのガイドラインを把握
-            3. .claude/rules/README.md を読んで、ドキュメント構造の全体像を把握
-            4. 必要に応じて .claude/rules/ 配下の関連ドキュメントを読む
-            5. scripts/validators/ 配下のバリデーターを確認（__init__.py でエクスポート一覧を確認）
-            6. 必要な変更を特定し、以下を実装:
+            2. CLAUDE.mdと .claude/rules/contribution-guide.md を読んで、
+               プロジェクトのガイドラインとドキュメントの記述方針を把握
+            3. 最新のCHANGELOG全文（/tmp/claude-code-changelog.md）と照合する
+               （詳細は下の「CHANGELOGとの照合」）
+            4. .claude/rules/README.md を読んで、ドキュメント構造の全体像を把握
+            5. 必要に応じて .claude/rules/ 配下の関連ドキュメントを読む
+            6. 公式ドキュメントで仕様を確認する（詳細は下の「公式ドキュメントの確認」）
+            7. scripts/validators/ 配下のバリデーターを確認（__init__.py でエクスポート一覧を確認）
+            8. 必要な変更を特定し、以下を実装:
                a. ドキュメント更新（.claude/rules/*.md）
                b. バリデーター更新（scripts/validators/*.py）
                c. テスト更新（scripts/tests/*.py）
-            7. 実装完了後、pre-commitを実行してlint/formatエラーをチェック
+               b と c の要否は下の「バリデーターとテストの同期」で判断する
+            9. 下の「仕上げ前の自己点検」を行い、見つかった違反を直す
+            10. 実装完了後、pre-commitを実行してlint/formatエラーをチェック
                - `pre-commit run --all-files` を実行
                - エラーがあれば内容を確認し、該当ファイルを修正
                - 再度pre-commitを実行し、すべてパスするまで繰り返す
                - Pythonの1行は100桁以内に収める。長い日本語コメントや文字列リテラルは
                  formatterが折り返さないため、自分で分割すること
-            8. すべてのチェックがパスしたら、変更内容のサマリーを /tmp/change-summary.txt に書き出す
+            11. すべてのチェックがパスしたら、変更内容のサマリーを /tmp/change-summary.txt に書き出す
                - 変更したファイル一覧と各ファイルの変更概要を箇条書きで記載
                - 例: "- .claude/rules/README.md: 用語集にPRFAQ、DDDを追加"
-            9. 変更が不要と判断した場合は、その判断理由を /tmp/no-change-reason.txt に書き出す
+               - 続けて次の3点を「### 」の見出しで書く（PR本文に載り、レビュー担当が確認する）:
+                 「### 確認した公式ドキュメント」: 読んだページのURLと、そこで確認できた事実
+                 「### 新しいバージョンとの照合」: 対象より新しいCHANGELOG項目で、
+                   取り消し・変更があったか（なければ「該当なし」と書く）
+                 「### バリデーター同期」: 文書化した静的な制約ごとに、
+                   対応するバリデーターとテストの場所（同期不要ならその理由）
+            12. 変更が不要と判断した場合は、その判断理由を /tmp/no-change-reason.txt に書き出す
                - Issueが挙げた項目ごとに、なぜ変更が不要かを箇条書きで記載
                - 既に対応済みの場合は該当するファイルパスと記述箇所を必ず示す
                - 例: "- backgroundフィールド: .claude/rules/skill-authoring.md に記載済み"
@@ -256,9 +284,104 @@ jobs:
             - 「〜とされている」「〜と言われている」のような伝聞表現で、
               未確認の内容を既成事実のように書かないこと
             - 裏が取れない項目は、書かないか「TODO: 要確認」と明記して
-              「何が確認できていないのか」を具体的に書く
+              「何が確認できていないのか」を具体的に書く。ただし「TODO: 要確認」を
+              書く前に、必ず下の「公式ドキュメントの確認」を済ませること
             - 判断に迷ったら書かない。記述の欠落は後から足せるが、
               誤情報は気付かれないまま残る
+
+            ## CHANGELOGとの照合
+
+            Issueに引用されたCHANGELOGは対象バージョンの抜粋にすぎない。
+            /tmp/claude-code-changelog.md に最新のCHANGELOG全文がある
+            （見出しは「## 2.1.290」の形式で、新しいバージョンが上にある）。
+
+            - 対象バージョンの見出しを探し、Issueが挙げた項目が本当にその見出しの下に
+              あるかを確かめる。Issueタイトルの版数が誤っていることがある
+              （例: v2.1.290 の内容が v2.1.291 として起票された）
+            - 対象より新しいバージョンの項目も全て読み、同じ機能・フィールド・
+              設定に触れる項目がないか探す。後のバージョンで取り消し・変更・
+              差し戻しがあれば、最新の挙動だけを書く
+              （例: v2.1.282 で予約名になった `claude-ai` は v2.1.283 で取り消された。
+              この場合 `claude-ai` を予約名として書いてはならない）
+            - 取り消されて書く内容がなくなった項目は、その経緯を
+              /tmp/no-change-reason.txt（全項目が該当する場合）または
+              /tmp/change-summary.txt に書く。ドキュメント本文には書かない
+            - 照合の結果、項目の内容が属する見出しを確定できたら、その版数を
+              /tmp/changelog-version.txt に1行で書き出す
+              - 形式は「v2.1.290」、複数バージョンにまたがる場合は「v2.1.290-v2.1.291」
+              - 書く版数は /tmp/claude-code-changelog.md に実在する見出しに限る
+              - PRタイトルの版数はこのファイルの値で置き換えられる
+                （ワークフロー側で見出しの実在を検証してから使う）
+
+            ## 公式ドキュメントの確認
+
+            CHANGELOGは1行の要約なので、型・有効範囲・既定値・禁止値・
+            エラー時の挙動などは公式ドキュメントで確かめること。
+            公式ドキュメントを見れば分かることを「TODO: 要確認」として残すのは失敗である。
+
+            - 索引 https://code.claude.com/docs/llms.txt をWebFetchで読み、
+              変更に関係するページを特定する。各ページは
+              https://code.claude.com/docs/en/<ページ>.md の形式でMarkdownを取得できる
+            - プラグイン関連でよく参照するページの例:
+              plugins/marketplace-reference.md / plugins/cli-reference.md /
+              plugins/components.md / sub-agents.md / mcp.md / skills.md / hooks.md
+              （実際のパスは llms.txt で確認すること）
+            - WebFetchの要約は細部を落とすことがあるため、プロンプトでは
+              該当箇所の原文をそのまま引用するよう求め、引用を根拠に書く
+            - 公式ドキュメントとCHANGELOGが食い違う場合は、新しい方を推測で選ばず、
+              両方の記述を /tmp/unresolved-items.txt に書いて人間の判断に回す
+            - 公式ドキュメントにも記載がなく「TODO: 要確認」を残す場合は、
+              確認したページ名を併記する
+              （例: 「TODO: 要確認 — 上限値は plugins/marketplace-reference.md に記載なし」）
+            - 編集する節に既存の「TODO: 要確認」があれば、それも公式ドキュメントで
+              解消できないか確かめ、解消できたものは置き換える
+
+            ## ドキュメントの記述方針（経緯とバージョンを書かない）
+
+            .claude/rules/contribution-guide.md の「ドキュメントの記述方針」に従い、
+            ドキュメントには現在の仕様だけを書く。CHANGELOGは変更の記録なので、
+            その文体をそのまま写すと方針違反になりやすい。
+
+            - 書かない表現の例:
+              「〜するようになった」「〜できるようになりました」「〜に変更された」
+              「以前は〜だった」「かつては〜というバグがあった」「〜が修正された」
+              「v2.1.290以降」「v2.1.290で追加」「破壊的変更」
+            - 書き換えの例:
+              NG「`foo` フィールドで `bar` を指定できるようになった（v2.1.290）」
+              OK「`foo` フィールドには `bar` を指定できる」
+            - バグ修正の項目は、修正後の挙動を現在の仕様として書く。
+              修正前の挙動やバグがあったことには触れない
+
+            ## バリデーターとテストの同期
+
+            .claude/rules/contribution-guide.md の「既存定義を更新する場合」に従う。
+            プラグイン定義ファイル（frontmatter / plugin.json / marketplace.json /
+            hooks.json / .mcp.json / .lsp.json / monitors.json など）の静的に検証できる
+            制約をドキュメントに書いたら、同じPRでバリデーターとテストも更新する。
+
+            - 対象になる制約: フィールドの追加・削除、型、有効値の列挙、
+              数値や文字数の範囲、禁止値・禁止文字、必須/任意の別、
+              新しいイベント名やフック種別
+            - 対象にならないもの: 発火タイミングやレスポンスの解釈などランタイム挙動
+            - ドキュメントに書いた制約ごとに、対応するバリデーターの検証ロジックと、
+              受理されるケース・拒否されるケースの両方のテストがあるかを確かめる。
+              既存のバリデーターが既に検証しているなら、その場所を確認するだけでよい
+            - 同期できなかった制約は黙って残さず /tmp/unresolved-items.txt に書く
+
+            ## 仕上げ前の自己点検
+
+            pre-commitの前に、自分が編集した .claude/rules/*.md の追加・変更箇所を
+            読み返し、次をGrepなどで確かめる。Grepは既存の文にも多数ヒットするが、
+            点検するのは今回自分が追加・変更した行だけで、ヒットした既存の行は
+            書き換えない（Issueの範囲外の変更になるため）。
+
+            - 「ようになった」「ようになりました」「以前は」「かつて」「修正された」
+              「以降」や「v2.」などの版数表記が、自分の書いた文に入っていないか
+              （既存の記述や「最低必要 Claude Code バージョン」の例外は対象外）
+            - 新しく書いた「TODO: 要確認」それぞれについて、公式ドキュメントを
+              確認済みで、確認したページ名を併記しているか
+            - 対象より新しいCHANGELOG項目で取り消し・変更された内容を書いていないか
+            - 新しく書いた静的な制約それぞれに、バリデーターとテストが対応しているか
 
             ## 対応できなかった項目の記録
 
@@ -279,11 +402,12 @@ jobs:
           #   Edit ルールは Write を含む全ファイル編集ツールに効く。
           # allowed-tools: uvx/npx のワイルドカードは任意コード実行に等しく、
           #   deny ルールはサブプロセスの書き込みには効かないため実際に使うコマンドへ絞る。
+          #   WebFetch は公式ドキュメントでの仕様確認に使うため、取得先を公式ドキュメントに限る。
           # max-turns: 実測で成功38〜46 turns、失敗は一律51（上限50に到達）だったため引き上げる。
           claude_args: >-
             --max-turns 80
             --permission-mode bypassPermissions
-            --allowed-tools "Read,Grep,Glob,Edit,Write,
+            --allowed-tools "Read,Grep,Glob,Edit,Write,WebFetch(domain:code.claude.com),
             Bash(uvx pytest*),Bash(uvx --with pytest-cov pytest*),Bash(uvx ruff*),
             Bash(python3 scripts/*),Bash(pre-commit run*)"
             --disallowed-tools "Edit(/.claude/settings.json),
@@ -365,7 +489,7 @@ jobs:
           claude_args: >-
             --max-turns 80
             --permission-mode bypassPermissions
-            --allowed-tools "Read,Grep,Glob,Edit,Write,
+            --allowed-tools "Read,Grep,Glob,Edit,Write,WebFetch(domain:code.claude.com),
             Bash(uvx pytest*),Bash(uvx --with pytest-cov pytest*),Bash(uvx ruff*),
             Bash(python3 scripts/*),Bash(pre-commit run*)"
             --disallowed-tools "Edit(/.claude/settings.json),
@@ -616,18 +740,48 @@ jobs:
         run: |
           # ISSUE_TITLEはユーザー制御可能なため、env経由で安全に渡す
           ISSUE_NUM="${ISSUE_NUMBER}"
+          VERSION_RE='^v[0-9]+\.[0-9]+\.[0-9]+(-v[0-9]+\.[0-9]+\.[0-9]+)?$'
+          CHANGELOG_TITLE_RE='^\[CHANGELOG (v[0-9]+\.[0-9]+\.[0-9]+(-v[0-9]+\.[0-9]+\.[0-9]+)?)\]'
 
           # Issueタイトルが空の場合のフォールバック
           if [ -z "$ISSUE_TITLE" ]; then
             PR_TITLE="feat: Issue #${ISSUE_NUM} の自動実装"
-          # [CHANGELOG vX.X.X] 形式の場合はそのまま使用
-          elif [[ "$ISSUE_TITLE" =~ ^\[CHANGELOG\ v[0-9]+\.[0-9]+\.[0-9]+\] ]]; then
+          # [CHANGELOG vX.X.X] / [CHANGELOG vX.X.X-vY.Y.Y] 形式の場合はそのまま使用
+          elif [[ "$ISSUE_TITLE" =~ $CHANGELOG_TITLE_RE ]]; then
             PR_TITLE="$ISSUE_TITLE"
           # [プラグイン改善] 形式の場合はそのまま使用
           elif [[ "$ISSUE_TITLE" =~ ^\[プラグイン改善\] ]]; then
             PR_TITLE="$ISSUE_TITLE"
           else
             PR_TITLE="feat: $ISSUE_TITLE"
+          fi
+
+          # タイトルの版数を、Claudeが CHANGELOG と照合した版数に合わせる。
+          # 起票時に版数を取り違える例があったため（v2.1.290 の内容が v2.1.291 として起票された）。
+          # Claudeの出力はそのまま信用せず、形式と CHANGELOG 見出しの実在を確かめてから使う。
+          TITLE_NOTE=""
+          if [ "${TARGET_LABEL}" = "claude-code-update" ] \
+             && [[ "$PR_TITLE" =~ $CHANGELOG_TITLE_RE ]]; then
+            TITLE_VERSION="${BASH_REMATCH[1]}"
+            VERIFIED=""
+            if [ -s /tmp/changelog-version.txt ]; then
+              CANDIDATE=$(head -n 1 /tmp/changelog-version.txt | tr -d '[:space:]')
+              if [[ "$CANDIDATE" =~ $VERSION_RE ]]; then
+                VERIFIED="$CANDIDATE"
+                # 形式を検証済みなので、単語分割で範囲の両端を取り出してよい
+                for V in ${CANDIDATE//-/ }; do
+                  if ! grep -qxF "## ${V#v}" /tmp/claude-code-changelog.md; then
+                    VERIFIED=""
+                  fi
+                done
+              fi
+            fi
+            if [ -z "$VERIFIED" ]; then
+              TITLE_NOTE="⚠️ タイトルの版数（${TITLE_VERSION}）を CHANGELOG の見出しと照合できませんでした。マージ前に確認してください。"
+            elif [ "$VERIFIED" != "$TITLE_VERSION" ]; then
+              PR_TITLE="[CHANGELOG ${VERIFIED}]${PR_TITLE#*]}"
+              TITLE_NOTE="タイトルの版数を、Issue の ${TITLE_VERSION} から CHANGELOG の見出しに合わせて ${VERIFIED} に修正しました。"
+            fi
           fi
 
           # Claude Codeが出力した変更サマリーファイルを読み込む
@@ -696,6 +850,15 @@ jobs:
               echo "---"
               echo "🤖 Generated with [Claude Code](https://claude.com/claude-code)"
             } > /tmp/pr-body.md
+          fi
+
+          if [ -n "$TITLE_NOTE" ]; then
+            {
+              echo ""
+              echo "## タイトルの版数"
+              echo ""
+              echo "$TITLE_NOTE"
+            } >> /tmp/pr-body.md
           fi
 
           # 検証未通過の場合はDraft PRにし、失敗ログを本文に添える
