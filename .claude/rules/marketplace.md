@@ -522,7 +522,7 @@ zipは配下に`.claude-plugin/`を直接含む構成、または単一のトッ
 - `agent-skills`
 - `life-sciences`
 
-上記の予約済み名前と完全一致する場合に加え、予約済み名前を「模倣（imitate）」するマーケットプレイス名も、追加時に拒否され、既に追加済みの場合はロードが停止するようになった。
+上記の予約済み名前と完全一致する場合に加え、予約済み名前を「模倣（imitate）」するマーケットプレイス名も、追加時に拒否され、既に追加済みの場合はロードされません。
 
 > CHANGELOGより: "Changed plugin marketplaces whose name imitates a reserved marketplace name to be
 > refused when added, and to stop loading if one was already added"

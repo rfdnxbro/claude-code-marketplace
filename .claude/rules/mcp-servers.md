@@ -251,17 +251,16 @@ export MAX_MCP_OUTPUT_TOKENS=50000
 ## ツール説明・サーバーinstructionsの文字数上限
 
 MCPツールの説明文およびMCPサーバーのinstructionsには、セッション内のすべてのMCPサーバーに対して
-既定で2,048文字の上限が設定されています。
+既定で4,096文字の上限が設定されています（上限を超えた部分は切り詰められます）。
 
 `CLAUDE_CODE_MAX_MCP_DESCRIPTION_LENGTH` 環境変数でこの上限文字数を変更できます:
 
 ```bash
-export CLAUDE_CODE_MAX_MCP_DESCRIPTION_LENGTH=4096
+export CLAUDE_CODE_MAX_MCP_DESCRIPTION_LENGTH=8192
 ```
 
 TODO: 要確認 — 以下は現時点で未確認。
 
-- 上限を超えた場合の挙動（切り詰め・エラー・警告表示等）
 - 設定可能な値の上限・下限
 - `.mcp.json` の個別サーバー設定で上書きできるか（本環境変数はセッション全体に適用されると読める）
 
