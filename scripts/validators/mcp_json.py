@@ -57,13 +57,14 @@ def validate_mcp_json(file_path: Path, content: str) -> ValidationResult:
             )
 
         # alwaysLoad はブール値のみ有効（v2.1.121以降）
-        always_load = config.get("alwaysLoad")
-        if always_load is not None and not isinstance(always_load, bool):
+        # null も不正値として扱うため、キーの有無で判定する
+        if "alwaysLoad" in config and not isinstance(config["alwaysLoad"], bool):
             result.add_error(f"{file_path.name}: {server_name}: alwaysLoadはブール値が必要です")
 
         # bareElicitationCapability はブール値のみ有効
-        bare_elicitation = config.get("bareElicitationCapability")
-        if bare_elicitation is not None and not isinstance(bare_elicitation, bool):
+        if "bareElicitationCapability" in config and not isinstance(
+            config["bareElicitationCapability"], bool
+        ):
             result.add_error(
                 f"{file_path.name}: {server_name}: bareElicitationCapabilityはブール値が必要です"
             )

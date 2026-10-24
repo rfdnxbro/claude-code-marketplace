@@ -217,6 +217,24 @@ class TestValidateMcpJson:
         assert result.has_errors()
         assert any("bareElicitationCapability" in e for e in result.errors)
 
+    def test_boolean_fields_null(self):
+        """alwaysLoad・bareElicitationCapability に null を指定した場合はエラー"""
+        for field in ("alwaysLoad", "bareElicitationCapability"):
+            content = json.dumps(
+                {
+                    "mcpServers": {
+                        "test-server": {
+                            "type": "stdio",
+                            "command": "node",
+                            field: None,
+                        }
+                    }
+                }
+            )
+            result = validate_mcp_json(Path(".mcp.json"), content)
+            assert result.has_errors()
+            assert any(field in e for e in result.errors)
+
     def test_reserved_server_name_workspace(self):
         """予約済みサーバー名 'workspace' を使用するとエラー"""
         content = json.dumps(
