@@ -527,12 +527,12 @@ zipは配下に`.claude-plugin/`を直接含む構成、または単一のトッ
 > CHANGELOGより: "Changed plugin marketplaces whose name imitates a reserved marketplace name to be
 > refused when added, and to stop loading if one was already added"
 
-TODO: 要確認 — 「模倣」の具体的な判定基準（タイポスクワッティング、部分一致、編集距離など）は
-CHANGELOGの記述からは不明。
+公式ドキュメントでは、模倣と判定される名前として次を挙げている:
 
-本リポジトリのバリデーターはkebab-case形式チェックのみを行っており、予約済み名前との
-類似度判定（模倣チェック）は行っていない。判定基準がCHANGELOGから特定できないため、
-本リポジトリのバリデーターへの実装は見送っている。
+- 公式マーケットプレイスを装う名前（例: `official-claude-plugins`、`claude-plugins-v2`）と、非ASCII文字を含む名前。エラーは `Marketplace name impersonates an official Anthropic/Claude marketplace`
+- 予約済み名前の別表記（末尾にドットを付けたもの、ハイフンをアンダースコア以外の記号に置き換えたもの。例: `claude.code.plugins` は `claude-code-plugins` とみなされる）
+
+TODO: 要確認 — 「公式を装う名前」の網羅的な判定規則は公式ドキュメントにも記載がない。本リポジトリのバリデーターは kebab-case 形式チェックのみで、模倣チェックは行っていない。
 
 ## 禁止文字（制御文字・不可視文字）
 
