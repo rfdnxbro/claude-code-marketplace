@@ -223,7 +223,7 @@ Claude.ai のレート制限使用状況を表示します。存在しない場�
 | `rate_limits.5h.resets_at` | string | 5時間ウィンドウのリセット日時（ISO 8601） | `"2026-03-20T15:30:00Z"` |
 | `rate_limits.7d.used_percentage` | number | 7日間ウィンドウの使用率（%） | `18.0` |
 | `rate_limits.7d.resets_at` | string | 7日間ウィンドウのリセット日時（ISO 8601） | `"2026-03-27T00:00:00Z"` |
-| `rate_limits.spend_limit` | object? | Claude apps gateway配下でスペンド上限が設定されている開発者向けのスペンド上限使用状況。存在しない場合はフィールド自体が省略される。TODO: 要確認 - 正確なサブフィールドは未調査 | - |
+| `rate_limits.spend_limit` | object? | Claude apps gateway配下でスペンド上限が設定されている開発者向けのスペンド上限使用状況。存在しない場合はフィールド自体が省略される。サブフィールドとして `used_usd`、`limit_usd`、`period` を持つ。TODO: 要確認 - `period` の取り得る値、および `used_usd` / `limit_usd` の単位・型の詳細は未確認 | - |
 
 #### プロンプトキャッシュ情報
 
