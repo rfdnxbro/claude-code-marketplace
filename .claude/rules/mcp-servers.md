@@ -438,6 +438,23 @@ Claude Code は 2025-11-25 プロトコルの URL elicitation（サーバーか�
 
 TODO: 要確認 — `bareElicitationCapability: true` が具体的にクライアントのどの挙動を変えるか（宣言するelicitation capabilityの内容など）、および `false` / 省略時の挙動は、CHANGELOGからは確認できていない。
 
+MCPツール自身が `_meta['anthropic/alwaysLoad']` を `false` に設定している場合、`--mcp-config` で渡されたサーバー・Agent SDK が提供するサーバー・プラグインが提供するサーバーでは、サーバー設定の `alwaysLoad: true` よりツール側の指定が優先され、そのツールは遅延ロードのままになります。それ以外のサーバー（ユーザー自身の `.mcp.json` 等）では、サーバー設定の `alwaysLoad: true` に従って先にロードされます。
+
+## 設定が必要な同梱 `.mcpb` MCPサーバー
+
+`plugin.json` の `mcpServers` には、`.mcpb`（または `.dxt`）バンドルのパス（`"./bundle.mcpb"`）や https URL も指定できる（→ [plugin-manifest.md](plugin-manifest.md)）。バンドルのマニフェストが `user_config` ブロックで必須の設定を宣言していて、その値が未保存の場合、そのサーバーは起動しない。`/plugin` の Errors タブ・インストール時のメッセージ・`claude plugin install` がその旨を表示し、Configure へ誘導する。
+
+ユーザーは次のどちらかで値を設定する:
+
+- `/plugin` の Installed タブでプラグインを選び、Configure を選ぶ
+- インストール時に `claude plugin install` の `--config <server>.<key>=<value>` で渡す（プラグイン内に同梱したバンドルファイルの場合のみ）
+
+```bash
+claude plugin install <plugin> --config <server>.<key>=<value>
+```
+
+`--config` は繰り返し指定できる。`<server>.` を付けない `--config <key>=<value>` は、プラグインの `userConfig` の値を設定する。
+
 ## 予約済みサーバー名
 
 `anthropic-skills` という名前で設定したMCPサーバーは、ツールは動作するが、そのサーバーが提供するスキル・プロンプトは一覧に表示されない。スキル・プロンプトを公開したい場合は別の名前を使うこと。
@@ -449,6 +466,10 @@ TODO: 要確認 — `bareElicitationCapability: true` が具体的にクライ�
 | `workspace` |
 | `Claude Browser` |
 | `Claude Preview` |
+
+加えて、クラウドセッションおよびセルフホストランナーでは、サーバー名 `widgets` が予約されています。`widgets` や `widgets_` のような近い綴りのサーバー名もロードされません。本リポジトリのバリデーターは `widgets` を警告として検出します。
+
+TODO: 要確認 — 「近い綴り」の正確な判定規則、およびローカル環境で予約されるか。
 
 ## セキュリティ注意事項
 

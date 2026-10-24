@@ -1172,6 +1172,13 @@ class TestValidatePluginJson:
         assert not result.has_errors()
         assert not any("./で始めることを推奨" in w for w in result.warnings)
 
+    def test_mcp_servers_bundle_url_no_prefix_warning(self):
+        """mcpServersに.mcpbバンドルのhttps URLを指定した場合は./プレフィックス警告なし"""
+        content = json.dumps({"name": "my-plugin", "mcpServers": "https://example.com/server.mcpb"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+        assert not any("./で始めることを推奨" in w for w in result.warnings)
+
     def test_skills_dot_array_no_error(self):
         """skillsが配列で"."を含む場合もエラーなし"""
         content = json.dumps({"name": "my-plugin", "skills": ["."]})
