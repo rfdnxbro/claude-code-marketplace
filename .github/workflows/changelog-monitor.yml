@@ -100,8 +100,7 @@ jobs:
           #   （Write(path) ではパスを絞れない）。Write が要るのは /tmp のタイトル・本文だけ。
           claude_args: >-
             --max-turns 40
-            --allowed-tools "Bash(bash .github/scripts/create-changelog-issue.sh:*),Bash(gh issue list:*),
-            Read,Write,Grep,Glob"
+            --allowed-tools "Bash(bash .github/scripts/create-changelog-issue.sh:*),Bash(gh issue list:*),Read,Write,Grep,Glob"
             --disallowed-tools "Edit(/.github/**),Edit(/current-changelog.md)"
           prompt: |
             あなたはClaude Codeマーケットプレイスのメンテナーです。
