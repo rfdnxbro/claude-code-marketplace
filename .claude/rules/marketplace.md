@@ -723,24 +723,32 @@ URLには `https://` プレフィックスが必要です。`gitlab.com/company/
 
 > この節は公式ドキュメント [discover-plugins](https://code.claude.com/docs/en/discover-plugins) の「Add from other Git hosts」節に基づきます。
 
-## strictKnownMarketplacesのpathPattern
+## strictKnownMarketplacesによる許可リスト
 
-エンタープライズ管理設定の `strictKnownMarketplaces` の `pathPattern` フィールドにより、ファイル/ディレクトリマーケットプレイスソースの正規表現マッチングが可能です。`strictKnownMarketplaces` は `allowedMarketplaces` という別名でも指定できます。
+エンタープライズ管理設定の `strictKnownMarketplaces` により、ユーザーが追加できるマーケットプレイスソースを許可リストで制限できます。`strictKnownMarketplaces` は `allowedMarketplaces` という別名でも指定できます。
 
 TODO: 要確認 — 両方の綴りを同一ファイルに指定した場合にどちらが優先されるかは未調査。
 
-`hostPattern` による制限に加えて、ローカルパスのパターンマッチングでマーケットプレイスソースを制限できます。エントリは `source` の値ごとに1つずつ書きます:
+エントリは `source` の値ごとに1つずつ書きます:
 
 ```json
 {
   "strictKnownMarketplaces": [
+    {
+      "source": "github",
+      "repo": "acme-corp/approved-plugins"
+    },
+    {
+      "source": "url",
+      "url": "https://plugins.example.com/marketplace.json"
+    },
     {
       "source": "hostPattern",
       "hostPattern": "^github\\.example\\.com$"
     },
     {
       "source": "pathPattern",
-      "pathPattern": "^/opt/company/plugins/.*"
+      "pathPattern": "^/opt/company/plugins/"
     }
   ]
 }
@@ -757,9 +765,9 @@ TODO: 要確認 — 両方の綴りを同一ファイルに指定した場合に
 
 `hostPattern` と `pathPattern` はホスト名・パスのどこに一致してもマッチするため、範囲を限定したい場合は `^` と `$` でアンカーします。`github` ソースのホストは常に `github.com` として扱われます。
 
-このほか `git`（`url`、任意で `ref` / `path`）、`file`・`directory`（`path`）、`skills-dir` などの種類もあります。いずれもエントリ1つにつき `source` を1つだけ持つため、`hostPattern` と `pathPattern` で絞り込みたい場合はエントリを分けて書きます。
+このほか `git`（`url`、任意で `ref` / `path`）、`file`・`directory`（`path`）、`skills-dir`（併記するフィールドなし）などの種類もあります。いずれもエントリ1つにつき `source` を1つだけ持つため、`hostPattern` と `pathPattern` で絞り込みたい場合はエントリを分けて書きます。
 
-**完全一致はURLを正規化しない:** 許可リストの `url`（および `git` の `url`）の照合は文字列の完全一致で、末尾スラッシュの有無、`.git` サフィックスの有無、`https://` と `ssh://` の違いはすべて別の値として扱われます。同じリポジトリでも、`github` エントリ（`your-org/your-marketplace`）は同じリポジトリを `git` URLでクローンするソースをカバーしません。複数のURL形式でクローンされうるマーケットプレイスには、リテラルURLより `hostPattern` エントリを使うほうが確実です。なお、ブロックリスト（`blockedMarketplaces`）側はGitのURLを正規化して照合します。
+**完全一致はURLを正規化しない:** 許可リストの `url`（および `git` の `url`）の照合は文字列の完全一致で、末尾スラッシュの有無、`.git` サフィックスの有無、`https://` と `ssh://` の違いはすべて別の値として扱われます。同じリポジトリでも、`github` エントリ（`your-org/your-marketplace`）は同じリポジトリを `git` URLでクローンするソースをカバーしません。公式ドキュメントは、複数のURL形式でクローンされうるマーケットプレイスには `hostPattern` エントリを使うよう勧めています。ただし `hostPattern` はホスト名だけを照合するため、そのホスト上のすべてのリポジトリが許可されます。共有のGitホスティング（`github.com` や社内GitLabなど）で特定のリポジトリだけを許可したい場合は、`hostPattern` を使わず、使われうるURL形式をそれぞれ `url` / `git` エントリとして列挙してください。なお、ブロックリスト（`blockedMarketplaces`）側はGitのURLを正規化して照合します。
 
 空の許可リスト（`[]`）は、公式マーケットプレイスを含むすべてのマーケットプレイスソースを締め出します。
 
