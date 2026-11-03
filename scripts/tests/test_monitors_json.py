@@ -170,8 +170,8 @@ class TestValidateMonitorsJson:
         assert result.has_errors()
         assert any("when" in e for e in result.errors)
 
-    def test_unknown_field_warning(self):
-        """未知のフィールドは警告"""
+    def test_unknown_field_error(self):
+        """未知のフィールドはエラー（プラグインが読み込まれなくなるため）"""
         content = json.dumps(
             [
                 {
@@ -183,8 +183,8 @@ class TestValidateMonitorsJson:
             ]
         )
         result = validate_monitors_json(Path("monitors.json"), content)
-        assert not result.has_errors()
-        assert any("unknownField" in w for w in result.warnings)
+        assert result.has_errors()
+        assert any("unknownField" in e for e in result.errors)
 
     def test_on_skill_invoke_without_skill_name(self):
         """on-skill-invoke: の後にスキル名がない場合は警告（エラーではない）"""

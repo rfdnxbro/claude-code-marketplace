@@ -76,6 +76,8 @@ paths: plugins/*/monitors/monitors.json, monitors/monitors.json
 
 `command` はシェル経由で実行される文字列であり（フックの `args` 配列指定のようなexec form相当の仕組みは存在しない）、シェルインジェクション対策のため `command` 文字列内での `${user_config.*}` の展開は拒否されます。`userConfig` で宣言した値をモニタースクリプトから利用する場合は、コマンド文字列に埋め込まず、スクリプト内部で読み込む方式（例: プラグインが `${CLAUDE_PLUGIN_DATA}` 配下に生成した設定ファイルを読む）に変更してください。
 
+フックと異なり、モニターのプロセスには `userConfig` の値を渡す環境変数 `CLAUDE_PLUGIN_OPTION_<KEY>` が注入されません。`${CLAUDE_PLUGIN_ROOT}` などのパス変数は `command` 文字列内で展開されますが、環境変数としてはエクスポートされません。モニタースクリプトは設定値を自力で取得する必要があります。（公式 plugins-reference の「Fields that run through a shell」「Where each variable resolves」に記載）
+
 ## ライフサイクル
 
 - `when: "always"`（デフォルト）のモニターは**セッション開始時**および**プラグイン reload 時**に起動
@@ -119,6 +121,12 @@ paths: plugins/*/monitors/monitors.json, monitors/monitors.json
 - 1つ目: デプロイ状況の変化を監視するスクリプト。セッション開始時に自動起動し、`poll-deploy.sh` がスクリプト内部で設定ファイル（`${CLAUDE_PLUGIN_DATA}` 配下等）から `api_endpoint` を読み込む
 - 2つ目: `debug` スキルが呼ばれた初回のみ `tail -F` でエラーログを監視開始
 
+## 読み込みに失敗する条件
+
+- モニターのエントリはstrictなオブジェクトで、エントリ内に未知のキーがあるとエラーになり、プラグインが読み込まれない。`claude plugin validate` も同じ条件で検証に失敗する（本リポジトリのバリデーターもエラーとして扱う）
+- `monitors` に指定したパスが存在しない場合、そのコンポーネントは読み込まれず、`/plugin` の Errors タブに `<component> path not found: <path>` が表示される
+- `monitors` キーを省略した場合は、`monitors/monitors.json` が存在すれば読み込まれる
+
 ## 公式ドキュメントで明示されていない項目
 
 以下の点は plugins-reference / tools-reference に明示されておらず、本ドキュメントでも保証しません:
@@ -127,7 +135,7 @@ paths: plugins/*/monitors/monitors.json, monitors/monitors.json
 - プロセスが異常終了した場合の自動再起動挙動（LSP の `restartOnCrash` に相当する仕組みの有無）
 - 並列起動可能な monitor 数の上限
 - 出力レート制限や通知のバッチング有無
-- デフォルトの `monitors/monitors.json` が壊れている（不正なJSON、読み込み権限がない等）場合に、エラー表示・警告・無視のいずれになるか。`claude plugin validate .` でJSON構文エラーや読み込み権限エラーを再現しても診断メッセージは出力されなかったが、これが `claude plugin validate` の仕様（monitorsの内容を検証対象としていない）なのか、実際のプラグインロード時の挙動と異なるのかは未確認
+- デフォルトの `monitors/monitors.json` がJSONとして壊れている、または読み込み権限がない場合に、エラー表示・警告・無視のいずれになるか（未知キーと存在しないパスの扱いは「読み込みに失敗する条件」を参照）
 
 ## 出典
 
@@ -135,4 +143,7 @@ paths: plugins/*/monitors/monitors.json, monitors/monitors.json
 - [Plugins reference: File locations reference](https://code.claude.com/docs/en/plugins-reference#file-locations-reference)
 - [Plugins reference: Environment variables](https://code.claude.com/docs/en/plugins-reference#environment-variables)
 - [Plugins reference: Path behavior rules](https://code.claude.com/docs/en/plugins-reference#path-behavior-rules)
+- [Plugins reference: Strict objects](https://code.claude.com/docs/en/plugins-reference#strict-objects)（未知キーで読み込まれない条件）
+- [Plugins reference: Fields that run through a shell](https://code.claude.com/docs/en/plugins-reference#fields-that-run-through-a-shell)（モニターに `CLAUDE_PLUGIN_OPTION_<KEY>` が渡らないこと）
+- [Plugins reference: Where each variable resolves](https://code.claude.com/docs/en/plugins-reference#where-each-variable-resolves)（モニターのコマンドではパス変数が環境変数としてエクスポートされないこと）
 - [Tools reference: Monitor tool](https://code.claude.com/docs/en/tools-reference#monitor-tool)
