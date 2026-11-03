@@ -64,6 +64,8 @@ paths: plugins/*/hooks/hooks.json
 
 本リポジトリのバリデーター（`scripts/validators/hooks_json.py`）は `modules` の形式（文字列の配列、パス1つ、拡張子）を検証し、`modules` があれば `hooks` が空でも警告しない。
 
+hooks モジュールの書き方・描画サイト・Mods API・制約は [mods.md](mods.md) を参照。
+
 ## Frontmatter形式
 
 エージェント、スキル、スラッシュコマンドのfrontmatter内でフックを定義できます:
