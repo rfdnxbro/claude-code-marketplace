@@ -74,7 +74,7 @@ claude plugin install skill-preview@custom-marketplace
 
 組み込み・Anthropic 提供のスキルとコマンドの説明（description）を、右ペインで日本語にして表示します。実行時に翻訳はしません。SKILL.md の本文は訳しません。説明は次の順で選びます。
 
-1. **公式訳**: Claude Desktop アプリが持つ、一部の組み込みコマンド（`/btw`、`/model`、`/help` など約 40 件）の日本語訳（[公式訳](#公式訳)）
+1. **公式訳**: Claude Desktop アプリが持つ、一部の組み込みコマンド（`/btw`、`/model`、`/help` など 42 件）の日本語訳（[公式訳](#公式訳)）
 2. **自前訳**: この mod に同梱した日本語訳（`hooks/ja-descriptions.ts`）。開発時に用意したもの
 3. **英語**: どちらも使えないときは元の説明
 
