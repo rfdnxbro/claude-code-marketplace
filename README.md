@@ -28,7 +28,6 @@ Claude Codeの機能を拡張するプラグイン（スラッシュコマンド
 | プラグイン | 説明 | 状態 |
 |-----------|------|------|
 | [claude-code-workflow](plugins/claude-code-workflow/) | Claude Codeの個人的な作業スタイル（文体ガイド等）をスキルとして集約 | 🔧 開発中 |
-| [git-main-sync](plugins/git-main-sync/) | 新規セッション開始時、git管理下なら現在ブランチに応じてmainブランチをpullまたはfetchで最新化する | 🔧 開発中 |
 
 ## ディレクトリ構成
 
