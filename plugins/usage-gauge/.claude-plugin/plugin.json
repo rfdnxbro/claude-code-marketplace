@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "usage-gauge",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "入力欄の上にコンテキスト・5時間・週間・週間 Fable・クレジットの使用量ゲージを並べる mod",
   "author": { "name": "rfdnxbro" },
   "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/usage-gauge",

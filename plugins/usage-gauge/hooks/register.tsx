@@ -1,12 +1,10 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { Official, Remote, UsageWindow } from '../types'
+import type { Official, UsageWindow } from '../types'
 import {
-  backoffMs,
   clampPercent,
   creditsDetail,
-  creditsPercent,
   elapsedRatio,
   FIVE_HOUR_MS,
   formatPercent,
@@ -15,8 +13,6 @@ import {
   gaugeColor,
   gaugeSvg,
   gaugeText,
-  hasUsage,
-  mergeRemote,
   parseRemote,
   SEVEN_DAY_MS,
 } from './format'
@@ -27,10 +23,11 @@ const USAGE_URL = 'https://api.anthropic.com/api/oauth/usage'
 const POLL_MS = 60_000
 // 非公式 API を呼ぶ最短の間隔（短いと 429 が返り続ける）
 const MIN_FETCH_GAP_MS = 5 * 60_000
+// 取得に失敗して Retry-After も無いとき、次に試すまでの間隔
+const RETRY_MS = 15 * 60_000
 // 認証情報が無い環境で、もう一度試すまでの間隔
 const NO_AUTH_RETRY_MS = 60 * 60_000
 const STORE_KEY = 'collapsed'
-const LAST_GOOD_KEY = 'lastRemote'
 // デスクトップの1セルあたりのおおよその幅（CSS ピクセル）
 const DESKTOP_CELL_PX = 8.5
 
@@ -42,14 +39,10 @@ const remote = atom({ plugin: 'usage-gauge', key: 'remote' } as const, null, {
   shape: 'remote-1',
 })
 const now = atom({ plugin: 'usage-gauge', key: 'now' } as const, 0)
-const collapsed = atom({ plugin: 'usage-gauge', key: 'collapsed' } as const, null)
+const collapsed = atom({ plugin: 'usage-gauge', key: 'collapsed' } as const, false)
 
-// モジュール変数: リロードで初期化されてよい値
-let lastFetchAt = 0
-let isFetching = false
-// 失敗が続いたときの待ち時間と、次に取得してよい時刻
-let backoff = 0
-let nextAllowedAt = 0
+// 次に非公式 API を呼んでよい時刻（モジュール変数: リロードで初期化されてよい）
+let nextFetchAt = 0
 
 /** 公式値（$.session.usage()）を読み直して $.state に置く */
 async function refreshOfficial($: EngineInterface): Promise<void> {
@@ -70,64 +63,38 @@ async function refreshOfficial($: EngineInterface): Promise<void> {
 
 /**
  * 非公式 API を叩いて $.state に置く。トークンは本体が持ち、mod には渡らない。
- * 失敗したら前回の値を残してエラーを添え、取得の間隔を延ばす。
+ * 失敗したら前回の値（$.state に残っている）にエラーを添え、しばらく呼ばない。
  */
 async function refreshRemote($: EngineInterface): Promise<void> {
   const t = await $.clock.now()
-  if (isFetching || t < nextAllowedAt || (lastFetchAt > 0 && t - lastFetchAt < MIN_FETCH_GAP_MS)) return
-  isFetching = true
-  lastFetchAt = t
-  let fresh: Remote | undefined
-  let error: string | undefined
-  let noAuth = false
+  if (t < nextFetchAt) return
+  // 呼ぶ前に先へ進めておき、取得中に重ねて呼ばないようにする
+  nextFetchAt = t + MIN_FETCH_GAP_MS
+  let error = '非公式API取得失敗'
   try {
     const auth = await $.session.authorize()
     if (!auth) {
       // API キーやゲートウェイでは取れない。エラーは出さず、しばらく呼ばない
-      noAuth = true
-    } else {
-      const res = await $.http.fetch(USAGE_URL, {
-        headers: { 'anthropic-beta': 'oauth-2025-04-20' },
-        auth: auth.handle,
-      })
-      const parsed = res.ok ? parseRemote(JSON.parse(res.text)) : undefined
-      if (parsed && hasUsage(parsed)) {
-        fresh = parsed
-      } else if (res.ok) {
-        // 200 でも使用量が読めない応答は、前回値を消さないよう失敗として扱う
-        error = '非公式API: 応答に使用量なし'
-        backoff = backoffMs(backoff, undefined)
-      } else {
-        error = `非公式API取得失敗 (${res.status})`
-        backoff = backoffMs(backoff, res.headers['retry-after'])
-      }
+      nextFetchAt = t + NO_AUTH_RETRY_MS
+      return
     }
-  } catch {
-    error = '非公式API取得失敗'
-    backoff = backoffMs(backoff, undefined)
-  } finally {
-    isFetching = false
-  }
-  if (noAuth) {
-    nextAllowedAt = t + NO_AUTH_RETRY_MS
-    return
-  }
-  if (fresh) {
-    backoff = 0
-    nextAllowedAt = 0
-    // 応答に欠けた項目は前回の値を残す（API の変化で一部だけ取れなくなっても消さない）
-    const got = fresh
-    const merged = await update($, remote, prev => mergeRemote(prev, got))
-    // 次回起動や取得失敗のときに使えるよう、最後に取れた値を残す
-    await $.store.set(LAST_GOOD_KEY, merged)
-  } else {
-    nextAllowedAt = t + backoff
-    const saved = (await $.store.get(LAST_GOOD_KEY)) as Remote | undefined
-    await update($, remote, prev => {
-      const { error: _old, ...values } = prev ?? saved ?? {}
-      return { ...values, error }
+    const res = await $.http.fetch(USAGE_URL, {
+      headers: { 'anthropic-beta': 'oauth-2025-04-20' },
+      auth: auth.handle,
     })
+    if (res.ok) {
+      const fresh = parseRemote(JSON.parse(res.text))
+      await update($, remote, () => fresh)
+      return
+    }
+    error = `非公式API取得失敗 (${res.status})`
+    // Retry-After（秒）があればそれに従う。429 では "0" が返るので、そのときは既定の間隔にする
+    const sec = Number(res.headers['retry-after'])
+    nextFetchAt = t + (sec > 0 ? Math.max(MIN_FETCH_GAP_MS, sec * 1000) : RETRY_MS)
+  } catch {
+    nextFetchAt = t + RETRY_MS
   }
+  await update($, remote, prev => ({ ...prev, error }))
 }
 
 async function tick($: EngineInterface): Promise<void> {
@@ -137,15 +104,26 @@ async function tick($: EngineInterface): Promise<void> {
   await refreshRemote($)
 }
 
+/** 開閉状態を $.store から $.state に写す（$.state は /clear などで初期値に戻るため） */
+async function loadCollapsed($: EngineInterface): Promise<void> {
+  const stored = (await $.store.get(STORE_KEY)) === true
+  await update($, collapsed, () => stored)
+}
+
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     const r = await next(e)
-    // 非公式 API が取れるまでの間は、前回取れた値を出す
-    const saved = (await $.store.get(LAST_GOOD_KEY)) as Remote | undefined
-    if (saved) await update($, remote, prev => prev ?? saved)
+    await loadCollapsed($)
     // 起動を待たせないよう、初回の取得はタイマーに回す
     $.clock.after(1, () => void tick($))
     $.clock.every(POLL_MS, () => void tick($))
+    return r
+  })
+
+  // /clear・/resume・/branch の後は session.start が来ないので、ここで写し直す
+  on('classic.SessionStart', async ($, e, next) => {
+    const r = await next(e)
+    await loadCollapsed($)
     return r
   })
 
@@ -155,24 +133,17 @@ export const register: Register = on => {
     return r
   })
 
-  on('turn.complete', async ($, e, next) => {
-    const r = await next(e)
-    // 間引きは refreshRemote の中で行う
-    $.clock.after(1, () => void refreshRemote($))
-    return r
-  })
-
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     if (e.props.hasSurvey) return next(e)
 
-    const { Box, Text, Button } = $.ui.resolve(e)
+    const els = $.ui.resolve(e)
+    const { Box, Text, Button } = els
     const isDesktop = e.surface === 'desktop'
     const off = await read($, official)
     const rem = await read($, remote)
-    await read($, now) // 1分ごとの再描画のために購読する
-    const t = await $.clock.now()
-    const stored = await read($, collapsed)
-    const isCollapsed = stored ?? (await $.store.get(STORE_KEY)) === true
+    // 1分ごとに進む時刻を購読して、残り時間を描き直す
+    const t = await read($, now)
+    const isCollapsed = await read($, collapsed)
 
     const fiveHour = off?.fiveHour ?? rem?.fiveHour
     const sevenDay = off?.sevenDay ?? rem?.sevenDay
@@ -186,8 +157,7 @@ export const register: Register = on => {
         plain
         onPress={async () => {
           // 描画時の値ではなく、押した時点の値から反転する
-          const fromStore = (await $.store.get(STORE_KEY)) === true
-          const toggled = await update($, collapsed, v => !(v ?? fromStore))
+          const toggled = await update($, collapsed, v => !v)
           await $.store.set(STORE_KEY, toggled)
         }}
       />
@@ -226,9 +196,9 @@ export const register: Register = on => {
 
     const gauge = (percent: number | undefined, elapsed: number | undefined) => {
       const p = percent === undefined ? 0 : clampPercent(percent)
-      if (e.surface === 'desktop') {
+      if ('Svg' in els) {
         // デスクトップは細いバーを SVG で描く（Box の背景色だと行どうしがつながって見える）
-        const { Svg } = $.ui.resolve(e)
+        const { Svg } = els
         const px = Math.round(gaugeWidth * DESKTOP_CELL_PX)
         return (
           <Box width={gaugeWidth} overflow="hidden">
@@ -299,12 +269,7 @@ export const register: Register = on => {
       formatRemaining(fable?.resetsAt, t),
       elapsedRatio(fable?.resetsAt, t, SEVEN_DAY_MS),
     )
-    const creditRow = row(
-      'credit',
-      'クレジット',
-      credits ? creditsPercent(credits) : undefined,
-      credits ? creditsDetail(credits) : '',
-    )
+    const creditRow = row('credit', 'クレジット', credits?.percent, credits ? creditsDetail(credits) : '')
 
     const body = isTwoColumns ? (
       <Box flexDirection="row" gap={COL_GAP}>

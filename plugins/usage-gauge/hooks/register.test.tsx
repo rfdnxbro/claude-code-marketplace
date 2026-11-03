@@ -2,16 +2,7 @@ import { expect, mock, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-import {
-  backoffMs,
-  creditsDetail,
-  elapsedRatio,
-  formatRemaining,
-  formatTokens,
-  gaugeColor,
-  mergeRemote,
-  parseRemote,
-} from './format'
+import { creditsDetail, elapsedRatio, formatRemaining, formatTokens, gaugeColor, parseRemote } from './format'
 
 const NOW = Date.parse('2026-11-03T06:00:00Z')
 
@@ -114,6 +105,21 @@ test('トグルで1行の要約に折りたたみ、もう一度押すと開く'
   }
 })
 
+test('開閉状態は $.store から読み、/clear の後にも写し直す', async ($, on) => {
+  const clock = mock.clock(on, { now: NOW })
+  mock.store(on, { collapsed: true })
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('classic.SessionStart', () => ({}))
+  on('session.usage', () => ({ value: USAGE }))
+  on('session.authorize', () => ({ value: null }))
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  await clock.advance(1)
+  await $.classic.SessionStart({ source: 'clear' })
+  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  expect((await ui.find({ type: 'Text', text: /^ctx / }))?.text).toBe('ctx 40% · 5h 5% · 週 32% · Fable — · $—')
+  await ui.unmount()
+})
+
 test('非公式 API が失敗したら公式値だけで描き、薄字で知らせる', async ($, on) => {
   await start($, on, 500)
   const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
@@ -160,17 +166,6 @@ test('表示用の関数', async () => {
   expect(creditsDetail({ used: 0, limit: 200, enabled: false })).toBe('$0 無効')
 })
 
-test('取得失敗後の待ち時間', async () => {
-  // Retry-After（秒）があればそれに従う
-  expect(backoffMs(0, '30')).toBe(30_000)
-  // なければ 2 分から倍々
-  expect(backoffMs(0, undefined)).toBe(120_000)
-  expect(backoffMs(120_000, '0')).toBe(240_000)
-  // 上限は 15 分
-  expect(backoffMs(600_000, undefined)).toBe(900_000)
-  expect(backoffMs(0, '3600')).toBe(900_000)
-})
-
 test('取得に失敗しても前回取れた値を出し続ける', async ($, on) => {
   let status = 200
   let text = JSON.stringify(BODY)
@@ -179,47 +174,31 @@ test('取得に失敗しても前回取れた値を出し続ける', async ($, o
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('session.usage', () => ({ value: USAGE }))
   on('session.authorize', () => ({ value: { handle: 'h', kind: 'bearer' } }))
-  on('http.fetch', () => ({ value: { status, ok: status === 200, headers: {}, text } }))
+  let calls = 0
+  on('http.fetch', () => {
+    calls++
+    return { value: { status, ok: status === 200, headers: { 'retry-after': '0' }, text } }
+  })
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
   await clock.advance(1)
+  expect(calls).toBe(1)
 
   // 429 が返っても Fable とクレジットは前回値のまま
   status = 429
   text = ''
   await clock.advance(6 * 60_000)
+  expect(calls).toBe(2)
   const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
   expect((await ui.find({ type: 'Text', text: /非公式API取得失敗 \(429\)/ }))?.text).toBe('非公式API取得失敗 (429)（前回の値を表示）')
   expect((await ui.find({ type: 'Text', text: '4%' }))?.text).toBe('4%')
   expect((await ui.find({ type: 'Text', text: '$0/$200' }))?.text).toBe('$0/$200')
   await ui.unmount()
-})
 
-test('200 でも使用量が読めない応答は失敗として扱い、前回値を消さない', async ($, on) => {
-  let text = JSON.stringify(BODY)
-  const clock = mock.clock(on, { now: NOW })
-  mock.store(on)
-  on('session.start', (_, e) => ({ cwd: e.cwd }))
-  on('session.usage', () => ({ value: USAGE }))
-  on('session.authorize', () => ({ value: { handle: 'h', kind: 'bearer' } }))
-  on('http.fetch', () => ({ value: { status: 200, ok: true, headers: {}, text } }))
-  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
-  await clock.advance(1)
-
-  text = '{}'
-  await clock.advance(6 * 60_000)
-  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
-  expect((await ui.find({ type: 'Text', text: /応答に使用量なし/ }))?.text).toBe('非公式API: 応答に使用量なし（前回の値を表示）')
-  expect((await ui.find({ type: 'Text', text: '$0/$200' }))?.text).toBe('$0/$200')
-  await ui.unmount()
-})
-
-test('応答に欠けた項目は前回の値を残す', async () => {
-  const prev = parseRemote(BODY)
-  const merged = mergeRemote(prev, { fiveHour: { percent: 50 } })
-  expect(merged.fiveHour).toEqual({ percent: 50 })
-  expect(merged.fable).toEqual(prev.fable)
-  expect(merged.credits).toEqual(prev.credits)
-  expect(mergeRemote(null, { fable: { percent: 1 } }).credits).toBeUndefined()
+  // Retry-After が "0" なら 15 分は呼ばない
+  await clock.advance(14 * 60_000)
+  expect(calls).toBe(2)
+  await clock.advance(2 * 60_000)
+  expect(calls).toBe(3)
 })
 
 test('認証情報が無い環境ではエラーを出さない', async ($, on) => {
