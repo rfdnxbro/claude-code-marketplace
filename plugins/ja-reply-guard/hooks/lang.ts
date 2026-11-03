@@ -25,8 +25,8 @@ const LATIN = /[A-Za-z]/g
 
 /** 行単位で消す・置き換える、地の文ではない部分 */
 const INLINE_PATTERNS: readonly RegExp[] = [
-  // インラインコード（`a` や ``a`b``）
-  /(`+)[^`]*?\1/g,
+  // インラインコード（`a` や ``a`b``）。開閉は同じ長さのバッククォート列で、より長い列の一部ではない
+  /(?<!`)(`+)(?!`).*?(?<!`)\1(?!`)/g,
   // HTML タグ
   /<\/?[A-Za-z][^>\n]*>/g,
   // URL
@@ -111,9 +111,15 @@ const ASKS_FOR_ENGLISH: readonly RegExp[] = [
   /\b(?:speak|use|write)\s+English\b/i,
 ]
 
-/** プロンプトが英語での返答を明示的に求めているか */
+/**
+ * プロンプトが英語での返答を明示的に求めているか
+ *
+ * コードブロックや引用の中の「英語で答えて」は、貼り付けた文字列でありユーザーの指示ではないので見ない。
+ */
 export function asksForEnglish(prompt: string): boolean {
-  return ASKS_FOR_ENGLISH.some(pattern => pattern.test(prompt))
+  const prose = stripNonProse(prompt)
+
+  return ASKS_FOR_ENGLISH.some(pattern => pattern.test(prose))
 }
 
 /**

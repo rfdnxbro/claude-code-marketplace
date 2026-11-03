@@ -3,13 +3,11 @@
 // - ターンの途中: ステップの可視テキスト（ターン内の累積）が英語だらけなら、
 //   以降は日本語で書くよう指示する行を会話に差し込む（1ターンに1回まで）
 // - ターンの最後: 最終回答が英語だらけなら、日本語で書き直す依頼を送る
-//   （書き直し依頼から始まったターンには再依頼しない）
+//   （人が次のプロンプトを送るまで1回まで。書き直しのターンにまた依頼してループしないため）
 // - ユーザーが英語を求めたとき（明示した、または英語で書いた）とサブエージェントは対象外
 import type { PromptOrigin, Register } from 'claude-code'
 
 import { isEnglishHeavy, userWantsEnglish } from './lang.ts'
-
-const MOD = 'ja-reply-guard'
 
 /** ターンの途中で差し込む指示 */
 export const STEP_NOTE = '以降の返答は日本語で書いてください。コード・コマンド・識別子は原文のままで構いません。'
@@ -24,8 +22,6 @@ const HUMAN_ORIGINS: ReadonlySet<PromptOrigin['kind']> = new Set(['composer', 'b
 /** メインの会話の、いま進んでいるターン */
 type TurnInfo = {
   turnId: string
-  /** この mod の書き直し依頼から始まったターンか */
-  isRewrite: boolean
   /** このターンで指示を差し込んだか */
   isNoted: boolean
   /** このターンのステップの可視テキストを連結したもの */
@@ -35,28 +31,21 @@ type TurnInfo = {
 export const register: Register = on => {
   /** 人が最後に送ったプロンプト（スラッシュコマンドは引数） */
   let lastPrompt = ''
-  /** 次に始まるメインのターンが書き直し依頼のものか */
-  let isRewriteNext = false
+  /** 人が次のプロンプトを送るまでに、まだ書き直しを依頼してよいか */
+  let canRequestRewrite = true
   let turn: TurnInfo | undefined
 
   on('prompt.submit', ($, e, next) => {
-    const origin = e.origin
-    if (origin.kind === 'plugin' && origin.name === MOD) isRewriteNext = true
-    else if (HUMAN_ORIGINS.has(origin.kind)) lastPrompt = e.command ? e.command.args : e.text
+    if (HUMAN_ORIGINS.has(e.origin.kind)) {
+      lastPrompt = e.command ? e.command.args : e.text
+      canRequestRewrite = true
+    }
 
     return next(e)
   })
 
   on('turn.start', ($, e, next) => {
-    if (e.agentId === undefined) {
-      turn = {
-        turnId: e.turnId,
-        isRewrite: isRewriteNext || e.text.includes(REWRITE_PROMPT),
-        isNoted: false,
-        prose: '',
-      }
-      isRewriteNext = false
-    }
+    if (e.agentId === undefined) turn = { turnId: e.turnId, isNoted: false, prose: '' }
 
     return next(e)
   })
@@ -85,10 +74,11 @@ export const register: Register = on => {
 
     const info = turn?.turnId === e.turnId ? turn : undefined
     turn = undefined
-    // 始まりを見ていないターン（リロード直後など）は書き直しかどうか分からないので触らない
-    if (info === undefined || info.isRewrite || e.reason !== 'answer') return result
+    // 始まりを見ていないターン（リロード直後など）は、書き直しのターンかもしれないので触らない
+    if (info === undefined || !canRequestRewrite || e.reason !== 'answer') return result
     if (userWantsEnglish(lastPrompt) || !isEnglishHeavy(e.answer)) return result
 
+    canRequestRewrite = false
     // セッションが空いてから新しいターンとして始まる。待つとこのターンが終わらないので待たない
     void $.prompt.submit({ text: REWRITE_PROMPT }).then(sent => {
       if (sent.drop !== undefined) $.ui.toast(`書き直しを依頼できませんでした: ${sent.drop}`)

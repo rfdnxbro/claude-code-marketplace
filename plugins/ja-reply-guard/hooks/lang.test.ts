@@ -41,6 +41,12 @@ describe('stripNonProse', () => {
     expect(stats.latin).toBe(0)
   })
 
+  test('内側にバッククォートを含むインラインコードを最後まで除く', () => {
+    const id = 'longEnglishIdentifierRepeatedManyTimes'
+    expect(proseStats(`説明です。 \`\`${id}\`${id}\`\` おわり`).latin).toBe(0)
+    expect(isEnglishHeavy(`説明です。 \`\`${id} \`${id} ${id}\`\` おわり`)).toBe(false)
+  })
+
   test('引用の行を除き、リンクは表示テキストを残す', () => {
     expect(stripNonProse('> Error: something failed badly\n[説明](https://example.com)')).toBe('説明')
   })
@@ -90,6 +96,12 @@ describe('ユーザーが英語を求めているか', () => {
     expect(asksForEnglish('クロージャについて英語で答えて')).toBe(true)
     expect(asksForEnglish('この文を英訳して')).toBe(true)
     expect(asksForEnglish('README を英語にして')).toBe(true)
+  })
+
+  test('コードブロック・インラインコード・引用の中の英語指定はユーザーの指示ではない', () => {
+    expect(asksForEnglish('次の文字列が何を意味するか説明して:\n```\n英語で答えて\n```')).toBe(false)
+    expect(asksForEnglish('`Answer in English` というテンプレートの意味は？')).toBe(false)
+    expect(asksForEnglish('> 英語で答えてください\nというメールが来ました。どう返せばいい？')).toBe(false)
   })
 
   test('英語の話題に触れているだけなら明示ではない', () => {

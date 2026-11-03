@@ -18,11 +18,13 @@ type Recorded = {
   toasts: string[]
   /** 次の turn.step でモデルが返すもの */
   reply: { answer: string; toolUses: readonly TurnStepToolUse[] }
+  /** true の間は、プラグインが送ったプロンプトを drop する */
+  dropsPluginPrompts: boolean
 }
 
 /** エンジン役の hook を差し込む */
 function engine(on: On): Recorded {
-  const rec: Recorded = { appends: [], submits: [], toasts: [], reply: { answer: '', toolUses: [] } }
+  const rec: Recorded = { appends: [], submits: [], toasts: [], reply: { answer: '', toolUses: [] }, dropsPluginPrompts: false }
 
   on('session.append', (_$, e, next) => {
     for (const block of e.message.content) if (block.type === 'text' && typeof block.text === 'string') rec.appends.push(block.text)
@@ -31,6 +33,7 @@ function engine(on: On): Recorded {
   })
   on('prompt.submit', (_$, e) => {
     rec.submits.push({ text: e.text, origin: e.origin })
+    if (rec.dropsPluginPrompts && e.origin.kind === 'plugin') return { drop: 'busy' }
 
     return { text: e.text }
   })
@@ -78,7 +81,7 @@ function typed($: Engine, text: string) {
 
 /** mod が待たずに送ったものが届くのを待つ */
 async function settle() {
-  for (let i = 0; i < 20; i++) await Promise.resolve()
+  for (let i = 0; i < 500; i++) await Promise.resolve()
 }
 
 /** 送られたプロンプトのうち、この mod のもの */
@@ -153,6 +156,45 @@ test('書き直しの後の普通のターンでは、また依頼する', async
   await complete($, 't3', ENGLISH)
   await settle()
 
+  expect(rewrites(rec)).toEqual([REWRITE_PROMPT, REWRITE_PROMPT])
+})
+
+test('書き直しの依頼が drop されても、人が次に送ったターンではまた依頼する', async ($, on) => {
+  const rec = engine(on)
+  rec.dropsPluginPrompts = true
+  await typed($, 'クロージャとは？')
+  await $.turn.start({ text: 'クロージャとは？', turnId: 't1' })
+  await complete($, 't1', ENGLISH)
+  await settle()
+  expect(rewrites(rec)).toEqual([REWRITE_PROMPT])
+  expect(rec.toasts).toContain('書き直しを依頼できませんでした: busy')
+
+  rec.dropsPluginPrompts = false
+  await typed($, '次の質問です')
+  await $.turn.start({ text: '次の質問です', turnId: 't2' })
+  await complete($, 't2', ENGLISH)
+  await settle()
+
+  expect(rewrites(rec)).toEqual([REWRITE_PROMPT, REWRITE_PROMPT])
+})
+
+test('書き直しの依頼より先に人のプロンプトのターンが始まっても、その回答の書き直しを依頼する', async ($, on) => {
+  const rec = engine(on)
+  await $.turn.start({ text: '', turnId: 't1' })
+  await complete($, 't1', ENGLISH)
+  await settle()
+
+  // 依頼が待っている間に、人のプロンプトのターンが先に始まった
+  await typed($, '別の質問です')
+  await $.turn.start({ text: '別の質問です', turnId: 't2' })
+  await complete($, 't2', ENGLISH)
+  await settle()
+  expect(rewrites(rec)).toEqual([REWRITE_PROMPT, REWRITE_PROMPT])
+
+  // 待っていた書き直しのターンが英語のままでも、もう依頼しない
+  await $.turn.start({ text: REWRITE_PROMPT, turnId: 't3' })
+  await complete($, 't3', ENGLISH)
+  await settle()
   expect(rewrites(rec)).toEqual([REWRITE_PROMPT, REWRITE_PROMPT])
 })
 
