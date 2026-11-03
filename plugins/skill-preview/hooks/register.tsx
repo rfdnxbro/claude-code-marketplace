@@ -10,6 +10,7 @@ import {
   matchCommands,
   originOfCommand,
   originOfSkillSource,
+  projectDirs,
   shortName,
   slashQuery,
 } from './lib.ts'
@@ -24,6 +25,8 @@ const DEBOUNCE_MS = 60
 const CLOSE_DELAY_MS = 300
 /** $.store に覚えるパスの最大件数 */
 const MAX_LEARNED = 500
+/** 実行して分かったパスを置く $.store のキー（作業ディレクトリごとに覚える） */
+const LEARNED_KEY = 'learned-paths'
 
 const EMPTY: PreviewView = { mode: 'empty', candidates: [] }
 
@@ -43,7 +46,10 @@ type SkillIndex = {
 
 // モジュール変数はリロードで初期化されてよいものだけを置く
 let index: SkillIndex = { exact: {}, bare: {} }
+/** 実行して分かったパス（キーは `<作業ディレクトリ>\n<スキル名>`） */
 let learned: Record<string, string> = {}
+/** 索引を作った作業ディレクトリ（learned のキーに使う） */
+let cwd = ''
 let commands: CommandInfo[] = []
 let ready: Promise<void> | undefined
 let timer: Timer | undefined
@@ -79,31 +85,62 @@ async function isDir($: EngineInterface, path: string, kind: string): Promise<bo
   }
 }
 
-/** `<dir>/<name>/SKILL.md` を `<prefix><name>` として登録する */
+/** スキルを探すときに入らないディレクトリ */
+const SKIP_DIRS = new Set(['node_modules'])
+/** スキルを探す深さの上限（`skills/` 直下を 0 とする） */
+const MAX_SKILL_DEPTH = 3
+
+function addEntry(table: Record<string, Entry>, name: string, entry: Entry) {
+  if (!table[name]) table[name] = entry
+}
+
+/**
+ * `<dir>/**\/<name>/SKILL.md` を `<prefix><name>` として登録する。
+ * ネストしたスキル（`category/name/SKILL.md`）は `<prefix>category:name` でも引けるようにする。
+ * 浅いものを先に登録する（同名なら浅い方が勝つ）。exclude は `dir` 直下で入らない名前
+ */
 async function addSkills(
   $: EngineInterface,
   table: Record<string, Entry>,
   dir: string,
   prefix: string,
   origin: string,
+  exclude: readonly string[] = [],
 ) {
-  const entries = await listDir($, dir)
-  const found = await Promise.all(
-    entries
-      .filter(entry => entry.kind !== 'file' && !entry.name.startsWith('.'))
-      .map(async entry => {
-        const path = `${dir}/${entry.name}/SKILL.md`
-        try {
-          return (await $.fs.exists(path)) ? { name: entry.name, path } : undefined
-        } catch {
-          return undefined
+  let level: { dir: string; parents: string[] }[] = [{ dir, parents: [] }]
+  for (let depth = 0; depth <= MAX_SKILL_DEPTH && level.length > 0; depth++) {
+    const nextLevel: { dir: string; parents: string[] }[] = []
+    for (const { dir: current, parents } of level) {
+      const entries = (await listDir($, current)).filter(
+        entry =>
+          entry.kind !== 'file' &&
+          !entry.name.startsWith('.') &&
+          !SKIP_DIRS.has(entry.name) &&
+          !(depth === 0 && exclude.includes(entry.name)),
+      )
+      const found = await Promise.all(
+        entries.map(async entry => {
+          const path = `${current}/${entry.name}`
+          try {
+            if (await $.fs.exists(`${path}/SKILL.md`)) return { entry, path, isSkill: true }
+          } catch {
+            // 読めないものはスキルではないとみなす
+          }
+
+          return { entry, path, isSkill: false }
+        }),
+      )
+      for (const { entry, path, isSkill } of found) {
+        if (isSkill) {
+          const skill: Entry = { path: `${path}/SKILL.md`, origin }
+          addEntry(table, `${prefix}${entry.name}`, skill)
+          if (parents.length > 0) addEntry(table, `${prefix}${[...parents, entry.name].join(':')}`, skill)
+        } else if (await isDir($, path, entry.kind)) {
+          nextLevel.push({ dir: path, parents: [...parents, entry.name] })
         }
-      }),
-  )
-  for (const hit of found) {
-    if (hit && !table[`${prefix}${hit.name}`]) {
-      table[`${prefix}${hit.name}`] = { path: hit.path, origin }
+      }
     }
+    level = nextLevel
   }
 }
 
@@ -162,16 +199,18 @@ async function addPlugins(
   )
 }
 
-async function buildIndex($: EngineInterface): Promise<SkillIndex> {
+async function buildIndex($: EngineInterface, cwd: string): Promise<SkillIndex> {
   const home = (await $.env.get('HOME')) ?? ''
   const configDir = (await $.env.get('CLAUDE_CONFIG_DIR')) ?? `${home}/.claude`
-  const cwd = await $.session.cwd()
   const built: SkillIndex = { exact: {}, bare: {} }
 
-  // 先に登録したものが優先（プロジェクト → ユーザー → プラグイン）
-  await addSkills($, built.exact, `${cwd}/.claude/skills`, '', 'project')
-  await addCommands($, built.exact, `${cwd}/.claude/commands`, '', 'project', 0)
-  await addSkills($, built.exact, `${configDir}/skills`, '', 'user')
+  // 先に登録したものが優先（プロジェクト（近い順）→ ユーザー → プラグイン）
+  for (const dir of projectDirs(cwd, home)) {
+    await addSkills($, built.exact, `${dir}/.claude/skills`, '', 'project')
+    await addCommands($, built.exact, `${dir}/.claude/commands`, '', 'project', 0)
+  }
+  // 同期スキルは下で別に引くので、ユーザーのスキルとしては数えない
+  await addSkills($, built.exact, `${configDir}/skills`, '', 'user', ['synced'])
   await addCommands($, built.exact, `${configDir}/commands`, '', 'user', 0)
   await addPlugins($, built.exact, configDir, cwd)
 
@@ -186,9 +225,10 @@ async function buildIndex($: EngineInterface): Promise<SkillIndex> {
 }
 
 async function prepare($: EngineInterface) {
-  const stored = await $.store.get('paths')
+  const stored = await $.store.get(LEARNED_KEY)
   if (stored && typeof stored === 'object') learned = stored as Record<string, string>
-  index = await buildIndex($)
+  cwd = await $.session.cwd()
+  index = await buildIndex($, cwd)
 }
 
 async function ensureReady($: EngineInterface) {
@@ -201,11 +241,16 @@ async function ensureReady($: EngineInterface) {
 // ---------------------------------------------------------------------------
 // スキルの読み込み
 
+function learnedKey(name: string): string {
+  return `${cwd}\n${name}`
+}
+
+/** 今のプロジェクトの索引を優先し、索引に無いものだけ実行して分かったパスで補う */
 function resolveEntry(name: string): Entry | undefined {
-  const known = learned[name]
   const exact = index.exact[name]
-  if (known) return { path: known, origin: exact?.origin ?? '' }
   if (exact) return exact
+  const known = learned[learnedKey(name)]
+  if (known) return { path: known, origin: '' }
 
   return index.bare[shortName(name)]
 }
@@ -312,8 +357,9 @@ async function showQuery($: EngineInterface, query: string, fromInput: boolean) 
   const first = hits[0]
   if (!first) {
     if (fromInput) previewing = true
+    // 入力中に一致しないときは、まだ何も出していない表示と実行中・直前に実行の表示を残す
     await update($, view, (current): PreviewView =>
-      current.mode === 'empty' ? current : { mode: 'typing', query, candidates: [] },
+      fromInput && current.mode !== 'typing' ? current : { mode: 'typing', query, candidates: [] },
     )
     return
   }
@@ -369,13 +415,13 @@ async function showRun($: EngineInterface, run: SkillRun) {
   const fallback: SkillDoc = { name: run.skill, origin, description, fields }
   let doc = fallback
   if (run.path) {
-    if (learned[run.skill] !== run.path) {
+    await ensureReady($)
+    const key = learnedKey(run.skill)
+    if (learned[key] !== run.path) {
       learned = Object.fromEntries(
-        [...Object.entries(learned).filter(([key]) => key !== run.skill), [run.skill, run.path]].slice(
-          -MAX_LEARNED,
-        ),
+        [...Object.entries(learned).filter(([k]) => k !== key), [key, run.path]].slice(-MAX_LEARNED),
       )
-      await $.store.set('paths', learned)
+      await $.store.set(LEARNED_KEY, learned)
     }
     doc = await loadFile($, run.skill, origin, run.path, fallback)
   }
@@ -525,7 +571,7 @@ export const register: Register = on => {
         {doc && doc.fields.length > 0 && (
           <Box flexDirection="column">
             {doc.fields.map(field => (
-              <Text>
+              <Text key={`field:${field.key}`}>
                 <Text bold>{field.key}</Text>: {field.value}
               </Text>
             ))}

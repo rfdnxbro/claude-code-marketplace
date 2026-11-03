@@ -38,3 +38,6 @@ changelog-diff.txt
 # ログファイル
 *.log
 npm-debug.log*
+
+# mod の型定義（Claude Code が mod を読み込んだときに生成する）
+plugins/*/.claude-plugin/types/

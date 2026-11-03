@@ -5,7 +5,7 @@
 入力欄に `/スキル名` を打っている間や、スキルが実行されたときに、そのスキルの `SKILL.md`（frontmatter と本文）を右ペインに表示する mod です。
 
 - **入力中のプレビュー**: 入力欄が `/` で始まると、先頭のトークン（`/` の後ろから空白まで）でスキルを引きます。完全一致を優先し、なければ前方一致で探します。`plugin:skill` 形式のスキルはコロンの後ろの名前でも一致します。候補が複数あるときは上位 6 件をボタンで並べ、押すとそのスキルに切り替わります
-- **実行時の表示**: `/name`、Skill ツール、サブエージェントへのプリロードでスキルが実行されると、そのスキルを「▶ 実行中」として表示します。ターンが終わると「✓ 直前に実行」に変わります
+- **実行時の表示**: `/name`、Skill ツール、サブエージェントへのプリロードでスキルが実行されると、そのスキルを「▶ 実行中」として表示します。ターンが終わると「✓ 直前に実行」に変わります。実行中・直前に実行の表示中に `/` で別のスキル名を打つと、一致したときだけそちらのプレビューに切り替わり、一致しないときは元の表示を残します
 - **表示内容**: スキル名、出どころ（`user` / `project` / `plugin: <名前>` / `builtin` など）、ファイルパス、frontmatter の各フィールド（`description`、`allowed-tools`、`model` など）、本文（Markdown）
 - 入力欄を空にする（または `/` で始まらない文に書き換える）と、入力中のプレビューのペインを閉じます。送信した直後にスキルが実行された場合は閉じずに「▶ 実行中」に切り替え、実行中・直前に実行の表示は入力欄が空でも残します。入力中のプレビューを手で閉じたときは、入力欄を空にするまで開き直しません
 - ファイルが見つからないスキル（組み込みコマンドなど）は、コマンド一覧の説明文だけを表示します
@@ -19,6 +19,8 @@ mod は Claude Code のプロセス内で動く関数フックのプラグイン
 - 組み込みガードが読み込まれるセッション（managed settings がある端末、Team / Enterprise のログイン）では、ユーザーの mod の `skill.prompt` フックが動かないため、実行時の表示は出ません
 
 ## インストール
+
+> **Note**: このプラグインは `.claude-plugin/marketplace.json` への登録が済むまで、以下の手順ではインストールできません。それまでは「開発」の手順で読み込んでください。
 
 ```bash
 # マーケットプレイスを追加（初回のみ）
@@ -53,14 +55,14 @@ claude plugin install skill-preview@custom-marketplace
 
 | 出どころ | 場所 | 名前 |
 |---|---|---|
-| project | `<作業ディレクトリ>/.claude/skills/<name>/SKILL.md`、`<作業ディレクトリ>/.claude/commands/**/*.md` | `<name>`（サブディレクトリは `dir:name`） |
-| user | `~/.claude/skills/<name>/SKILL.md`、`~/.claude/commands/**/*.md` | 同上 |
-| plugin | `~/.claude/plugins/installed_plugins.json` の各プラグインの `installPath` 配下の `skills/*/SKILL.md` と `commands/*.md` | `<plugin>:<name>` |
+| project | 作業ディレクトリと、その親をたどった各ディレクトリ（ホームを除く）の `.claude/skills/**/SKILL.md`、`.claude/commands/**/*.md`。作業ディレクトリに近いものが優先 | スキルは `<name>`（ネストしたものは `category:name` でも引く）、コマンドは `<name>`（サブディレクトリは `dir:name`） |
+| user | `~/.claude/skills/**/SKILL.md`（`synced` を除く）、`~/.claude/commands/**/*.md` | 同上 |
+| plugin | `~/.claude/plugins/installed_plugins.json` の各プラグインの `installPath` 配下の `skills/**/SKILL.md` と `commands/**/*.md` | `<plugin>:<name>` |
 | synced | `~/.claude/skills/synced/*/<name>/SKILL.md`（アカウントから同期されたスキル） | コロンの後ろの名前で引く |
 
-`CLAUDE_CONFIG_DIR` が設定されていれば `~/.claude` の代わりにそこを見ます。
+`CLAUDE_CONFIG_DIR` が設定されていれば `~/.claude` の代わりにそこを見ます。スキルは `skills/` の下を 3 階層まで探し、`node_modules` には入りません。
 
-この表に無いスキル（`--plugin-dir` で読み込んだプラグインのものなど）も、一度実行されれば `skill.prompt` で分かったパスを覚え（`$.store` に保存）、次回以降の入力中プレビューに使います。
+この表に無いスキル（`--plugin-dir` で読み込んだプラグインのものなど）も、一度実行されれば `skill.prompt` で分かったパスを作業ディレクトリごとに覚え（`$.store` に保存）、次回以降の入力中プレビューに使います。表で見つかるスキルは、覚えたパスより表を優先します。
 
 ## 制限
 
@@ -76,7 +78,12 @@ claude plugin validate plugins/skill-preview
 
 # テスト（hooks/register.test.tsx）
 claude plugin test plugins/skill-preview
+
+# 開発中のセッションに読み込む
+claude --plugin-dir plugins/skill-preview
 ```
+
+`.claude-plugin/types/`（`claude-code` の型定義と、この mod の `tsconfig.json` が継承する設定）は、Claude Code がこの mod を読み込んだときに生成します。生成するコマンドは無く、`git` の管理対象外です（`.gitignore` で除外）。一度読み込んだあとは `tsc -p plugins/skill-preview` で型チェックできます。
 
 ## ライセンス
 

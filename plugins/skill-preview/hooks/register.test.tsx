@@ -8,7 +8,7 @@ import type {
   PromptEditResult,
 } from 'claude-code'
 
-import { matchCommands, parseFrontmatter, slashQuery } from './lib.ts'
+import { matchCommands, parseFrontmatter, projectDirs, slashQuery } from './lib.ts'
 
 const PANE = {
   plugin: 'skill-preview',
@@ -33,6 +33,9 @@ const COMMANDS = [
   { name: 'grill-me', description: 'grill me', source: 'user' },
   { name: 'eli5:eli5', description: '5歳児向けに説明', source: 'plugin', plugin: 'eli5' },
   { name: 'deep-research', description: '深い調査', source: 'builtin' },
+  { name: 'lint-fix', description: 'lint を直す', source: 'user' },
+  { name: 'parent-skill', description: '親のスキル', source: 'user' },
+  { name: 'pdf', description: 'PDF を扱う', source: 'user' },
 ] as const
 
 const FILES: Record<string, string> = {
@@ -58,6 +61,12 @@ const FILES: Record<string, string> = {
     },
   }),
   '/cache/eli5/1.0.0/skills/eli5/SKILL.md': '---\nname: eli5\ndescription: 5歳児向けに説明\n---\nやさしく説明する。',
+  // ネストしたスキル
+  [`${HOME}/.claude/skills/tools/lint-fix/SKILL.md`]: '---\nname: lint-fix\n---\nネストした本文。',
+  // 作業ディレクトリの親のスキル
+  '/work/.claude/skills/parent-skill/SKILL.md': '---\nname: parent-skill\n---\n親の本文。',
+  // アカウントから同期されたスキル
+  [`${HOME}/.claude/skills/synced/acct/pdf/SKILL.md`]: '---\nname: pdf\n---\n同期した本文。',
 }
 
 /** FILES から作るディレクトリの一覧 */
@@ -195,6 +204,11 @@ test('完全一致を優先し、コロンの後ろでも一致させる', async
   expect(names('eli')).toEqual(['eli5:eli5'])
   expect(names('eli5')).toEqual(['eli5:eli5'])
   expect(names('zzz')).toEqual([])
+})
+
+test('作業ディレクトリから根までをたどり、ホームは除く', async () => {
+  expect(projectDirs('/work/app/src', HOME)).toEqual(['/work/app/src', '/work/app', '/work', '/'])
+  expect(projectDirs(`${HOME}/proj`, HOME)).toEqual([`${HOME}/proj`, '/home', '/'])
 })
 
 test('frontmatter のリストとブロックスカラーを読む', async () => {
@@ -355,6 +369,73 @@ test('スキル以外のコマンドを送信したら閉じる', async ($, on) 
   await clearBox($)
   await clock.advance(500)
   expect(panes.has('skill-preview')).toBe(false)
+})
+
+test('ネストしたスキル・親ディレクトリのスキル・同期スキルの本文を出す', async ($, on) => {
+  const clock = mock.clock(on)
+  engine(on)
+  await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
+
+  const cases = [
+    ['/lint-fix', /ネストした本文/, /user/],
+    ['/parent-skill', /親の本文/, /project/],
+    ['/pdf', /同期した本文/, /synced/],
+  ] as const
+  for (const [text, body, origin] of cases) {
+    await eraseAll($, '/x')
+    await typeText($, text)
+    await clock.advance(100)
+    const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+    expect(await ui.find({ type: 'Markdown', text: body })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: origin })).toBeDefined()
+    await ui.unmount()
+  }
+})
+
+test('別の場所のパスで実行したことがあっても、今のプロジェクトの索引を優先する', async ($, on) => {
+  const clock = mock.clock(on)
+  engine(on)
+  await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
+  await $.skill.prompt({
+    skill: 'grilling',
+    text: '',
+    source: 'projectSettings',
+    path: '/elsewhere/grilling/SKILL.md',
+    frontmatter: { name: 'grilling' },
+  })
+  await $.turn.complete({ answer: '', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  await typeText($, '/grilling')
+  await clock.advance(100)
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  expect(await ui.find({ type: 'Markdown', text: /質問を1つずつ投げる/ })).toBeDefined()
+  await ui.unmount()
+})
+
+test('実行中に一致しない / を打っても実行中の表示を残す', async ($, on) => {
+  const clock = mock.clock(on)
+  engine(on)
+  await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
+  await $.skill.prompt({ ...ELI5_RUN })
+  await typeText($, '/zzz')
+  await clock.advance(500)
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  expect(await ui.find({ type: 'Text', text: /実行中/ })).toBeDefined()
+  expect(await ui.find({ type: 'Markdown', text: /やさしく説明する/ })).toBeDefined()
+  await ui.unmount()
+})
+
+test('/skill-preview に一致しない名前を渡すと一致なしを出す', async ($, on) => {
+  const clock = mock.clock(on)
+  engine(on)
+  await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
+  await $.command.run({ command: 'skill-preview', args: 'zzz', origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 120 } })
+  await clock.settle()
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  expect(await ui.find({ type: 'Text', text: /一致するスキルはありません/ })).toBeDefined()
+  await ui.unmount()
 })
 
 test('何も一致していないときは案内を出す', async ($, on) => {

@@ -60,6 +60,20 @@ export function matchCommands<T extends CommandLike>(
     .map(hit => hit.command)
 }
 
+/** 作業ディレクトリから根までの各ディレクトリ（近い順。ホームはユーザー設定として別に見るので除く） */
+export function projectDirs(start: string, home: string): string[] {
+  const dirs: string[] = []
+  let dir = start
+  for (let i = 0; i < 64; i++) {
+    if (dir !== home) dirs.push(dir)
+    const parent = dir.replace(/\/[^/]*$/, '') || '/'
+    if (parent === dir) break
+    dir = parent
+  }
+
+  return dirs
+}
+
 /** $.command.list() の source から出どころの表示を作る */
 export function originOfCommand(command: CommandLike, indexed?: string): string {
   if (command.source === 'plugin') {
