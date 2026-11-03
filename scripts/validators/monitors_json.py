@@ -83,7 +83,10 @@ def validate_monitors_entries(
         # 未知のフィールドはエラー（Claude Code はエントリ内の未知キーでプラグインを読み込まない）
         for key in entry:
             if key not in KNOWN_FIELDS:
-                result.add_error(f"{prefix}: 未知のフィールド: {key}")
+                result.add_error(
+                    f"{prefix}: 未知のフィールド: {key}"
+                    "（Claude Code はこのプラグインを読み込みません）"
+                )
 
 
 def validate_monitors_json(file_path: Path, content: str) -> ValidationResult:

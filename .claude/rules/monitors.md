@@ -76,7 +76,7 @@ paths: plugins/*/monitors/monitors.json, monitors/monitors.json
 
 `command` はシェル経由で実行される文字列であり（フックの `args` 配列指定のようなexec form相当の仕組みは存在しない）、シェルインジェクション対策のため `command` 文字列内での `${user_config.*}` の展開は拒否されます。`userConfig` で宣言した値をモニタースクリプトから利用する場合は、コマンド文字列に埋め込まず、スクリプト内部で読み込む方式（例: プラグインが `${CLAUDE_PLUGIN_DATA}` 配下に生成した設定ファイルを読む）に変更してください。
 
-フックと異なり、モニターのプロセスには `userConfig` の値を渡す環境変数 `CLAUDE_PLUGIN_OPTION_<KEY>` が注入されません。`${CLAUDE_PLUGIN_ROOT}` などのパス変数は `command` 文字列内で展開されますが、環境変数としてはエクスポートされません。モニタースクリプトは設定値を自力で取得する必要があります。
+フックと異なり、モニターのプロセスには `userConfig` の値を渡す環境変数 `CLAUDE_PLUGIN_OPTION_<KEY>` が注入されません。`${CLAUDE_PLUGIN_ROOT}` などのパス変数は `command` 文字列内で展開されますが、環境変数としてはエクスポートされません。モニタースクリプトは設定値を自力で取得する必要があります。（公式 plugins-reference の「Fields that run through a shell」「Where each variable resolves」に記載）
 
 ## ライフサイクル
 
@@ -143,4 +143,6 @@ paths: plugins/*/monitors/monitors.json, monitors/monitors.json
 - [Plugins reference: File locations reference](https://code.claude.com/docs/en/plugins-reference#file-locations-reference)
 - [Plugins reference: Environment variables](https://code.claude.com/docs/en/plugins-reference#environment-variables)
 - [Plugins reference: Path behavior rules](https://code.claude.com/docs/en/plugins-reference#path-behavior-rules)
+- [Plugins reference: Strict objects](https://code.claude.com/docs/en/plugins-reference#strict-objects)（未知キーで読み込まれない条件）
+- [Plugins reference: Fields that run through a shell](https://code.claude.com/docs/en/plugins-reference#fields-that-run-through-a-shell)（モニターに `CLAUDE_PLUGIN_OPTION_<KEY>` が渡らないこと）
 - [Tools reference: Monitor tool](https://code.claude.com/docs/en/tools-reference#monitor-tool)
