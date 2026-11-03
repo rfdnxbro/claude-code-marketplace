@@ -257,6 +257,10 @@ def find_reserved_plugin_name(name: str) -> str | None:
     `claude-` などで始まる名前、`claude` などそのものの名前、
     `official` を `claude` / `anthropic` と隣り合わせにした名前は使えない。
 
+    `claude plugin validate` のエラーメッセージから組み立てた近似的な判定で、
+    `official` の隣接はハイフン区切りの単語単位でのみ見る（`officialclaude` の
+    ような連結は検出しない）。最終的な判定は `claude plugin validate` に任せる。
+
     Args:
         name: 検証するプラグイン名
 
