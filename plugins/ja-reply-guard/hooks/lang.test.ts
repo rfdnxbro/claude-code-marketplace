@@ -47,6 +47,12 @@ describe('stripNonProse', () => {
     expect(isEnglishHeavy(`説明です。 \`\`${id} \`${id} ${id}\`\` おわり`)).toBe(false)
   })
 
+  test('パスやファイル名に似た英語（and/or、e.g、end.Next）も除く（判定が甘くなる方向）', () => {
+    expect(proseStats('and/or と I/O と e.g と end.Next').latin).toBe(0)
+    // ピリオドの後に空白がある普通の英文は残る（use the cache Then read it の 21 文字）
+    expect(proseStats('use the cache. Then read it').latin).toBe(21)
+  })
+
   test('引用の行を除き、リンクは表示テキストを残す', () => {
     expect(stripNonProse('> Error: something failed badly\n[説明](https://example.com)')).toBe('説明')
   })
