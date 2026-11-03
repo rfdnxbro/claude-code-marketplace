@@ -1,4 +1,4 @@
-// skill-preview: 入力中の /スキル名 や実行されたスキルの SKILL.md を右ペインに表示する
+// skill-preview: 入力中の /スキル名 や実行されたスキルの SKILL.md を右ペインに表示し、組み込み・Anthropic 提供の説明を日本語訳で出す
 
 import { atom, read, update } from 'claude-code'
 import type { CommandInfo, EngineInterface, Register, Timer } from 'claude-code'
@@ -7,12 +7,19 @@ import type { PreviewView, SkillDoc } from '../types'
 import {
   docFromFile,
   fieldsOf,
+  findUntranslated,
+  formatUntranslated,
+  localizeDescription,
   matchCommands,
   originOfCommand,
   originOfSkillSource,
+  ownerOfCommand,
+  ownerOfProvider,
+  ownerOfSkillRun,
   projectDirs,
   shortName,
   slashQuery,
+  translateDescription,
 } from './lib.ts'
 
 const PANE = 'skill-preview'
@@ -23,6 +30,8 @@ const MAX_CANDIDATES = 6
 const DEBOUNCE_MS = 60
 /** 入力欄が空になってから入力中のプレビューを閉じるまでの待ち（ミリ秒）。送信直後のスキル実行を待つ */
 const CLOSE_DELAY_MS = 300
+/** 未訳の一覧を出すコマンド */
+const UNTRANSLATED_COMMAND = 'skill-preview-untranslated'
 /** $.store に覚えるパスの最大件数 */
 const MAX_LEARNED = 500
 /** 実行して分かったパスを置く $.store のキー（作業ディレクトリごとに覚える） */
@@ -34,6 +43,8 @@ const EMPTY: PreviewView = { mode: 'empty', candidates: [] }
 const view = atom({ plugin: 'skill-preview', key: 'view' } as const, EMPTY, {
   shape: 'view-1',
 })
+/** 訳の対象なのに英語のまま表示しているコマンドの数 */
+const untranslated = atom({ plugin: 'skill-preview', key: 'untranslated' } as const, 0)
 
 /** 名前 → SKILL.md の索引 */
 type Entry = { path: string; origin: string }
@@ -280,18 +291,24 @@ async function loadFile(
   }
 }
 
+/** 説明を日本語訳に置き換える（訳が無い・原文が変わったときはそのまま） */
+function localizeDoc(doc: SkillDoc, owner: string | undefined): SkillDoc {
+  const description = localizeDescription(doc.name, doc.description, owner)
+
+  return description === doc.description ? doc : { ...doc, description }
+}
+
 async function loadCommand($: EngineInterface, command: CommandInfo): Promise<SkillDoc> {
   const entry = resolveEntry(command.name)
   const origin = originOfCommand(command, entry?.origin || undefined)
-  const fallback: SkillDoc = {
-    name: command.name,
-    origin,
-    description: command.description || undefined,
-    fields: [],
-  }
+  const owner = ownerOfCommand(command)
+  const fallback = localizeDoc(
+    { name: command.name, origin, description: command.description || undefined, fields: [] },
+    owner,
+  )
   if (!entry) return fallback
 
-  return loadFile($, command.name, origin, entry.path, fallback)
+  return localizeDoc(await loadFile($, command.name, origin, entry.path, fallback), owner)
 }
 
 // ---------------------------------------------------------------------------
@@ -346,11 +363,27 @@ function onBoxText($: EngineInterface, text: string) {
   })
 }
 
+/** コマンド一覧から未訳の数を数え直す（変わったときだけ書く） */
+async function countUntranslated($: EngineInterface, list: readonly CommandInfo[]) {
+  const count = findUntranslated(list).length
+  if ((await read($, untranslated)) !== count) await update($, untranslated, (): number => count)
+}
+
+/** 起動時に未訳を数える（失敗しても他の表示は止めない） */
+async function refreshUntranslated($: EngineInterface) {
+  try {
+    await countUntranslated($, await $.command.list())
+  } catch {
+    // 数えられなくても、入力時にまた数える
+  }
+}
+
 /** トークンから候補を引き、先頭をプレビューする（fromInput: 入力欄から引いたか） */
 async function showQuery($: EngineInterface, query: string, fromInput: boolean) {
   const mine = ++seq
   await ensureReady($)
   commands = await $.command.list()
+  await countUntranslated($, commands)
   const hits = matchCommands(commands, query, MAX_CANDIDATES)
   if (mine !== seq) return
 
@@ -411,8 +444,9 @@ async function showRun($: EngineInterface, run: SkillRun) {
   dismissed = false
 
   const origin = originOfSkillSource(run.source, run.pluginName)
+  const owner = ownerOfSkillRun(run.skill, run.source, run.pluginName)
   const { description, fields } = fieldsOf(Object.entries(run.frontmatter ?? {}))
-  const fallback: SkillDoc = { name: run.skill, origin, description, fields }
+  const fallback = localizeDoc({ name: run.skill, origin, description, fields }, owner)
   let doc = fallback
   if (run.path) {
     await ensureReady($)
@@ -423,7 +457,7 @@ async function showRun($: EngineInterface, run: SkillRun) {
       )
       await $.store.set(LEARNED_KEY, learned)
     }
-    doc = await loadFile($, run.skill, origin, run.path, fallback)
+    doc = localizeDoc(await loadFile($, run.skill, origin, run.path, fallback), owner)
   }
   if (mine !== seq) return
   await update($, view, (): PreviewView => ({
@@ -444,8 +478,15 @@ export const register: Register = on => {
       description: 'スキル説明ペインを開く（スキル名を渡すとそのスキルを表示）',
       argumentHint: '[スキル名]',
     })
+    await $.command.register({
+      name: UNTRANSLATED_COMMAND,
+      description: '組み込み・Anthropic 提供の説明のうち、日本語訳が無く英語のままのものを一覧する',
+    })
+    // 読み込み前にキャッシュされた英語の説明を、日本語訳で引き直してもらう
+    $.ui.invalidate('command.describe')
     // 索引づくりは待たずに始める（最初の検索で待つ）
     void ensureReady($)
+    void refreshUntranslated($)
 
     return next(e)
   })
@@ -460,6 +501,26 @@ export const register: Register = on => {
     if (name !== '') await showQuery($, name, false)
 
     return { text: 'スキル説明ペインを開きました。' }
+  })
+
+  // 未訳の一覧を、Claude に貼って訳を頼める形で出す（クリップボードにもコピーする）
+  on('command.run', { command: UNTRANSLATED_COMMAND }, async $ => {
+    const list = await $.command.list()
+    await countUntranslated($, list)
+    const items = findUntranslated(list)
+    const text = formatUntranslated(items)
+    if (items.length === 0) return { text }
+    const copied = await $.ui.copy({ text })
+
+    return { text: copied.isCopied ? `${text}\n\n（クリップボードにもコピーしました）` : text }
+  })
+
+  // 候補リストと /help の説明を日本語訳に置き換える（原文が訳の元と違えば英語のまま）
+  on('command.describe', async ($, e, next) => {
+    const result = await next(e)
+    const ja = translateDescription(e.command, result.description, ownerOfProvider(e.provider))
+
+    return ja === undefined || ja === result.description ? result : { ...result, description: ja }
   })
 
   // キー入力ごと（上限 50 ms）。ここではファイルを読まず、タイマーで後から引く
@@ -516,14 +577,23 @@ export const register: Register = on => {
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     const { Box, Text, Button, Markdown } = $.ui.resolve(e)
     const current = await read($, view)
+    const missing = await read($, untranslated)
     const doc = current.doc
+    // 未訳があるときだけ控えめに知らせる
+    const notice =
+      missing > 0 ? (
+        <Text dimColor>
+          未訳 {missing} 件（/{UNTRANSLATED_COMMAND} で一覧）
+        </Text>
+      ) : null
 
     if (current.mode === 'empty') {
       return (
-        <Box flexDirection="column">
+        <Box flexDirection="column" gap={1}>
           <Text dimColor>
             入力欄に「/」に続けてスキル名を入力すると、ここにそのスキルの SKILL.md を表示します。
           </Text>
+          {notice}
         </Box>
       )
     }
@@ -579,6 +649,7 @@ export const register: Register = on => {
         )}
 
         {doc?.path && <Text dimColor>{doc.path}</Text>}
+        {notice}
         {doc?.error && <Text color="error">{doc.error}</Text>}
 
         {doc && (doc.body ? (

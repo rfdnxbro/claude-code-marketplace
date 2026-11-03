@@ -9,6 +9,7 @@
 - **表示内容**: スキル名、出どころ（`user` / `project` / `plugin: <名前>` / `builtin` など）、ファイルパス、frontmatter の各フィールド（`description`、`allowed-tools`、`model` など）、本文（Markdown）
 - 入力欄を空にする（または `/` で始まらない文に書き換える）と、入力中のプレビューのペインを閉じます。送信した直後にスキルが実行された場合は閉じずに「▶ 実行中」に切り替え、実行中・直前に実行の表示は入力欄が空でも残します。入力中のプレビューを手で閉じたときは、入力欄を空にするまで開き直しません
 - ファイルが見つからないスキル（組み込みコマンドなど）は、コマンド一覧の説明文だけを表示します
+- **説明の日本語訳**: 組み込み・Anthropic 提供のスキルとコマンドの英語の説明を、同梱の日本語訳に置き換えて表示します（[説明の日本語訳](#説明の日本語訳)）
 
 mod は Claude Code のプロセス内で動く関数フックのプラグインです。仕組みは公式ドキュメント [Mods overview](https://code.claude.com/docs/en/plugins/mods/overview) を参照してください。
 
@@ -47,6 +48,12 @@ claude plugin install skill-preview@custom-marketplace
 /skill-preview grilling
 ```
 
+組み込み・Anthropic 提供の説明のうち、日本語訳が無く英語のままのものは次のコマンドで一覧できます（[未訳の確認](#未訳の確認)）。
+
+```text
+/skill-preview-untranslated
+```
+
 ターミナルでは、mod が自分で開くペインは幅 144 列以上のときだけ表示されます。狭いときは `/skill-preview` で開いてください。
 
 ## スキルの探し方
@@ -64,11 +71,64 @@ claude plugin install skill-preview@custom-marketplace
 
 この表に無いスキル（`--plugin-dir` で読み込んだプラグインのものなど）も、一度実行されれば `skill.prompt` で分かったパスを作業ディレクトリごとに覚え（`$.store` に保存）、次回以降の入力中プレビューに使います。表で見つかるスキルは、覚えたパスより表を優先します。
 
+## 説明の日本語訳
+
+組み込み・Anthropic 提供のスキルとコマンドの説明（description）を、同梱の日本語訳（`hooks/ja-descriptions.ts`）で表示します。訳は開発時に用意したもので、実行時に翻訳はしません。SKILL.md の本文は訳しません。
+
+| 表示先 | 置き換えるもの |
+|---|---|
+| 入力欄の候補リスト・`/help` | `command.describe` で返す説明 |
+| 右ペイン | コマンド一覧の説明、SKILL.md の frontmatter の `description`、実行時に届く frontmatter の `description` |
+
+### 訳す対象
+
+- **組み込み**: Claude Code 本体のスラッシュコマンドとスキル（`$.command.list()` の `source` が `builtin`、`command.describe` の提供元が `engine` のもの）
+- **Anthropic 提供のプラグイン**: プラグインの `plugin.json` の `author` が Anthropic のもの。現在は次の 4 つです
+
+| プラグイン | 配布元 |
+|---|---|
+| `anthropic-skills` | claude.ai のアカウントから同期されるスキル |
+| `code-review`、`commit-commands` | 公式マーケットプレイス `claude-plugins-official` |
+| `cowork-plugin-management` | Claude Desktop が配る `knowledge-work-plugins` |
+
+次のものは訳しません。
+
+- ユーザーやプロジェクトが書いたスキル・コマンド（組み込みと同じ名前でも訳しません）
+- コミュニティや他社のプラグイン（`eli5`、公式マーケットプレイスや Desktop 経由でも作者が Anthropic でない `1password` など）
+- MCP サーバーのコマンド
+- もともと日本語の説明（`anthropic-skills` にユーザーがアップロードしたスキルなど）
+
+### 原文が変わったとき
+
+各訳には訳の元にした英語の原文を持たせています。実行時の説明がその原文と一致しないとき（Claude Code やプラグインの更新で説明が変わったとき）は、古い訳を出さずに英語の説明をそのまま表示します。改行や連続する空白の違いは無視して比べます。モデル名のように実行時に変わる部分は、原文と訳の `{}` で表し、原文の該当部分を訳にそのまま入れます（例: `Set the AI model for Claude Code (currently {})`）。
+
+### 未訳の確認
+
+訳の対象なのに訳が使えないもの（同梱の訳が無い、または英語の原文が同梱時と一致しないため英語のまま表示しているもの）を「未訳」として数えます。未訳があるときは、右ペインに「未訳 N 件」と控えめに表示します（0 件なら出しません）。説明が空のものと、もともと日本語のものは数えません。
+
+```text
+/skill-preview-untranslated
+```
+
+未訳の一覧（`name` / `source` / `plugin` / 現在の英語の `description`）と、訳文ファイルの更新の頼み方を出力し、クリップボードにもコピーします。
+
+### 訳文の更新手順
+
+Claude Code やプラグインの更新で説明が変わったり、コマンドが増えたりして未訳が出たら、次の手順で訳を足して配ります。実行時に自動で翻訳はしません。
+
+1. `/skill-preview-untranslated` を実行し、出力（クリップボードにも入っています）をこのリポジトリで作業する Claude に渡して、`hooks/ja-descriptions.ts` の `JA_DESCRIPTIONS` の更新を頼みます。`en` には出力の `description` をそのまま写します（手で打ち直すと一致しなくなります）。訳のトーンは簡潔な説明文（「〜する。」調）で、固有名詞・コマンド名・ツール名・ファイル名は原文のままにします
+2. `claude plugin test plugins/skill-preview` を実行します（原文と訳の `{}` の数がそろっているかもテストします）
+3. `.claude-plugin/plugin.json` の `version` を上げて配ります
+
+Anthropic 提供のプラグインが増えたときは、`hooks/lib.ts` の `ANTHROPIC_PLUGINS` に名前を足すと、そのプラグインも未訳として数えるようになります。
+
 ## 制限
 
 - typeahead（スラッシュコマンドの候補一覧）の上下キーでの選択移動を検知するイベントが無いため、プレビューは入力した文字列だけで決まります
 - プラグインの `plugin.json` でスキルの置き場所を変えている場合や、frontmatter の `name` でスキル名を変えている場合は、一度実行するまでファイルを見つけられません
 - frontmatter は表示用に簡易に読んでいるため、入れ子の深い YAML は 1 行にまとめて表示します
+- 説明の日本語訳は、訳を用意した時点の Claude Code とプラグインの説明に合わせています。新しく増えたコマンドや説明が変わったコマンドは、訳を更新するまで英語のまま表示します（[未訳の確認](#未訳の確認)）
+- `command.describe` で書き換えた説明は、候補リストだけでなく、Claude がスキルを選ぶときに読むスキル一覧の説明にも使われます。この mod を入れると、組み込み・Anthropic 提供のスキルの説明は Claude にも日本語訳で渡ります
 
 ## 開発
 
@@ -76,7 +136,7 @@ claude plugin install skill-preview@custom-marketplace
 # 静的解析（Mod を動かす環境と同じバージョンの claude で実行する）
 claude plugin validate plugins/skill-preview
 
-# テスト（hooks/register.test.tsx）
+# テスト（hooks/register.test.tsx。説明の日本語訳のテストも含む）
 claude plugin test plugins/skill-preview
 
 # 開発中のセッションに読み込む

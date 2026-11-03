@@ -43,6 +43,8 @@ declare module 'claude-code' {
   interface PluginState {
     'skill-preview': {
       view: Shaped<PreviewView>
+      /** 訳の対象なのに英語のまま表示しているコマンドの数 */
+      untranslated: number
     }
   }
 }
