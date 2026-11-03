@@ -31,7 +31,7 @@
       "name": "usage-gauge",
       "source": "./plugins/usage-gauge",
       "description": "入力欄の上にコンテキスト・5時間・週間・週間 Fable・クレジットの使用量ゲージを並べる mod",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "author": {
         "name": "rfdnxbro"
       },
@@ -49,8 +49,8 @@
     {
       "name": "skill-preview",
       "source": "./plugins/skill-preview",
-      "description": "入力中の /スキル名 や実行されたスキルの SKILL.md を右ペインに表示する mod",
-      "version": "0.1.0",
+      "description": "入力中の /スキル名 や実行されたスキルの SKILL.md を右ペインに表示し、組み込み・Anthropic 提供のスキルとコマンドの説明を日本語で出す mod",
+      "version": "0.2.0",
       "author": {
         "name": "rfdnxbro"
       },

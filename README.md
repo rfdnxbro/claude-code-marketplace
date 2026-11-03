@@ -29,7 +29,7 @@ Claude Codeの機能を拡張するプラグイン（スラッシュコマンド
 |-----------|------|------|
 | [workflow-kit](plugins/workflow-kit/) | Claude Codeの個人的な作業スタイル（文体ガイド等）をスキルとして集約 | 🔧 開発中 |
 | [usage-gauge](plugins/usage-gauge/) | 入力欄の上にコンテキスト・5時間・週間・週間 Fable・クレジットの使用量ゲージを並べる mod | 🔧 開発中 |
-| [skill-preview](plugins/skill-preview/) | 入力中の `/スキル名` や実行されたスキルの SKILL.md を右ペインに表示する mod | 🔧 開発中 |
+| [skill-preview](plugins/skill-preview/) | 入力中の `/スキル名` や実行されたスキルの SKILL.md を右ペインに表示し、組み込み・Anthropic 提供のスキルとコマンドの説明を日本語で出す mod | 🔧 開発中 |
 | [ja-reply-guard](plugins/ja-reply-guard/) | Claude の返答が英語だらけになったとき、日本語で書くよう促す mod | 🔧 開発中 |
 
 ## ディレクトリ構成
