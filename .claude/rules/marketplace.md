@@ -746,12 +746,24 @@ TODO: 要確認 — 両方の綴りを同一ファイルに指定した場合に
 }
 ```
 
-| フィールド | 型 | 説明 |
-|-----------|---|------|
-| `hostPattern` | string | ホスト名のパターン（gitソースに使用） |
-| `pathPattern` | string | ファイル/ディレクトリパスの正規表現パターン |
+許可リストの各エントリは、`source` の値で種類を指定します。主な種類は以下の4つです:
 
-> 公式ドキュメント [plugin-marketplaces](https://code.claude.com/docs/en/plugin-marketplaces) の「Common configurations」節には、`hostPattern` / `pathPattern` のエントリがそれぞれ `{"source": "hostPattern", "hostPattern": "^github\\.example\\.com$"}` / `{"source": "pathPattern", "pathPattern": "^/opt/approved/"}` の形で示されています。`source` を省略した形式や、`hostPattern` と `pathPattern` を1エントリに併記した形式は公式ドキュメントには見当たりません。
+| `source` | 併記するフィールド | 照合方法 |
+|----------|------------------|---------|
+| `github` | `repo`（必須）。任意で `ref` / `path` | `owner/repo` の単一リポジトリ指定、または `owner/*` のownerワイルドカード指定。単一リポジトリの場合、`repo`・`ref`・`path` はすべて一致するか、マーケットプレイスソースと許可リストエントリの両方で省略されている必要がある |
+| `url` | `url` | 完全一致 |
+| `hostPattern` | `hostPattern` | `github` / `git` / `url` ソースのホスト名を正規表現で照合 |
+| `pathPattern` | `pathPattern` | `file` / `directory` ソースのファイルシステムパスを正規表現で照合 |
+
+`hostPattern` と `pathPattern` はホスト名・パスのどこに一致してもマッチするため、範囲を限定したい場合は `^` と `$` でアンカーします。`github` ソースのホストは常に `github.com` として扱われます。
+
+このほか `git`（`url`、任意で `ref` / `path`）、`file`・`directory`（`path`）、`skills-dir` などの種類もあります。いずれもエントリ1つにつき `source` を1つだけ持つため、`hostPattern` と `pathPattern` で絞り込みたい場合はエントリを分けて書きます。
+
+**完全一致はURLを正規化しない:** 許可リストの `url`（および `git` の `url`）の照合は文字列の完全一致で、末尾スラッシュの有無、`.git` サフィックスの有無、`https://` と `ssh://` の違いはすべて別の値として扱われます。同じリポジトリでも、`github` エントリ（`your-org/your-marketplace`）は同じリポジトリを `git` URLでクローンするソースをカバーしません。複数のURL形式でクローンされうるマーケットプレイスには、リテラルURLより `hostPattern` エントリを使うほうが確実です。なお、ブロックリスト（`blockedMarketplaces`）側はGitのURLを正規化して照合します。
+
+空の許可リスト（`[]`）は、公式マーケットプレイスを含むすべてのマーケットプレイスソースを締め出します。
+
+> この節は公式ドキュメント [Manage plugins for your organization](https://code.claude.com/docs/en/plugins/org) の「Allowlist with strictKnownMarketplaces」「How entries match」節に基づきます。
 
 ## strictKnownMarketplaces / blockedMarketplacesのownerワイルドカード
 
@@ -788,7 +800,7 @@ TODO: 要確認 — 両方の綴りを同一ファイルに指定した場合に
 }
 ```
 
-TODO: 要確認 — ownerワイルドカードのマッチング挙動（大文字小文字を区別するか、ネストしたパスにマッチするかなど）は未調査。
+ownerワイルドカードの `*` はリポジトリ名全体を表す必要があります。`*/plugins` や `your-org/tools-*` のようなエントリは無効として無視されます。許可リストでのワイルドカード照合は大文字小文字を区別し、ブロックリストでは区別しません。
 
 ## blockedMarketplacesによるマーケットプレイスのブロック
 
