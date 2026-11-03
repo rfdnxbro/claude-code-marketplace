@@ -52,7 +52,28 @@ TODO: 要確認 — Claude Desktopの管理マーケットプレイス同期が�
 ```bash
 # プラグインディレクトリを検証
 claude plugin validate .
+
+# 検証結果を1つのJSONオブジェクトとして出力（CI・自動化向け）
+claude plugin validate . --json
+
+# 警告もエラーとして扱う（未知フィールドや不足メタデータで失敗させる）
+claude plugin validate . --strict
 ```
+
+| オプション | 説明 |
+|-----------|------|
+| `--json` | 検証レポートを stdout に1つのJSONオブジェクトとして出力する。終了コードは通常時と同じ |
+| `--strict` | ランタイムが許容する警告（未知フィールド、メタデータ不足など）もエラーとして扱う |
+
+`--json` の出力のトップレベルには `success`（終了コードと同じ判定）、`strict`、`target`、`manifest`（マニフェストの検証結果。無い場合は `null`）、`contents`（ファイルごとの `file` / `errors` / `warnings` / `notes`。問題のないファイルは含まれない）などのフィールドが入ります。
+
+| 終了コード | 意味 |
+|-----------|------|
+| `0` | 検証に成功 |
+| `1` | 検証に失敗 |
+| `2` | 検証中の予期しないエラー。`--json` 指定時も stdout には何も出力されず、エラーは stderr に出る |
+
+> 出典: 公式ドキュメント [Plugins CLI reference](https://code.claude.com/docs/en/plugins/cli-reference) の「plugin validate」節
 
 #### 警告のスキップ
 
