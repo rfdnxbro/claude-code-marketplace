@@ -16,6 +16,7 @@ import {
   gaugeSvg,
   gaugeText,
   hasUsage,
+  mergeRemote,
   parseRemote,
   SEVEN_DAY_MS,
 } from './format'
@@ -114,9 +115,11 @@ async function refreshRemote($: EngineInterface): Promise<void> {
   if (fresh) {
     backoff = 0
     nextAllowedAt = 0
-    await update($, remote, () => fresh)
+    // 応答に欠けた項目は前回の値を残す（API の変化で一部だけ取れなくなっても消さない）
+    const got = fresh
+    const merged = await update($, remote, prev => mergeRemote(prev, got))
     // 次回起動や取得失敗のときに使えるよう、最後に取れた値を残す
-    await $.store.set(LAST_GOOD_KEY, fresh)
+    await $.store.set(LAST_GOOD_KEY, merged)
   } else {
     nextAllowedAt = t + backoff
     const saved = (await $.store.get(LAST_GOOD_KEY)) as Remote | undefined

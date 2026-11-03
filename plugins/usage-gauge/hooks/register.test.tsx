@@ -9,6 +9,7 @@ import {
   formatRemaining,
   formatTokens,
   gaugeColor,
+  mergeRemote,
   parseRemote,
 } from './format'
 
@@ -210,6 +211,15 @@ test('200 でも使用量が読めない応答は失敗として扱い、前回�
   expect((await ui.find({ type: 'Text', text: /応答に使用量なし/ }))?.text).toBe('非公式API: 応答に使用量なし（前回の値を表示）')
   expect((await ui.find({ type: 'Text', text: '$0/$200' }))?.text).toBe('$0/$200')
   await ui.unmount()
+})
+
+test('応答に欠けた項目は前回の値を残す', async () => {
+  const prev = parseRemote(BODY)
+  const merged = mergeRemote(prev, { fiveHour: { percent: 50 } })
+  expect(merged.fiveHour).toEqual({ percent: 50 })
+  expect(merged.fable).toEqual(prev.fable)
+  expect(merged.credits).toEqual(prev.credits)
+  expect(mergeRemote(null, { fable: { percent: 1 } }).credits).toBeUndefined()
 })
 
 test('認証情報が無い環境ではエラーを出さない', async ($, on) => {

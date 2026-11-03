@@ -67,12 +67,17 @@ claude --plugin-dir plugins/usage-gauge
 
 ## 開発
 
+`tsconfig.json` は、Claude Code が生成する `.claude-plugin/types/tsconfig.json`（コミットしない）を extends しています。型チェックの前に、対話セッションで一度 `claude --plugin-dir plugins/usage-gauge` として読み込むと、型定義が `.claude-plugin/types/` に生成されます。
+
 ```bash
 # 静的解析
 claude plugin validate plugins/usage-gauge
 
 # テスト（hooks/register.test.tsx）
 claude plugin test plugins/usage-gauge
+
+# 型チェック（型定義の生成後）
+tsc -p plugins/usage-gauge
 ```
 
 ## ライセンス

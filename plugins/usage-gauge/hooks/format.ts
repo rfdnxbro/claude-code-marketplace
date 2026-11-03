@@ -209,3 +209,13 @@ export function parseRemote(body: unknown): Remote {
 export function hasUsage(r: Remote): boolean {
   return r.fable !== undefined || r.credits !== undefined || r.fiveHour !== undefined || r.sevenDay !== undefined
 }
+
+/** 新しく取れた値で前回値を更新する。応答に欠けた項目は前回の値を残す */
+export function mergeRemote(prev: Remote | null | undefined, fresh: Remote): Remote {
+  return {
+    fable: fresh.fable ?? prev?.fable,
+    credits: fresh.credits ?? prev?.credits,
+    fiveHour: fresh.fiveHour ?? prev?.fiveHour,
+    sevenDay: fresh.sevenDay ?? prev?.sevenDay,
+  }
+}
