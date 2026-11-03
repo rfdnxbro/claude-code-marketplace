@@ -50,7 +50,7 @@
       "name": "skill-preview",
       "source": "./plugins/skill-preview",
       "description": "入力中の /スキル名 や実行されたスキルの SKILL.md を右ペインに表示し、組み込み・Anthropic 提供のスキルとコマンドの説明を日本語で出す mod",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "author": {
         "name": "rfdnxbro"
       },
