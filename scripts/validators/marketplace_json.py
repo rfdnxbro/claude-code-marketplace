@@ -5,7 +5,13 @@ marketplace.json のバリデーター
 import re
 from pathlib import Path
 
-from .base import LISTING_FIELDS, ValidationResult, parse_json_safe, validate_kebab_case
+from .base import (
+    LISTING_FIELDS,
+    ValidationResult,
+    find_reserved_plugin_name,
+    parse_json_safe,
+    validate_kebab_case,
+)
 
 # 予約済み名前（完全一致で使用不可）
 # 公式・コミュニティ・プラグインディレクトリの名前は github.com/anthropics/ 配下から
@@ -196,6 +202,9 @@ def validate_marketplace_json(file_path: Path, content: str) -> ValidationResult
                 kebab_error = validate_kebab_case(plugin_name)
                 if kebab_error:
                     result.add_error(f"{file_path.name}: plugins[{i}]: {kebab_error}")
+                reserved_error = find_reserved_plugin_name(plugin_name)
+                if reserved_error:
+                    result.add_error(f"{file_path.name}: plugins[{i}]: {reserved_error}")
 
             # ディレクトリ掲載用フィールドは plugin.json にだけ書く（エントリ側は未知フィールド扱い）
             for field in LISTING_FIELDS:

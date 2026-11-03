@@ -7,7 +7,13 @@ import re
 from pathlib import Path
 from typing import Any
 
-from .base import LISTING_FIELDS, ValidationResult, parse_json_safe, validate_kebab_case
+from .base import (
+    LISTING_FIELDS,
+    ValidationResult,
+    find_reserved_plugin_name,
+    parse_json_safe,
+    validate_kebab_case,
+)
 from .mcp_json import find_user_config_references, validate_server_url
 from .monitors_json import validate_monitors_entries
 
@@ -187,6 +193,9 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
             result.add_error(f"{file_path.name}: {kebab_error}")
         if " " in name:
             result.add_error(f"{file_path.name}: nameにスペースは使用できません")
+        reserved_error = find_reserved_plugin_name(name)
+        if reserved_error:
+            result.add_error(f"{file_path.name}: {reserved_error}")
 
     # バージョン形式
     version = data.get("version", "")

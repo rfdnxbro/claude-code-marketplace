@@ -1,4 +1,4 @@
-# claude-code-workflow
+# workflow-kit
 
 ## 概要
 
@@ -17,8 +17,10 @@ Claude Code を使う際の個人的な作業スタイル（文体ガイド、�
 claude plugin marketplace add rfdnxbro/claude-code-marketplace
 
 # プラグインをユーザースコープでインストール
-claude plugin install claude-code-workflow@custom-marketplace
+claude plugin install workflow-kit@custom-marketplace
 ```
+
+旧名 `claude-code-workflow` でインストール済みの場合は、マーケットプレイスの `renames` により設定が `workflow-kit` へ自動で置き換わります（`claude-` で始まるプラグイン名が Claude Code の予約名になったための改名）。
 
 ## 使い方
 

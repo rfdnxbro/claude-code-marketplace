@@ -243,6 +243,52 @@ def validate_kebab_case(name: str) -> str | None:
     return None
 
 
+# Anthropic のプラグインと紛らわしいため、サードパーティが使えないプラグイン名
+RESERVED_PLUGIN_NAME_PREFIXES = ("claude-", "anthropic-", "anthropics-", "cc-plugin-")
+RESERVED_PLUGIN_NAMES = {"claude", "anthropic", "anthropics", "claude-code", "claude-mods"}
+# "official" と隣り合わせにできない語
+OFFICIAL_ADJACENT_WORDS = {"claude", "anthropic", "anthropics"}
+
+
+def find_reserved_plugin_name(name: str) -> str | None:
+    """
+    Anthropic のプラグインに見える予約済みのプラグイン名かを判定する
+
+    `claude-` などで始まる名前、`claude` などそのものの名前、
+    `official` を `claude` / `anthropic` と隣り合わせにした名前は使えない。
+
+    `claude plugin validate` のエラーメッセージから組み立てた近似的な判定で、
+    `official` の隣接はハイフン区切りの単語単位でのみ見る（`officialclaude` の
+    ような連結は検出しない）。最終的な判定は `claude plugin validate` に任せる。
+
+    Args:
+        name: 検証するプラグイン名
+
+    Returns:
+        エラーメッセージ。問題なければNone
+    """
+    lowered = name.lower()
+    if lowered in RESERVED_PLUGIN_NAMES:
+        return f"プラグイン名「{name}」は予約済みです（Anthropic のプラグインと紛らわしい名前）"
+    for prefix in RESERVED_PLUGIN_NAME_PREFIXES:
+        if lowered.startswith(prefix):
+            return (
+                f"プラグイン名「{name}」は予約済みです（{prefix} で始まる名前は"
+                "Anthropic のプラグインと紛らわしいため使えない）"
+            )
+    words = lowered.split("-")
+    for i, word in enumerate(words):
+        if word != "official":
+            continue
+        neighbors = words[max(i - 1, 0) : i] + words[i + 1 : i + 2]
+        if any(neighbor in OFFICIAL_ADJACENT_WORDS for neighbor in neighbors):
+            return (
+                f"プラグイン名「{name}」は予約済みです（official を claude / anthropic と"
+                "隣り合わせにした名前は使えない）"
+            )
+    return None
+
+
 def parse_json_safe(content: str, file_path: Path, result: ValidationResult) -> dict | None:
     """
     JSON文字列を安全にパースする
