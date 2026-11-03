@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "skill-preview",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "入力中の /スキル名 や実行されたスキルの SKILL.md を右ペインに表示し、組み込み・Anthropic 提供のスキルとコマンドの説明を日本語で出す mod",
   "author": { "name": "rfdnxbro" },
   "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/skill-preview",
