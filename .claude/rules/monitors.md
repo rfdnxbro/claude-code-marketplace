@@ -145,4 +145,5 @@ paths: plugins/*/monitors/monitors.json, monitors/monitors.json
 - [Plugins reference: Path behavior rules](https://code.claude.com/docs/en/plugins-reference#path-behavior-rules)
 - [Plugins reference: Strict objects](https://code.claude.com/docs/en/plugins-reference#strict-objects)（未知キーで読み込まれない条件）
 - [Plugins reference: Fields that run through a shell](https://code.claude.com/docs/en/plugins-reference#fields-that-run-through-a-shell)（モニターに `CLAUDE_PLUGIN_OPTION_<KEY>` が渡らないこと）
+- [Plugins reference: Where each variable resolves](https://code.claude.com/docs/en/plugins-reference#where-each-variable-resolves)（モニターのコマンドではパス変数が環境変数としてエクスポートされないこと）
 - [Tools reference: Monitor tool](https://code.claude.com/docs/en/tools-reference#monitor-tool)
