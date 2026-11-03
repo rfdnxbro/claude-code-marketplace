@@ -56,6 +56,10 @@ Stdio MCPサーバーのサブプロセスは以下の環境変数を自動的�
 }
 ```
 
+stdioサーバーの `env` で `AWS_BEARER_TOKEN_BEDROCK` を空文字に設定した場合、空値では渡されず変数が未設定になる。サーバーはマシン自身のAWS認証情報を使える。
+
+TODO: 要確認 — `AWS_BEARER_TOKEN_BEDROCK` 以外の変数にも当てはまるかは、CHANGELOGに記載がなく、公式ドキュメント（mcp.md / env-vars.md）にも記載を見つけられなかった。
+
 ### HTTP（リモート）
 
 | フィールド | 必須 | 説明 |
