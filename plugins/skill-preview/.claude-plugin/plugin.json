@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "skill-preview",
+  "version": "0.1.0",
+  "description": "入力中の /スキル名 や実行されたスキルの SKILL.md を右ペインに表示する mod",
+  "author": { "name": "rfdnxbro" },
+  "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/skill-preview",
+  "repository": "https://github.com/rfdnxbro/claude-code-marketplace",
+  "license": "MIT",
+  "keywords": [
+    "mod",
+    "skills",
+    "pane"
+  ],
+  "types": "./types/index.d.ts"
+}
