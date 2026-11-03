@@ -5,6 +5,8 @@ plugin_json.py のテスト
 import json
 from pathlib import Path
 
+import pytest
+
 from scripts.validators.plugin_json import validate_plugin_json
 
 
@@ -58,6 +60,40 @@ class TestValidatePluginJson:
         result = validate_plugin_json(Path("plugin.json"), content)
         assert result.has_errors()
         assert any("スペース" in e for e in result.errors)
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "claude",
+            "anthropic",
+            "anthropics",
+            "claude-code",
+            "claude-mods",
+            "claude-code-workflow",
+            "anthropic-tools",
+            "anthropics-tools",
+            "cc-plugin-foo",
+            "official-claude",
+            "claude-official",
+            "my-anthropic-official-kit",
+        ],
+    )
+    def test_reserved_plugin_name(self, name):
+        """Anthropic のプラグインと紛らわしい名前はエラー"""
+        content = json.dumps({"name": name})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert result.has_errors()
+        assert any("予約済み" in e for e in result.errors)
+
+    @pytest.mark.parametrize(
+        "name",
+        ["workflow-kit", "my-claude-helper", "official-tools", "claudette", "usage-gauge"],
+    )
+    def test_non_reserved_plugin_name(self, name):
+        """途中に claude を含む名前や、claude と隣り合わない official は使える"""
+        content = json.dumps({"name": name})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not any("予約済み" in e for e in result.errors)
 
     def test_invalid_version_format(self):
         content = json.dumps({"name": "my-plugin", "version": "v1"})

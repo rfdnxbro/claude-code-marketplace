@@ -5,16 +5,19 @@
   "owner": {
     "name": "rfdnxbro"
   },
+  "renames": {
+    "claude-code-workflow": "workflow-kit"
+  },
   "plugins": [
     {
-      "name": "claude-code-workflow",
-      "source": "./plugins/claude-code-workflow",
+      "name": "workflow-kit",
+      "source": "./plugins/workflow-kit",
       "description": "Claude Code を使う際の個人的な作業スタイル（文体ガイド、判断ルール等）をスキルとして集約するプラグイン",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "author": {
         "name": "rfdnxbro"
       },
-      "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/claude-code-workflow",
+      "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/workflow-kit",
       "repository": "https://github.com/rfdnxbro/claude-code-marketplace",
       "license": "MIT",
       "keywords": [

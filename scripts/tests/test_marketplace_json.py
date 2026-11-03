@@ -25,6 +25,20 @@ class TestValidateMarketplaceJson:
         result = validate_marketplace_json(Path("marketplace.json"), content)
         assert not result.has_errors()
 
+    @pytest.mark.parametrize("name", ["claude-code-workflow", "anthropic-tools", "claude-official"])
+    def test_reserved_plugin_entry_name(self, name):
+        """プラグインエントリ名に Anthropic のプラグインと紛らわしい名前は使えない"""
+        content = json.dumps(
+            {
+                "name": "my-marketplace",
+                "owner": {"name": "Team Name"},
+                "plugins": [{"name": name, "source": "./plugins/x"}],
+            }
+        )
+        result = validate_marketplace_json(Path("marketplace.json"), content)
+        assert result.has_errors()
+        assert any("plugins[0]" in e and "予約済み" in e for e in result.errors)
+
     def test_valid_full(self):
         """すべてのオプションを含む有効な設定"""
         content = json.dumps(
