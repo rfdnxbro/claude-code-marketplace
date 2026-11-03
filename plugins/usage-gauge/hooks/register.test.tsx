@@ -2,7 +2,15 @@ import { expect, mock, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-import { creditsDetail, elapsedRatio, formatRemaining, formatTokens, gaugeColor, parseRemote } from './format'
+import {
+  backoffMs,
+  creditsDetail,
+  elapsedRatio,
+  formatRemaining,
+  formatTokens,
+  gaugeColor,
+  parseRemote,
+} from './format'
 
 const NOW = Date.parse('2026-11-03T06:00:00Z')
 
@@ -147,6 +155,75 @@ test('表示用の関数', async () => {
   expect(Math.round((elapsedRatio('2026-11-03T10:12:00Z', NOW, 5 * 3600_000) ?? 0) * 300)).toBe(48)
   expect(creditsDetail({ used: 0, limit: 200, enabled: true })).toBe('$0/$200')
   expect(creditsDetail({ used: 0, enabled: false })).toBe('$0 無効')
+  // 無効なら上限が残っていても上限は出さない
+  expect(creditsDetail({ used: 0, limit: 200, enabled: false })).toBe('$0 無効')
+})
+
+test('取得失敗後の待ち時間', async () => {
+  // Retry-After（秒）があればそれに従う
+  expect(backoffMs(0, '30')).toBe(30_000)
+  // なければ 2 分から倍々
+  expect(backoffMs(0, undefined)).toBe(120_000)
+  expect(backoffMs(120_000, '0')).toBe(240_000)
+  // 上限は 15 分
+  expect(backoffMs(600_000, undefined)).toBe(900_000)
+  expect(backoffMs(0, '3600')).toBe(900_000)
+})
+
+test('取得に失敗しても前回取れた値を出し続ける', async ($, on) => {
+  let status = 200
+  let text = JSON.stringify(BODY)
+  const clock = mock.clock(on, { now: NOW })
+  mock.store(on)
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('session.usage', () => ({ value: USAGE }))
+  on('session.authorize', () => ({ value: { handle: 'h', kind: 'bearer' } }))
+  on('http.fetch', () => ({ value: { status, ok: status === 200, headers: {}, text } }))
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  await clock.advance(1)
+
+  // 429 が返っても Fable とクレジットは前回値のまま
+  status = 429
+  text = ''
+  await clock.advance(6 * 60_000)
+  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  expect((await ui.find({ type: 'Text', text: /非公式API取得失敗 \(429\)/ }))?.text).toBe('非公式API取得失敗 (429)（前回の値を表示）')
+  expect((await ui.find({ type: 'Text', text: '4%' }))?.text).toBe('4%')
+  expect((await ui.find({ type: 'Text', text: '$0/$200' }))?.text).toBe('$0/$200')
+  await ui.unmount()
+})
+
+test('200 でも使用量が読めない応答は失敗として扱い、前回値を消さない', async ($, on) => {
+  let text = JSON.stringify(BODY)
+  const clock = mock.clock(on, { now: NOW })
+  mock.store(on)
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('session.usage', () => ({ value: USAGE }))
+  on('session.authorize', () => ({ value: { handle: 'h', kind: 'bearer' } }))
+  on('http.fetch', () => ({ value: { status: 200, ok: true, headers: {}, text } }))
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  await clock.advance(1)
+
+  text = '{}'
+  await clock.advance(6 * 60_000)
+  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  expect((await ui.find({ type: 'Text', text: /応答に使用量なし/ }))?.text).toBe('非公式API: 応答に使用量なし（前回の値を表示）')
+  expect((await ui.find({ type: 'Text', text: '$0/$200' }))?.text).toBe('$0/$200')
+  await ui.unmount()
+})
+
+test('認証情報が無い環境ではエラーを出さない', async ($, on) => {
+  const clock = mock.clock(on, { now: NOW })
+  mock.store(on)
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('session.usage', () => ({ value: USAGE }))
+  on('session.authorize', () => ({ value: null }))
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  await clock.advance(1)
+  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  expect(await ui.find({ type: 'Text', text: /非公式API/ })).toBeUndefined()
+  expect((await ui.find({ type: 'Text', text: '40%' }))?.text).toBe('40%')
+  await ui.unmount()
 })
 
 test('非公式 API の応答から Fable 枠とクレジットを読む', async () => {
@@ -154,4 +231,5 @@ test('非公式 API の応答から Fable 枠とクレジットを読む', async
   expect(r.fable).toEqual({ percent: 4, resetsAt: '2026-11-06T04:00:00Z' })
   expect(r.credits).toEqual({ used: 0, limit: 200, percent: 0, enabled: true })
   expect(parseRemote({}).fable).toBeUndefined()
+  expect(parseRemote({}).credits).toBeUndefined()
 })

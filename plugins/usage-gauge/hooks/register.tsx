@@ -15,6 +15,7 @@ import {
   gaugeColor,
   gaugeSvg,
   gaugeText,
+  hasUsage,
   parseRemote,
   SEVEN_DAY_MS,
 } from './format'
@@ -25,6 +26,8 @@ const USAGE_URL = 'https://api.anthropic.com/api/oauth/usage'
 const POLL_MS = 60_000
 // 非公式 API を呼ぶ最短の間隔（短いと 429 が返り続ける）
 const MIN_FETCH_GAP_MS = 5 * 60_000
+// 認証情報が無い環境で、もう一度試すまでの間隔
+const NO_AUTH_RETRY_MS = 60 * 60_000
 const STORE_KEY = 'collapsed'
 const LAST_GOOD_KEY = 'lastRemote'
 // デスクトップの1セルあたりのおおよその幅（CSS ピクセル）
@@ -75,17 +78,24 @@ async function refreshRemote($: EngineInterface): Promise<void> {
   lastFetchAt = t
   let fresh: Remote | undefined
   let error: string | undefined
+  let noAuth = false
   try {
     const auth = await $.session.authorize()
     if (!auth) {
-      error = '非公式API: 認証情報なし'
+      // API キーやゲートウェイでは取れない。エラーは出さず、しばらく呼ばない
+      noAuth = true
     } else {
       const res = await $.http.fetch(USAGE_URL, {
         headers: { 'anthropic-beta': 'oauth-2025-04-20' },
         auth: auth.handle,
       })
-      if (res.ok) {
-        fresh = parseRemote(JSON.parse(res.text))
+      const parsed = res.ok ? parseRemote(JSON.parse(res.text)) : undefined
+      if (parsed && hasUsage(parsed)) {
+        fresh = parsed
+      } else if (res.ok) {
+        // 200 でも使用量が読めない応答は、前回値を消さないよう失敗として扱う
+        error = '非公式API: 応答に使用量なし'
+        backoff = backoffMs(backoff, undefined)
       } else {
         error = `非公式API取得失敗 (${res.status})`
         backoff = backoffMs(backoff, res.headers['retry-after'])
@@ -96,6 +106,10 @@ async function refreshRemote($: EngineInterface): Promise<void> {
     backoff = backoffMs(backoff, undefined)
   } finally {
     isFetching = false
+  }
+  if (noAuth) {
+    nextAllowedAt = t + NO_AUTH_RETRY_MS
+    return
   }
   if (fresh) {
     backoff = 0

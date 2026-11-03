@@ -124,8 +124,10 @@ export function creditsPercent(c: Credits): number {
 }
 
 export function creditsDetail(c: Credits): string {
+  // 無効なら上限が残っていても使えないので、上限は出さない
+  if (!c.enabled) return `${formatDollars(c.used)} 無効`
   if (c.limit !== undefined) return `${formatDollars(c.used)}/${formatDollars(c.limit)}`
-  return c.enabled ? `${formatDollars(c.used)}/上限なし` : `${formatDollars(c.used)} 無効`
+  return `${formatDollars(c.used)}/上限なし`
 }
 
 // ---- 非公式 API の応答の読み取り ----
@@ -154,7 +156,7 @@ function money(v: unknown): number | undefined {
   return minor / 10 ** (num(o?.exponent) ?? 2)
 }
 
-function window(v: unknown): UsageWindow | undefined {
+function parseWindow(v: unknown): UsageWindow | undefined {
   const o = obj(v)
   const percent = num(o?.utilization)
   if (percent === undefined) return undefined
@@ -198,7 +200,12 @@ export function parseRemote(body: unknown): Remote {
     }
   }
 
-  out.fiveHour = window(root.five_hour)
-  out.sevenDay = window(root.seven_day)
+  out.fiveHour = parseWindow(root.five_hour)
+  out.sevenDay = parseWindow(root.seven_day)
   return out
+}
+
+/** 応答から使える値を1つでも読めたか（読めなければ取得失敗として扱う） */
+export function hasUsage(r: Remote): boolean {
+  return r.fable !== undefined || r.credits !== undefined || r.fiveHour !== undefined || r.sevenDay !== undefined
 }
