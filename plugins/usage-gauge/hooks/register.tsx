@@ -100,8 +100,8 @@ async function refreshRemote($: EngineInterface): Promise<void> {
 async function tick($: EngineInterface): Promise<void> {
   const t = await $.clock.now()
   await update($, now, () => t)
-  await refreshOfficial($)
-  await refreshRemote($)
+  // 片方が失敗しても、もう片方は更新する
+  await Promise.allSettled([refreshOfficial($), refreshRemote($)])
 }
 
 /** 開閉状態を $.store から $.state に写す（$.state は /clear などで初期値に戻るため） */
