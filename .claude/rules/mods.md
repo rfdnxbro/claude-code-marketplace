@@ -163,7 +163,28 @@ Claude Code は hooks モジュールのソースを実行前に静的解析し�
 | `startedAt` | セッション開始時刻（ミリ秒） |
 
 - `{ breakdown: 'summary' | 'full' }` を渡すと `/context` と同じカテゴリ別内訳が付く（`full` はトークンカウント API を呼ぶ）
-- モデル別の週次枠（例: Fable 専用の週次枠）や extra usage / クレジット残高を取る API は公式ドキュメント・型定義に記載がない。`rateLimits` の `kind` は開いた文字列なので、実行時に追加の `kind` が届く可能性はあるが、届く値は実機で確認する
+- モデル別の週次枠（例: Fable 専用の週次枠）や extra usage / クレジット残高を取る Mods API は、公式ドキュメント・型定義に記載がない。`rateLimits` の `kind` は開いた文字列なので、実行時に追加の `kind` が届く可能性はあるが、Claude Desktop の Code タブでの実機確認では `five_hour` と `seven_day` しか届かなかった
+
+### 公式外の手段: OAuth 使用量エンドポイント
+
+モデル別の週次枠やクレジットが必要な場合は、claude.ai の使用量画面と同じ情報を返す**非公開のエンドポイント**を mod から呼ぶ手段がある（本リポジトリの `plugins/usage-gauge/` がこの方式）。仕様は公開されておらず予告なく変わりうるため、取得に失敗しても公式の値だけで動くように作る。
+
+```tsx
+const auth = await $.session.authorize()   // 公式 API。資格情報はホスト側に残り、中身の見えないハンドルだけが返る
+if (auth) {                                 // API キー・ゲートウェイ・サードパーティプロバイダーでは null
+  const res = await $.http.fetch('https://api.anthropic.com/api/oauth/usage', {
+    headers: { 'anthropic-beta': 'oauth-2025-04-20' },
+    auth: auth.handle,                      // ファーストパーティのホストにだけ認証ヘッダーが付く
+  })
+}
+```
+
+- `$.session.authorize()` と `$.http.fetch` の `auth` は公式の Mods API。トークン本体は mod に渡らないため、Keychain を読む必要はない
+- 実機で確認した応答のキー（非公開のため変わりうる）:
+  - モデル別の週次枠: `limits[]` のうち `kind` が `"weekly_scoped"` の要素。モデル名は `scope.model.display_name`（例: `"Fable"`）、使用率は `percent`、リセット時刻は `resets_at`
+  - クレジット: `spend.used` / `spend.limit`（`{ amount_minor, currency, exponent }`）、`spend.percent`、`spend.enabled`。`extra_usage` の `is_enabled` / `monthly_limit` / `used_credits` / `utilization` にも同じ系統の値がある
+  - 5時間・週次の枠: `five_hour` / `seven_day` の `utilization` と `resets_at`
+- 失敗時は `Retry-After` に従って間隔を空ける。呼び出し頻度は分単位にとどめる
 
 ## スキル情報の取得
 
