@@ -33,19 +33,19 @@ export const JA_DESCRIPTIONS: Readonly<Record<string, readonly JaEntry[]>> = {
   "artifact-capabilities": [
     {
       en: "Runtime capabilities a published Artifact page can be granted — behavior static HTML cannot provide on its own, such as the page reading live or connected data, remembering what people do on it (a poll, a sign-up sheet, a checklist, a document edited in place — it saves new versions of itself), keeping state shared across viewers, knowing who is viewing, asking Claude a question of its own, storing files people add, handing the viewer a file to save, or using the viewer's camera, microphone, location, screen or device motion. Serves this user's live capability roster and the typed call definitions. Load it whenever any such runtime behavior would make an artifact more useful, before writing the page.",
-      ja: "公開した Artifact ページに付与できるランタイム機能。静的な HTML だけではできない振る舞い（ライブデータや接続先のデータの読み取り、閲覧者の操作の記録（投票、申し込み表、チェックリスト、その場で編集して新しい版を保存するドキュメントなど）、閲覧者のあいだで共有する状態、閲覧者の識別、Claude への独自の質問、閲覧者が追加したファイルの保存、閲覧者へのファイルの受け渡し、閲覧者のカメラ・マイク・位置情報・画面・デバイスの動きの利用など）を扱う。このユーザーの現在の機能一覧と型付きの呼び出し定義を提供する。こうしたランタイムの振る舞いで Artifact が便利になるときは、ページを書く前に読み込む。",
+      ja: "公開した Artifact ページに付与できるランタイム機能を示す。静的な HTML だけではできない振る舞い（ライブデータや接続先のデータの読み取り、閲覧者の操作の記録（投票、申し込み表、チェックリスト、その場で編集して新しい版を保存するドキュメントなど）、閲覧者のあいだで共有する状態、閲覧者の識別、Claude への独自の質問、閲覧者が追加したファイルの保存、閲覧者へのファイルの受け渡し、閲覧者のカメラ・マイク・位置情報・画面・デバイスの動きの利用など）を扱う。このユーザーの現在の機能一覧と型付きの呼び出し定義を提供する。こうしたランタイムの振る舞いで Artifact が便利になるときは、ページを書く前に読み込む。",
     },
   ],
   "artifact-design": [
     {
       en: "Design guidance and fundamentals for Artifacts.",
-      ja: "Artifact のデザインの指針と基本。",
+      ja: "Artifact のデザインの指針と基本を示す。",
     },
   ],
   "artifact-diagramming": [
     {
       en: "Diagramming know-how for Artifacts - when a picture earns its place, how to draw one that shows the real mechanism, and the inline-SVG mechanics that keep it legible in both themes.",
-      ja: "Artifact で図を描くためのノウハウ。図が役立つのはどんなときか、実際の仕組みを示す図の描き方、両方のテーマで読みやすく保つインライン SVG の仕組みを扱う。",
+      ja: "Artifact で図を描くためのノウハウを示す。図が役立つのはどんなときか、実際の仕組みを示す図の描き方、両方のテーマで読みやすく保つインライン SVG の仕組みを扱う。",
     },
   ],
   "artifacts": [
@@ -105,7 +105,7 @@ export const JA_DESCRIPTIONS: Readonly<Record<string, readonly JaEntry[]>> = {
   "claude-api": [
     {
       en: "Reference for the Claude API / Anthropic SDK — model ids, pricing, params, streaming, tool use, MCP, agents, caching, token counting, model migration.\nTRIGGER — read BEFORE opening the target file; don't skip because it \"looks like a one-liner\" — whenever: the prompt names Claude/Anthropic in any form (Claude, Anthropic, Fable, Opus, Sonnet, Haiku, `anthropic`, `@anthropic-ai`, `claude-*`, `us.anthropic.*`, `[1m]`); the user asks about an LLM (pricing/model choice/limits/caching) — never answer from memory; OR the task is LLM-shaped with provider unstated (agent/MCP/tool-definition/multi-agent/RAG/LLM-judge/computer-use; generate/summarize/extract/classify/rewrite/converse over NL; debugging refusals/cutoffs/streaming/tool-calls/tokens).\nSKIP only when another provider is being worked on (overrides all triggers): OpenAI/GPT/Gemini/Llama/Mistral/Cohere/Ollama named in the query; OR `grep -rE 'openai|langchain_openai|google.generativeai|genai|mistralai|cohere|ollama'` over the project hits (run this grep FIRST if no provider named — don't Read the file).",
-      ja: "Claude API / Anthropic SDK のリファレンス（モデル ID、料金、パラメーター、ストリーミング、ツール使用、MCP、エージェント、キャッシュ、トークンカウント、モデルの移行）。トリガー: 対象のファイルを開く前に読む（「1行で済みそう」に見えても飛ばさない）。プロンプトが Claude / Anthropic に何らかの形で触れているとき（Claude、Anthropic、Fable、Opus、Sonnet、Haiku、`anthropic`、`@anthropic-ai`、`claude-*`、`us.anthropic.*`、`[1m]`）、ユーザーが LLM について尋ねたとき（料金・モデルの選択・上限・キャッシュ。記憶で答えない）、またはプロバイダーが明示されていない LLM 的なタスク（エージェント / MCP / ツール定義 / マルチエージェント / RAG / LLM-judge / computer-use、自然言語の生成・要約・抽出・分類・書き換え・対話、拒否・打ち切り・ストリーミング・ツール呼び出し・トークンのデバッグ）。スキップ: 別のプロバイダーを扱っているときだけ（すべてのトリガーより優先）。クエリで OpenAI / GPT / Gemini / Llama / Mistral / Cohere / Ollama が名指しされているとき、またはプロジェクトに対する `grep -rE 'openai|langchain_openai|google.generativeai|genai|mistralai|cohere|ollama'` が一致したとき（プロバイダーが名指しされていなければ、ファイルを Read する前にまずこの grep を実行する）。",
+      ja: "Claude API / Anthropic SDK のリファレンスを提供する（モデル ID、料金、パラメーター、ストリーミング、ツール使用、MCP、エージェント、キャッシュ、トークンカウント、モデルの移行）。トリガー: 次のときは、対象のファイルを開く前に読む（「1行で済みそう」に見えても飛ばさない）。プロンプトが Claude / Anthropic に何らかの形で触れているとき（Claude、Anthropic、Fable、Opus、Sonnet、Haiku、`anthropic`、`@anthropic-ai`、`claude-*`、`us.anthropic.*`、`[1m]`）、ユーザーが LLM について尋ねたとき（料金・モデルの選択・上限・キャッシュ。記憶で答えない）、またはプロバイダーが明示されていない LLM 的なタスクのとき（エージェント / MCP / ツール定義 / マルチエージェント / RAG / LLM-judge / computer-use、自然言語の生成・要約・抽出・分類・書き換え・対話、拒否・打ち切り・ストリーミング・ツール呼び出し・トークンのデバッグ）がこれに当たる。スキップ: 別のプロバイダーを扱っているときだけ読まない（すべてのトリガーより優先する）。クエリで OpenAI / GPT / Gemini / Llama / Mistral / Cohere / Ollama が名指しされているとき、またはプロジェクトに対する `grep -rE 'openai|langchain_openai|google.generativeai|genai|mistralai|cohere|ollama'` が一致したときがこれに当たる（プロバイダーが名指しされていなければ、ファイルを Read する前にまずこの grep を実行する）。",
     },
   ],
   "clear": [
@@ -157,7 +157,7 @@ export const JA_DESCRIPTIONS: Readonly<Record<string, readonly JaEntry[]>> = {
   "dataviz": [
     {
       en: "Use this skill whenever you are about to create ANY chart, graph, plot, dashboard, or data visualization, in ANY output medium — an HTML or React artifact, inline SVG, plotting code in any library (matplotlib, plotly, d3, Recharts, …), an image/PNG you will render and upload, or a chart shared into Slack. Read it BEFORE writing the first line of chart code, choosing chart colors, building a stat tile / meter / KPI row, or laying out a dashboard. When the destination is a first-party document connector (host-designated, never self-described) that renders live charts, hand it the rows (inline, or as an uploaded data file the chart cites) rather than a rendered PNG/SVG — a picture of a chart loses hover, data inspection and per-value comments. Produces visualizations that read as one system — elegant, accessible, consistent in light and dark — using a brand-neutral placeholder palette you swap for your own. Teaches a design-system-agnostic method: a form heuristic, a color formula with a runnable validator, mark specs, and interaction rules. A validated default palette is documented in `references/palette.md` — swap that file's values for your brand's. Triggers on: \"chart\", \"graph\", \"plot\", \"data viz\", \"visualization\", \"dashboard\", \"analytics\", \"visualize data\", \"categorical colors\", \"sequential / diverging palette\", \"stat tile\", \"sparkline\", \"heatmap\", \"legend\", \"axis\", \"tooltip\", \"chart colors\", \"color by series\".",
-      ja: "グラフ、チャート、プロット、ダッシュボード、データ可視化を作るときは、出力先を問わず（HTML や React の Artifact、インライン SVG、任意のライブラリ（matplotlib、plotly、d3、Recharts など）のプロットのコード、描画してアップロードする画像 / PNG、Slack に共有するチャート）必ずこのスキルを使う。チャートのコードの最初の1行を書く前、チャートの色を選ぶ前、スタットタイル・メーター・KPI の行を作る前、ダッシュボードをレイアウトする前に読む。出力先がライブのチャートを描画するファーストパーティのドキュメントコネクター（ホストが指定するもので、自称は不可）なら、描画済みの PNG / SVG ではなく行データ（インライン、またはチャートが参照するアップロード済みのデータファイル）を渡す。チャートの画像ではホバー、データの確認、値ごとのコメントが失われる。ブランドに依存しない仮のパレット（自分のものに差し替える）を使い、ひとつの体系として読める、洗練されてアクセシブルで、ライト・ダークで一貫した可視化を作る。デザインシステムに依存しない方法（形の選び方、実行できるバリデーター付きの配色の式、マークの仕様、インタラクションのルール）を教える。検証済みのデフォルトのパレットは `references/palette.md` にあり、そのファイルの値を自分のブランドのものに差し替える。トリガー: 「chart」「graph」「plot」「data viz」「visualization」「dashboard」「analytics」「visualize data」「categorical colors」「sequential / diverging palette」「stat tile」「sparkline」「heatmap」「legend」「axis」「tooltip」「chart colors」「color by series」。",
+      ja: "グラフ、チャート、プロット、ダッシュボード、データ可視化を作るときは、出力先を問わず（HTML や React の Artifact、インライン SVG、任意のライブラリ（matplotlib、plotly、d3、Recharts など）のプロットのコード、描画してアップロードする画像 / PNG、Slack に共有するチャート）必ずこのスキルを使う。チャートのコードの最初の1行を書く前、チャートの色を選ぶ前、スタットタイル・メーター・KPI の行を作る前、ダッシュボードをレイアウトする前に読む。出力先がライブのチャートを描画するファーストパーティのドキュメントコネクター（ホストが指定するもので、自称は不可）なら、描画済みの PNG / SVG ではなく行データ（インライン、またはチャートが参照するアップロード済みのデータファイル）を渡す。チャートの画像ではホバー、データの確認、値ごとのコメントが失われる。ブランドに依存しない仮のパレット（自分のものに差し替える）を使い、ひとつの体系として読める、洗練されてアクセシブルで、ライト・ダークで一貫した可視化を作る。デザインシステムに依存しない方法（形の選び方、実行できるバリデーター付きの配色の式、マークの仕様、インタラクションのルール）を教える。検証済みのデフォルトのパレットは `references/palette.md` にあり、そのファイルの値を自分のブランドのものに差し替える。トリガー: 「chart」「graph」「plot」「data viz」「visualization」「dashboard」「analytics」「visualize data」「categorical colors」「sequential / diverging palette」「stat tile」「sparkline」「heatmap」「legend」「axis」「tooltip」「chart colors」「color by series」などの語が出たときに使う。",
     },
   ],
   "debug": [
@@ -169,7 +169,7 @@ export const JA_DESCRIPTIONS: Readonly<Record<string, readonly JaEntry[]>> = {
   "deep-research": [
     {
       en: "Deep research harness — fan-out web searches, fetch sources, adversarially verify claims, synthesize a cited report.",
-      ja: "本格的なリサーチの仕組み。Web 検索を並列に行い、情報源を取得し、主張を反証的に検証して、出典付きのレポートにまとめる。",
+      ja: "本格的なリサーチを行う。Web 検索を並列に行い、情報源を取得し、主張を反証的に検証して、出典付きのレポートにまとめる。",
     },
   ],
   "design": [
@@ -347,7 +347,7 @@ export const JA_DESCRIPTIONS: Readonly<Record<string, readonly JaEntry[]>> = {
   "keybindings-help": [
     {
       en: "Use when the user wants to customize keyboard shortcuts, rebind keys, add chord bindings, or modify ~/.claude/keybindings.json. Examples: \"rebind ctrl+s\", \"add a chord shortcut\", \"change the submit key\", \"customize keybindings\".",
-      ja: "キーボードショートカットのカスタマイズ、キーの割り当て直し、コードバインド（複数キーの組み合わせ）の追加、~/.claude/keybindings.json の変更をしたいときに使う。例: 「ctrl+s を割り当て直して」「コードのショートカットを追加して」「送信キーを変えて」「キーバインドをカスタマイズして」。",
+      ja: "キーボードショートカットのカスタマイズ、キーの割り当て直し、コードバインド（複数キーの組み合わせ）の追加、~/.claude/keybindings.json の変更をしたいときに使う。例えば「ctrl+s を割り当て直して」「コードのショートカットを追加して」「送信キーを変えて」「キーバインドをカスタマイズして」といった依頼に使う。",
     },
   ],
   "list-agents": [
@@ -531,7 +531,7 @@ export const JA_DESCRIPTIONS: Readonly<Record<string, readonly JaEntry[]>> = {
   "sandbox": [
     {
       en: "{} sandbox enabled (⏎ to configure)",
-      ja: "{} サンドボックス有効（⏎ で設定）",
+      ja: "{} サンドボックスが有効になっている（⏎ で設定する）。",
     },
   ],
   "schedule": [
@@ -639,13 +639,13 @@ export const JA_DESCRIPTIONS: Readonly<Record<string, readonly JaEntry[]>> = {
   "ultrareview": [
     {
       en: "Start a cloud agent that finds and verifies bugs in your branch (~5-15 min, $5-$25 USD) · Runs in a cloud session. See https://code.claude.com/docs/en/claude-code-on-the-web",
-      ja: "ブランチのバグを見つけて検証するクラウドエージェントを起動する（約 5〜15 分、5〜25 米ドル）· クラウドセッションで実行する。詳しくは https://code.claude.com/docs/en/claude-code-on-the-web を参照。",
+      ja: "ブランチのバグを見つけて検証するクラウドエージェントを起動する（約 5〜15 分、5〜25 米ドル）· クラウドセッションで実行する。詳しくは https://code.claude.com/docs/en/claude-code-on-the-web を参照する。",
     },
   ],
   "update-config": [
     {
       en: "Use this skill to configure the Claude Code harness via settings.json. Automated behaviors (\"from now on when X\", \"each time X\", \"whenever X\", \"before/after X\") require hooks configured in settings.json - the harness executes these, not Claude, so memory/preferences cannot fulfill them. Also use for: permissions (\"allow X\", \"add permission\", \"move permission to\"), env vars (\"set X=Y\"), hook troubleshooting, or any changes to settings.json/settings.local.json files. Examples: \"allow npm commands\", \"add bq permission to global settings\", \"move permission to user settings\", \"set DEBUG=true\", \"when claude stops show X\". For simple settings like theme/model, suggest the /config command.",
-      ja: "settings.json で Claude Code のハーネスを設定するときに使う。自動の振る舞い（「今後 X のときは」「X のたびに」「X するときはいつも」「X の前 / 後に」）には settings.json に設定したフックが必要で、実行するのは Claude ではなくハーネスなので、メモリや好みの設定では実現できない。ほかに、パーミッション（「X を許可して」「パーミッションを追加して」「パーミッションを〜に移して」）、環境変数（「X=Y を設定して」）、フックのトラブルシューティング、settings.json / settings.local.json の変更にも使う。例: 「npm コマンドを許可して」「グローバル設定に bq のパーミッションを追加して」「パーミッションをユーザー設定に移して」「DEBUG=true を設定して」「Claude が止まったら X を表示して」。テーマやモデルのような単純な設定には /config コマンドを勧める。",
+      ja: "settings.json で Claude Code のハーネスを設定するときに使う。自動の振る舞い（「今後 X のときは」「X のたびに」「X するときはいつも」「X の前 / 後に」）には settings.json に設定したフックが必要で、実行するのは Claude ではなくハーネスなので、メモリや好みの設定では実現できない。ほかに、パーミッション（「X を許可して」「パーミッションを追加して」「パーミッションを〜に移して」）、環境変数（「X=Y を設定して」）、フックのトラブルシューティング、settings.json / settings.local.json の変更にも使う。例えば「npm コマンドを許可して」「グローバル設定に bq のパーミッションを追加して」「パーミッションをユーザー設定に移して」「DEBUG=true を設定して」「Claude が止まったら X を表示して」といった依頼に使う。テーマやモデルのような単純な設定には /config コマンドを勧める。",
     },
   ],
   "upgrade": [
@@ -673,7 +673,7 @@ export const JA_DESCRIPTIONS: Readonly<Record<string, readonly JaEntry[]>> = {
   "verify": [
     {
       en: "Verify that a code change actually does what it's supposed to by exercising it end-to-end and observing behavior — drive the affected flow, not just tests or typecheck. Run before committing nontrivial changes; bootstraps this repo's project verify skill if none exists yet. Don't invoke it on a diff that only touches tests, docs, or other code with no runtime surface to drive (a change to product source always has one) — there's nothing to observe.",
-      ja: "コードの変更が本来の動作をするかを、エンドツーエンドで動かして振る舞いを観察して確かめる。テストや型チェックだけでなく、影響を受けるフローを実際に操作する。自明でない変更をコミットする前に実行する。このリポジトリにプロジェクトの verify スキルがまだ無ければ作る。テスト、ドキュメント、その他動かして確かめる実行面の無いコードだけを変える差分には使わない（製品のソースの変更には必ずある）。観察するものが無いため。",
+      ja: "コードの変更が本来の動作をするかを、エンドツーエンドで動かして振る舞いを観察して確かめる。テストや型チェックだけでなく、影響を受けるフローを実際に操作する。自明でない変更をコミットする前に実行する。このリポジトリにプロジェクトの verify スキルがまだ無ければ作る。テスト、ドキュメント、その他動かして確かめる実行面の無いコードだけを変える差分には、観察するものが無いので使わない（製品のソースの変更には実行面が必ずある）。",
     },
   ],
   "voice": [
@@ -691,7 +691,7 @@ export const JA_DESCRIPTIONS: Readonly<Record<string, readonly JaEntry[]>> = {
   "workflow-authoring": [
     {
       en: "Reference for writing a Workflow tool script (script API and gotchas, resume, quality patterns, worked examples). Load before authoring a script for a workflow the user already opted into; it does not itself authorize running one.",
-      ja: "Workflow ツールのスクリプトを書くためのリファレンス（スクリプト API と注意点、再開、品質のパターン、実例）。ユーザーがすでに同意したワークフローのスクリプトを書く前に読み込む。このスキル自体はワークフローの実行を許可しない。",
+      ja: "Workflow ツールのスクリプトを書くためのリファレンスを提供する（スクリプト API と注意点、再開、品質のパターン、実例）。ユーザーがすでに同意したワークフローのスクリプトを書く前に読み込む。このスキル自体はワークフローの実行を許可しない。",
     },
   ],
   "workflow-launch-exec": [
@@ -710,7 +710,7 @@ export const JA_DESCRIPTIONS: Readonly<Record<string, readonly JaEntry[]>> = {
   "anthropic-skills:built-in-browser": [
     {
       en: "Read this skill before the first step that uses the built-in browser, the browser pane inside the Claude desktop app (also called the in-app browser, the browser pane, Claude's browser, or \"your own browser\"), whose tools are named mcp__Claude_Browser__* when the session runs in the desktop app and mcp__remote-devices__Claude_Browser__* when a cloud session is linked to the person's computer; before those tools are turned on there may be a single enable__mcp__remote-devices__Claude_Browser tool instead. It covers the pane's persistent sign-ins, tabs and preview_start, reading pages as text, site approvals, what the pane cannot open, and what to do when it cannot be reached. It is not for Claude in Chrome (mcp__claude-in-chrome__* tools), which has its own skill, and it does not decide which browser to use.",
-      ja: "内蔵ブラウザーを使う最初の手順の前に読む。内蔵ブラウザーは Claude デスクトップアプリ内のブラウザーペイン（アプリ内ブラウザー、ブラウザーペイン、Claude のブラウザー、「自分のブラウザー」とも呼ぶ）で、ツール名はデスクトップアプリで動くセッションでは mcp__Claude_Browser__*、クラウドセッションがユーザーのコンピューターにつながっているときは mcp__remote-devices__Claude_Browser__*。これらのツールが有効になる前は、enable__mcp__remote-devices__Claude_Browser ツールが1つだけある場合がある。ペインに残るサインイン、タブと preview_start、ページのテキストとしての読み取り、サイトの承認、ペインで開けないもの、接続できないときの対処を扱う。Claude in Chrome（mcp__claude-in-chrome__* ツール）は別のスキルがあるので対象外で、どちらのブラウザーを使うかも決めない。",
+      ja: "内蔵ブラウザーを使う最初の手順の前に読む。内蔵ブラウザーは Claude デスクトップアプリ内のブラウザーペイン（アプリ内ブラウザー、ブラウザーペイン、Claude のブラウザー、「自分のブラウザー」とも呼ぶ）で、ツール名はデスクトップアプリで動くセッションでは mcp__Claude_Browser__*、クラウドセッションがユーザーのコンピューターにつながっているときは mcp__remote-devices__Claude_Browser__* である。これらのツールが有効になる前は、enable__mcp__remote-devices__Claude_Browser ツールが1つだけある場合がある。ペインに残るサインイン、タブと preview_start、ページのテキストとしての読み取り、サイトの承認、ペインで開けないもの、接続できないときの対処を扱う。Claude in Chrome（mcp__claude-in-chrome__* ツール）は別のスキルがあるので対象外で、どちらのブラウザーを使うかも決めない。",
     },
   ],
   "anthropic-skills:chrome-browser": [
@@ -722,7 +722,7 @@ export const JA_DESCRIPTIONS: Readonly<Record<string, readonly JaEntry[]>> = {
   "anthropic-skills:computer-use": [
     {
       en: "Read this skill before the first step of any request to do something in an app on the person's own computer (Notes, Finder, System Settings, any desktop app), to look at their screen, or for \"computer use\". Computer use (desktop control) lets Claude take screenshots of the person's desktop and control it with clicks, typing and scrolling through the Claude desktop app; its tools are named mcp__computer-use__* when the session runs in the desktop app and mcp__remote-devices__computer_* when a cloud session is linked to the person's computer; before computer use is turned on for a conversation there may be no such tools, only an enable__mcp__remote-devices__computer tool, which turns it on. It covers turning it on, picking the right tool, the access flow, and the safety rules for tiered apps, links and financial actions. It is not for websites, which go through Claude in Chrome or the built-in browser and their own skills.",
-      ja: "ユーザー自身のコンピューターのアプリ（メモ、Finder、システム設定、任意のデスクトップアプリ）で何かをする依頼、画面を見る依頼、「computer use」の依頼では、最初の手順の前に読む。computer use（デスクトップの操作）では、Claude デスクトップアプリを通じて、Claude がユーザーのデスクトップのスクリーンショットを撮り、クリック・入力・スクロールで操作する。ツール名はデスクトップアプリで動くセッションでは mcp__computer-use__*、クラウドセッションがユーザーのコンピューターにつながっているときは mcp__remote-devices__computer_*。会話で computer use が有効になる前はこれらのツールが無く、有効にする enable__mcp__remote-devices__computer ツールだけがある場合がある。有効にする方法、適切なツールの選び方、アクセスの流れ、段階的な権限のアプリ・リンク・金融操作に関する安全のルールを扱う。Web サイトは Claude in Chrome か内蔵ブラウザーとそれぞれのスキルで扱うので対象外。",
+      ja: "ユーザー自身のコンピューターのアプリ（メモ、Finder、システム設定、任意のデスクトップアプリ）で何かをする依頼、画面を見る依頼、「computer use」の依頼では、最初の手順の前に読む。computer use（デスクトップの操作）では、Claude デスクトップアプリを通じて、Claude がユーザーのデスクトップのスクリーンショットを撮り、クリック・入力・スクロールで操作する。ツール名はデスクトップアプリで動くセッションでは mcp__computer-use__*、クラウドセッションがユーザーのコンピューターにつながっているときは mcp__remote-devices__computer_* である。会話で computer use が有効になる前はこれらのツールが無く、有効にする enable__mcp__remote-devices__computer ツールだけがある場合がある。有効にする方法、適切なツールの選び方、アクセスの流れ、段階的な権限のアプリ・リンク・金融操作に関する安全のルールを扱う。Web サイトは Claude in Chrome か内蔵ブラウザーとそれぞれのスキルで扱うので対象外である。",
     },
   ],
   "anthropic-skills:consolidate-memory": [
@@ -740,13 +740,13 @@ export const JA_DESCRIPTIONS: Readonly<Record<string, readonly JaEntry[]>> = {
   "anthropic-skills:docs": [
     {
       en: "docs (editable docs people share and comment on; the default for any document, named as a doc or not: a document, report, proposal, resume, cover letter, letter, contract, policy, form, template, worksheet, essay, handbook, guide, how-to, cheat sheet, SOP or other writing to keep, share, collaborate on, send, submit, print or sign; a doc exports to Word, PDF, Markdown or Google Docs, so needing a file to send, attach, upload, submit or print is no reason to pick Word, and a file nobody asked for is a doc, not Word; a plan, comparison, summary or notes asked in chat stays in chat; a pasted claude.ai artifact link may be a doc: check with docs tools first; Word or another file format named, tracked changes wanted, or a .docx to change or use as a template → that format's skill): making one → if no docs-connector instructions are in context, call its `guide` (topic.instructions) first; then create the doc (headings only, no body) before any search, file read or plan, even with files attached.",
-      ja: "docs（人が共有してコメントできる編集可能なドキュメント。doc と呼ばれていなくても、あらゆるドキュメントのデフォルト。保存・共有・共同編集・送信・提出・印刷・署名する文書、レポート、提案書、履歴書、カバーレター、手紙、契約書、ポリシー、フォーム、テンプレート、ワークシート、エッセイ、ハンドブック、ガイド、ハウツー、チートシート、SOP などの文章。doc は Word、PDF、Markdown、Google Docs に書き出せるので、送信・添付・アップロード・提出・印刷するファイルが必要なことは Word を選ぶ理由にならず、誰も頼んでいないファイルは Word ではなく doc にする。チャットで頼まれた計画・比較・要約・メモはチャットに書く。貼り付けられた claude.ai の Artifact のリンクは doc の場合があるので、まず docs のツールで確かめる。Word などのファイル形式の指定、変更履歴の要望、変更またはテンプレートに使う .docx がある場合 → その形式のスキル）。作るとき → コンテキストに docs コネクターの指示が無ければ、まずその `guide`（topic.instructions）を呼ぶ。次に、ファイルが添付されていても、検索・ファイルの読み込み・計画より前に doc を（見出しだけで本文なしで）作る。",
+      ja: "docs（人が共有してコメントできる編集可能なドキュメント。doc と呼ばれていなくても、あらゆるドキュメントのデフォルト。保存・共有・共同編集・送信・提出・印刷・署名する文書、レポート、提案書、履歴書、カバーレター、手紙、契約書、ポリシー、フォーム、テンプレート、ワークシート、エッセイ、ハンドブック、ガイド、ハウツー、チートシート、SOP などの文章。doc は Word、PDF、Markdown、Google Docs に書き出せるので、送信・添付・アップロード・提出・印刷するファイルが必要なことは Word を選ぶ理由にならず、誰も頼んでいないファイルは Word ではなく doc にする。チャットで頼まれた計画・比較・要約・メモはチャットに書く。貼り付けられた claude.ai の Artifact のリンクは doc の場合があるので、まず docs のツールで確かめる。Word などのファイル形式の指定、変更履歴の要望、変更またはテンプレートに使う .docx がある場合 → その形式のスキル）を扱う。作るとき → コンテキストに docs コネクターの指示が無ければ、まずその `guide`（topic.instructions）を呼ぶ。次に、ファイルが添付されていても、検索・ファイルの読み込み・計画より前に doc を（見出しだけで本文なしで）作る。",
     },
   ],
   "anthropic-skills:docx": [
     {
       en: "Use this skill whenever the user wants to create, read, edit, or manipulate Word documents (.docx) or Word templates (.dotx). Triggers include: any mention of Microsoft Word Documents, such as 'Word doc', 'word document', '.docx', '.dotx', 'microsoft doc'. Also use when extracting or reorganizing content from .docx or .dotx files, inserting or replacing images in documents, find-and-replace in Word files, working with tracked changes or comments, or converting content into a polished Word document. If the user asks for a deliverable as a Word or .docx file (to download, email or print), use this skill. However, if they ask for a document, page, report, memo, or notes WITHOUT naming a file format and the session offers Claude's own dedicated document or page skill or connector, use that instead, even if they will email or print it. Do NOT use for PDFs, spreadsheets, Google Docs, or coding unrelated to document generation.",
-      ja: "Word 文書（.docx）や Word テンプレート（.dotx）を作成・読み取り・編集・操作したいときに使う。トリガー: 「Word doc」「word document」「.docx」「.dotx」「microsoft doc」など Microsoft Word 文書への言及。.docx や .dotx ファイルの内容の抽出や再構成、文書への画像の挿入や差し替え、Word ファイルの検索と置換、変更履歴やコメントの扱い、整った Word 文書への変換にも使う。ユーザーが成果物を Word や .docx ファイルとして求めたとき（ダウンロード、メール、印刷のため）はこのスキルを使う。ただし、ファイル形式を指定せずにドキュメント・ページ・レポート・メモ・ノートを求められ、セッションに Claude 専用のドキュメントやページのスキル・コネクターがあれば、メールや印刷に使う場合でもそちらを使う。PDF、スプレッドシート、Google Docs、文書の生成と関係のないコーディングには使わない。",
+      ja: "Word 文書（.docx）や Word テンプレート（.dotx）を作成・読み取り・編集・操作したいときに使う。トリガー: 「Word doc」「word document」「.docx」「.dotx」「microsoft doc」など、Microsoft Word 文書に触れたときに使う。.docx や .dotx ファイルの内容の抽出や再構成、文書への画像の挿入や差し替え、Word ファイルの検索と置換、変更履歴やコメントの扱い、整った Word 文書への変換にも使う。ユーザーが成果物を Word や .docx ファイルとして求めたとき（ダウンロード、メール、印刷のため）はこのスキルを使う。ただし、ファイル形式を指定せずにドキュメント・ページ・レポート・メモ・ノートを求められ、セッションに Claude 専用のドキュメントやページのスキル・コネクターがあれば、メールや印刷に使う場合でもそちらを使う。PDF、スプレッドシート、Google Docs、文書の生成と関係のないコーディングには使わない。",
     },
   ],
   "anthropic-skills:explain-usage": [
@@ -758,7 +758,7 @@ export const JA_DESCRIPTIONS: Readonly<Record<string, readonly JaEntry[]>> = {
   "anthropic-skills:google-workspace": [
     {
       en: "Read this before the first Google Drive, Docs, Sheets or Slides connector call whenever the task creates or changes a Google file. Use this skill whenever the user wants to create or change a Google Doc, Sheet or Slides file in their Google Drive. Triggers include: a request that names Google Docs, Sheets, Slides or Drive and asks to make, edit, format, copy or rename a file; a docs.google.com link with a request to change that file, even a one-line fix or suggested edits; and any follow-up change to a Google file from earlier in the chat, even \"change it\" or \"add a tab\". Includes helper scripts for document positions, cell ranges and slide layout. However, if the user asks for a doc, deck or spreadsheet without naming Google, or gives a Google file only as source material for something new, use Claude's own output type instead. Do NOT use for read-only questions about a Google file, or for Word, Excel, PowerPoint or PDF files.",
-      ja: "作業で Google のファイルを作成・変更するときは、Google ドライブ・ドキュメント・スプレッドシート・スライドのコネクターを最初に呼ぶ前に読む。ユーザーが Google ドライブにある Google ドキュメント・スプレッドシート・スライドのファイルを作成・変更したいときに使う。トリガー: Google Docs・Sheets・Slides・Drive を名指しして、ファイルの作成・編集・書式設定・コピー・名前の変更を求める依頼、1行の修正や編集の提案であっても、そのファイルの変更を求める docs.google.com のリンク、会話の前のほうで出た Google のファイルへの追加の変更（「変えて」「タブを追加して」だけでも）。文書内の位置、セルの範囲、スライドのレイアウトのための補助スクリプトを含む。ただし、Google を名指しせずにドキュメント・デッキ・スプレッドシートを求められたときや、Google のファイルを新しいものを作る素材として渡されただけのときは、Claude 自身の出力形式を使う。Google のファイルについての読み取りだけの質問や、Word・Excel・PowerPoint・PDF のファイルには使わない。",
+      ja: "作業で Google のファイルを作成・変更するときは、Google ドライブ・ドキュメント・スプレッドシート・スライドのコネクターを最初に呼ぶ前に読む。ユーザーが Google ドライブにある Google ドキュメント・スプレッドシート・スライドのファイルを作成・変更したいときに使う。トリガー: Google Docs・Sheets・Slides・Drive を名指しして、ファイルの作成・編集・書式設定・コピー・名前の変更を求める依頼、1行の修正や編集の提案であっても、そのファイルの変更を求める docs.google.com のリンク、会話の前のほうで出た Google のファイルへの追加の変更（「変えて」「タブを追加して」だけでも）を頼まれたときに使う。文書内の位置、セルの範囲、スライドのレイアウトのための補助スクリプトを含む。ただし、Google を名指しせずにドキュメント・デッキ・スプレッドシートを求められたときや、Google のファイルを新しいものを作る素材として渡されただけのときは、Claude 自身の出力形式を使う。Google のファイルについての読み取りだけの質問や、Word・Excel・PowerPoint・PDF のファイルには使わない。",
     },
   ],
   "anthropic-skills:import-memory": [
@@ -788,13 +788,13 @@ export const JA_DESCRIPTIONS: Readonly<Record<string, readonly JaEntry[]>> = {
   "anthropic-skills:setup-claude": [
     {
       en: "Guided setup — install role-matched plugins, connect your tools, try a skill.",
-      ja: "ガイド付きのセットアップ。役割に合ったプラグインを入れ、ツールをつなぎ、スキルを試す。",
+      ja: "ガイド付きのセットアップを行う。役割に合ったプラグインを入れ、ツールをつなぎ、スキルを試す。",
     },
   ],
   "anthropic-skills:setup-cowork": [
     {
       en: "Guided setup — install role-matched plugins, connect your tools, try a skill.",
-      ja: "ガイド付きのセットアップ。役割に合ったプラグインを入れ、ツールをつなぎ、スキルを試す。",
+      ja: "ガイド付きのセットアップを行う。役割に合ったプラグインを入れ、ツールをつなぎ、スキルを試す。",
     },
   ],
   "anthropic-skills:skill-creator": [
@@ -836,13 +836,13 @@ export const JA_DESCRIPTIONS: Readonly<Record<string, readonly JaEntry[]>> = {
   "cowork-plugin-management:cowork-plugin-customizer": [
     {
       en: "Customize a Claude Code plugin for a specific organization's tools and workflows. Use when: customize plugin, set up plugin, configure plugin, tailor plugin, adjust plugin settings, customize plugin connectors, customize plugin skill, tweak plugin, modify plugin configuration.",
-      ja: "特定の組織のツールとワークフローに合わせて Claude Code のプラグインをカスタマイズする。使う場面: プラグインのカスタマイズ、セットアップ、設定、調整、プラグインの設定の変更、プラグインのコネクターやスキルのカスタマイズ、プラグインの微調整、プラグインの構成の変更。",
+      ja: "特定の組織のツールとワークフローに合わせて Claude Code のプラグインをカスタマイズする。プラグインのカスタマイズ、セットアップ、設定、調整、プラグインの設定の変更、プラグインのコネクターやスキルのカスタマイズ、プラグインの微調整、プラグインの構成の変更を頼まれたときに使う。",
     },
   ],
   "cowork-plugin-management:create-cowork-plugin": [
     {
       en: "Guide users through creating a new plugin from scratch in a cowork session. Use when users want to create a plugin, build a plugin, make a new plugin, develop a plugin, scaffold a plugin, start a plugin from scratch, or design a plugin. This skill requires Cowork mode with access to the outputs directory for delivering the final .plugin file.",
-      ja: "cowork セッションで、プラグインをゼロから作る手順を案内する。プラグインを作りたい、作成したい、新しく作りたい、開発したい、雛形を作りたい、ゼロから始めたい、設計したいときに使う。このスキルには、完成した .plugin ファイルを渡すための outputs ディレクトリにアクセスできる Cowork モードが必要。",
+      ja: "cowork セッションで、プラグインをゼロから作る手順を案内する。プラグインを作りたい、作成したい、新しく作りたい、開発したい、雛形を作りたい、ゼロから始めたい、設計したいときに使う。このスキルには、完成した .plugin ファイルを渡すための outputs ディレクトリにアクセスできる Cowork モードが必要である。",
     },
   ],
 }

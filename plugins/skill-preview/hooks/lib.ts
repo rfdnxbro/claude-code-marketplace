@@ -262,7 +262,11 @@ export function formatUntranslated(items: readonly Untranslated[]): string {
   return [
     `skill-preview の未訳の説明が ${items.length} 件あります。`,
     'plugins/skill-preview/hooks/ja-descriptions.ts の JA_DESCRIPTIONS に、各コマンドの { en, ja } を追加・更新してください。',
-    'en には下の description をそのまま写し、ja は簡潔な説明文（「〜する。」調）にして、固有名詞・コマンド名・ツール名・ファイル名は原文のままにしてください。',
+    'en には下の description をそのまま写してください。ja は README の「訳文の文体」に従ってください:',
+    '- 文末はである調（「〜する。」）にし、ですます調（〜します。〜です。）は使わない。すべての文を「。」で終える',
+    '- 体言止めにせず、名詞で終わる文は動詞で終える（例: 「〜の指針と基本。」→「〜の指針と基本を示す。」）。文末に括弧書きの補足を置くときも、括弧の前の本文は動詞で終える',
+    '- 起動条件を含む長い説明も要約せず忠実に訳し、「トリガー:」などのラベルとトリガー語の列挙も残す',
+    '- 固有名詞・コマンド名・ツール名・ファイル名は原文のままにする',
     '終わったら plugins/skill-preview/.claude-plugin/plugin.json の version を上げてください。',
     '',
     '```json',

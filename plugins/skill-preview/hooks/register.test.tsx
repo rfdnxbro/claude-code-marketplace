@@ -530,13 +530,16 @@ test('可変部分を訳に入れ、すでに訳文ならそのまま返す', as
   )
 })
 
-test('訳文の表は原文と訳の可変部分の数がそろっている', async () => {
+test('訳文の表は可変部分の数がそろい、である調で「。」で終わる', async () => {
   const holes = (text: string) => text.split('{}').length - 1
   for (const [name, entries] of Object.entries(JA_DESCRIPTIONS)) {
     expect(entries.length).toBeGreaterThan(0)
     for (const entry of entries) {
       expect([name, holes(entry.ja)]).toEqual([name, holes(entry.en)])
       expect([name, entry.ja.trim() !== '']).toEqual([name, true])
+      // 文体: である調で、すべての訳を「。」で終える（ですます調は使わない）
+      expect([name, entry.ja.endsWith('。')]).toEqual([name, true])
+      expect([name, /です|ます。/.test(entry.ja)]).toEqual([name, false])
     }
   }
 })
