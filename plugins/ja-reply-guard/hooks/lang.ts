@@ -12,79 +12,47 @@ export const MIN_PROMPT_LATIN_LETTERS = 20
 /** プロンプトの地の文に日本語文字がこれ以上あれば、日本語のプロンプトとみなす */
 export const MIN_PROMPT_JAPANESE = 2
 
-/** 地の文の文字数 */
-export type ProseStats = {
-  /** ひらがな・カタカナ・漢字の数 */
-  japanese: number
-  /** A-Z / a-z の数 */
-  latin: number
-}
-
 const JAPANESE = /[぀-ゟ゠-ヿㇰ-ㇿ㐀-䶿一-鿿豈-﫿ｦ-ﾟ]/gu
 const LATIN = /[A-Za-z]/g
 
-/** 行単位で消す・置き換える、地の文ではない部分 */
-const INLINE_PATTERNS: readonly RegExp[] = [
-  // インラインコード（`a` や ``a`b``）。開閉は同じ長さのバッククォート列で、より長い列の一部ではない
-  /(?<!`)(`+)(?!`).*?(?<!`)\1(?!`)/g,
-  // HTML タグ
-  /<\/?[A-Za-z][^>\n]*>/g,
+/** 行の中で地の文から外す部分 */
+const NON_PROSE: readonly RegExp[] = [
+  // インラインコード
+  /`[^`\n]+`/g,
   // URL
   /\b[A-Za-z][A-Za-z0-9+.-]*:\/\/\S+/g,
-  // メールアドレス
-  /\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+\b/g,
   // ファイルパス（区切りを含むもの）
   /(?:~|\.{1,2})?[/\\]?(?:[\w.@-]+[/\\])+[\w.@-]*/g,
   // 拡張子付きのファイル名（register.ts など）
   /\b[\w-]+\.[A-Za-z][A-Za-z0-9]{0,5}\b/g,
-  // snake_case・camelCase・PascalCase の識別子
-  /\b\w*_\w*\b/g,
-  /\b[a-z]+[A-Z]\w*\b/g,
-  /\b[A-Z][a-z]+[A-Z]\w*\b/g,
-  // コマンドのオプション（--force、-v）
-  /(?:^|\s)--?[A-Za-z][\w-]*/g,
 ]
 
-/**
- * コードブロック・インラインコード・URL・ファイルパス・識別子・引用（`>` の行）を除いた地の文を返す
- */
+/** 英語での返答を明示的に求める言い回し */
+const ASKS_FOR_ENGLISH = /英語で|英訳|英文で|\bin English\b/i
+
+/** コードブロック・インラインコード・URL・ファイルパス・引用（`>` の行。ツール出力の貼り付けなど）を除いた地の文を返す */
 export function stripNonProse(text: string): string {
   const kept: string[] = []
-  let fence: string | undefined
+  let inFence = false
 
   for (const line of text.split('\n')) {
-    const opener = /^\s*(`{3,}|~{3,})/.exec(line)?.[1]
-    if (fence !== undefined) {
-      // 閉じるフェンスは開いたものと同じ文字で、同じ長さ以上
-      if (opener !== undefined && opener[0] === fence[0] && opener.length >= fence.length) fence = undefined
+    if (/^\s*(```|~~~)/.test(line)) {
+      inFence = !inFence
       continue
     }
-    if (opener !== undefined) {
-      fence = opener
-      continue
-    }
-    // 引用（ツール出力の貼り付けなど）
-    if (/^\s*>/.test(line)) continue
+    if (inFence || /^\s*>/.test(line)) continue
 
-    let prose = line.replace(/\[([^\]\n]*)\]\([^)\n]*\)/g, '$1')
-    for (const pattern of INLINE_PATTERNS) prose = prose.replace(pattern, ' ')
-    kept.push(prose)
+    kept.push(NON_PROSE.reduce((prose, pattern) => prose.replace(pattern, ' '), line))
   }
 
   return kept.join('\n')
 }
 
-/** 文字列の日本語文字と英字の数を数える */
-export function measure(text: string): ProseStats {
-  return {
-    japanese: text.match(JAPANESE)?.length ?? 0,
-    latin: text.match(LATIN)?.length ?? 0,
-  }
-}
+/** 地の文（コードなどを除いた後）の日本語文字と英字の数 */
+export function proseStats(text: string): { japanese: number; latin: number } {
+  const prose = stripNonProse(text)
 
-/** 地の文の統計（コードなどを除いた後） */
-export function proseStats(text: string): ProseStats {
-  return measure(stripNonProse(text))
+  return { japanese: prose.match(JAPANESE)?.length ?? 0, latin: prose.match(LATIN)?.length ?? 0 }
 }
 
 /**
@@ -100,26 +68,9 @@ export function isEnglishHeavy(text: string): boolean {
   return japanese / (japanese + latin) < MAX_JAPANESE_RATIO
 }
 
-/** 英語での返答を明示的に求める言い回し */
-const ASKS_FOR_ENGLISH: readonly RegExp[] = [
-  /英語で(?:答|返|書|回|説明|話|教|お願い|頼|記述|出力|レス|やり取り|会話)/,
-  /英語に(?:して|直|訳|翻訳|変)/,
-  /英訳/,
-  /英文で/,
-  /\b(?:in|into|to)\s+English\b/i,
-  /\bEnglish\s+(?:only|please)\b/i,
-  /\b(?:speak|use|write)\s+English\b/i,
-]
-
-/**
- * プロンプトが英語での返答を明示的に求めているか
- *
- * コードブロックや引用の中の「英語で答えて」は、貼り付けた文字列でありユーザーの指示ではないので見ない。
- */
+/** プロンプトが英語での返答を明示的に求めているか */
 export function asksForEnglish(prompt: string): boolean {
-  const prose = stripNonProse(prompt)
-
-  return ASKS_FOR_ENGLISH.some(pattern => pattern.test(prose))
+  return ASKS_FOR_ENGLISH.test(prompt)
 }
 
 /**

@@ -21,7 +21,6 @@ const HUMAN_ORIGINS: ReadonlySet<PromptOrigin['kind']> = new Set(['composer', 'b
 
 /** メインの会話の、いま進んでいるターン */
 type TurnInfo = {
-  turnId: string
   /** このターンで指示を差し込んだか */
   isNoted: boolean
   /** このターンのステップの可視テキストを連結したもの */
@@ -45,14 +44,14 @@ export const register: Register = on => {
   })
 
   on('turn.start', ($, e, next) => {
-    if (e.agentId === undefined) turn = { turnId: e.turnId, isNoted: false, prose: '' }
+    if (e.agentId === undefined) turn = { isNoted: false, prose: '' }
 
     return next(e)
   })
 
   on('turn.step', async function* ($, e, next) {
     const response = yield* next(e)
-    if (e.agentId !== undefined || turn?.turnId !== e.turnId) return response
+    if (e.agentId !== undefined || turn === undefined) return response
 
     turn.prose += `\n${response.answer}`
     // 最後のステップ（ツール呼び出しなし）はターンの最後の書き直しに任せる
@@ -60,10 +59,8 @@ export const register: Register = on => {
     if (userWantsEnglish(lastPrompt) || !isEnglishHeavy(turn.prose)) return response
 
     turn.isNoted = true
-    const appended = await $.session.append({
-      message: { type: 'user', content: [{ type: 'text', text: STEP_NOTE }] },
-    })
-    $.ui.toast(appended.deny ? `日本語の指示を差し込めませんでした: ${appended.deny}` : '返答が英語になっていたので、日本語で書くよう指示しました')
+    await $.session.append({ message: { type: 'user', content: [{ type: 'text', text: STEP_NOTE }] } })
+    $.ui.toast('返答が英語になっていたので、日本語で書くよう指示しました')
 
     return response
   })
@@ -72,7 +69,7 @@ export const register: Register = on => {
     const result = await next(e)
     if (e.agentId !== undefined) return result
 
-    const info = turn?.turnId === e.turnId ? turn : undefined
+    const info = turn
     turn = undefined
     // 始まりを見ていないターン（リロード直後など）は、書き直しのターンかもしれないので触らない
     if (info === undefined || !canRequestRewrite || e.reason !== 'answer') return result
@@ -80,9 +77,7 @@ export const register: Register = on => {
 
     canRequestRewrite = false
     // セッションが空いてから新しいターンとして始まる。待つとこのターンが終わらないので待たない
-    void $.prompt.submit({ text: REWRITE_PROMPT }).then(sent => {
-      if (sent.drop !== undefined) $.ui.toast(`書き直しを依頼できませんでした: ${sent.drop}`)
-    })
+    void $.prompt.submit({ text: REWRITE_PROMPT })
     $.ui.toast('返答が英語になっていたので、日本語での書き直しを依頼しました')
 
     return result

@@ -167,7 +167,6 @@ test('書き直しの依頼が drop されても、人が次に送ったター�
   await complete($, 't1', ENGLISH)
   await settle()
   expect(rewrites(rec)).toEqual([REWRITE_PROMPT])
-  expect(rec.toasts).toContain('書き直しを依頼できませんでした: busy')
 
   rec.dropsPluginPrompts = false
   await typed($, '次の質問です')

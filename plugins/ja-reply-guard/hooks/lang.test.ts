@@ -29,22 +29,9 @@ describe('stripNonProse', () => {
     expect(stripNonProse(text)).toBe('説明です\nおわり')
   })
 
-  test('閉じるフェンスは開いたものより短いと閉じない', () => {
-    const text = ['````md', '```', 'inner text', '```', '````', '後'].join('\n')
-    expect(stripNonProse(text)).toBe('後')
-  })
-
-  test('インラインコード・URL・パス・ファイル名・識別子・オプションを除く', () => {
-    const stats = proseStats(
-      'これは `someFunction()` と https://example.com/very/long/path と ~/work/app/src と register.ts と snake_case_name と camelCaseName と --force です',
-    )
+  test('インラインコード・URL・パス・ファイル名を除く', () => {
+    const stats = proseStats('これは `someFunction()` と https://example.com/very/long/path と ~/work/app/src と register.ts です')
     expect(stats.latin).toBe(0)
-  })
-
-  test('内側にバッククォートを含むインラインコードを最後まで除く', () => {
-    const id = 'longEnglishIdentifierRepeatedManyTimes'
-    expect(proseStats(`説明です。 \`\`${id}\`${id}\`\` おわり`).latin).toBe(0)
-    expect(isEnglishHeavy(`説明です。 \`\`${id} \`${id} ${id}\`\` おわり`)).toBe(false)
   })
 
   test('パスやファイル名に似た英語（and/or、e.g、end.Next）も除く（判定が甘くなる方向）', () => {
@@ -53,8 +40,8 @@ describe('stripNonProse', () => {
     expect(proseStats('use the cache. Then read it').latin).toBe(21)
   })
 
-  test('引用の行を除き、リンクは表示テキストを残す', () => {
-    expect(stripNonProse('> Error: something failed badly\n[説明](https://example.com)')).toBe('説明')
+  test('引用の行（ツール出力の貼り付けなど）を除く', () => {
+    expect(stripNonProse('> Error: something failed badly\n説明')).toBe('説明')
   })
 })
 
@@ -101,13 +88,6 @@ describe('ユーザーが英語を求めているか', () => {
     expect(asksForEnglish('Answer in English only: what is a closure?')).toBe(true)
     expect(asksForEnglish('クロージャについて英語で答えて')).toBe(true)
     expect(asksForEnglish('この文を英訳して')).toBe(true)
-    expect(asksForEnglish('README を英語にして')).toBe(true)
-  })
-
-  test('コードブロック・インラインコード・引用の中の英語指定はユーザーの指示ではない', () => {
-    expect(asksForEnglish('次の文字列が何を意味するか説明して:\n```\n英語で答えて\n```')).toBe(false)
-    expect(asksForEnglish('`Answer in English` というテンプレートの意味は？')).toBe(false)
-    expect(asksForEnglish('> 英語で答えてください\nというメールが来ました。どう返せばいい？')).toBe(false)
   })
 
   test('英語の話題に触れているだけなら明示ではない', () => {
