@@ -55,7 +55,7 @@ skills: skill-name
 | `mcpServers` | No | エージェントが利用可能なMCPサーバーを制限（カンマ/YAML形式） |
 | `isolation` | No | 実行分離モード：`worktree` |
 | `background` | No | バックグラウンドタスクとして常に実行：`true`/`false` |
-| `omitClaudeMd` | No | `true`にすると、ユーザー・プロジェクト・ローカルのCLAUDE.mdを読み込まずにエージェントを実行する：`true`/`false`。管理ポリシーファイルは`omitClaudeMd`指定時も読み込まれる |
+| `omitClaudeMd` | No | `true`にすると、ユーザー・プロジェクト・ローカルのCLAUDE.mdを読み込まずにエージェントを実行する：`true`/`false`。管理ポリシーファイルは`omitClaudeMd`指定時も読み込まれる。`--agents` 定義でも指定可能。詳細は[omitClaudeMd](#omitclaudemd)節を参照 |
 | `autoCompactWindow` | No | このサブエージェントの auto-compact ウィンドウをトークン数で指定し、メイン会話より早く compact させる。`100000`〜`1000000` の整数で書く（`200k` は 200 と読まれて範囲外になる）。範囲外の値は無視され、フィールドが無いのと同じ扱いになる。環境変数 `CLAUDE_CODE_AUTO_COMPACT_WINDOW` が設定されている場合はそちらが優先される。`--agents` 定義でも指定可能 |
 | `experimental` | No | 実験的なエージェント別オプション（ネストされたオブジェクト。未知キーは無視される）。[experimental.cacheTtl](#experimentalcachettl)参照 |
 
@@ -346,6 +346,9 @@ background: true
 ## omitClaudeMd
 
 `omitClaudeMd: true` を指定すると、エージェントはユーザー・プロジェクト・ローカルのCLAUDE.mdファイルを読み込まずに実行されます。管理ポリシーファイルは`omitClaudeMd`指定時も読み込まれます。
+
+- frontmatterのほか、`--agents` で渡すJSON定義でも同じ `omitClaudeMd: true` を指定できる
+- このフィールドが効くのはサブエージェントとして起動されたときだけで、エージェントをメインセッションのエージェントとして実行した場合は無視される
 
 ```yaml
 ---
