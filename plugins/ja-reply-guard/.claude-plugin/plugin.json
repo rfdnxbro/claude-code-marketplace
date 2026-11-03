@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "ja-reply-guard",
+  "version": "0.1.0",
+  "description": "Claude の返答が英語だらけになったとき、日本語で書くよう促す mod",
+  "author": { "name": "rfdnxbro" },
+  "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/ja-reply-guard",
+  "repository": "https://github.com/rfdnxbro/claude-code-marketplace",
+  "license": "MIT",
+  "keywords": [
+    "mod",
+    "japanese",
+    "language"
+  ]
+}
