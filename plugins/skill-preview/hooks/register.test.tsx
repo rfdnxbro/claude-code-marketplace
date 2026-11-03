@@ -509,6 +509,23 @@ test('何も一致していないときは案内を出す', async ($, on) => {
 
 const ENGINE = { plugin: 'engine', tier: 'core' } as const
 
+/** 入力欄に text を打ち、右ペインに description の Text があるか */
+async function paneShows(
+  $: Engine,
+  clock: ReturnType<typeof mock.clock>,
+  text: string,
+  description: string | RegExp,
+): Promise<boolean> {
+  await eraseAll($, '/x')
+  await typeText($, text)
+  await clock.advance(100)
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  const found = await ui.find({ type: 'Text', text: description })
+  await ui.unmount()
+
+  return found !== undefined
+}
+
 /** command.describe を1回呼ぶ */
 function describe($: Engine, command: string, description: string, provider: { plugin: string; tier: 'core' | 'user' } = ENGINE) {
   return $.command.describe({ command, description, isHidden: false, immediate: false, provider })
@@ -559,35 +576,15 @@ test('訳文の表は可変部分の数がそろい、である調で「。」�
   }
 })
 
-test('候補リストの説明を日本語訳に置き換える', async ($, on) => {
+test('候補リストの説明は書き換えない（Claude に渡るスキル一覧も英語の原文のまま）', async ($, on) => {
   engine(on)
-  expect((await describe($, 'context', 'Show current context usage')).description).toBe(
-    '現在のコンテキストの使用状況を表示する。',
-  )
+  expect((await describe($, 'context', 'Show current context usage')).description).toBe('Show current context usage')
   expect(
     (await describe($, 'commit-commands:commit', 'Create a git commit', {
       plugin: 'commit-commands@claude-plugins-official',
       tier: 'user',
     })).description,
-  ).toBe('git コミットを作る。')
-})
-
-test('原文が変わったもの・ユーザーやコミュニティのものは候補リストで英語のまま', async ($, on) => {
-  engine(on)
-  expect((await describe($, 'context', 'Show the context usage (new wording)')).description).toBe(
-    'Show the context usage (new wording)',
-  )
-  // ユーザーが書いた、組み込みと同じ名前のコマンド
-  expect(
-    (await describe($, 'init', 'Initialize a new CLAUDE.md file with codebase documentation', {
-      plugin: 'user',
-      tier: 'user',
-    })).description,
-  ).toBe('Initialize a new CLAUDE.md file with codebase documentation')
-  expect(
-    (await describe($, 'eli5:eli5', 'Explain a topic like I am 5', { plugin: 'eli5@claude-community', tier: 'user' }))
-      .description,
-  ).toBe('Explain a topic like I am 5')
+  ).toBe('Create a git commit')
 })
 
 test('右ペインの説明も日本語訳にし、原文が変わったものは英語のまま出す', async ($, on) => {
@@ -854,32 +851,24 @@ test('公式訳の定義と訳文を asar の出力から読む', async () => {
   expect(idsPattern(['a+b/c'])).toBe('"(a\\+b\\/c)": "([^"\\\\]|\\\\.)*"')
 })
 
-test('公式訳があれば候補リストと右ペインの両方で自前訳より優先する', async ($, on) => {
+test('公式訳があれば右ペインで自前訳より優先する', async ($, on) => {
   const clock = mock.clock(on)
   const runs: string[][] = []
   engine(on, { asar: { size: 123, mtimeMs: 7 }, run: fakeAsar, runs })
   await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
   await settleOfficial(clock)
 
-  // 候補リスト: 公式訳のあるものは公式訳、無いものは自前訳
-  expect((await describe($, 'btw', 'Ask a quick side question without interrupting the main conversation')).description).toBe(
-    '公式の btw の説明',
-  )
-  expect((await describe($, 'model', 'Set the AI model for Claude Code')).description).toBe('公式のモデルの説明')
-  expect((await describe($, 'help', 'Show help and available commands')).description).toBe('公式のヘルプの説明')
-  expect((await describe($, 'context', 'Show current context usage')).description).toBe(
-    '現在のコンテキストの使用状況を表示する。',
-  )
-  // 公式訳は組み込みにだけ使う
-  expect((await describe($, 'resume', 'My resume', { plugin: 'user', tier: 'user' })).description).toBe('My resume')
+  await describe($, 'btw', 'Ask a quick side question without interrupting the main conversation')
+  await describe($, 'model', 'Set the AI model for Claude Code')
+  await describe($, 'resume', 'My resume', { plugin: 'user', tier: 'user' })
   await clock.advance(300)
 
-  // 右ペイン
-  await typeText($, '/btw')
-  await clock.advance(100)
-  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
-  expect(await ui.find({ type: 'Text', text: '公式の btw の説明' })).toBeDefined()
-  await ui.unmount()
+  // 公式訳のあるものは公式訳、無いものは自前訳
+  expect(await paneShows($, clock, '/btw', '公式の btw の説明')).toBe(true)
+  expect(await paneShows($, clock, '/model', '公式のモデルの説明')).toBe(true)
+  expect(await paneShows($, clock, '/context', '現在のコンテキストの使用状況を表示する。')).toBe(true)
+  // 公式訳は組み込みにだけ使う
+  expect(await paneShows($, clock, '/resume', 'My resume')).toBe(true)
 
   // 公式訳のあるものは、自前訳の原文が変わっていても未訳に数えない
   await describe($, 'btw', 'Ask a side question (reworded)')
@@ -914,9 +903,8 @@ test('アプリが無い・形式が読めないときは自前訳を使う', as
     current = options
     await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
     await settleOfficial(clock)
-    expect((await describe($, 'model', 'Set the AI model for Claude Code')).description).toBe(
-      'Claude Code の AI モデルを設定する。',
-    )
+    await describe($, 'model', 'Set the AI model for Claude Code')
+    expect(await paneShows($, clock, '/model', 'Claude Code の AI モデルを設定する。')).toBe(true)
   }
   // アプリが無いとき・ヘッダーが読めないときは asar を grep しない
   expect(runs.filter(argv => argv[0] === '/usr/bin/grep').length).toBe(0)
@@ -934,14 +922,13 @@ test('公式訳の取り出しが一時的に失敗したときはキャッシ�
   })
   await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
   await settleOfficial(clock)
-  expect((await describe($, 'model', 'Set the AI model for Claude Code')).description).toBe(
-    'Claude Code の AI モデルを設定する。',
-  )
+  await describe($, 'model', 'Set the AI model for Claude Code')
+  expect(await paneShows($, clock, '/model', 'Claude Code の AI モデルを設定する。')).toBe(true)
 
   failing = false
   await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
   await settleOfficial(clock)
-  expect((await describe($, 'model', 'Set the AI model for Claude Code')).description).toBe('公式のモデルの説明')
+  expect(await paneShows($, clock, '/model', '公式のモデルの説明')).toBe(true)
   // 1回目の失敗をキャッシュしていないので、2回目も取り出し直している
   expect(runs.filter(argv => argv[0] === '/usr/bin/grep').length).toBe(4)
 })

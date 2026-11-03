@@ -1,4 +1,4 @@
-// skill-preview: 入力中の /スキル名 や実行されたスキルの SKILL.md を右ペインに表示し、組み込み・Anthropic 提供の説明を日本語訳で出す
+// skill-preview: 入力中の /スキル名 や実行されたスキルの SKILL.md を右ペインに表示し、組み込み・Anthropic 提供の説明を右ペインで日本語訳にする
 
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, Timer } from 'claude-code'
@@ -369,10 +369,8 @@ async function loadOfficial($: EngineInterface) {
   } catch {
     official = {}
   }
-  if (JSON.stringify(official) === before) return
-  // 公式訳が変わったら、候補リストの説明と未訳の数を引き直す
-  $.ui.invalidate('command.describe')
-  await refreshUntranslated($)
+  // 公式訳が変わったら、未訳を数え直す
+  if (JSON.stringify(official) !== before) await refreshUntranslated($)
 }
 
 // ---------------------------------------------------------------------------
@@ -512,7 +510,7 @@ export const register: Register = on => {
       name: UNTRANSLATED_COMMAND,
       description: '組み込み・Anthropic 提供の説明のうち、日本語訳が無く英語のままのものを一覧する',
     })
-    // 読み込み前にキャッシュされた説明を引き直してもらう（command.describe で受け取るコマンドも埋め直す）
+    // リロードで忘れた command.describe のコマンドを受け取り直す
     $.ui.invalidate('command.describe')
     // 索引づくりと公式訳の読み込みは待たずに始める（索引は最初の検索で待つ）
     void ensureReady($)
@@ -539,16 +537,18 @@ export const register: Register = on => {
     return { text: formatUntranslated(findUntranslated(await listCommands($), official)) }
   })
 
-  // 候補リストと /help の説明を日本語訳に置き換える（公式訳 → 自前訳。どちらも無ければ英語のまま）
+  // 候補リストの説明は書き換えない（書き換えると Claude がスキルを選ぶときに読む説明まで変わるため。docs/adr/0001）。
+  // 受け取ったコマンドを覚え、$.command.list() に無い組み込みを右ペインと未訳の数え方で補う
   on('command.describe', async ($, e, next) => {
-    const command: CommandLike = { name: e.command, description: e.description, ...sourceOfProvider(e.provider) }
-    // 書き換える前の原文を覚える（$.command.list() に無い組み込みを右ペインと未訳の数え方で補う）
-    described[e.command] = { ...command, isHidden: e.isHidden }
+    described[e.command] = {
+      name: e.command,
+      description: e.description,
+      ...sourceOfProvider(e.provider),
+      isHidden: e.isHidden,
+    }
     scheduleRecount($)
-    const result = await next(e)
-    const ja = japaneseDescription({ ...command, description: result.description }, official)
 
-    return ja === undefined || ja === result.description ? result : { ...result, description: ja }
+    return next(e)
   })
 
   // キー入力ごと（上限 50 ms）。ここではファイルを読まず、タイマーで後から引く
