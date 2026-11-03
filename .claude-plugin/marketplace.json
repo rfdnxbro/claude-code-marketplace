@@ -63,6 +63,24 @@
         "pane"
       ],
       "category": "productivity"
+    },
+    {
+      "name": "ja-reply-guard",
+      "source": "./plugins/ja-reply-guard",
+      "description": "Claude の返答が英語だらけになったとき、日本語で書くよう促す mod",
+      "version": "0.1.0",
+      "author": {
+        "name": "rfdnxbro"
+      },
+      "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/ja-reply-guard",
+      "repository": "https://github.com/rfdnxbro/claude-code-marketplace",
+      "license": "MIT",
+      "keywords": [
+        "mod",
+        "japanese",
+        "language"
+      ],
+      "category": "productivity"
     }
   ]
 }
