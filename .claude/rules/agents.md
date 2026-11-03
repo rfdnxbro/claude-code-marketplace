@@ -437,6 +437,10 @@ model: sonnet
 export CLAUDE_CODE_SUBAGENT_MODEL=haiku
 ```
 
+### `CLAUDE_CODE_SUBAGENT_EFFORT` 環境変数
+
+`CLAUDE_CODE_SUBAGENT_EFFORT` を設定すると、他でeffortが指定されていない場合にサブエージェントが動作するeffortレベルを指定できます。設定しない場合と異なり、セッションのeffortは継承されません。
+
 ## CLIコマンド
 
 ### claude agents
