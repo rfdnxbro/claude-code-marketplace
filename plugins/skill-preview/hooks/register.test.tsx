@@ -10,6 +10,14 @@ import type {
 
 import { JA_DESCRIPTIONS } from './ja-descriptions.ts'
 import {
+  asarLayout,
+  idsPattern,
+  localeFileRange,
+  officialLabelsOf,
+  parseMessages,
+  parseTranslations,
+} from './official.ts'
+import {
   findUntranslated,
   formatUntranslated,
   matchCommands,
@@ -34,6 +42,8 @@ const PANE = {
 } as const
 
 const HOME = '/home/u'
+const ASAR = '/Applications/Claude.app/Contents/Resources/ion-dist.asar'
+const DESKTOP_CONFIG = `${HOME}/Library/Application Support/Claude/config.json`
 const CWD = '/work/app'
 
 const COMMANDS = [
@@ -111,11 +121,19 @@ type EngineOptions = {
   commands?: readonly (typeof COMMANDS)[number][]
   /** $.ui.copy で渡された文字列を入れる */
   copies?: string[]
+  /** FILES に足すファイル（パス → 中身） */
+  files?: Record<string, string>
+  /** Desktop アプリの asar を置く（無ければアプリが無い扱い） */
+  asar?: { size: number; mtimeMs: number }
+  /** $.process.run の応答（省くと失敗を返す）。呼ばれた argv は runs に入れる */
+  run?: (argv: readonly string[]) => string | undefined
+  runs?: string[][]
 }
 
 function engine(on: On, options: EngineOptions = {}): Set<string> {
+  const files: Record<string, string> = { ...FILES, ...options.files }
   const tree = dirs()
-  const isFile = (path: string) => FILES[path] !== undefined
+  const isFile = (path: string) => files[path] !== undefined
   const panes = new Set<string>()
   mock.store(on)
   mock.env(on, { HOME })
@@ -144,12 +162,29 @@ function engine(on: On, options: EngineOptions = {}): Set<string> {
   }))
   on('fs.exists', (_, e) => ({ value: isFile(e.path) || tree[e.path] !== undefined }))
   on('fs.stat', (_, e) => {
+    if (options.asar && e.path === ASAR) {
+      return { value: { kind: 'file', size: options.asar.size, mtimeMs: options.asar.mtimeMs, isLink: false } as const }
+    }
     if (!isFile(e.path) && tree[e.path] === undefined) throw new Error(`ENOENT: ${e.path}`)
 
     return { value: { kind: isFile(e.path) ? 'file' : 'dir', size: 0, mtimeMs: 1, isLink: false } as const }
   })
+  on('process.run', (_, e) => {
+    options.runs?.push([...e.argv])
+    const stdout = options.run?.(e.argv)
+
+    return {
+      value: {
+        exitCode: stdout === undefined ? 1 : 0,
+        stdout: stdout ?? '',
+        stderr: '',
+        isStdoutTruncated: false,
+        isStderrTruncated: false,
+      },
+    }
+  })
   on('fs.read', (_, e) => {
-    const text = FILES[e.path]
+    const text = files[e.path]
     if (text === undefined) throw new Error(`ENOENT: ${e.path}`)
 
     return { value: text }
@@ -726,4 +761,197 @@ test('未訳の一覧コマンドは一覧を出力し、クリップボード�
   expect(result.text).toMatch(/クリップボードにもコピーしました/)
   expect(copies.length).toBe(1)
   expect(copies[0]).toMatch(/未訳の説明が 2 件あります/)
+})
+
+// ---------------------------------------------------------------------------
+// command.describe でだけ届くコマンド（$.command.list() に無い組み込み）
+
+test('一覧に無い組み込みも command.describe で受け取れば右ペインに訳を出す', async ($, on) => {
+  const clock = mock.clock(on)
+  engine(on)
+  await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
+  await clock.settle()
+
+  for (const name of ['btw', 'help', 'resume'] as const) {
+    await describe($, name, JA_DESCRIPTIONS[name]?.[0]?.en ?? '')
+  }
+  // 隠しコマンドは右ペインの候補から外す
+  await $.command.describe({
+    command: 'claim-credit',
+    description: 'Claim credit',
+    isHidden: true,
+    immediate: false,
+    provider: ENGINE,
+  })
+  await clock.advance(300)
+
+  const shows = async (text: string, description: string | RegExp) => {
+    await eraseAll($, '/x')
+    await typeText($, text)
+    await clock.advance(100)
+    const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+    const found = await ui.find({ type: 'Text', text: description })
+    await ui.unmount()
+
+    return found !== undefined
+  }
+  expect(await shows('/btw', 'メインの会話を中断せずに、ちょっとした質問をする。')).toBe(true)
+  expect(await shows('/help', 'ヘルプと使えるコマンドを表示する。')).toBe(true)
+  expect(await shows('/resume', '以前の会話を再開する。')).toBe(true)
+  expect(await shows('/claim-credit', '一致するスキルはありません。')).toBe(true)
+})
+
+test('command.describe で受け取った原文で未訳を数える', async ($, on) => {
+  const clock = mock.clock(on)
+  engine(on)
+  await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
+  await clock.settle()
+  // 一覧に無い組み込みの原文が変わったもの
+  await describe($, 'btw', 'Ask a side question (reworded)')
+  // 一覧にあるもの（context）は、書き換え後ではなく受け取った原文で判定する
+  await describe($, 'context', 'Show current context usage')
+  await clock.advance(300)
+
+  const result = await $.command.run({ ...RUN_UNTRANSLATED })
+  expect(result.text).toMatch(/"name": "btw"/)
+  expect(result.text).not.toMatch(/"name": "context"/)
+})
+
+// ---------------------------------------------------------------------------
+// Desktop アプリの公式訳（テストでは合成した asar の内容を使う）
+
+/** 合成した asar の公式訳の定義（キー・英語・ID・日本語） */
+const OFFICIAL_MESSAGES = [
+  { key: 'btw', en: 'Ask a side question', id: 'Id+btw/01', ja: '公式の btw の説明' },
+  { key: 'model', en: 'Set the model', id: 'Id+model02', ja: '公式のモデルの説明' },
+  { key: 'addDir', en: 'Add a folder', id: 'Id+addDir3', ja: '公式のフォルダ追加の説明' },
+  { key: 'help', en: 'Get help', id: 'Id+help004', ja: '公式のヘルプの説明' },
+  { key: 'resume', en: 'Resume', id: 'Id+resume5', ja: '公式の再開の説明' },
+  { key: 'mcpSession', en: 'Manage servers', id: 'Id+mcpSes6', ja: '公式のサーバー管理の説明' },
+] as const
+
+/** asar の i18n/ja-JP.json の範囲（ヘッダーの offset 5000、大きさ 2000、本体の始まりは 8 + 1000） */
+const JA_START = 8 + 1000 + 5000
+
+/** 合成した asar に対する od / head / grep の出力 */
+function fakeAsar(argv: readonly string[]): string | undefined {
+  const [command, ...args] = argv
+  if (command === '/usr/bin/od') return '           4        1000         996         120\n'
+  if (command === '/usr/bin/head') {
+    const header = JSON.stringify({
+      files: { i18n: { files: { 'en-US.json': { size: 2000, offset: '1000' }, 'ja-JP.json': { size: 2000, offset: '5000' } } } },
+    })
+    return `\u0004\u0000\u0000\u0000xxxxxxxxxxxx${header}`
+  }
+  if (command === '/usr/bin/grep' && !args.includes('-b')) {
+    const defs = OFFICIAL_MESSAGES.map(m => `${m.key}:{defaultMessage:"${m.en}",id:"${m.id}"}`).join(',')
+    return `x=ne({${defs}})\nbtw:{defaultMessage:"btw",id:"Other00001"}\n`
+  }
+  if (command === '/usr/bin/grep') {
+    return OFFICIAL_MESSAGES.flatMap((m, i) => [
+      // en-US.json の行（範囲外なので使わない）
+      `${2008 + i * 10}:"${m.id}": "${m.en}"`,
+      `${JA_START + i * 10}:"${m.id}": "${m.ja}"`,
+    ]).join('\n')
+  }
+
+  return undefined
+}
+
+const JA_CONFIG = { [DESKTOP_CONFIG]: JSON.stringify({ locale: 'ja-JP' }) }
+
+/** 公式訳の読み込み（session.start の裏で走る）が終わるまで進める */
+async function settleOfficial(clock: { settle: () => Promise<void> }) {
+  for (let i = 0; i < 5; i++) await clock.settle()
+}
+
+test('公式訳の定義と訳文を asar の出力から読む', async () => {
+  expect(asarLayout('  4  1000  996  120 ')).toEqual({ headerLength: 120, base: 1008 })
+  expect(asarLayout('garbage')).toBe(undefined)
+  expect(localeFileRange(fakeAsar(['/usr/bin/head']) ?? '', 1008, 'ja-JP')).toEqual({ start: 6008, end: 8008 })
+  expect(localeFileRange('no header', 1008, 'ja-JP')).toBe(undefined)
+
+  const messages = parseMessages(fakeAsar(['/usr/bin/grep']) ?? '')
+  expect(messages.map(m => m.key)).toEqual(OFFICIAL_MESSAGES.map(m => m.key))
+  expect(parseMessages('btw:{defaultMessage:"btw",id:"x"}')).toEqual([])
+
+  const translations = parseTranslations(fakeAsar(['/usr/bin/grep', '-b']) ?? '', { start: 6008, end: 8008 })
+  expect(translations['Id+model02']).toBe('公式のモデルの説明')
+  const labels = officialLabelsOf(messages, translations)
+  expect(labels['add-dir']).toBe('公式のフォルダ追加の説明')
+  expect(labels['mcp-session']).toBe('公式のサーバー管理の説明')
+  // ERE の特殊文字（+ と /）を含む ID もエスケープする
+  expect(idsPattern(['a+b/c'])).toBe('"(a\\+b\\/c)": "([^"\\\\]|\\\\.)*"')
+})
+
+test('公式訳があれば候補リストと右ペインの両方で自前訳より優先する', async ($, on) => {
+  const clock = mock.clock(on)
+  const runs: string[][] = []
+  engine(on, { files: JA_CONFIG, asar: { size: 123, mtimeMs: 7 }, run: fakeAsar, runs })
+  await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
+  await settleOfficial(clock)
+
+  // 候補リスト: 公式訳のあるものは公式訳、無いものは自前訳
+  expect((await describe($, 'btw', 'Ask a quick side question without interrupting the main conversation')).description).toBe(
+    '公式の btw の説明',
+  )
+  expect((await describe($, 'model', 'Set the AI model for Claude Code')).description).toBe('公式のモデルの説明')
+  expect((await describe($, 'help', 'Show help and available commands')).description).toBe('公式のヘルプの説明')
+  expect((await describe($, 'context', 'Show current context usage')).description).toBe(
+    '現在のコンテキストの使用状況を表示する。',
+  )
+  // 公式訳は組み込みにだけ使う
+  expect((await describe($, 'resume', 'My resume', { plugin: 'user', tier: 'user' })).description).toBe('My resume')
+  await clock.advance(300)
+
+  // 右ペイン
+  await typeText($, '/btw')
+  await clock.advance(100)
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  expect(await ui.find({ type: 'Text', text: '公式の btw の説明' })).toBeDefined()
+  await ui.unmount()
+
+  // 公式訳のあるものは、自前訳の原文が変わっていても未訳に数えない
+  await describe($, 'btw', 'Ask a side question (reworded)')
+  await clock.advance(300)
+  const result = await $.command.run({ ...RUN_UNTRANSLATED })
+  expect(result.text).not.toMatch(/"name": "btw"/)
+
+  // 2回目の起動では、asar が変わっていなければキャッシュを使い、取り出し直さない
+  const before = runs.filter(argv => argv[0] === '/usr/bin/grep').length
+  await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
+  await settleOfficial(clock)
+  expect(runs.filter(argv => argv[0] === '/usr/bin/grep').length).toBe(before)
+  expect(before).toBe(2)
+})
+
+test('UI が日本語でない・アプリが無い・形式が読めないときは自前訳を使う', async ($, on) => {
+  const cases: EngineOptions[] = [
+    { files: { [DESKTOP_CONFIG]: JSON.stringify({ locale: 'en-US' }) }, asar: { size: 1, mtimeMs: 1 }, run: fakeAsar },
+    { files: JA_CONFIG, run: fakeAsar },
+    { files: JA_CONFIG, asar: { size: 2, mtimeMs: 2 }, run: argv => (argv[0] === '/usr/bin/od' ? 'broken' : '') },
+  ]
+  const clock = mock.clock(on)
+  const runs: string[][] = []
+  let current: EngineOptions = {}
+  engine(on, {
+    get files() {
+      return current.files
+    },
+    get asar() {
+      return current.asar
+    },
+    run: argv => current.run?.(argv),
+    runs,
+  })
+  for (const options of cases) {
+    current = options
+    await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
+    await settleOfficial(clock)
+    expect((await describe($, 'model', 'Set the AI model for Claude Code')).description).toBe(
+      'Claude Code の AI モデルを設定する。',
+    )
+  }
+  // UI が日本語でないとき・アプリが無いときは asar を grep しない
+  expect(runs.filter(argv => argv[0] === '/usr/bin/grep').length).toBe(0)
 })

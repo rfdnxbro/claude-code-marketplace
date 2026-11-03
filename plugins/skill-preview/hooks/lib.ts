@@ -1,8 +1,12 @@
 // $ を使わない純粋な処理（入力の解釈・候補の絞り込み・frontmatter の解析）
 
-import type { SkillDoc, SkillField } from '../types'
+import type { DescribedCommand, SkillDoc, SkillField } from '../types'
 import { JA_DESCRIPTIONS } from './ja-descriptions.ts'
 import type { JaEntry } from './ja-descriptions.ts'
+import type { OfficialLabels } from './official.ts'
+
+/** 訳文の表（テストで差し替えられるようにする） */
+type Table = Readonly<Record<string, readonly JaEntry[]>>
 
 /** 候補として扱うコマンドの形（$.command.list() の要素と同じ） */
 export type CommandLike = {
@@ -177,14 +181,40 @@ export function translateDescription(
   return undefined
 }
 
-/** 訳があれば訳を、無ければ元の説明を返す */
+/** 組み込みコマンドの公式訳（Claude Desktop アプリが持つもの）があればそれを返す */
+export function officialDescription(
+  name: string,
+  owner: string | undefined,
+  official: Readonly<OfficialLabels> | undefined,
+): string | undefined {
+  if (owner !== BUILTIN || !official || !Object.prototype.hasOwnProperty.call(official, name)) return undefined
+
+  return official[name]
+}
+
+/**
+ * 表示する日本語の説明を、公式訳 → 同梱の自前訳の順で選ぶ。どちらも使えなければ undefined。
+ * 公式訳は手を加えずにそのまま返す（文体ルールは自前訳だけに適用する）
+ */
+export function preferredDescription(
+  name: string,
+  description: string | undefined,
+  owner: string | undefined,
+  official?: Readonly<OfficialLabels>,
+  table?: Table,
+): string | undefined {
+  return officialDescription(name, owner, official) ?? translateDescription(name, description, owner, table)
+}
+
+/** 公式訳 → 自前訳 → 元の説明の順で、表示する説明を返す */
 export function localizeDescription(
   name: string,
   description: string | undefined,
   owner: string | undefined,
-  table?: Readonly<Record<string, readonly JaEntry[]>>,
+  official?: Readonly<OfficialLabels>,
+  table?: Table,
 ): string | undefined {
-  return translateDescription(name, description, owner, table) ?? description
+  return preferredDescription(name, description, owner, official, table) ?? description
 }
 
 /** $.command.list() の要素から説明の出どころを決める（ユーザーと MCP のものは訳さない） */
@@ -237,7 +267,7 @@ export const ANTHROPIC_MARKETPLACES: Readonly<Record<string, readonly string[]>>
 
 /**
  * 訳の対象にする Anthropic 提供のプラグインの名前。組み込み（BUILTIN）とあわせて、未訳を数える範囲にもなる。
- * $.command.list() にはマーケットプレイスが含まれないので、右ペインと未訳の数え方は名前だけで判定する
+ * $.command.list() にはマーケットプレイスが含まれないので、command.describe で受け取っていないコマンドは名前だけで判定する
  */
 export const ANTHROPIC_PLUGINS: readonly string[] = Object.keys(ANTHROPIC_MARKETPLACES)
 
@@ -262,12 +292,12 @@ export function isMostlyJapanese(text: string): boolean {
 export type Untranslated = { name: string; source: string; plugin?: string; description: string }
 
 /**
- * コマンド一覧のうち、訳の対象なのに訳が使えないもの（訳が無い、または英語の原文が
+ * コマンド一覧のうち、訳の対象なのに訳が使えないもの（公式訳が無く、同梱の訳も無いか英語の原文が
  * 同梱時と一致しない）を返す。説明が空のもの、もともと日本語のものは数えない
  */
 export function findUntranslated(
   list: readonly CommandLike[],
-  table?: Readonly<Record<string, readonly JaEntry[]>>,
+  options: { official?: Readonly<OfficialLabels>; table?: Table } = {},
 ): Untranslated[] {
   return list
     .filter(command => {
@@ -276,7 +306,10 @@ export function findUntranslated(
         return false
       }
 
-      return translateDescription(command.name, command.description, owner, table) === undefined
+      return (
+        preferredDescription(command.name, command.description, owner, options.official, options.table) ===
+        undefined
+      )
     })
     .map(command => ({
       name: command.name,
@@ -284,6 +317,50 @@ export function findUntranslated(
       ...(command.plugin === undefined ? {} : { plugin: command.plugin }),
       description: command.description,
     }))
+}
+
+/** command.describe の provider から覚えた出どころを、$.command.list() の source と plugin の形にする */
+function sourceOfOwner(owner: string): { source: string; plugin?: string } {
+  if (owner === BUILTIN) return { source: 'builtin' }
+  // ユーザー・プロジェクトのコマンドは provider が `user` / `project` で届く
+  if (owner === 'user' || owner === 'project') return { source: 'user' }
+
+  return { source: 'plugin', plugin: owner }
+}
+
+/**
+ * $.command.list() と、command.describe で受け取ったコマンドを合わせる。
+ * $.command.list() に無い組み込み（`/btw`、`/help` など）も補い、隠しコマンドは外す。
+ * 説明は command.describe で受け取った書き換え前の原文を使う（訳と未訳の判定を原文で行うため）。
+ * Anthropic 提供と同じ名前の、別のマーケットプレイスのプラグインは、出どころを `<名前>@<マーケットプレイス>` にする
+ */
+export function mergeCommands<T extends CommandLike>(
+  list: readonly T[],
+  described: Readonly<Record<string, DescribedCommand>>,
+): CommandLike[] {
+  const has = (name: string) => Object.prototype.hasOwnProperty.call(described, name)
+  const merged: CommandLike[] = []
+  const listed = new Set<string>()
+  for (const command of list) {
+    listed.add(command.name)
+    const known = has(command.name) ? described[command.name] : undefined
+    if (known?.isHidden) continue
+    if (!known) {
+      merged.push(command)
+      continue
+    }
+    merged.push({
+      ...command,
+      description: known.description,
+      ...(command.source === 'plugin' && known.owner.includes('@') ? { plugin: known.owner } : {}),
+    })
+  }
+  for (const [name, known] of Object.entries(described)) {
+    if (known.isHidden || listed.has(name)) continue
+    merged.push({ name, description: known.description, ...sourceOfOwner(known.owner) })
+  }
+
+  return merged
 }
 
 /** 未訳の一覧を、Claude にそのまま貼って訳を頼める形にする */

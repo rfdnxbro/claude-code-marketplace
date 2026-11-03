@@ -1,9 +1,10 @@
 // skill-preview: 入力中の /スキル名 や実行されたスキルの SKILL.md を右ペインに表示し、組み込み・Anthropic 提供の説明を日本語訳で出す
 
 import { atom, read, update } from 'claude-code'
-import type { CommandInfo, EngineInterface, Register, Timer } from 'claude-code'
+import type { EngineInterface, Register, Timer } from 'claude-code'
 
-import type { PreviewView, SkillDoc } from '../types'
+import type { DescribedCommand, PreviewView, SkillDoc } from '../types'
+import type { CommandLike } from './lib.ts'
 import {
   docFromFile,
   fieldsOf,
@@ -11,6 +12,7 @@ import {
   formatUntranslated,
   localizeDescription,
   matchCommands,
+  mergeCommands,
   originOfCommand,
   originOfSkillSource,
   ownerOfCommand,
@@ -19,8 +21,24 @@ import {
   projectDirs,
   shortName,
   slashQuery,
-  translateDescription,
+  preferredDescription,
 } from './lib.ts'
+import {
+  MESSAGES_PATTERN,
+  asarCandidates,
+  asarLayout,
+  desktopConfigPath,
+  idsPattern,
+  isJapaneseLocale,
+  isOfficialCacheFor,
+  localeFileRange,
+  localeOfAppleLanguages,
+  localeOfConfig,
+  officialLabelsOf,
+  parseMessages,
+  parseTranslations,
+} from './official.ts'
+import type { AsarStat, OfficialLabels } from './official.ts'
 
 const PANE = 'skill-preview'
 const TITLE = 'スキル'
@@ -36,6 +54,14 @@ const UNTRANSLATED_COMMAND = 'skill-preview-untranslated'
 const MAX_LEARNED = 500
 /** 実行して分かったパスを置く $.store のキー（作業ディレクトリごとに覚える） */
 const LEARNED_KEY = 'learned-paths'
+/** Desktop アプリから取り出した公式訳のキャッシュを置く $.store のキー */
+const OFFICIAL_KEY = 'official-labels'
+/** 公式訳の訳文のファイル（asar の中の `i18n/<これ>.json`） */
+const OFFICIAL_LOCALE_FILE = 'ja-JP'
+/** 公式訳を取り出すコマンド1回の時間の上限（ミリ秒）。asar 全体を grep するので長めにする */
+const OFFICIAL_TIMEOUT_MS = 60000
+/** command.describe で受け取ったコマンドを $.state に書くまでの待ち（ミリ秒）。まとめて書く */
+const DESCRIBED_FLUSH_MS = 200
 
 const EMPTY: PreviewView = { mode: 'empty', candidates: [] }
 
@@ -45,6 +71,11 @@ const view = atom({ plugin: 'skill-preview', key: 'view' } as const, EMPTY, {
 })
 /** 訳の対象なのに英語のまま表示しているコマンドの数 */
 const untranslated = atom({ plugin: 'skill-preview', key: 'untranslated' } as const, 0)
+/** command.describe で受け取ったコマンド（$.command.list() に無い組み込みを補うため） */
+const NO_DESCRIBED: Record<string, DescribedCommand> = {}
+const described = atom({ plugin: 'skill-preview', key: 'described' } as const, NO_DESCRIBED, {
+  shape: 'described-1',
+})
 
 /** 名前 → SKILL.md の索引 */
 type Entry = { path: string; origin: string }
@@ -61,7 +92,12 @@ let index: SkillIndex = { exact: {}, bare: {} }
 let learned: Record<string, string> = {}
 /** 索引を作った作業ディレクトリ（learned のキーに使う） */
 let cwd = ''
-let commands: CommandInfo[] = []
+let commands: CommandLike[] = []
+/** Desktop アプリの公式訳（コマンド名 → 日本語）。読めないときは空 */
+let official: OfficialLabels = {}
+/** まだ $.state に書いていない command.describe の受け取り分 */
+let pendingDescribed: Record<string, DescribedCommand> = {}
+let describedTimer: Timer | undefined
 let ready: Promise<void> | undefined
 let timer: Timer | undefined
 let closeTimer: Timer | undefined
@@ -291,14 +327,14 @@ async function loadFile(
   }
 }
 
-/** 説明を日本語訳に置き換える（訳が無い・原文が変わったときはそのまま） */
+/** 説明を公式訳か自前訳に置き換える（どちらも使えないときはそのまま） */
 function localizeDoc(doc: SkillDoc, owner: string | undefined): SkillDoc {
-  const description = localizeDescription(doc.name, doc.description, owner)
+  const description = localizeDescription(doc.name, doc.description, owner, official)
 
   return description === doc.description ? doc : { ...doc, description }
 }
 
-async function loadCommand($: EngineInterface, command: CommandInfo): Promise<SkillDoc> {
+async function loadCommand($: EngineInterface, command: CommandLike): Promise<SkillDoc> {
   const entry = resolveEntry(command.name)
   const origin = originOfCommand(command, entry?.origin || undefined)
   const owner = ownerOfCommand(command)
@@ -363,26 +399,138 @@ function onBoxText($: EngineInterface, text: string) {
   })
 }
 
+/** $.command.list() と、command.describe で受け取ったコマンド（一覧に無い組み込みも含む）を合わせた一覧 */
+async function listCommands($: EngineInterface): Promise<CommandLike[]> {
+  return mergeCommands(await $.command.list(), await read($, described))
+}
+
 /** コマンド一覧から未訳の数を数え直す（変わったときだけ書く） */
-async function countUntranslated($: EngineInterface, list: readonly CommandInfo[]) {
-  const count = findUntranslated(list).length
+async function countUntranslated($: EngineInterface, list: readonly CommandLike[]) {
+  const count = findUntranslated(list, { official }).length
   if ((await read($, untranslated)) !== count) await update($, untranslated, (): number => count)
 }
 
-/** 起動時に未訳を数える（失敗しても他の表示は止めない） */
+/** 未訳を数え直す（失敗しても他の表示は止めない） */
 async function refreshUntranslated($: EngineInterface) {
   try {
-    await countUntranslated($, await $.command.list())
+    await countUntranslated($, await listCommands($))
   } catch {
     // 数えられなくても、入力時にまた数える
   }
+}
+
+/** command.describe で受け取ったコマンドを覚える（まとめて $.state に書く） */
+function rememberDescribed($: EngineInterface, name: string, command: DescribedCommand) {
+  pendingDescribed[name] = command
+  describedTimer?.cancel()
+  describedTimer = $.clock.after(DESCRIBED_FLUSH_MS, () => {
+    describedTimer = undefined
+    void flushDescribed($)
+  })
+}
+
+async function flushDescribed($: EngineInterface) {
+  const batch = pendingDescribed
+  pendingDescribed = {}
+  await update($, described, (current): Record<string, DescribedCommand> => ({ ...current, ...batch }))
+  await refreshUntranslated($)
+}
+
+// ---------------------------------------------------------------------------
+// Desktop アプリの公式訳（実行時にアプリ内のファイルから読む。リポジトリには同梱しない）
+
+/** Desktop の UI の言語（設定ファイルに無ければ macOS の言語設定） */
+async function desktopLocale($: EngineInterface, home: string): Promise<string | undefined> {
+  try {
+    const locale = localeOfConfig(await $.fs.read(desktopConfigPath(home)))
+    if (locale) return locale
+  } catch {
+    // 設定ファイルが無ければ OS の言語を見る
+  }
+  try {
+    const result = await $.process.run(['/usr/bin/defaults', 'read', '-g', 'AppleLanguages'], { timeoutMs: 5000 })
+    if (result.exitCode === 0) return localeOfAppleLanguages(result.stdout)
+  } catch {
+    // macOS 以外など
+  }
+
+  return undefined
+}
+
+/** Desktop アプリの asar を探す */
+async function findAsar($: EngineInterface, home: string): Promise<AsarStat | undefined> {
+  for (const path of asarCandidates(home)) {
+    try {
+      const stat = await $.fs.stat(path)
+      if (stat.kind === 'file') return { path, size: stat.size, mtimeMs: stat.mtimeMs }
+    } catch {
+      // 次の場所を見る
+    }
+  }
+
+  return undefined
+}
+
+/** asar から組み込みコマンドの公式の日本語訳を取り出す（読めなければ空） */
+async function extractOfficial($: EngineInterface, path: string): Promise<OfficialLabels> {
+  const init = { timeoutMs: OFFICIAL_TIMEOUT_MS, env: { LC_ALL: 'C' } }
+  const od = await $.process.run(['/usr/bin/od', '-An', '-tu4', '-N16', path], init)
+  const layout = od.exitCode === 0 ? asarLayout(od.stdout) : undefined
+  if (!layout) return {}
+
+  const head = await $.process.run(['/usr/bin/head', '-c', String(16 + layout.headerLength), path], init)
+  const range =
+    head.exitCode === 0 && !head.isStdoutTruncated
+      ? localeFileRange(head.stdout, layout.base, OFFICIAL_LOCALE_FILE)
+      : undefined
+  if (!range) return {}
+
+  const defs = await $.process.run(['/usr/bin/grep', '-a', '-o', '-E', MESSAGES_PATTERN, path], init)
+  const messages = parseMessages(defs.stdout)
+  if (messages.length === 0) return {}
+
+  const ids = messages.map(message => message.id)
+  const found = await $.process.run(['/usr/bin/grep', '-a', '-o', '-b', '-E', idsPattern(ids), path], init)
+
+  return officialLabelsOf(messages, parseTranslations(found.stdout, range))
+}
+
+/**
+ * 公式訳を読み込む。asar の大きさ・更新時刻と UI の言語が前回と同じなら $.store のキャッシュを使う。
+ * アプリが無い・形式が変わって読めない・UI が日本語でない・macOS 以外のときは空にして、自前訳に任せる
+ */
+async function loadOfficial($: EngineInterface) {
+  const before = JSON.stringify(official)
+  try {
+    const home = (await $.env.get('HOME')) ?? ''
+    const locale = await desktopLocale($, home)
+    const asar = isJapaneseLocale(locale) ? await findAsar($, home) : undefined
+    if (!asar || locale === undefined) {
+      official = {}
+    } else {
+      const cached = await $.store.get(OFFICIAL_KEY)
+      if (isOfficialCacheFor(cached, asar, locale)) {
+        official = cached.labels
+      } else {
+        official = await extractOfficial($, asar.path)
+        // 読めなかったときも空のまま覚え、アプリが更新されるまで取り直さない
+        await $.store.set(OFFICIAL_KEY, { ...asar, locale, labels: official })
+      }
+    }
+  } catch {
+    official = {}
+  }
+  if (JSON.stringify(official) === before) return
+  // 公式訳が変わったら、候補リストの説明と未訳の数を引き直す
+  $.ui.invalidate('command.describe')
+  await refreshUntranslated($)
 }
 
 /** トークンから候補を引き、先頭をプレビューする（fromInput: 入力欄から引いたか） */
 async function showQuery($: EngineInterface, query: string, fromInput: boolean) {
   const mine = ++seq
   await ensureReady($)
-  commands = await $.command.list()
+  commands = await listCommands($)
   await countUntranslated($, commands)
   const hits = matchCommands(commands, query, MAX_CANDIDATES)
   if (mine !== seq) return
@@ -487,6 +635,7 @@ export const register: Register = on => {
     // 索引づくりは待たずに始める（最初の検索で待つ）
     void ensureReady($)
     void refreshUntranslated($)
+    void loadOfficial($)
 
     return next(e)
   })
@@ -505,9 +654,9 @@ export const register: Register = on => {
 
   // 未訳の一覧を、Claude に貼って訳を頼める形で出す（クリップボードにもコピーする）
   on('command.run', { command: UNTRANSLATED_COMMAND }, async $ => {
-    const list = await $.command.list()
+    const list = await listCommands($)
     await countUntranslated($, list)
-    const items = findUntranslated(list)
+    const items = findUntranslated(list, { official })
     const text = formatUntranslated(items)
     if (items.length === 0) return { text }
     const copied = await $.ui.copy({ text })
@@ -517,8 +666,12 @@ export const register: Register = on => {
 
   // 候補リストと /help の説明を日本語訳に置き換える（原文が訳の元と違えば英語のまま）
   on('command.describe', async ($, e, next) => {
+    const owner = ownerOfProvider(e.provider)
+    // 書き換える前の原文を覚える（$.command.list() に無い組み込みを右ペインと未訳の数え方で補う）
+    rememberDescribed($, e.command, { description: e.description, owner, isHidden: e.isHidden })
     const result = await next(e)
-    const ja = translateDescription(e.command, result.description, ownerOfProvider(e.provider))
+    // 公式訳 → 自前訳の順で選ぶ（Desktop は一部の組み込みに自前の日本語を出すが、ターミナルでも同じ訳にする）
+    const ja = preferredDescription(e.command, result.description, owner, official)
 
     return ja === undefined || ja === result.description ? result : { ...result, description: ja }
   })
