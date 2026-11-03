@@ -20,6 +20,8 @@ const TITLE = 'スキル'
 const MAX_CANDIDATES = 6
 /** キー入力が止まってから引きに行くまでの待ち（ミリ秒） */
 const DEBOUNCE_MS = 60
+/** 入力欄が空になってから入力中のプレビューを閉じるまでの待ち（ミリ秒）。送信直後のスキル実行を待つ */
+const CLOSE_DELAY_MS = 300
 /** $.store に覚えるパスの最大件数 */
 const MAX_LEARNED = 500
 
@@ -29,7 +31,6 @@ const EMPTY: PreviewView = { mode: 'empty', candidates: [] }
 const view = atom({ plugin: 'skill-preview', key: 'view' } as const, EMPTY, {
   shape: 'view-1',
 })
-const opened = atom({ plugin: 'skill-preview', key: 'opened' } as const, false)
 
 /** 名前 → SKILL.md の索引 */
 type Entry = { path: string; origin: string }
@@ -46,7 +47,12 @@ let learned: Record<string, string> = {}
 let commands: CommandInfo[] = []
 let ready: Promise<void> | undefined
 let timer: Timer | undefined
+let closeTimer: Timer | undefined
 let lastQuery: string | undefined
+/** 入力欄の `/スキル名` から引いたプレビューを出しているか */
+let previewing = false
+/** 入力中のプレビューを手で閉じられたか（入力欄が `/` で始まらなくなるまで開き直さない） */
+let dismissed = false
 /** 後から終わった古い読み込みで表示を上書きしないための番号 */
 let seq = 0
 const docCache = new Map<string, { mtimeMs: number; text: string }>()
@@ -246,14 +252,57 @@ async function loadCommand($: EngineInterface, command: CommandInfo): Promise<Sk
 // ---------------------------------------------------------------------------
 // 表示の更新
 
-async function openOnce($: EngineInterface) {
-  if (await read($, opened)) return
-  await update($, opened, () => true)
+/** ペインが閉じていれば開く */
+async function ensureOpen($: EngineInterface) {
+  if (dismissed) return
+  if ((await $.ui.panes()).some(pane => pane.id === PANE)) return
   await $.ui.open({ id: PANE, title: TITLE })
 }
 
-/** 入力中のトークンから候補を引き、先頭をプレビューする */
-async function showQuery($: EngineInterface, query: string) {
+function cancelClose() {
+  closeTimer?.cancel()
+  closeTimer = undefined
+}
+
+/** 入力中のプレビューを閉じる（実行中・直前に実行の表示は残す） */
+async function closePreview($: EngineInterface) {
+  if ((await read($, view)).mode !== 'typing') return
+  await $.ui.close({ id: PANE })
+}
+
+/** 入力欄の中身が変わったとき（編集・送信・クリア・履歴の呼び出し） */
+function onBoxText($: EngineInterface, text: string) {
+  const query = slashQuery(text)
+  if (query === undefined) {
+    // `/` で始まらなくなったら（空になったら）入力中のプレビューを閉じる
+    lastQuery = undefined
+    timer?.cancel()
+    dismissed = false
+    if (previewing) {
+      previewing = false
+      // 読み込み途中のプレビューで開き直さない
+      seq++
+      cancelClose()
+      closeTimer = $.clock.after(CLOSE_DELAY_MS, () => {
+        closeTimer = undefined
+        void closePreview($)
+      })
+    }
+    return
+  }
+
+  cancelClose()
+  // `/` だけのときは直前の表示を残す
+  if (query === '' || query === lastQuery) return
+  lastQuery = query
+  timer?.cancel()
+  timer = $.clock.after(DEBOUNCE_MS, () => {
+    void showQuery($, query, true)
+  })
+}
+
+/** トークンから候補を引き、先頭をプレビューする（fromInput: 入力欄から引いたか） */
+async function showQuery($: EngineInterface, query: string, fromInput: boolean) {
   const mine = ++seq
   await ensureReady($)
   commands = await $.command.list()
@@ -262,6 +311,7 @@ async function showQuery($: EngineInterface, query: string) {
 
   const first = hits[0]
   if (!first) {
+    if (fromInput) previewing = true
     await update($, view, (current): PreviewView =>
       current.mode === 'empty' ? current : { mode: 'typing', query, candidates: [] },
     )
@@ -280,7 +330,8 @@ async function showQuery($: EngineInterface, query: string) {
     selected: first.name,
     doc,
   }))
-  await openOnce($)
+  if (fromInput) previewing = true
+  await ensureOpen($)
 }
 
 /** 候補の Button から別のスキルに切り替える */
@@ -308,7 +359,10 @@ type SkillRun = {
 async function showRun($: EngineInterface, run: SkillRun) {
   const mine = ++seq
   timer?.cancel()
+  cancelClose()
   lastQuery = undefined
+  previewing = false
+  dismissed = false
 
   const origin = originOfSkillSource(run.source, run.pluginName)
   const { description, fields } = fieldsOf(Object.entries(run.frontmatter ?? {}))
@@ -332,7 +386,7 @@ async function showRun($: EngineInterface, run: SkillRun) {
     selected: run.skill,
     doc,
   }))
-  await openOnce($)
+  await ensureOpen($)
 }
 
 // ---------------------------------------------------------------------------
@@ -351,10 +405,13 @@ export const register: Register = on => {
   })
 
   on('command.run', { command: 'skill-preview' }, async ($, e) => {
-    await update($, opened, () => true)
+    // 送信で入力欄が空になって閉じかけていても、コマンドで開いたものは残す
+    cancelClose()
+    previewing = false
+    dismissed = false
     await $.ui.open({ id: PANE, title: TITLE })
     const name = e.args.trim().replace(/^\//, '')
-    if (name !== '') await showQuery($, name)
+    if (name !== '') await showQuery($, name, false)
 
     return { text: 'スキル説明ペインを開きました。' }
   })
@@ -362,21 +419,24 @@ export const register: Register = on => {
   // キー入力ごと（上限 50 ms）。ここではファイルを読まず、タイマーで後から引く
   on('prompt.edit', async ($, e, next) => {
     const box = await next(e)
-    const query = slashQuery(box.text)
-    if (query === undefined || query === '') {
-      // `/` で始まらなくなったら直前の表示を残す
-      lastQuery = undefined
-      return box
-    }
-    if (query !== lastQuery) {
-      lastQuery = query
-      timer?.cancel()
-      timer = $.clock.after(DEBOUNCE_MS, () => {
-        void showQuery($, query)
-      })
-    }
+    onBoxText($, box.text)
 
     return box
+  })
+
+  // 編集以外で入力欄が変わったとき（送信・クリア・履歴の呼び出しなど）
+  on('prompt.change', async ($, e, next) => {
+    const result = await next(e)
+    onBoxText($, e.text)
+
+    return result
+  })
+
+  // 入力中のプレビューを手で閉じたら、入力欄が `/` で始まらなくなるまで開き直さない
+  on('ui.close', async ($, e, next) => {
+    if (e.id === PANE && e.origin.kind === 'person' && previewing) dismissed = true
+
+    return next(e)
   })
 
   on('skill.prompt', async ($, e, next) => {

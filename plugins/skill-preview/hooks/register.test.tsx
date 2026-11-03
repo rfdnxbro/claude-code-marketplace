@@ -1,6 +1,12 @@
 import { expect, mock, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
-import type { On, PromptEditInput, PromptEditResult } from 'claude-code'
+import type {
+  On,
+  PromptChangeInput,
+  PromptChangeResult,
+  PromptEditInput,
+  PromptEditResult,
+} from 'claude-code'
 
 import { matchCommands, parseFrontmatter, slashQuery } from './lib.ts'
 
@@ -68,14 +74,27 @@ function dirs(): Record<string, Set<string>> {
   return out
 }
 
-/** エンジン役: ファイルシステムとコマンド一覧などを差し込む */
-function engine(on: On) {
+/** エンジン役: ファイルシステムとコマンド一覧などを差し込む。開いているペインの id の集合を返す */
+function engine(on: On): Set<string> {
   const tree = dirs()
   const isFile = (path: string) => FILES[path] !== undefined
+  const panes = new Set<string>()
   mock.store(on)
   mock.env(on, { HOME })
   on('command.register', () => ({ value: { command: 'skill-preview' } }))
-  on('ui.open', () => ({ value: { isPlaced: true } }))
+  on('ui.open', (_, e) => {
+    panes.add(e.id)
+
+    return { value: { isPlaced: true } }
+  })
+  on('ui.close', (_, e) => {
+    panes.delete(e.id)
+
+    return { value: undefined }
+  })
+  on('ui.panes', () => ({
+    value: [...panes].map(id => ({ id, title: id, isShown: true, isFocused: false, isPlaced: true })),
+  }))
   on('session.cwd', () => ({ value: CWD }))
   on('command.list', () => ({ value: COMMANDS.map(c => ({ ...c })) }))
   on('fs.list', (_, e) => ({
@@ -106,6 +125,9 @@ function engine(on: On) {
 
     return { text, cursor: e.start + e.inputText.length }
   })
+  on('prompt.change', (_, e) => ({ text: e.text }))
+
+  return panes
 }
 
 /** prompt.edit はテストキットの型に無いが、エンジンの $ では呼べる */
@@ -114,6 +136,34 @@ type PromptEdit = { edit: (e: PromptEditInput) => Promise<PromptEditResult> }
 function edit($: Engine, e: PromptEditInput) {
   return ($.prompt as unknown as PromptEdit).edit(e)
 }
+
+/** 送信やクリアで入力欄が空になる（prompt.change） */
+type PromptChange = { change: (e: PromptChangeInput) => Promise<PromptChangeResult> }
+
+function clearBox($: Engine) {
+  return ($.prompt as unknown as PromptChange).change({ text: '', cursor: 0, origin: { kind: 'clear' } })
+}
+
+/** 入力欄の文字をすべて消す（Backspace） */
+function eraseAll($: Engine, text: string) {
+  return edit($, {
+    origin: { kind: 'composer' },
+    text,
+    cursor: text.length,
+    start: 0,
+    end: text.length,
+    inputText: '',
+  })
+}
+
+const ELI5_RUN = {
+  skill: 'eli5:eli5',
+  text: 'やさしく説明する。',
+  source: 'plugin',
+  pluginName: 'eli5',
+  path: '/cache/eli5/1.0.0/skills/eli5/SKILL.md',
+  frontmatter: { name: 'eli5', description: '5歳児向けに説明' },
+} as const
 
 /** 入力欄に1文字ずつ打つ */
 async function typeText($: Engine, text: string) {
@@ -220,14 +270,7 @@ test('スキルが実行されると実行中として表示し、ターン完�
   const clock = mock.clock(on)
   engine(on)
   await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
-  await $.skill.prompt({
-    skill: 'eli5:eli5',
-    text: 'やさしく説明する。',
-    source: 'plugin',
-    pluginName: 'eli5',
-    path: '/cache/eli5/1.0.0/skills/eli5/SKILL.md',
-    frontmatter: { name: 'eli5', description: '5歳児向けに説明' },
-  })
+  await $.skill.prompt({ ...ELI5_RUN })
   await clock.settle()
 
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
@@ -247,25 +290,71 @@ test('スキルが実行されると実行中として表示し、ターン完�
   await after.unmount()
 })
 
-test('入力が / で始まらなくなっても直前の表示を残す', async ($, on) => {
+test('入力欄を空にすると入力中のプレビューを閉じ、また打つと開く', async ($, on) => {
   const clock = mock.clock(on)
-  engine(on)
+  const panes = engine(on)
   await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
   await typeText($, '/grilling')
   await clock.advance(100)
-  await edit($, {
-    origin: { kind: 'composer' },
-    text: '/grilling',
-    cursor: 9,
-    start: 0,
-    end: 9,
-    inputText: 'こんにちは',
-  })
+  expect(panes.has('skill-preview')).toBe(true)
+
+  // `/` だけ残っているあいだは閉じない
+  await edit($, { origin: { kind: 'composer' }, text: '/grilling', cursor: 9, start: 1, end: 9, inputText: '' })
+  await clock.advance(500)
+  expect(panes.has('skill-preview')).toBe(true)
+
+  await eraseAll($, '/')
+  await clock.advance(500)
+  expect(panes.has('skill-preview')).toBe(false)
+
+  await typeText($, '/eli')
   await clock.advance(100)
+  expect(panes.has('skill-preview')).toBe(true)
+})
+
+test('/ で始まらない文に書き換えたときも閉じる', async ($, on) => {
+  const clock = mock.clock(on)
+  const panes = engine(on)
+  await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
+  await typeText($, '/grilling')
+  await clock.advance(100)
+  await edit($, { origin: { kind: 'composer' }, text: '/grilling', cursor: 9, start: 0, end: 9, inputText: 'こんにちは' })
+  await clock.advance(500)
+  expect(panes.has('skill-preview')).toBe(false)
+})
+
+test('送信で入力欄が空になっても、スキルが実行されたら閉じずに実行中を出す', async ($, on) => {
+  const clock = mock.clock(on)
+  const panes = engine(on)
+  await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
+  await typeText($, '/eli5 テスト')
+  await clock.advance(100)
+  await clearBox($)
+  await $.skill.prompt({ ...ELI5_RUN })
+  await clock.advance(500)
+  expect(panes.has('skill-preview')).toBe(true)
 
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
-  expect(await ui.find({ type: 'Markdown', text: /質問を1つずつ投げる/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /実行中/ })).toBeDefined()
   await ui.unmount()
+
+  // 実行後の表示は、入力欄が空のままでも残す
+  await $.turn.complete({ answer: '', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  await clearBox($)
+  await clock.advance(500)
+  expect(panes.has('skill-preview')).toBe(true)
+})
+
+test('スキル以外のコマンドを送信したら閉じる', async ($, on) => {
+  const clock = mock.clock(on)
+  const panes = engine(on)
+  await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
+  await typeText($, '/clear')
+  await clock.advance(100)
+  expect(panes.has('skill-preview')).toBe(true)
+  await clearBox($)
+  await clock.advance(500)
+  expect(panes.has('skill-preview')).toBe(false)
 })
 
 test('何も一致していないときは案内を出す', async ($, on) => {

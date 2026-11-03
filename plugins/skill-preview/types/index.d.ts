@@ -43,8 +43,6 @@ declare module 'claude-code' {
   interface PluginState {
     'skill-preview': {
       view: Shaped<PreviewView>
-      /** このセッションでペインを自動で開いたか */
-      opened: boolean
     }
   }
 }
