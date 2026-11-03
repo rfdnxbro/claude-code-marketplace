@@ -1,6 +1,9 @@
-// $ を使わない純粋な処理（入力の解釈・候補の絞り込み・frontmatter の解析）
+// $ を使わない純粋な処理（入力の解釈・候補の絞り込み・出どころと訳の判定・frontmatter の解析）
 
 import type { SkillDoc, SkillField } from '../types'
+import { JA_DESCRIPTIONS } from './ja-descriptions.ts'
+import type { JaEntry } from './ja-descriptions.ts'
+import type { OfficialLabels } from './official.ts'
 
 /** 候補として扱うコマンドの形（$.command.list() の要素と同じ） */
 export type CommandLike = {
@@ -8,6 +11,16 @@ export type CommandLike = {
   description: string
   source: string
   plugin?: string
+}
+
+/** command.describe で受け取ったコマンド（description は書き換える前の原文） */
+export type DescribedCommand = CommandLike & { isHidden: boolean }
+
+/** 訳文の表（テストで差し替えられるようにする） */
+type Table = Readonly<Record<string, readonly JaEntry[]>>
+
+function hasOwn(object: object, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(object, key)
 }
 
 /**
@@ -74,46 +87,188 @@ export function projectDirs(start: string, home: string): string[] {
   return dirs
 }
 
-/** $.command.list() の source から出どころの表示を作る */
-export function originOfCommand(command: CommandLike, indexed?: string): string {
-  if (command.source === 'plugin') {
-    return `plugin: ${command.plugin ?? command.name.split(':')[0]}`
-  }
-  if (command.source === 'builtin') return 'builtin'
-  if (command.source === 'mcp') return 'mcp'
+// ---------------------------------------------------------------------------
+// 出どころ（command.describe と skill.prompt の情報は入口で CommandLike の source / plugin に揃える）
 
-  // user はユーザーとプロジェクトを区別しないので、索引で分かればそちらを使う
+/** 訳の対象にする Anthropic 提供のプラグイン（plugin.json の author が Anthropic のもの） */
+export const ANTHROPIC_PLUGINS: readonly string[] = [
+  'anthropic-skills',
+  'code-review',
+  'commit-commands',
+  'cowork-plugin-management',
+]
+
+/** command.describe の provider（組み込みは `engine`、プラグインは `<名前>@<マーケットプレイス>`）を source / plugin にする */
+export function sourceOfProvider(provider: { plugin: string }): Pick<CommandLike, 'source' | 'plugin'> {
+  if (provider.plugin === 'engine') return { source: 'builtin' }
+  // ユーザー・プロジェクトのコマンドは `user` / `project` で届く
+  if (provider.plugin === 'user' || provider.plugin === 'project') return { source: 'user' }
+
+  return { source: 'plugin', plugin: provider.plugin.split('@')[0] ?? provider.plugin }
+}
+
+/** skill.prompt の source（`built-in`、`plugin`、`syncedSkills`、`userSettings` など）を source / plugin にする */
+export function sourceOfSkillRun(
+  skill: string,
+  source: string,
+  pluginName?: string,
+): Pick<CommandLike, 'source' | 'plugin'> {
+  if (source === 'built-in') return { source: 'builtin' }
+  if (source === 'mcp') return { source: 'mcp' }
+  // 同期スキルは `anthropic-skills:<name>` の名前で届く
+  const plugin = pluginName ?? (skill.includes(':') ? skill.slice(0, skill.indexOf(':')) : undefined)
+  if ((source === 'plugin' || source === 'syncedSkills') && plugin) return { source: 'plugin', plugin }
+
+  return { source: 'user' }
+}
+
+/** 出どころの表示（user はユーザーとプロジェクトを区別しないので、索引で分かればそちらを使う） */
+export function originOfCommand(command: CommandLike, indexed?: string): string {
+  if (command.source === 'plugin') return `plugin: ${command.plugin ?? command.name.split(':')[0]}`
+  if (command.source === 'builtin' || command.source === 'mcp') return command.source
+
   return indexed ?? 'user'
 }
 
-/** skill.prompt の source から出どころの表示を作る */
-export function originOfSkillSource(source: string, pluginName?: string): string {
-  switch (source) {
-    case 'userSettings':
-      return 'user'
-    case 'projectSettings':
-      return 'project'
-    case 'policySettings':
-      return 'policy'
-    case 'plugin':
-      return pluginName ? `plugin: ${pluginName}` : 'plugin'
-    case 'built-in':
-      return 'builtin'
-    case 'syncedSkills':
-      return 'synced'
-    default:
-      return source
-  }
+/** 訳の対象なら出どころ（組み込みは `builtin`、Anthropic 提供のプラグインはその名前）を、対象外なら undefined を返す */
+export function ownerOfCommand(command: CommandLike): string | undefined {
+  if (command.source === 'builtin') return command.name.includes(':') ? undefined : 'builtin'
+  if (command.source !== 'plugin') return undefined
+  const plugin = command.plugin ?? command.name.split(':')[0] ?? ''
+
+  return ANTHROPIC_PLUGINS.includes(plugin) && command.name.startsWith(`${plugin}:`) ? plugin : undefined
 }
+
+// ---------------------------------------------------------------------------
+// 説明の日本語訳
+
+/** 改行や連続する空白の違いを無視して比べる（SKILL.md の折り返しと一覧の説明を同じに扱う） */
+function squash(text: string): string {
+  return text.replace(/\s+/g, ' ').trim()
+}
+
+/** `{}` を可変部分とみなして英語の原文と照合し、一致すれば可変部分を入れた訳を返す */
+function translate(description: string, entries: readonly JaEntry[]): string | undefined {
+  const text = squash(description)
+  for (const entry of entries) {
+    const parts = squash(entry.en)
+      .split('{}')
+      .map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    const match = new RegExp(`^${parts.join('(.+?)')}$`).exec(text)
+    if (!match) continue
+    let i = 1
+
+    return entry.ja.replace(/\{\}/g, () => match[i++] ?? '')
+  }
+
+  return undefined
+}
+
+/**
+ * 表示する日本語の説明を選ぶ。公式訳（組み込みだけ。Claude Desktop アプリが持つもので、手を加えずに返す）→
+ * 同梱の自前訳（英語の原文が同梱時と一致するときだけ）の順。どちらも使えなければ undefined（元の説明を出す）
+ */
+export function japaneseDescription(
+  command: CommandLike,
+  official: Readonly<OfficialLabels> = {},
+  table: Table = JA_DESCRIPTIONS,
+): string | undefined {
+  const owner = ownerOfCommand(command)
+  if (owner === undefined) return undefined
+  if (owner === 'builtin' && hasOwn(official, command.name)) return official[command.name]
+  const entries = hasOwn(table, command.name) ? table[command.name] : undefined
+
+  return entries ? translate(command.description, entries) : undefined
+}
+
+/**
+ * 日本語が主体の説明か。もともと日本語の説明は訳さない。
+ * 日本語の文字（ひらがな・カタカナ・漢字）1文字は英単語1語ほどの情報を持つので、2倍に数えて英字の数と比べる。
+ * 英語が主体の説明に日本語の語が混じっているだけなら false（未訳として数える）
+ */
+export function isMostlyJapanese(text: string): boolean {
+  const japanese = text.match(/[\u3040-\u30ff\u4e00-\u9fff]/g)?.length ?? 0
+  const latin = text.match(/[A-Za-z]/g)?.length ?? 0
+
+  return japanese > 0 && japanese * 2 >= latin
+}
+
+/** 日本語訳が無く、英語のまま表示しているコマンド */
+export type Untranslated = { name: string; source: string; plugin?: string; description: string }
+
+/**
+ * 訳の対象なのに訳が使えないもの（公式訳が無く、同梱の訳も無いか英語の原文が同梱時と一致しない）を返す。
+ * 説明が空のもの、もともと日本語のものは数えない
+ */
+export function findUntranslated(
+  list: readonly CommandLike[],
+  official?: Readonly<OfficialLabels>,
+  table?: Table,
+): Untranslated[] {
+  return list
+    .filter(
+      command =>
+        ownerOfCommand(command) !== undefined &&
+        command.description.trim() !== '' &&
+        !isMostlyJapanese(command.description) &&
+        japaneseDescription(command, official, table) === undefined,
+    )
+    .map(command => ({
+      name: command.name,
+      source: command.source,
+      ...(command.plugin === undefined ? {} : { plugin: command.plugin }),
+      description: command.description,
+    }))
+}
+
+/**
+ * $.command.list() と、command.describe で受け取ったコマンドを合わせる。
+ * $.command.list() に無い組み込み（`/btw`、`/help` など）も補い、隠しコマンドは外す。
+ * 説明は command.describe で受け取った書き換え前の原文を使う（訳と未訳の判定を原文で行うため）
+ */
+export function mergeCommands(
+  list: readonly CommandLike[],
+  described: Readonly<Record<string, DescribedCommand>>,
+): CommandLike[] {
+  const merged: CommandLike[] = []
+  const listed = new Set<string>()
+  for (const command of list) {
+    listed.add(command.name)
+    const known = hasOwn(described, command.name) ? described[command.name] : undefined
+    if (known?.isHidden) continue
+    merged.push(known ? { ...command, description: known.description } : command)
+  }
+  for (const { isHidden, ...command } of Object.values(described)) {
+    if (!isHidden && !listed.has(command.name)) merged.push(command)
+  }
+
+  return merged
+}
+
+/** 未訳の一覧を、Claude にそのまま貼って訳を頼める形にする */
+export function formatUntranslated(items: readonly Untranslated[]): string {
+  if (items.length === 0) return '未訳の説明はありません。'
+
+  return [
+    `skill-preview の未訳の説明が ${items.length} 件あります。`,
+    'plugins/skill-preview/README.md の「訳文の更新手順」に従って、plugins/skill-preview/hooks/ja-descriptions.ts に訳を足してください。',
+    '',
+    '```json',
+    JSON.stringify(items, null, 2),
+    '```',
+  ].join('\n')
+}
+
+// ---------------------------------------------------------------------------
+// frontmatter
 
 type Frontmatter = { entries: [string, string][]; body: string }
 
-/** 引用符を外す */
+/** 引用符を外す（二重引用符の中の `\"` `\\` と、一重引用符の中の `''` も戻す） */
 function unquote(value: string): string {
   const v = value.trim()
-  if (v.length >= 2 && ((v[0] === '"' && v.endsWith('"')) || (v[0] === "'" && v.endsWith("'")))) {
-    return v.slice(1, -1)
-  }
+  if (v.length >= 2 && v[0] === '"' && v.endsWith('"')) return v.slice(1, -1).replace(/\\(["\\])/g, '$1')
+  if (v.length >= 2 && v[0] === "'" && v.endsWith("'")) return v.slice(1, -1).replace(/''/g, "'")
 
   return v
 }
@@ -124,7 +279,7 @@ function unquote(value: string): string {
  * ブロックスカラー（`|` `>`）、リスト（`- item`）だけを簡易に読む。
  */
 export function parseFrontmatter(source: string): Frontmatter {
-  const text = source.replace(/^﻿/, '').replace(/\r\n?/g, '\n')
+  const text = source.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n')
   const open = /^---[ \t]*\n/.exec(text)
   if (!open) return { entries: [], body: text }
 
