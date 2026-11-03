@@ -120,10 +120,13 @@ export const register: Register = on => {
     return r
   })
 
-  // /clear・/resume・/branch の後は session.start が来ないので、ここで写し直す
+  // /clear・/resume・/branch の後は session.start が来ず $.state が初期値に戻るので、ここで埋め直す
   on('classic.SessionStart', async ($, e, next) => {
     const r = await next(e)
     await loadCollapsed($)
+    // 非公式 API の値が消えていたら、間引きを待たずに取り直す
+    if (!(await read($, remote))) nextFetchAt = 0
+    $.clock.after(1, () => void tick($))
     return r
   })
 
