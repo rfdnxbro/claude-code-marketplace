@@ -573,6 +573,13 @@ test('原文が変わったもの・ユーザーやコミュニティのもの�
     (await describe($, 'eli5:eli5', 'Explain a topic like I am 5', { plugin: 'eli5@claude-community', tier: 'user' }))
       .description,
   ).toBe('Explain a topic like I am 5')
+  // Anthropic 提供のプラグインと同じ名前でも、別のマーケットプレイスから入ったものは訳さない
+  expect(
+    (await describe($, 'commit-commands:commit', 'Create a git commit', {
+      plugin: 'commit-commands@someone-else',
+      tier: 'user',
+    })).description,
+  ).toBe('Create a git commit')
 })
 
 test('右ペインの説明も日本語訳にし、原文が変わったものは英語のまま出す', async ($, on) => {
@@ -646,9 +653,18 @@ test('訳の対象で訳が使えないものだけを未訳として数える',
     { name: '1password:envs', description: 'Manages secrets', source: 'plugin', plugin: '1password' },
     { name: 'mcp__x__y', description: 'An MCP prompt', source: 'mcp' },
     { name: 'empty', description: '', source: 'builtin' },
+    // 英語が主体の説明に日本語の語が混じったもの（原文が変わっているので未訳）
+    { name: 'help', description: 'Show help and available commands (日本語対応)', source: 'builtin' },
+    // ユーザーがアップロードした、もともと日本語のスキル（英語の固有名詞を含む）
+    {
+      name: 'anthropic-skills:my-probe',
+      description: 'Chat 経由でアップロードしたスキルが Claude Code Routines のクラウド実行から呼び出せるかを確かめる。',
+      source: 'plugin',
+      plugin: 'anthropic-skills',
+    },
   ]).map(item => item.name)
-  // 原文が変わった組み込み（compact）と、訳の無い Anthropic 提供のスキル
-  expect(names).toEqual(['compact', 'anthropic-skills:brand-new'])
+  // 原文が変わった組み込み（compact、help）と、訳の無い Anthropic 提供のスキル
+  expect(names).toEqual(['compact', 'anthropic-skills:brand-new', 'help'])
 })
 
 test('未訳の一覧を Claude に貼れる形で書き出す', async () => {

@@ -119,13 +119,20 @@ function squash(text: string): string {
   return text.replace(/\s+/g, ' ').trim()
 }
 
+/** patternOf で作った正規表現（訳文の表は変わらないので、元の文字列ごとに使い回す） */
+const patterns = new Map<string, RegExp>()
+
 /** `{}` を可変部分とみなした正規表現（空白は squash 済みの文字列に合わせる） */
 function patternOf(text: string): RegExp {
+  const cached = patterns.get(text)
+  if (cached) return cached
   const parts = squash(text)
     .split('{}')
     .map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+  const pattern = new RegExp(`^${parts.join('(.+?)')}$`)
+  patterns.set(text, pattern)
 
-  return new RegExp(`^${parts.join('(.+?)')}$`)
+  return pattern
 }
 
 /** 訳文の `{}` に原文から取った可変部分を順に入れる */
@@ -188,11 +195,23 @@ export function ownerOfCommand(command: CommandLike): string | undefined {
   return undefined
 }
 
-/** command.describe の provider（`{ plugin: 'engine' }` か `<名前>@<マーケットプレイス>`）から出どころを決める */
+/**
+ * command.describe の provider（`{ plugin: 'engine' }` か `<名前>@<マーケットプレイス>`）から出どころを決める。
+ * Anthropic 提供のプラグインと同じ名前でも、Anthropic のマーケットプレイス以外から入ったものは
+ * `<名前>@<マーケットプレイス>` のまま返し、訳の対象にしない
+ */
 export function ownerOfProvider(provider: { plugin: string }): string {
   if (provider.plugin === 'engine') return BUILTIN
+  const at = provider.plugin.indexOf('@')
+  if (at < 0) return provider.plugin
+  const name = provider.plugin.slice(0, at)
+  const marketplace = provider.plugin.slice(at + 1)
+  const official = Object.prototype.hasOwnProperty.call(ANTHROPIC_MARKETPLACES, name)
+    ? ANTHROPIC_MARKETPLACES[name]
+    : undefined
+  if (official && !official.includes(marketplace)) return provider.plugin
 
-  return provider.plugin.split('@')[0] ?? provider.plugin
+  return name
 }
 
 /** skill.prompt の source から説明の出どころを決める */
@@ -206,24 +225,37 @@ export function ownerOfSkillRun(skill: string, source: string, pluginName?: stri
 }
 
 /**
- * 訳の対象にする Anthropic 提供のプラグイン（plugin.json の author が Anthropic のもの）。
- * 組み込み（BUILTIN）とあわせて、未訳を数える範囲にもなる
+ * 訳の対象にする Anthropic 提供のプラグイン（plugin.json の author が Anthropic のもの）と、
+ * それを配るマーケットプレイス（`inline` は Claude Desktop・claude.ai のアカウントから配られるもの）
  */
-export const ANTHROPIC_PLUGINS: readonly string[] = [
-  'anthropic-skills',
-  'code-review',
-  'commit-commands',
-  'cowork-plugin-management',
-]
+export const ANTHROPIC_MARKETPLACES: Readonly<Record<string, readonly string[]>> = {
+  'anthropic-skills': ['inline'],
+  'code-review': ['claude-plugins-official'],
+  'commit-commands': ['claude-plugins-official'],
+  'cowork-plugin-management': ['inline', 'knowledge-work-plugins'],
+}
+
+/**
+ * 訳の対象にする Anthropic 提供のプラグインの名前。組み込み（BUILTIN）とあわせて、未訳を数える範囲にもなる。
+ * $.command.list() にはマーケットプレイスが含まれないので、右ペインと未訳の数え方は名前だけで判定する
+ */
+export const ANTHROPIC_PLUGINS: readonly string[] = Object.keys(ANTHROPIC_MARKETPLACES)
 
 /** 訳の対象の出どころか */
 export function isTranslatable(owner: string | undefined): boolean {
   return owner === BUILTIN || (owner !== undefined && ANTHROPIC_PLUGINS.includes(owner))
 }
 
-/** 日本語（ひらがな・カタカナ・漢字）を含むか。もともと日本語の説明は訳さない */
-export function hasJapanese(text: string): boolean {
-  return /[぀-ヿ一-鿿]/.test(text)
+/**
+ * 日本語が主体の説明か。もともと日本語の説明は訳さない。
+ * 日本語の文字（ひらがな・カタカナ・漢字）1文字は英単語1語ほどの情報を持つので、2倍に数えて英字の数と比べる。
+ * 英語が主体の説明に日本語の語が混じっているだけなら false（未訳として数える）
+ */
+export function isMostlyJapanese(text: string): boolean {
+  const japanese = text.match(/[\u3040-\u30ff\u4e00-\u9fff]/g)?.length ?? 0
+  const latin = text.match(/[A-Za-z]/g)?.length ?? 0
+
+  return japanese > 0 && japanese * 2 >= latin
 }
 
 /** 日本語訳が無く、英語のまま表示しているコマンド */
@@ -240,7 +272,7 @@ export function findUntranslated(
   return list
     .filter(command => {
       const owner = ownerOfCommand(command)
-      if (!isTranslatable(owner) || command.description.trim() === '' || hasJapanese(command.description)) {
+      if (!isTranslatable(owner) || command.description.trim() === '' || isMostlyJapanese(command.description)) {
         return false
       }
 
