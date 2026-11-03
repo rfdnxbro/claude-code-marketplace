@@ -471,28 +471,39 @@ async function findAsar($: EngineInterface, home: string): Promise<AsarStat | un
   return undefined
 }
 
-/** asar から組み込みコマンドの公式の日本語訳を取り出す（読めなければ空） */
-async function extractOfficial($: EngineInterface, path: string): Promise<OfficialLabels> {
+/**
+ * asar から組み込みコマンドの公式の日本語訳を取り出す。
+ * cacheable は結果を $.store に覚えてよいか。形式が変わって読めないときは空を覚えてアプリの更新まで取り直さず、
+ * コマンドの失敗や出力の切り詰め（一時的な失敗かもしれない）のときは覚えずに次の起動で取り直す
+ */
+async function extractOfficial(
+  $: EngineInterface,
+  path: string,
+): Promise<{ labels: OfficialLabels; cacheable: boolean }> {
+  const failed = { labels: {}, cacheable: false }
+  const unreadable = { labels: {}, cacheable: true }
   const init = { timeoutMs: OFFICIAL_TIMEOUT_MS, env: { LC_ALL: 'C' } }
   const od = await $.process.run(['/usr/bin/od', '-An', '-tu4', '-N16', path], init)
-  const layout = od.exitCode === 0 ? asarLayout(od.stdout) : undefined
-  if (!layout) return {}
+  if (od.exitCode !== 0) return failed
+  const layout = asarLayout(od.stdout)
+  if (!layout) return unreadable
 
   const head = await $.process.run(['/usr/bin/head', '-c', String(16 + layout.headerLength), path], init)
-  const range =
-    head.exitCode === 0 && !head.isStdoutTruncated
-      ? localeFileRange(head.stdout, layout.base, OFFICIAL_LOCALE_FILE)
-      : undefined
-  if (!range) return {}
+  if (head.exitCode !== 0 || head.isStdoutTruncated) return failed
+  const range = localeFileRange(head.stdout, layout.base, OFFICIAL_LOCALE_FILE)
+  if (!range) return unreadable
 
+  // grep の終了コードは 0 が一致あり、1 が一致なし（形式が変わった）、2 以上が失敗
   const defs = await $.process.run(['/usr/bin/grep', '-a', '-o', '-E', MESSAGES_PATTERN, path], init)
+  if (defs.exitCode > 1 || defs.isStdoutTruncated) return failed
   const messages = parseMessages(defs.stdout)
-  if (messages.length === 0) return {}
+  if (messages.length === 0) return unreadable
 
   const ids = messages.map(message => message.id)
   const found = await $.process.run(['/usr/bin/grep', '-a', '-o', '-b', '-E', idsPattern(ids), path], init)
+  if (found.exitCode > 1 || found.isStdoutTruncated) return failed
 
-  return officialLabelsOf(messages, parseTranslations(found.stdout, range))
+  return { labels: officialLabelsOf(messages, parseTranslations(found.stdout, range)), cacheable: true }
 }
 
 /**
@@ -512,9 +523,10 @@ async function loadOfficial($: EngineInterface) {
       if (isOfficialCacheFor(cached, asar, locale)) {
         official = cached.labels
       } else {
-        official = await extractOfficial($, asar.path)
-        // 読めなかったときも空のまま覚え、アプリが更新されるまで取り直さない
-        await $.store.set(OFFICIAL_KEY, { ...asar, locale, labels: official })
+        const extracted = await extractOfficial($, asar.path)
+        official = extracted.labels
+        // 形式が変わって読めなかったときも空のまま覚え、アプリが更新されるまで取り直さない
+        if (extracted.cacheable) await $.store.set(OFFICIAL_KEY, { ...asar, locale, labels: official })
       }
     }
   } catch {

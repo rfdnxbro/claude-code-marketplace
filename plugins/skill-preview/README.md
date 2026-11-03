@@ -111,11 +111,13 @@ claude plugin install skill-preview@custom-marketplace
 
 ### 公式訳
 
+> **Note**: 公式訳を使うために、この mod は Claude Desktop アプリの内部ファイルを読み取り専用で読み、そのために `$.process.run` で macOS 標準のコマンド（`od`・`head`・`grep`）を実行します。公式訳は同梱・再配布しません。
+
 Claude Desktop アプリは、一部の組み込みコマンドの説明に自前の日本語訳を持っています。この mod は公式訳をリポジトリに同梱せず、使う人のマシンにあるアプリの内部ファイル（`/Applications/Claude.app/Contents/Resources/ion-dist.asar`）から実行時に読み取ります。
 
 - 読み取りには macOS 標準の `od`・`head`・`grep` を使い、コマンド一覧の定義と、その ID の日本語訳だけを取り出します（数秒〜十数秒かかるので、起動の裏で行います）
-- 取り出した結果は `$.store` にキャッシュし、asar の大きさ・更新時刻か UI の言語が変わったときだけ取り直します
-- Desktop の UI の言語は、Desktop の設定ファイル（`~/Library/Application Support/Claude/config.json` の `locale`）で判定し、無ければ macOS の言語設定を見ます
+- 取り出した結果は `$.store` にキャッシュし、asar の大きさ・更新時刻か UI の言語が変わったときだけ取り直します。コマンドの失敗や出力の切り詰めで取り出せなかったときはキャッシュせず、次の起動で取り直します
+- Desktop の UI の言語は、Desktop の設定ファイル（`~/Library/Application Support/Claude/config.json` の `locale`）で判定し、無ければ macOS の言語設定を見ます。言語が `ja` で始まるとき（`ja`、`ja-JP` など）は、アプリの `ja-JP` の訳文を読みます
 - アプリが無い、UI が日本語でない、macOS 以外、アプリの更新で内部ファイルの形式が変わって読めない、のいずれかのときは、エラーを出さずに自前訳を使います
 - 公式訳は手を加えずにそのまま表示します。公式訳の文体は統一されていない（「〜を管理」「〜を進めます」など）ため、下の[訳文の文体](#訳文の文体)は自前訳だけに適用します
 - 公式訳はアプリの内部ファイルに依存するため、アプリの更新で読めなくなることがあります。そのときは自前訳か英語で表示します

@@ -175,7 +175,8 @@ function engine(on: On, options: EngineOptions = {}): Set<string> {
 
     return {
       value: {
-        exitCode: stdout === undefined ? 1 : 0,
+        // 応答が無いときはコマンドの失敗（grep の「一致なし」の 1 ではなく 2）にする
+        exitCode: stdout === undefined ? 2 : 0,
         stdout: stdout ?? '',
         stderr: '',
         isStdoutTruncated: false,
@@ -954,4 +955,29 @@ test('UI が日本語でない・アプリが無い・形式が読めないと�
   }
   // UI が日本語でないとき・アプリが無いときは asar を grep しない
   expect(runs.filter(argv => argv[0] === '/usr/bin/grep').length).toBe(0)
+})
+
+test('公式訳の取り出しが一時的に失敗したときはキャッシュせず、次の起動で取り直す', async ($, on) => {
+  const clock = mock.clock(on)
+  const runs: string[][] = []
+  let failing = true
+  engine(on, {
+    files: JA_CONFIG,
+    asar: { size: 9, mtimeMs: 9 },
+    // 1回目の起動では訳文の grep が失敗する（終了コード 2）
+    run: argv => (failing && argv.includes('-b') ? undefined : fakeAsar(argv)),
+    runs,
+  })
+  await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
+  await settleOfficial(clock)
+  expect((await describe($, 'model', 'Set the AI model for Claude Code')).description).toBe(
+    'Claude Code の AI モデルを設定する。',
+  )
+
+  failing = false
+  await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
+  await settleOfficial(clock)
+  expect((await describe($, 'model', 'Set the AI model for Claude Code')).description).toBe('公式のモデルの説明')
+  // 1回目の失敗をキャッシュしていないので、2回目も取り出し直している
+  expect(runs.filter(argv => argv[0] === '/usr/bin/grep').length).toBe(4)
 })
