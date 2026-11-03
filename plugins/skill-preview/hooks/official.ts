@@ -9,36 +9,6 @@ export function asarCandidates(home: string): string[] {
   return [`/Applications/${relative}`, ...(home ? [`${home}/Applications/${relative}`] : [])]
 }
 
-/** Desktop の設定ファイル（UI の言語 `locale` を持つ） */
-export function desktopConfigPath(home: string): string {
-  return `${home}/Library/Application Support/Claude/config.json`
-}
-
-/** Desktop の設定ファイルの中身から UI の言語を取り出す（無ければ undefined） */
-export function localeOfConfig(text: string): string | undefined {
-  try {
-    const json: unknown = JSON.parse(text)
-    if (json && typeof json === 'object' && 'locale' in json) {
-      const locale = (json as { locale?: unknown }).locale
-      if (typeof locale === 'string' && locale !== '') return locale
-    }
-  } catch {
-    // 読めなければ分からないとみなす
-  }
-
-  return undefined
-}
-
-/** `defaults read -g AppleLanguages` の出力から先頭の言語を取り出す（Desktop が OS の言語に従うとき用） */
-export function localeOfAppleLanguages(text: string): string | undefined {
-  return /"?([A-Za-z]{2,3}(?:[-_][A-Za-z0-9]+)*)"?/.exec(text.replace(/^\s*\(\s*/, ''))?.[1]
-}
-
-/** 日本語の UI か */
-export function isJapaneseLocale(locale: string | undefined): boolean {
-  return locale !== undefined && /^ja(?:[-_]|$)/i.test(locale)
-}
-
 /**
  * `od -An -tu4 -N16 <asar>` の出力（4 つの 32 ビット整数）から、ヘッダーの JSON の長さと
  * ファイル本体の始まり（各ファイルの offset の基準）を求める
@@ -159,17 +129,16 @@ export function officialLabelsOf(
 export type AsarStat = { path: string; size: number; mtimeMs: number }
 
 /** $.store に置く公式訳のキャッシュ */
-export type OfficialCache = AsarStat & { locale: string; labels: OfficialLabels }
+export type OfficialCache = AsarStat & { labels: OfficialLabels }
 
-/** キャッシュが同じ asar（場所・大きさ・更新時刻）と UI の言語で取ったものか */
-export function isOfficialCacheFor(value: unknown, asar: AsarStat, locale: string): value is OfficialCache {
+/** キャッシュが同じ asar（場所・大きさ・更新時刻）から取ったものか */
+export function isOfficialCacheFor(value: unknown, asar: AsarStat): value is OfficialCache {
   if (!value || typeof value !== 'object') return false
   const cache = value as Partial<OfficialCache>
   return (
     cache.path === asar.path &&
     cache.size === asar.size &&
     cache.mtimeMs === asar.mtimeMs &&
-    cache.locale === locale &&
     !!cache.labels &&
     typeof cache.labels === 'object'
   )

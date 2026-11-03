@@ -3,37 +3,30 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, Timer } from 'claude-code'
 
-import type { DescribedCommand, PreviewView, SkillDoc } from '../types'
-import type { CommandLike } from './lib.ts'
+import type { PreviewView, SkillDoc } from '../types'
 import {
   docFromFile,
   fieldsOf,
   findUntranslated,
   formatUntranslated,
-  localizeDescription,
+  japaneseDescription,
   matchCommands,
   mergeCommands,
   originOfCommand,
-  originOfSkillSource,
-  ownerOfCommand,
-  ownerOfProvider,
-  ownerOfSkillRun,
   projectDirs,
   shortName,
   slashQuery,
-  preferredDescription,
+  sourceOfProvider,
+  sourceOfSkillRun,
 } from './lib.ts'
+import type { CommandLike, DescribedCommand } from './lib.ts'
 import {
   MESSAGES_PATTERN,
   asarCandidates,
   asarLayout,
-  desktopConfigPath,
   idsPattern,
-  isJapaneseLocale,
   isOfficialCacheFor,
   localeFileRange,
-  localeOfAppleLanguages,
-  localeOfConfig,
   officialLabelsOf,
   parseMessages,
   parseTranslations,
@@ -50,18 +43,14 @@ const DEBOUNCE_MS = 60
 const CLOSE_DELAY_MS = 300
 /** 未訳の一覧を出すコマンド */
 const UNTRANSLATED_COMMAND = 'skill-preview-untranslated'
-/** $.store に覚えるパスの最大件数 */
-const MAX_LEARNED = 500
-/** 実行して分かったパスを置く $.store のキー（作業ディレクトリごとに覚える） */
-const LEARNED_KEY = 'learned-paths'
+/** command.describe が続いて届き終わってから未訳を数え直すまでの待ち（ミリ秒） */
+const RECOUNT_DELAY_MS = 200
 /** Desktop アプリから取り出した公式訳のキャッシュを置く $.store のキー */
 const OFFICIAL_KEY = 'official-labels'
 /** 公式訳の訳文のファイル（asar の中の `i18n/<これ>.json`） */
 const OFFICIAL_LOCALE_FILE = 'ja-JP'
 /** 公式訳を取り出すコマンド1回の時間の上限（ミリ秒）。asar 全体を grep するので長めにする */
 const OFFICIAL_TIMEOUT_MS = 60000
-/** command.describe で受け取ったコマンドを $.state に書くまでの待ち（ミリ秒）。まとめて書く */
-const DESCRIBED_FLUSH_MS = 200
 
 const EMPTY: PreviewView = { mode: 'empty', candidates: [] }
 
@@ -71,11 +60,6 @@ const view = atom({ plugin: 'skill-preview', key: 'view' } as const, EMPTY, {
 })
 /** 訳の対象なのに英語のまま表示しているコマンドの数 */
 const untranslated = atom({ plugin: 'skill-preview', key: 'untranslated' } as const, 0)
-/** command.describe で受け取ったコマンド（$.command.list() に無い組み込みを補うため） */
-const NO_DESCRIBED: Record<string, DescribedCommand> = {}
-const described = atom({ plugin: 'skill-preview', key: 'described' } as const, NO_DESCRIBED, {
-  shape: 'described-1',
-})
 
 /** 名前 → SKILL.md の索引 */
 type Entry = { path: string; origin: string }
@@ -88,19 +72,15 @@ type SkillIndex = {
 
 // モジュール変数はリロードで初期化されてよいものだけを置く
 let index: SkillIndex = { exact: {}, bare: {} }
-/** 実行して分かったパス（キーは `<作業ディレクトリ>\n<スキル名>`） */
-let learned: Record<string, string> = {}
-/** 索引を作った作業ディレクトリ（learned のキーに使う） */
-let cwd = ''
 let commands: CommandLike[] = []
+/** command.describe で受け取ったコマンド（リロード後は session.start で再要求して埋め直す） */
+let described: Record<string, DescribedCommand> = {}
 /** Desktop アプリの公式訳（コマンド名 → 日本語）。読めないときは空 */
 let official: OfficialLabels = {}
-/** まだ $.state に書いていない command.describe の受け取り分 */
-let pendingDescribed: Record<string, DescribedCommand> = {}
-let describedTimer: Timer | undefined
 let ready: Promise<void> | undefined
 let timer: Timer | undefined
 let closeTimer: Timer | undefined
+let recountTimer: Timer | undefined
 let lastQuery: string | undefined
 /** 入力欄の `/スキル名` から引いたプレビューを出しているか */
 let previewing = false
@@ -108,7 +88,6 @@ let previewing = false
 let dismissed = false
 /** 後から終わった古い読み込みで表示を上書きしないための番号 */
 let seq = 0
-const docCache = new Map<string, { mtimeMs: number; text: string }>()
 
 // ---------------------------------------------------------------------------
 // 索引づくり（session.start で開始し、最初の検索で待つ）
@@ -132,63 +111,29 @@ async function isDir($: EngineInterface, path: string, kind: string): Promise<bo
   }
 }
 
-/** スキルを探すときに入らないディレクトリ */
-const SKIP_DIRS = new Set(['node_modules'])
-/** スキルを探す深さの上限（`skills/` 直下を 0 とする） */
-const MAX_SKILL_DEPTH = 3
-
 function addEntry(table: Record<string, Entry>, name: string, entry: Entry) {
   if (!table[name]) table[name] = entry
 }
 
-/**
- * `<dir>/**\/<name>/SKILL.md` を `<prefix><name>` として登録する。
- * ネストしたスキル（`category/name/SKILL.md`）は `<prefix>category:name` でも引けるようにする。
- * 浅いものを先に登録する（同名なら浅い方が勝つ）。exclude は `dir` 直下で入らない名前
- */
+/** `<dir>/<name>/SKILL.md` を `<prefix><name>` として登録する */
 async function addSkills(
   $: EngineInterface,
   table: Record<string, Entry>,
   dir: string,
   prefix: string,
   origin: string,
-  exclude: readonly string[] = [],
 ) {
-  let level: { dir: string; parents: string[] }[] = [{ dir, parents: [] }]
-  for (let depth = 0; depth <= MAX_SKILL_DEPTH && level.length > 0; depth++) {
-    const nextLevel: { dir: string; parents: string[] }[] = []
-    for (const { dir: current, parents } of level) {
-      const entries = (await listDir($, current)).filter(
-        entry =>
-          entry.kind !== 'file' &&
-          !entry.name.startsWith('.') &&
-          !SKIP_DIRS.has(entry.name) &&
-          !(depth === 0 && exclude.includes(entry.name)),
-      )
-      const found = await Promise.all(
-        entries.map(async entry => {
-          const path = `${current}/${entry.name}`
-          try {
-            if (await $.fs.exists(`${path}/SKILL.md`)) return { entry, path, isSkill: true }
-          } catch {
-            // 読めないものはスキルではないとみなす
-          }
-
-          return { entry, path, isSkill: false }
-        }),
-      )
-      for (const { entry, path, isSkill } of found) {
-        if (isSkill) {
-          const skill: Entry = { path: `${path}/SKILL.md`, origin }
-          addEntry(table, `${prefix}${entry.name}`, skill)
-          if (parents.length > 0) addEntry(table, `${prefix}${[...parents, entry.name].join(':')}`, skill)
-        } else if (await isDir($, path, entry.kind)) {
-          nextLevel.push({ dir: path, parents: [...parents, entry.name] })
-        }
+  const entries = (await listDir($, dir)).filter(entry => entry.kind !== 'file' && !entry.name.startsWith('.'))
+  await Promise.all(
+    entries.map(async entry => {
+      const path = `${dir}/${entry.name}/SKILL.md`
+      try {
+        if (await $.fs.exists(path)) addEntry(table, `${prefix}${entry.name}`, { path, origin })
+      } catch {
+        // 読めないものはスキルではないとみなす
       }
-    }
-    level = nextLevel
-  }
+    }),
+  )
 }
 
 /** `<dir>/**\/*.md` を `<prefix>sub:name` として登録する（深さ 3 まで） */
@@ -256,8 +201,7 @@ async function buildIndex($: EngineInterface, cwd: string): Promise<SkillIndex> 
     await addSkills($, built.exact, `${dir}/.claude/skills`, '', 'project')
     await addCommands($, built.exact, `${dir}/.claude/commands`, '', 'project', 0)
   }
-  // 同期スキルは下で別に引くので、ユーザーのスキルとしては数えない
-  await addSkills($, built.exact, `${configDir}/skills`, '', 'user', ['synced'])
+  await addSkills($, built.exact, `${configDir}/skills`, '', 'user')
   await addCommands($, built.exact, `${configDir}/commands`, '', 'user', 0)
   await addPlugins($, built.exact, configDir, cwd)
 
@@ -271,16 +215,11 @@ async function buildIndex($: EngineInterface, cwd: string): Promise<SkillIndex> 
   return built
 }
 
-async function prepare($: EngineInterface) {
-  const stored = await $.store.get(LEARNED_KEY)
-  if (stored && typeof stored === 'object') learned = stored as Record<string, string>
-  cwd = await $.session.cwd()
-  index = await buildIndex($, cwd)
-}
-
 async function ensureReady($: EngineInterface) {
-  ready ??= prepare($).catch(() => {
-    // 索引が作れなくても、覚えたパスと説明文だけで動く
+  ready ??= (async () => {
+    index = await buildIndex($, await $.session.cwd())
+  })().catch(() => {
+    // 索引が作れなくても、説明文だけで動く
   })
   await ready
 }
@@ -288,174 +227,74 @@ async function ensureReady($: EngineInterface) {
 // ---------------------------------------------------------------------------
 // スキルの読み込み
 
-function learnedKey(name: string): string {
-  return `${cwd}\n${name}`
-}
-
-/** 今のプロジェクトの索引を優先し、索引に無いものだけ実行して分かったパスで補う */
+/** 今のプロジェクトの索引をフルネームで引き、無ければ同期スキルをコロンの後ろの名前で引く */
 function resolveEntry(name: string): Entry | undefined {
-  const exact = index.exact[name]
-  if (exact) return exact
-  const known = learned[learnedKey(name)]
-  if (known) return { path: known, origin: '' }
-
-  return index.bare[shortName(name)]
+  return index.exact[name] ?? index.bare[shortName(name)]
 }
 
-/** ファイルを読む（更新時刻が変わっていなければキャッシュを使う） */
-async function readCached($: EngineInterface, path: string): Promise<string> {
-  const stat = await $.fs.stat(path)
-  const cached = docCache.get(path)
-  if (cached && cached.mtimeMs === stat.mtimeMs) return cached.text
-  const text = await $.fs.read(path)
-  docCache.set(path, { mtimeMs: stat.mtimeMs, text })
+/** 説明を公式訳か自前訳に置き換える（どちらも使えないときはそのまま） */
+function localizeDoc(doc: SkillDoc, command: CommandLike): SkillDoc {
+  if (!doc.description) return doc
+  const description = japaneseDescription({ ...command, description: doc.description }, official)
 
-  return text
+  return description === undefined ? doc : { ...doc, description }
 }
 
 async function loadFile(
   $: EngineInterface,
-  name: string,
+  command: CommandLike,
   origin: string,
   path: string,
   fallback: SkillDoc,
 ): Promise<SkillDoc> {
   try {
-    return docFromFile(name, origin, path, await readCached($, path))
+    return localizeDoc(docFromFile(command.name, origin, path, await $.fs.read(path)), command)
   } catch (error) {
     return { ...fallback, path, error: `読み込めませんでした: ${String(error).slice(0, 200)}` }
   }
 }
 
-/** 説明を公式訳か自前訳に置き換える（どちらも使えないときはそのまま） */
-function localizeDoc(doc: SkillDoc, owner: string | undefined): SkillDoc {
-  const description = localizeDescription(doc.name, doc.description, owner, official)
-
-  return description === doc.description ? doc : { ...doc, description }
-}
-
 async function loadCommand($: EngineInterface, command: CommandLike): Promise<SkillDoc> {
   const entry = resolveEntry(command.name)
-  const origin = originOfCommand(command, entry?.origin || undefined)
-  const owner = ownerOfCommand(command)
+  const origin = originOfCommand(command, entry?.origin)
   const fallback = localizeDoc(
     { name: command.name, origin, description: command.description || undefined, fields: [] },
-    owner,
+    command,
   )
   if (!entry) return fallback
 
-  return localizeDoc(await loadFile($, command.name, origin, entry.path, fallback), owner)
+  return loadFile($, command, origin, entry.path, fallback)
 }
 
 // ---------------------------------------------------------------------------
-// 表示の更新
-
-/** ペインが閉じていれば開く */
-async function ensureOpen($: EngineInterface) {
-  if (dismissed) return
-  if ((await $.ui.panes()).some(pane => pane.id === PANE)) return
-  await $.ui.open({ id: PANE, title: TITLE })
-}
-
-function cancelClose() {
-  closeTimer?.cancel()
-  closeTimer = undefined
-}
-
-/** 入力中のプレビューを閉じる（実行中・直前に実行の表示は残す） */
-async function closePreview($: EngineInterface) {
-  if ((await read($, view)).mode !== 'typing') return
-  await $.ui.close({ id: PANE })
-}
-
-/** 入力欄の中身が変わったとき（編集・送信・クリア・履歴の呼び出し） */
-function onBoxText($: EngineInterface, text: string) {
-  const query = slashQuery(text)
-  if (query === undefined) {
-    // `/` で始まらなくなったら（空になったら）入力中のプレビューを閉じる
-    lastQuery = undefined
-    timer?.cancel()
-    dismissed = false
-    if (previewing) {
-      previewing = false
-      // 読み込み途中のプレビューで開き直さない
-      seq++
-      cancelClose()
-      closeTimer = $.clock.after(CLOSE_DELAY_MS, () => {
-        closeTimer = undefined
-        void closePreview($)
-      })
-    }
-    return
-  }
-
-  cancelClose()
-  // `/` だけのときは直前の表示を残す
-  if (query === '' || query === lastQuery) return
-  lastQuery = query
-  timer?.cancel()
-  timer = $.clock.after(DEBOUNCE_MS, () => {
-    void showQuery($, query, true)
-  })
-}
+// 未訳の数え方
 
 /** $.command.list() と、command.describe で受け取ったコマンド（一覧に無い組み込みも含む）を合わせた一覧 */
 async function listCommands($: EngineInterface): Promise<CommandLike[]> {
-  return mergeCommands(await $.command.list(), await read($, described))
+  return mergeCommands(await $.command.list(), described)
 }
 
-/** コマンド一覧から未訳の数を数え直す（変わったときだけ書く） */
-async function countUntranslated($: EngineInterface, list: readonly CommandLike[]) {
-  const count = findUntranslated(list, { official }).length
-  if ((await read($, untranslated)) !== count) await update($, untranslated, (): number => count)
-}
-
-/** 未訳を数え直す（失敗しても他の表示は止めない） */
+/** 未訳を数え直す（変わったときだけ書く。失敗しても他の表示は止めない） */
 async function refreshUntranslated($: EngineInterface) {
   try {
-    await countUntranslated($, await listCommands($))
+    const count = findUntranslated(await listCommands($), official).length
+    if ((await read($, untranslated)) !== count) await update($, untranslated, (): number => count)
   } catch {
-    // 数えられなくても、入力時にまた数える
+    // 数えられなくても、次の command.describe でまた数える
   }
 }
 
-/** command.describe で受け取ったコマンドを覚える（まとめて $.state に書く） */
-function rememberDescribed($: EngineInterface, name: string, command: DescribedCommand) {
-  pendingDescribed[name] = command
-  describedTimer?.cancel()
-  describedTimer = $.clock.after(DESCRIBED_FLUSH_MS, () => {
-    describedTimer = undefined
-    void flushDescribed($)
+/** command.describe が続いて届き終わってから未訳を数え直す */
+function scheduleRecount($: EngineInterface) {
+  recountTimer?.cancel()
+  recountTimer = $.clock.after(RECOUNT_DELAY_MS, () => {
+    recountTimer = undefined
+    void refreshUntranslated($)
   })
-}
-
-async function flushDescribed($: EngineInterface) {
-  const batch = pendingDescribed
-  pendingDescribed = {}
-  await update($, described, (current): Record<string, DescribedCommand> => ({ ...current, ...batch }))
-  await refreshUntranslated($)
 }
 
 // ---------------------------------------------------------------------------
 // Desktop アプリの公式訳（実行時にアプリ内のファイルから読む。リポジトリには同梱しない）
-
-/** Desktop の UI の言語（設定ファイルに無ければ macOS の言語設定） */
-async function desktopLocale($: EngineInterface, home: string): Promise<string | undefined> {
-  try {
-    const locale = localeOfConfig(await $.fs.read(desktopConfigPath(home)))
-    if (locale) return locale
-  } catch {
-    // 設定ファイルが無ければ OS の言語を見る
-  }
-  try {
-    const result = await $.process.run(['/usr/bin/defaults', 'read', '-g', 'AppleLanguages'], { timeoutMs: 5000 })
-    if (result.exitCode === 0) return localeOfAppleLanguages(result.stdout)
-  } catch {
-    // macOS 以外など
-  }
-
-  return undefined
-}
 
 /** Desktop アプリの asar を探す */
 async function findAsar($: EngineInterface, home: string): Promise<AsarStat | undefined> {
@@ -507,26 +346,24 @@ async function extractOfficial(
 }
 
 /**
- * 公式訳を読み込む。asar の大きさ・更新時刻と UI の言語が前回と同じなら $.store のキャッシュを使う。
- * アプリが無い・形式が変わって読めない・UI が日本語でない・macOS 以外のときは空にして、自前訳に任せる
+ * 公式訳を読み込む。asar の大きさ・更新時刻が前回と同じなら $.store のキャッシュを使う。
+ * アプリが無い・macOS 以外・形式が変わって読めないときは空にして、自前訳に任せる
  */
 async function loadOfficial($: EngineInterface) {
   const before = JSON.stringify(official)
   try {
-    const home = (await $.env.get('HOME')) ?? ''
-    const locale = await desktopLocale($, home)
-    const asar = isJapaneseLocale(locale) ? await findAsar($, home) : undefined
-    if (!asar || locale === undefined) {
+    const asar = await findAsar($, (await $.env.get('HOME')) ?? '')
+    if (!asar) {
       official = {}
     } else {
       const cached = await $.store.get(OFFICIAL_KEY)
-      if (isOfficialCacheFor(cached, asar, locale)) {
+      if (isOfficialCacheFor(cached, asar)) {
         official = cached.labels
       } else {
         const extracted = await extractOfficial($, asar.path)
         official = extracted.labels
         // 形式が変わって読めなかったときも空のまま覚え、アプリが更新されるまで取り直さない
-        if (extracted.cacheable) await $.store.set(OFFICIAL_KEY, { ...asar, locale, labels: official })
+        if (extracted.cacheable) await $.store.set(OFFICIAL_KEY, { ...asar, labels: official })
       }
     }
   } catch {
@@ -538,21 +375,72 @@ async function loadOfficial($: EngineInterface) {
   await refreshUntranslated($)
 }
 
-/** トークンから候補を引き、先頭をプレビューする（fromInput: 入力欄から引いたか） */
-async function showQuery($: EngineInterface, query: string, fromInput: boolean) {
+// ---------------------------------------------------------------------------
+// 表示の更新
+
+/** ペインが閉じていれば開く */
+async function ensureOpen($: EngineInterface) {
+  if (dismissed) return
+  if ((await $.ui.panes()).some(pane => pane.id === PANE)) return
+  await $.ui.open({ id: PANE, title: TITLE })
+}
+
+function cancelClose() {
+  closeTimer?.cancel()
+  closeTimer = undefined
+}
+
+/** 入力中のプレビューを閉じる（実行中・直前に実行の表示は残す） */
+async function closePreview($: EngineInterface) {
+  if ((await read($, view)).mode !== 'typing') return
+  await $.ui.close({ id: PANE })
+}
+
+/** 入力欄の中身が変わったとき（編集・送信・クリア・履歴の呼び出し） */
+function onBoxText($: EngineInterface, text: string) {
+  const query = slashQuery(text)
+  if (query === undefined) {
+    // `/` で始まらなくなったら（空になったら）入力中のプレビューを閉じる
+    lastQuery = undefined
+    timer?.cancel()
+    dismissed = false
+    if (previewing) {
+      previewing = false
+      // 読み込み途中のプレビューで開き直さない
+      seq++
+      cancelClose()
+      closeTimer = $.clock.after(CLOSE_DELAY_MS, () => {
+        closeTimer = undefined
+        void closePreview($)
+      })
+    }
+    return
+  }
+
+  cancelClose()
+  // `/` だけのときは直前の表示を残す
+  if (query === '' || query === lastQuery) return
+  lastQuery = query
+  timer?.cancel()
+  timer = $.clock.after(DEBOUNCE_MS, () => {
+    void showQuery($, query)
+  })
+}
+
+/** 入力欄のトークンから候補を引き、先頭をプレビューする */
+async function showQuery($: EngineInterface, query: string) {
   const mine = ++seq
   await ensureReady($)
   commands = await listCommands($)
-  await countUntranslated($, commands)
   const hits = matchCommands(commands, query, MAX_CANDIDATES)
   if (mine !== seq) return
 
+  previewing = true
   const first = hits[0]
   if (!first) {
-    if (fromInput) previewing = true
-    // 入力中に一致しないときは、まだ何も出していない表示と実行中・直前に実行の表示を残す
+    // 一致しないときは、まだ何も出していない表示と実行中・直前に実行の表示を残す
     await update($, view, (current): PreviewView =>
-      fromInput && current.mode !== 'typing' ? current : { mode: 'typing', query, candidates: [] },
+      current.mode !== 'typing' ? current : { mode: 'typing', query, candidates: [] },
     )
     return
   }
@@ -562,25 +450,17 @@ async function showQuery($: EngineInterface, query: string, fromInput: boolean) 
   await update($, view, (): PreviewView => ({
     mode: 'typing',
     query,
-    candidates: hits.map(hit => ({
-      name: hit.name,
-      origin: originOfCommand(hit, resolveEntry(hit.name)?.origin || undefined),
-    })),
+    candidates: hits.map(hit => ({ name: hit.name, origin: originOfCommand(hit, resolveEntry(hit.name)?.origin) })),
     selected: first.name,
     doc,
   }))
-  if (fromInput) previewing = true
   await ensureOpen($)
 }
 
 /** 候補の Button から別のスキルに切り替える */
 async function pick($: EngineInterface, name: string) {
   const mine = ++seq
-  const command = commands.find(item => item.name === name) ?? {
-    name,
-    description: '',
-    source: 'user' as const,
-  }
+  const command = commands.find(item => item.name === name) ?? { name, description: '', source: 'user' }
   const doc = await loadCommand($, command)
   if (mine !== seq) return
   await update($, view, (current): PreviewView => ({ ...current, selected: name, doc }))
@@ -603,22 +483,16 @@ async function showRun($: EngineInterface, run: SkillRun) {
   previewing = false
   dismissed = false
 
-  const origin = originOfSkillSource(run.source, run.pluginName)
-  const owner = ownerOfSkillRun(run.skill, run.source, run.pluginName)
+  await ensureReady($)
   const { description, fields } = fieldsOf(Object.entries(run.frontmatter ?? {}))
-  const fallback = localizeDoc({ name: run.skill, origin, description, fields }, owner)
-  let doc = fallback
-  if (run.path) {
-    await ensureReady($)
-    const key = learnedKey(run.skill)
-    if (learned[key] !== run.path) {
-      learned = Object.fromEntries(
-        [...Object.entries(learned).filter(([k]) => k !== key), [key, run.path]].slice(-MAX_LEARNED),
-      )
-      await $.store.set(LEARNED_KEY, learned)
-    }
-    doc = localizeDoc(await loadFile($, run.skill, origin, run.path, fallback), owner)
+  const command: CommandLike = {
+    name: run.skill,
+    description: description ?? '',
+    ...sourceOfSkillRun(run.skill, run.source, run.pluginName),
   }
+  const origin = originOfCommand(command, resolveEntry(run.skill)?.origin)
+  const fallback = localizeDoc({ name: run.skill, origin, description, fields }, command)
+  const doc = run.path ? await loadFile($, command, origin, run.path, fallback) : fallback
   if (mine !== seq) return
   await update($, view, (): PreviewView => ({
     mode: 'running',
@@ -633,57 +507,46 @@ async function showRun($: EngineInterface, run: SkillRun) {
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    await $.command.register({
-      name: 'skill-preview',
-      description: 'スキル説明ペインを開く（スキル名を渡すとそのスキルを表示）',
-      argumentHint: '[スキル名]',
-    })
+    await $.command.register({ name: 'skill-preview', description: 'スキル説明ペインを開く' })
     await $.command.register({
       name: UNTRANSLATED_COMMAND,
       description: '組み込み・Anthropic 提供の説明のうち、日本語訳が無く英語のままのものを一覧する',
     })
-    // 読み込み前にキャッシュされた英語の説明を、日本語訳で引き直してもらう
+    // 読み込み前にキャッシュされた説明を引き直してもらう（command.describe で受け取るコマンドも埋め直す）
     $.ui.invalidate('command.describe')
-    // 索引づくりは待たずに始める（最初の検索で待つ）
+    // 索引づくりと公式訳の読み込みは待たずに始める（索引は最初の検索で待つ）
     void ensureReady($)
-    void refreshUntranslated($)
     void loadOfficial($)
+    scheduleRecount($)
 
     return next(e)
   })
 
-  on('command.run', { command: 'skill-preview' }, async ($, e) => {
+  on('command.run', { command: 'skill-preview' }, async $ => {
     // 送信で入力欄が空になって閉じかけていても、コマンドで開いたものは残す
     cancelClose()
     previewing = false
     dismissed = false
     await $.ui.open({ id: PANE, title: TITLE })
-    const name = e.args.trim().replace(/^\//, '')
-    if (name !== '') await showQuery($, name, false)
 
     return { text: 'スキル説明ペインを開きました。' }
   })
 
-  // 未訳の一覧を、Claude に貼って訳を頼める形で出す（クリップボードにもコピーする）
+  // 未訳の一覧を、Claude に貼って訳を頼める形で出す
   on('command.run', { command: UNTRANSLATED_COMMAND }, async $ => {
-    const list = await listCommands($)
-    await countUntranslated($, list)
-    const items = findUntranslated(list, { official })
-    const text = formatUntranslated(items)
-    if (items.length === 0) return { text }
-    const copied = await $.ui.copy({ text })
+    await refreshUntranslated($)
 
-    return { text: copied.isCopied ? `${text}\n\n（クリップボードにもコピーしました）` : text }
+    return { text: formatUntranslated(findUntranslated(await listCommands($), official)) }
   })
 
-  // 候補リストと /help の説明を日本語訳に置き換える（原文が訳の元と違えば英語のまま）
+  // 候補リストと /help の説明を日本語訳に置き換える（公式訳 → 自前訳。どちらも無ければ英語のまま）
   on('command.describe', async ($, e, next) => {
-    const owner = ownerOfProvider(e.provider)
+    const command: CommandLike = { name: e.command, description: e.description, ...sourceOfProvider(e.provider) }
     // 書き換える前の原文を覚える（$.command.list() に無い組み込みを右ペインと未訳の数え方で補う）
-    rememberDescribed($, e.command, { description: e.description, owner, isHidden: e.isHidden })
+    described[e.command] = { ...command, isHidden: e.isHidden }
+    scheduleRecount($)
     const result = await next(e)
-    // 公式訳 → 自前訳の順で選ぶ（Desktop は一部の組み込みに自前の日本語を出すが、ターミナルでも同じ訳にする）
-    const ja = preferredDescription(e.command, result.description, owner, official)
+    const ja = japaneseDescription({ ...command, description: result.description }, official)
 
     return ja === undefined || ja === result.description ? result : { ...result, description: ja }
   })
@@ -702,6 +565,14 @@ export const register: Register = on => {
     onBoxText($, e.text)
 
     return result
+  })
+
+  // 送信したら入力中のプレビューを閉じる（Desktop では、候補を確定して送信しても入力欄の変化が届かないことがある）。
+  // 送信したのがスキルなら、閉じる前に skill.prompt で「実行中」に切り替わる
+  on('prompt.submit', async ($, e, next) => {
+    onBoxText($, '')
+
+    return next(e)
   })
 
   // 入力中のプレビューを手で閉じたら、入力欄が `/` で始まらなくなるまで開き直さない

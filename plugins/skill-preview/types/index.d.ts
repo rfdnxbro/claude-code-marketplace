@@ -39,21 +39,12 @@ export type PreviewView = {
   doc?: SkillDoc
 }
 
-/**
- * command.describe で受け取ったコマンド（$.command.list() に無い組み込みも含む）
- * - description: 書き換える前の説明（訳と未訳の判定に使う原文）
- * - owner: 出どころ（`builtin`、プラグイン名、別のマーケットプレイスの同名プラグインは `<名前>@<マーケットプレイス>`、`user` / `project`）
- */
-export type DescribedCommand = { description: string; owner: string; isHidden: boolean }
-
 declare module 'claude-code' {
   interface PluginState {
     'skill-preview': {
       view: Shaped<PreviewView>
       /** 訳の対象なのに英語のまま表示しているコマンドの数 */
       untranslated: number
-      /** command.describe で受け取ったコマンド（名前 → 原文と出どころ） */
-      described: Shaped<Record<string, DescribedCommand>>
     }
   }
 }

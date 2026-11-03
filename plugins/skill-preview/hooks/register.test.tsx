@@ -24,7 +24,7 @@ import {
   parseFrontmatter,
   projectDirs,
   slashQuery,
-  translateDescription,
+  japaneseDescription,
 } from './lib.ts'
 
 const PANE = {
@@ -43,7 +43,6 @@ const PANE = {
 
 const HOME = '/home/u'
 const ASAR = '/Applications/Claude.app/Contents/Resources/ion-dist.asar'
-const DESKTOP_CONFIG = `${HOME}/Library/Application Support/Claude/config.json`
 const CWD = '/work/app'
 
 const COMMANDS = [
@@ -52,7 +51,6 @@ const COMMANDS = [
   { name: 'grill-me', description: 'grill me', source: 'user' },
   { name: 'eli5:eli5', description: '5歳児向けに説明', source: 'plugin', plugin: 'eli5' },
   { name: 'deep-research', description: '深い調査', source: 'builtin' },
-  { name: 'lint-fix', description: 'lint を直す', source: 'user' },
   { name: 'parent-skill', description: '親のスキル', source: 'user' },
   { name: 'pdf', description: 'PDF を扱う', source: 'user' },
   // 説明の日本語訳を確かめるもの
@@ -93,8 +91,6 @@ const FILES: Record<string, string> = {
   // ユーザーが自分で書いた、組み込みと同じ名前のコマンド
   [`${HOME}/.claude/commands/init.md`]:
     '---\ndescription: Initialize a new CLAUDE.md file with codebase documentation\n---\n自作の init。',
-  // ネストしたスキル
-  [`${HOME}/.claude/skills/tools/lint-fix/SKILL.md`]: '---\nname: lint-fix\n---\nネストした本文。',
   // 作業ディレクトリの親のスキル
   '/work/.claude/skills/parent-skill/SKILL.md': '---\nname: parent-skill\n---\n親の本文。',
   // アカウントから同期されたスキル
@@ -119,10 +115,6 @@ function dirs(): Record<string, Set<string>> {
 type EngineOptions = {
   /** $.command.list() が返す一覧（省くと COMMANDS） */
   commands?: readonly (typeof COMMANDS)[number][]
-  /** $.ui.copy で渡された文字列を入れる */
-  copies?: string[]
-  /** FILES に足すファイル（パス → 中身） */
-  files?: Record<string, string>
   /** Desktop アプリの asar を置く（無ければアプリが無い扱い） */
   asar?: { size: number; mtimeMs: number }
   /** $.process.run の応答（省くと失敗を返す）。呼ばれた argv は runs に入れる */
@@ -131,7 +123,7 @@ type EngineOptions = {
 }
 
 function engine(on: On, options: EngineOptions = {}): Set<string> {
-  const files: Record<string, string> = { ...FILES, ...options.files }
+  const files = FILES
   const tree = dirs()
   const isFile = (path: string) => files[path] !== undefined
   const panes = new Set<string>()
@@ -194,11 +186,6 @@ function engine(on: On, options: EngineOptions = {}): Set<string> {
   on('turn.complete', () => ({ text: '' }))
   on('skill.prompt', (_, e) => ({ text: e.text }))
   on('ui.invalidate', () => ({ value: undefined }))
-  on('ui.copy', (_, e) => {
-    options.copies?.push(e.text)
-
-    return { value: { isCopied: true } }
-  })
   on('command.describe', (_, e) => ({
     description: e.description,
     argumentHint: e.argumentHint,
@@ -211,6 +198,7 @@ function engine(on: On, options: EngineOptions = {}): Set<string> {
     return { text, cursor: e.start + e.inputText.length }
   })
   on('prompt.change', (_, e) => ({ text: e.text }))
+  on('prompt.submit', (_, e) => ({ text: e.text }))
 
   return panes
 }
@@ -447,13 +435,40 @@ test('スキル以外のコマンドを送信したら閉じる', async ($, on) 
   expect(panes.has('skill-preview')).toBe(false)
 })
 
-test('ネストしたスキル・親ディレクトリのスキル・同期スキルの本文を出す', async ($, on) => {
+test('入力欄の変化が届かなくても、送信したら入力中のプレビューを閉じる', async ($, on) => {
+  const clock = mock.clock(on)
+  const panes = engine(on)
+  await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
+  await typeText($, '/gri')
+  await clock.advance(100)
+  expect(panes.has('skill-preview')).toBe(true)
+  // Desktop で候補を確定して送信したとき（prompt.change は届かない）
+  await $.prompt.submit({ text: '/clear', wait: false, origin: { kind: 'composer' } })
+  await clock.advance(500)
+  expect(panes.has('skill-preview')).toBe(false)
+})
+
+test('送信したのがスキルなら、閉じずに実行中を出す', async ($, on) => {
+  const clock = mock.clock(on)
+  const panes = engine(on)
+  await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
+  await typeText($, '/eli')
+  await clock.advance(100)
+  await $.prompt.submit({ text: '/eli5:eli5 テスト', wait: false, origin: { kind: 'composer' } })
+  await $.skill.prompt({ ...ELI5_RUN })
+  await clock.advance(500)
+  expect(panes.has('skill-preview')).toBe(true)
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  expect(await ui.find({ type: 'Text', text: /実行中/ })).toBeDefined()
+  await ui.unmount()
+})
+
+test('親ディレクトリのスキル・同期スキルの本文を出す', async ($, on) => {
   const clock = mock.clock(on)
   engine(on)
   await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
 
   const cases = [
-    ['/lint-fix', /ネストした本文/, /user/],
     ['/parent-skill', /親の本文/, /project/],
     ['/pdf', /同期した本文/, /synced/],
   ] as const
@@ -468,26 +483,6 @@ test('ネストしたスキル・親ディレクトリのスキル・同期ス�
   }
 })
 
-test('別の場所のパスで実行したことがあっても、今のプロジェクトの索引を優先する', async ($, on) => {
-  const clock = mock.clock(on)
-  engine(on)
-  await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
-  await $.skill.prompt({
-    skill: 'grilling',
-    text: '',
-    source: 'projectSettings',
-    path: '/elsewhere/grilling/SKILL.md',
-    frontmatter: { name: 'grilling' },
-  })
-  await $.turn.complete({ answer: '', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
-  await typeText($, '/grilling')
-  await clock.advance(100)
-
-  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
-  expect(await ui.find({ type: 'Markdown', text: /質問を1つずつ投げる/ })).toBeDefined()
-  await ui.unmount()
-})
-
 test('実行中に一致しない / を打っても実行中の表示を残す', async ($, on) => {
   const clock = mock.clock(on)
   engine(on)
@@ -499,18 +494,6 @@ test('実行中に一致しない / を打っても実行中の表示を残す',
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
   expect(await ui.find({ type: 'Text', text: /実行中/ })).toBeDefined()
   expect(await ui.find({ type: 'Markdown', text: /やさしく説明する/ })).toBeDefined()
-  await ui.unmount()
-})
-
-test('/skill-preview に一致しない名前を渡すと一致なしを出す', async ($, on) => {
-  const clock = mock.clock(on)
-  engine(on)
-  await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
-  await $.command.run({ command: 'skill-preview', args: 'zzz', origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 120 } })
-  await clock.settle()
-
-  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
-  expect(await ui.find({ type: 'Text', text: /一致するスキルはありません/ })).toBeDefined()
   await ui.unmount()
 })
 
@@ -531,39 +514,35 @@ function describe($: Engine, command: string, description: string, provider: { p
   return $.command.describe({ command, description, isHidden: false, immediate: false, provider })
 }
 
+const builtin = (name: string, description: string) => ({ name, description, source: 'builtin' })
+
 test('原文が一致すれば訳を返し、変わっていれば訳さない', async () => {
-  expect(translateDescription('context', 'Show current context usage', 'builtin')).toBe(
-    '現在のコンテキストの使用状況を表示する。',
-  )
+  expect(japaneseDescription(builtin('context', 'Show current context usage'))).toBe('現在のコンテキストの使用状況を表示する。')
   // Claude Code の更新で原文が変わったとき
-  expect(translateDescription('context', 'Show the current context usage', 'builtin')).toBe(undefined)
+  expect(japaneseDescription(builtin('context', 'Show the current context usage'))).toBe(undefined)
   // 訳の無いもの
-  expect(translateDescription('no-such-command', 'Something', 'builtin')).toBe(undefined)
+  expect(japaneseDescription(builtin('no-such-command', 'Something'))).toBe(undefined)
   // 改行や連続する空白の違いは無視する（SKILL.md の折り返し）
-  expect(translateDescription('commit-commands:commit', 'Create a\n  git commit', 'commit-commands')).toBe(
-    'git コミットを作る。',
+  const commit = { name: 'commit-commands:commit', source: 'plugin', plugin: 'commit-commands' }
+  expect(japaneseDescription({ ...commit, description: 'Create a\n  git commit' })).toBe('git コミットを作る。')
+})
+
+test('組み込み・Anthropic 提供のもの以外は訳さない', async () => {
+  // ユーザーやプロジェクトのコマンド
+  expect(japaneseDescription({ name: 'context', description: 'Show current context usage', source: 'user' })).toBe(
+    undefined,
   )
+  // 別のプラグインのコマンド・名前と出どころが食い違うもの
+  const other = { name: 'commit-commands:commit', description: 'Create a git commit', source: 'plugin' }
+  expect(japaneseDescription({ ...other, plugin: 'other-plugin' })).toBe(undefined)
+  expect(japaneseDescription({ name: 'context', description: 'Show current context usage', source: 'plugin', plugin: 'commit-commands' })).toBe(undefined)
 })
 
-test('出どころが組み込み・Anthropic 提供のものと違えば訳さない', async () => {
-  // ユーザーやプロジェクトのコマンドは出どころが無い
-  expect(translateDescription('context', 'Show current context usage', undefined)).toBe(undefined)
-  // 別のプラグインが同じ名前のコマンドを持っていても訳さない
-  expect(translateDescription('commit-commands:commit', 'Create a git commit', 'other-plugin')).toBe(undefined)
-  expect(translateDescription('context', 'Show current context usage', 'some-plugin')).toBe(undefined)
-})
-
-test('可変部分を訳に入れ、すでに訳文ならそのまま返す', async () => {
-  expect(translateDescription('model', 'Set the AI model for Claude Code (currently Opus 5.5)', 'builtin')).toBe(
+test('可変部分を訳に入れる', async () => {
+  expect(japaneseDescription(builtin('model', 'Set the AI model for Claude Code (currently Opus 5.5)'))).toBe(
     'Claude Code の AI モデルを設定する（現在は Opus 5.5）。',
   )
-  expect(translateDescription('model', 'Set the AI model for Claude Code', 'builtin')).toBe(
-    'Claude Code の AI モデルを設定する。',
-  )
-  // command.describe で書き換えた後の一覧の説明
-  expect(translateDescription('model', 'Claude Code の AI モデルを設定する（現在は Fable 5.1）。', 'builtin')).toBe(
-    'Claude Code の AI モデルを設定する（現在は Fable 5.1）。',
-  )
+  expect(japaneseDescription(builtin('model', 'Set the AI model for Claude Code'))).toBe('Claude Code の AI モデルを設定する。')
 })
 
 test('訳文の表は可変部分の数がそろい、である調で「。」で終わる', async () => {
@@ -609,13 +588,6 @@ test('原文が変わったもの・ユーザーやコミュニティのもの�
     (await describe($, 'eli5:eli5', 'Explain a topic like I am 5', { plugin: 'eli5@claude-community', tier: 'user' }))
       .description,
   ).toBe('Explain a topic like I am 5')
-  // Anthropic 提供のプラグインと同じ名前でも、別のマーケットプレイスから入ったものは訳さない
-  expect(
-    (await describe($, 'commit-commands:commit', 'Create a git commit', {
-      plugin: 'commit-commands@someone-else',
-      tier: 'user',
-    })).description,
-  ).toBe('Create a git commit')
 })
 
 test('右ペインの説明も日本語訳にし、原文が変わったものは英語のまま出す', async ($, on) => {
@@ -725,7 +697,8 @@ test('右ペインに未訳の件数を出し、0 件なら出さない', async 
   const clock = mock.clock(on)
   engine(on)
   await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
-  await clock.settle()
+  // 未訳は起動から少し遅らせて数える
+  await clock.advance(300)
 
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount({ ...PANE, surface })
@@ -746,22 +719,19 @@ test('未訳が無ければペインに件数を出さない', async ($, on) => 
   // 訳の対象のものがすべて訳せる一覧
   engine(on, { commands: COMMANDS.filter(c => c.name !== 'compact' && c.name !== 'anthropic-skills:brand-new') })
   await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
-  await clock.settle()
+  await clock.advance(300)
 
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
   expect(await ui.find({ type: 'Text', text: /未訳/ })).toBe(undefined)
   await ui.unmount()
 })
 
-test('未訳の一覧コマンドは一覧を出力し、クリップボードにも入れる', async ($, on) => {
-  const copies: string[] = []
-  engine(on, { copies })
+test('未訳の一覧コマンドは一覧を出力する', async ($, on) => {
+  engine(on)
   const result = await $.command.run({ ...RUN_UNTRANSLATED })
   expect(result.text).toMatch(/"name": "compact"/)
   expect(result.text).toMatch(/"name": "anthropic-skills:brand-new"/)
-  expect(result.text).toMatch(/クリップボードにもコピーしました/)
-  expect(copies.length).toBe(1)
-  expect(copies[0]).toMatch(/未訳の説明が 2 件あります/)
+  expect(result.text).toMatch(/未訳の説明が 2 件あります/)
 })
 
 // ---------------------------------------------------------------------------
@@ -859,7 +829,6 @@ function fakeAsar(argv: readonly string[]): string | undefined {
   return undefined
 }
 
-const JA_CONFIG = { [DESKTOP_CONFIG]: JSON.stringify({ locale: 'ja-JP' }) }
 
 /** 公式訳の読み込み（session.start の裏で走る）が終わるまで進める */
 async function settleOfficial(clock: { settle: () => Promise<void> }) {
@@ -888,7 +857,7 @@ test('公式訳の定義と訳文を asar の出力から読む', async () => {
 test('公式訳があれば候補リストと右ペインの両方で自前訳より優先する', async ($, on) => {
   const clock = mock.clock(on)
   const runs: string[][] = []
-  engine(on, { files: JA_CONFIG, asar: { size: 123, mtimeMs: 7 }, run: fakeAsar, runs })
+  engine(on, { asar: { size: 123, mtimeMs: 7 }, run: fakeAsar, runs })
   await $.session.start({ cwd: CWD, surface: 'desktop', isInteractive: true })
   await settleOfficial(clock)
 
@@ -926,19 +895,15 @@ test('公式訳があれば候補リストと右ペインの両方で自前訳�
   expect(before).toBe(2)
 })
 
-test('UI が日本語でない・アプリが無い・形式が読めないときは自前訳を使う', async ($, on) => {
+test('アプリが無い・形式が読めないときは自前訳を使う', async ($, on) => {
   const cases: EngineOptions[] = [
-    { files: { [DESKTOP_CONFIG]: JSON.stringify({ locale: 'en-US' }) }, asar: { size: 1, mtimeMs: 1 }, run: fakeAsar },
-    { files: JA_CONFIG, run: fakeAsar },
-    { files: JA_CONFIG, asar: { size: 2, mtimeMs: 2 }, run: argv => (argv[0] === '/usr/bin/od' ? 'broken' : '') },
+    { run: fakeAsar },
+    { asar: { size: 2, mtimeMs: 2 }, run: argv => (argv[0] === '/usr/bin/od' ? 'broken' : '') },
   ]
   const clock = mock.clock(on)
   const runs: string[][] = []
   let current: EngineOptions = {}
   engine(on, {
-    get files() {
-      return current.files
-    },
     get asar() {
       return current.asar
     },
@@ -953,7 +918,7 @@ test('UI が日本語でない・アプリが無い・形式が読めないと�
       'Claude Code の AI モデルを設定する。',
     )
   }
-  // UI が日本語でないとき・アプリが無いときは asar を grep しない
+  // アプリが無いとき・ヘッダーが読めないときは asar を grep しない
   expect(runs.filter(argv => argv[0] === '/usr/bin/grep').length).toBe(0)
 })
 
@@ -962,7 +927,6 @@ test('公式訳の取り出しが一時的に失敗したときはキャッシ�
   const runs: string[][] = []
   let failing = true
   engine(on, {
-    files: JA_CONFIG,
     asar: { size: 9, mtimeMs: 9 },
     // 1回目の起動では訳文の grep が失敗する（終了コード 2）
     run: argv => (failing && argv.includes('-b') ? undefined : fakeAsar(argv)),

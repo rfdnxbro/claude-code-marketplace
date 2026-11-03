@@ -41,11 +41,10 @@ claude plugin install skill-preview@custom-marketplace
 /gri
 ```
 
-ペインを閉じたあとで開き直すときや、特定のスキルを表示したいときはコマンドを使います。
+ペインを閉じたあとで開き直すときはコマンドを使います。
 
 ```text
 /skill-preview
-/skill-preview grilling
 ```
 
 組み込み・Anthropic 提供の説明のうち、日本語訳が無く英語のままのものは次のコマンドで一覧できます（[未訳の確認](#未訳の確認)）。
@@ -62,14 +61,14 @@ claude plugin install skill-preview@custom-marketplace
 
 | 出どころ | 場所 | 名前 |
 |---|---|---|
-| project | 作業ディレクトリと、その親をたどった各ディレクトリ（ホームを除く）の `.claude/skills/**/SKILL.md`、`.claude/commands/**/*.md`。作業ディレクトリに近いものが優先 | スキルは `<name>`（ネストしたものは `category:name` でも引く）、コマンドは `<name>`（サブディレクトリは `dir:name`） |
-| user | `~/.claude/skills/**/SKILL.md`（`synced` を除く）、`~/.claude/commands/**/*.md` | 同上 |
-| plugin | `~/.claude/plugins/installed_plugins.json` の各プラグインの `installPath` 配下の `skills/**/SKILL.md` と `commands/**/*.md` | `<plugin>:<name>` |
+| project | 作業ディレクトリと、その親をたどった各ディレクトリ（ホームを除く）の `.claude/skills/*/SKILL.md`、`.claude/commands/**/*.md`。作業ディレクトリに近いものが優先 | スキルは `<name>`、コマンドは `<name>`（サブディレクトリは `dir:name`） |
+| user | `~/.claude/skills/*/SKILL.md`、`~/.claude/commands/**/*.md` | 同上 |
+| plugin | `~/.claude/plugins/installed_plugins.json` の各プラグインの `installPath` 配下の `skills/*/SKILL.md` と `commands/**/*.md` | `<plugin>:<name>` |
 | synced | `~/.claude/skills/synced/*/<name>/SKILL.md`（アカウントから同期されたスキル） | コロンの後ろの名前で引く |
 
-`CLAUDE_CONFIG_DIR` が設定されていれば `~/.claude` の代わりにそこを見ます。スキルは `skills/` の下を 3 階層まで探し、`node_modules` には入りません。
+`CLAUDE_CONFIG_DIR` が設定されていれば `~/.claude` の代わりにそこを見ます。スキルは `skills/` の直下（`skills/<name>/SKILL.md`）だけを見ます。
 
-この表に無いスキル（`--plugin-dir` で読み込んだプラグインのものなど）も、一度実行されれば `skill.prompt` で分かったパスを作業ディレクトリごとに覚え（`$.store` に保存）、次回以降の入力中プレビューに使います。表で見つかるスキルは、覚えたパスより表を優先します。
+この表に無いスキル（`--plugin-dir` で読み込んだプラグインのものなど）は、入力中のプレビューではコマンド一覧の説明文だけを表示します。実行されたときは `skill.prompt` で届くパスから `SKILL.md` を表示します。
 
 ## 説明の日本語訳
 
@@ -116,9 +115,9 @@ claude plugin install skill-preview@custom-marketplace
 Claude Desktop アプリは、一部の組み込みコマンドの説明に自前の日本語訳を持っています。この mod は公式訳をリポジトリに同梱せず、使う人のマシンにあるアプリの内部ファイル（`/Applications/Claude.app/Contents/Resources/ion-dist.asar`）から実行時に読み取ります。
 
 - 読み取りには macOS 標準の `od`・`head`・`grep` を使い、コマンド一覧の定義と、その ID の日本語訳だけを取り出します（数秒〜十数秒かかるので、起動の裏で行います）
-- 取り出した結果は `$.store` にキャッシュし、asar の大きさ・更新時刻か UI の言語が変わったときだけ取り直します。コマンドの失敗や出力の切り詰めで取り出せなかったときはキャッシュせず、次の起動で取り直します
-- Desktop の UI の言語は、Desktop の設定ファイル（`~/Library/Application Support/Claude/config.json` の `locale`）で判定し、無ければ macOS の言語設定を見ます。言語が `ja` で始まるとき（`ja`、`ja-JP` など）は、アプリの `ja-JP` の訳文を読みます
-- アプリが無い、UI が日本語でない、macOS 以外、アプリの更新で内部ファイルの形式が変わって読めない、のいずれかのときは、エラーを出さずに自前訳を使います
+- 取り出した結果は `$.store` にキャッシュし、asar の大きさ・更新時刻が変わったときだけ取り直します。コマンドの失敗や出力の切り詰めで取り出せなかったときはキャッシュせず、次の起動で取り直します
+- 自前訳と同じく、Desktop の UI の言語にかかわらず日本語（アプリの `ja-JP` の訳文）を出します
+- アプリが無い、macOS 以外、アプリの更新で内部ファイルの形式が変わって読めない、のいずれかのときは、エラーを出さずに自前訳を使います
 - 公式訳は手を加えずにそのまま表示します。公式訳の文体は統一されていない（「〜を管理」「〜を進めます」など）ため、下の[訳文の文体](#訳文の文体)は自前訳だけに適用します
 - 公式訳はアプリの内部ファイルに依存するため、アプリの更新で読めなくなることがあります。そのときは自前訳か英語で表示します
 
@@ -134,13 +133,13 @@ Claude Desktop アプリは、一部の組み込みコマンドの説明に自�
 /skill-preview-untranslated
 ```
 
-未訳の一覧（`name` / `source` / `plugin` / 現在の英語の `description`）と、訳文ファイルの更新の頼み方を出力し、クリップボードにもコピーします。
+未訳の一覧（`name` / `source` / `plugin` / 現在の英語の `description`）を、Claude にそのまま貼って訳を頼める形で出力します。
 
 ### 訳文の更新手順
 
 Claude Code やプラグインの更新で説明が変わったり、コマンドが増えたりして未訳が出たら、次の手順で訳を足して配ります。実行時に自動で翻訳はしません。
 
-1. `/skill-preview-untranslated` を実行し、出力（クリップボードにも入っています）をこのリポジトリで作業する Claude に渡して、`hooks/ja-descriptions.ts` の `JA_DESCRIPTIONS` の更新を頼みます。`en` には出力の `description` をそのまま写します（手で打ち直すと一致しなくなります）。`ja` は下の「訳文の文体」に従って訳します
+1. `/skill-preview-untranslated` を実行し、出力をこのリポジトリで作業する Claude に渡して、`hooks/ja-descriptions.ts` の `JA_DESCRIPTIONS` の更新を頼みます。`en` には出力の `description` をそのまま写します（手で打ち直すと一致しなくなります）。`ja` は下の「訳文の文体」に従って訳します
 2. `claude plugin test plugins/skill-preview` を実行します（原文と訳の `{}` の数がそろっていること、すべての訳が「。」で終わり、ですます調を含まないこともテストします）
 3. `.claude-plugin/plugin.json` の `version` を上げて配ります
 
@@ -155,15 +154,15 @@ Claude Code やプラグインの更新で説明が変わったり、コマン�
 | 起動条件を含む長い説明も要約せず忠実に訳す。「トリガー:」「スキップ:」などのラベルとトリガー語の列挙も残し、ラベルの後の文も である調で終える。トリガー語（「chart」「graph」など）は原文のままでよい | 「トリガー: 「chart」「graph」…などの語が出たときに使う。」 |
 | 固有名詞・コマンド名・ツール名・ファイル名は原文のまま | `mcp__Claude_Browser__*`、`.claude/settings.json` |
 
-Anthropic 提供のプラグインが増えたときは、`hooks/lib.ts` の `ANTHROPIC_MARKETPLACES` にプラグイン名と配布元のマーケットプレイスを足すと、そのプラグインも訳の対象になり、未訳として数えるようになります。
+Anthropic 提供のプラグインが増えたときは、`hooks/lib.ts` の `ANTHROPIC_PLUGINS` にプラグイン名を足すと、そのプラグインも訳の対象になり、未訳として数えるようになります。
 
 ## 制限
 
 - typeahead（スラッシュコマンドの候補一覧）の上下キーでの選択移動を検知するイベントが無いため、プレビューは入力した文字列だけで決まります
-- プラグインの `plugin.json` でスキルの置き場所を変えている場合や、frontmatter の `name` でスキル名を変えている場合は、一度実行するまでファイルを見つけられません
+- プラグインの `plugin.json` でスキルの置き場所を変えている場合や、frontmatter の `name` でスキル名を変えている場合は、入力中のプレビューではファイルを見つけられません（実行されたときは表示します）
 - frontmatter は表示用に簡易に読んでいるため、入れ子の深い YAML は 1 行にまとめて表示します
 - 説明の日本語訳は、訳を用意した時点の Claude Code とプラグインの説明に合わせています。新しく増えたコマンドや説明が変わったコマンドは、訳を更新するまで英語のまま表示します（[未訳の確認](#未訳の確認)）
-- Anthropic 提供かどうかは、`command.describe` で受け取ったコマンドはプラグインの名前と配布元のマーケットプレイスの両方で判定します。`command.describe` で受け取っていないコマンドは、`$.command.list()` にマーケットプレイスが含まれないため名前だけで判定します。Anthropic 提供のプラグインと同じ名前のプラグインを別のマーケットプレイスから入れた場合、名前だけで判定するときは、説明が同梱の英語の原文と完全に一致したときだけ訳を出し、一致しなければ未訳として数えます
+- Anthropic 提供かどうかはプラグインの名前だけで判定します。Anthropic 提供のプラグインと同じ名前のプラグインを別のマーケットプレイスから入れた場合も訳の対象になりますが、訳を出すのは説明が同梱の英語の原文と完全に一致したときだけです
 - `command.describe` で書き換えた説明は、候補リストだけでなく、Claude がスキルを選ぶときに読むスキル一覧の説明にも使われます。Claude Desktop の Code タブ（内蔵の Claude Code 2.1.309）で、この mod を読み込んだ後、そのセッションの Claude に渡るスキル一覧の説明が日本語訳に変わったことを確認しました（型定義には、`command.describe` は typeahead と `/help` での見え方を決めるとだけ書かれています）。訳は原文に忠実にしていますが、スキルが選ばれる精度への影響は確かめていません
 
 ## 開発
