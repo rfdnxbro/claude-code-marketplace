@@ -101,26 +101,9 @@ export function gaugeText(percent: number, elapsed: number | undefined, width: n
   return out
 }
 
-/**
- * 失敗後に次の取得まで待つ時間。Retry-After（秒）があればそれに従い、
- * なければ 2 分から倍々にして 15 分で止める
- */
-export function backoffMs(prev: number, retryAfter: string | undefined): number {
-  const MAX = 15 * 60_000
-  const sec = retryAfter === undefined ? NaN : Number(retryAfter)
-  if (Number.isFinite(sec) && sec > 0) return Math.min(MAX, sec * 1000)
-  return Math.min(MAX, prev > 0 ? prev * 2 : 2 * 60_000)
-}
-
 /** 金額の表示: 0 → $0、12.5 → $12.50 */
 export function formatDollars(x: number): string {
   return Number.isInteger(x) ? `$${x}` : `$${x.toFixed(2)}`
-}
-
-export function creditsPercent(c: Credits): number {
-  if (c.percent !== undefined) return c.percent
-  if (c.limit) return (c.used / c.limit) * 100
-  return 0
 }
 
 export function creditsDetail(c: Credits): string {
@@ -146,10 +129,8 @@ function str(v: unknown): string | undefined {
   return typeof v === 'string' ? v : undefined
 }
 
-/** `{ amount_minor, exponent }` か数値を米ドルに直す */
+/** `{ amount_minor, exponent }` を米ドルに直す */
 function money(v: unknown): number | undefined {
-  const n = num(v)
-  if (n !== undefined) return n
   const o = obj(v)
   const minor = num(o?.amount_minor)
   if (minor === undefined) return undefined
@@ -166,8 +147,7 @@ function parseWindow(v: unknown): UsageWindow | undefined {
 /**
  * `GET /api/oauth/usage` の応答から、Fable 週次枠・クレジット・5時間・週間を取り出す。
  * 確認済みのキー: limits[].kind / scope.model.display_name / percent / resets_at、
- * spend.used.{amount_minor,exponent} / spend.limit / spend.percent / spend.enabled、
- * extra_usage.{is_enabled,monthly_limit,used_credits,utilization,decimal_places}
+ * spend.used.{amount_minor,exponent} / spend.limit / spend.percent / spend.enabled
  */
 export function parseRemote(body: unknown): Remote {
   const root = obj(body) ?? {}
@@ -184,38 +164,16 @@ export function parseRemote(body: unknown): Remote {
   }
 
   const spend = obj(root.spend)
-  const extra = obj(root.extra_usage)
-  const scale = 10 ** (num(extra?.decimal_places) ?? 2)
-  const extraUsed = num(extra?.used_credits)
-  const extraLimit = num(extra?.monthly_limit)
-  const used = money(spend?.used) ?? (extraUsed !== undefined ? extraUsed / scale : undefined)
-  const limit =
-    money(spend?.limit) ?? money(spend?.cap) ?? (extraLimit !== undefined ? extraLimit / scale : undefined)
-  if (spend || extra) {
+  if (spend) {
     out.credits = {
-      used: used ?? 0,
-      limit,
-      percent: num(spend?.percent) ?? num(extra?.utilization),
-      enabled: spend?.enabled === true || extra?.is_enabled === true,
+      used: money(spend.used) ?? 0,
+      limit: money(spend.limit),
+      percent: num(spend.percent),
+      enabled: spend.enabled === true,
     }
   }
 
   out.fiveHour = parseWindow(root.five_hour)
   out.sevenDay = parseWindow(root.seven_day)
   return out
-}
-
-/** 応答から使える値を1つでも読めたか（読めなければ取得失敗として扱う） */
-export function hasUsage(r: Remote): boolean {
-  return r.fable !== undefined || r.credits !== undefined || r.fiveHour !== undefined || r.sevenDay !== undefined
-}
-
-/** 新しく取れた値で前回値を更新する。応答に欠けた項目は前回の値を残す */
-export function mergeRemote(prev: Remote | null | undefined, fresh: Remote): Remote {
-  return {
-    fable: fresh.fable ?? prev?.fable,
-    credits: fresh.credits ?? prev?.credits,
-    fiveHour: fresh.fiveHour ?? prev?.fiveHour,
-    sevenDay: fresh.sevenDay ?? prev?.sevenDay,
-  }
 }

@@ -5,16 +5,19 @@
   "owner": {
     "name": "rfdnxbro"
   },
+  "renames": {
+    "claude-code-workflow": "workflow-kit"
+  },
   "plugins": [
     {
-      "name": "claude-code-workflow",
-      "source": "./plugins/claude-code-workflow",
+      "name": "workflow-kit",
+      "source": "./plugins/workflow-kit",
       "description": "Claude Code を使う際の個人的な作業スタイル（文体ガイド、判断ルール等）をスキルとして集約するプラグイン",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "author": {
         "name": "rfdnxbro"
       },
-      "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/claude-code-workflow",
+      "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/workflow-kit",
       "repository": "https://github.com/rfdnxbro/claude-code-marketplace",
       "license": "MIT",
       "keywords": [
@@ -23,6 +26,61 @@
         "personal"
       ],
       "category": "workflow"
+    },
+    {
+      "name": "usage-gauge",
+      "source": "./plugins/usage-gauge",
+      "description": "入力欄の上にコンテキスト・5時間・週間・週間 Fable・クレジットの使用量ゲージを並べる mod",
+      "version": "0.1.1",
+      "author": {
+        "name": "rfdnxbro"
+      },
+      "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/usage-gauge",
+      "repository": "https://github.com/rfdnxbro/claude-code-marketplace",
+      "license": "MIT",
+      "keywords": [
+        "mod",
+        "usage",
+        "rate-limit",
+        "context"
+      ],
+      "category": "productivity"
+    },
+    {
+      "name": "skill-preview",
+      "source": "./plugins/skill-preview",
+      "description": "入力中の /スキル名 や実行されたスキルの SKILL.md を右ペインに表示し、組み込み・Anthropic 提供のスキルとコマンドの説明を日本語で出す mod",
+      "version": "0.2.0",
+      "author": {
+        "name": "rfdnxbro"
+      },
+      "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/skill-preview",
+      "repository": "https://github.com/rfdnxbro/claude-code-marketplace",
+      "license": "MIT",
+      "keywords": [
+        "mod",
+        "skills",
+        "pane"
+      ],
+      "category": "productivity"
+    },
+    {
+      "name": "ja-reply-guard",
+      "source": "./plugins/ja-reply-guard",
+      "description": "Claude の返答が英語だらけになったとき、日本語で書くよう促す mod",
+      "version": "0.1.0",
+      "author": {
+        "name": "rfdnxbro"
+      },
+      "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/ja-reply-guard",
+      "repository": "https://github.com/rfdnxbro/claude-code-marketplace",
+      "license": "MIT",
+      "keywords": [
+        "mod",
+        "japanese",
+        "language"
+      ],
+      "category": "productivity"
     }
   ]
 }

@@ -10,6 +10,7 @@
 | [marketplace.md](marketplace.md) | マーケットプレイス設定（`marketplace.json`）の仕様 |
 | [agents.md](agents.md) | サブエージェントの定義方法 |
 | [hooks.md](hooks.md) | フック（イベントハンドラ）の定義方法 |
+| [mods.md](mods.md) | Mod（関数フックのプラグイン）の書き方・描画・Mods API |
 | [mcp-servers.md](mcp-servers.md) | MCPサーバーの設定方法 |
 | [channels.md](channels.md) | チャンネル（MCPサーバーからのイベント注入）の設定方法 |
 | [lsp-servers.md](lsp-servers.md) | LSPサーバーの設定方法 |

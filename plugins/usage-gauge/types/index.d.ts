@@ -34,8 +34,8 @@ declare module 'claude-code' {
       remote: Shaped<Remote | null>
       /** 残り時間の表示を進めるための現在時刻（ミリ秒） */
       now: number
-      /** 折りたたみ状態。null は「$.store の値に従う」 */
-      collapsed: boolean | null
+      /** 折りたたみ状態（$.store の値を起動時と /clear などの後に写す） */
+      collapsed: boolean
     }
   }
 }

@@ -1,10 +1,10 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
-  "name": "claude-code-workflow",
-  "version": "0.2.0",
+  "name": "workflow-kit",
+  "version": "0.3.0",
   "description": "Claude Code を使う際の個人的な作業スタイル（文体ガイド、判断ルール等）をスキルとして集約するプラグイン",
   "author": { "name": "rfdnxbro" },
-  "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/claude-code-workflow",
+  "homepage": "https://github.com/rfdnxbro/claude-code-marketplace/tree/main/plugins/workflow-kit",
   "repository": "https://github.com/rfdnxbro/claude-code-marketplace",
   "license": "MIT",
   "keywords": [

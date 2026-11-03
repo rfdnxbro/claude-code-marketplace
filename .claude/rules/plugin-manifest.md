@@ -12,7 +12,23 @@ paths: plugins/*/.claude-plugin/plugin.json, .claude-plugin/plugin.json
 
 | フィールド | 型 | 説明 |
 |-----------|---|------|
-| `name` | string | プラグイン識別子（kebab-case、スペース禁止） |
+| `name` | string | プラグイン識別子（kebab-case、スペース禁止、予約名は不可） |
+
+### 予約済みのプラグイン名
+
+Anthropic のプラグインと紛らわしい名前は、サードパーティのプラグイン名に使えない。`claude plugin validate` はエラー（`Plugin name "..." is reserved: it passes as one of Anthropic's own`）として失敗させる。
+
+| 規則 | 例 |
+|------|----|
+| `claude-` / `anthropic-` / `anthropics-` / `cc-plugin-` で始まる | `claude-code-workflow`、`anthropic-tools` |
+| `claude` / `anthropic` / `anthropics` / `claude-code` / `claude-mods` そのもの | `claude-code` |
+| `official` を `claude` / `anthropic` と隣り合わせにする | `official-claude`、`claude-official` |
+
+名前の途中に `claude` を含むだけの名前（例: `my-claude-helper`）は対象外。既存のプラグインを改名する場合は、`marketplace.json` の `renames` で旧名から新名へ対応付けると、インストール済みユーザーの設定が自動で更新される（→ [marketplace.md](marketplace.md) の「プラグイン自動リネーム」）。
+
+本リポジトリのバリデーター（`scripts/validators/base.py` の `find_reserved_plugin_name`）は、`plugin.json` の `name` と `marketplace.json` の `plugins[].name` について上の規則をエラーとして検出する。
+
+> 出典: Claude Code の `claude plugin validate` が出すエラーメッセージ、および公式ドキュメント [Create a mod](https://code.claude.com/docs/en/plugins/mods/create) の「Share your mod」節（名前が Anthropic のものに似ていると validate が失敗する）
 
 ## メタデータフィールド（オプション）
 
