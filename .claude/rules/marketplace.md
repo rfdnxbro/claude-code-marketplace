@@ -32,7 +32,7 @@ paths: .claude-plugin/marketplace.json
 
 | フィールド | 型 | 説明 |
 |-----------|---|------|
-| `name` | string | マーケットプレイス識別子（kebab-case） |
+| `name` | string | マーケットプレイス識別子（kebab-case）。Claude Code は英数字・`.`・`_`・`-` のみで英数字から始まり `..` を含まない名前を受け付け、これを満たさない名前は `claude plugin validate` が失敗とする |
 | `owner` | object | 管理者情報（`name`必須） |
 | `plugins` | array | プラグイン定義リスト |
 

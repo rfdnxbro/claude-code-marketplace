@@ -96,7 +96,7 @@ Claude Code は hooks モジュールのソースを実行前に静的解析し�
 | | `session.end` | 終了時（短い時間予算内） |
 | ターン | `turn.start` / `turn.step` / `turn.complete` | ターンの開始・各モデルリクエスト・完了（`e.usage`, `e.durationMs`） |
 | ツール | `tool.call` / `tool.check` / `tool.describe` | ツール呼び出しの観察・拒否・書き換え、権限判定、説明文の書き換え |
-| プロンプト | `prompt.submit` | 送信時。`e.command`（`{ name, args }`）があればスラッシュコマンドの送信 |
+| プロンプト | `prompt.submit` | 送信時。`e.command`（`{ name, args }`）があればスラッシュコマンドの送信。`next({ ...e, context: [...(e.context ?? []), 追加テキスト] })` で Claude だけが読むテキストを足せる。Mod が付加した内容はシステムメッセージではなくユーザーのターン内に留まる |
 | | `prompt.edit` | 入力欄の編集（キー入力・ペースト）ごと。hook の時間上限は 50 ms |
 | | `prompt.change` | 編集以外の入力欄の変化（履歴呼び出し・クリア・プラグインの fill）。観察のみ |
 | | `prompt.autocomplete` | カーソル位置の単語に対して、typeahead に候補行を追加 |
@@ -191,6 +191,22 @@ if (auth) {                                 // API キー・ゲートウェイ�
 - `skill.prompt`: スキル展開時に `e.path`（SKILL.md の絶対パス。組み込みスキルなどファイルが無い場合は無し）、`e.frontmatter`、`e.text`（展開後の本文）が取れる
 - `$.command.list()`: スラッシュコマンド一覧（`name` / `description` / `source` / `plugin`）。ファイルパスは含まない
 - 組み込みガード（`cc-plugin-sec-default`）が読み込まれるセッション（managed settings がある端末、または Team / Enterprise の `/login`）では、ユーザーの Mod の `skill.prompt` / `prompt.compose` / `prompt.section` / `prompt.context` / `classic.<Event>` などの hook は動かない
+
+## モデルの呼び出し
+
+`$.model.complete` と `$.model.fork` で、Mod から小さな作業をモデルに依頼できる。どちらもセッションの認証情報を使うため、ユーザーのプラン・APIキー・クラウドプロバイダーに課金される。
+
+| リクエストの内容 | `$.model.complete` | `$.model.fork` |
+|-----------------|-------------------|----------------|
+| モデル | 渡した `model` | セッションのモデル |
+| システムプロンプト | 短い帰属ブロック＋渡した `system` | セッションのシステムプロンプト |
+| メッセージ | `prompt` だけのユーザーメッセージ1件 | ここまでの会話に、`prompt` をユーザーメッセージとして追加 |
+| CLAUDE.md などのプロジェクトコンテキスト | 含まれない | 含まれる |
+| ツール | なし | Claude のツール（モデルは呼び出せない） |
+
+- `$.model.fork` には `effort` オプションを渡せる。`low` を渡すと、セッションの effort に関わらず軽い副作業を `low` で実行でき、結果は送信した effort を報告する。`effort` に渡せる値の全体は公式ドキュメントに列挙がなく、型定義（`types/index.d.ts`）で確認する
+- API の失敗では呼び出しが reject されないため、`r.isAnswered` を確認し、`false` なら `r.reason` を読む。組織がブロックしたモデルなど、Claude Code が送らないリクエストでは reject される
+- 詳細は [Use the mods API](https://code.claude.com/docs/en/plugins/mods/api.md) を参照
 
 ## 開発と読み込み
 
