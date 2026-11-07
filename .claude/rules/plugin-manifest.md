@@ -359,6 +359,17 @@ claude plugin init my-plugin
 }
 ```
 
+`subagentStatusLine` の `command` では `${CLAUDE_PLUGIN_ROOT}` を使ってプラグイン自身のスクリプトを参照できる。
+
+```json
+{
+  "subagentStatusLine": {
+    "type": "command",
+    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/subagent-statusline.sh"
+  }
+}
+```
+
 ### 注意事項
 
 - 機密情報（APIキー等）は `settings.json` に含めないでください。機密値はユーザーごとに入力を求める「ユーザー設定オプション（userConfig）」を使用し、`sensitive: true` を指定してください

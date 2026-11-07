@@ -40,7 +40,7 @@
 
 | 変数 | 説明 | 使用箇所 |
 |------|------|----------|
-| `${CLAUDE_PLUGIN_ROOT}` | プラグインルートへの絶対パス | hooks, mcp-servers, lsp-servers, monitors, allowed-tools |
+| `${CLAUDE_PLUGIN_ROOT}` | プラグインルートへの絶対パス | hooks, mcp-servers, lsp-servers, monitors, allowed-tools, subagentStatusLine |
 | `${CLAUDE_PROJECT_DIR}` | プロジェクトルートへの絶対パス | hooks, mcp-servers |
 | `${CLAUDE_SESSION_ID}` | 現在のセッションID | skills, slash-commands |
 | `${CLAUDE_SKILL_DIR}` | スキル自身のディレクトリへの絶対パス | skills |
@@ -59,6 +59,8 @@
 | `CLAUDE_CODE_MCP_SERVER_NAME` | `headersHelper` スクリプト内で利用可能。呼び出し元の MCP サーバー名 | mcp-servers |
 | `CLAUDE_CODE_MCP_SERVER_URL` | `headersHelper` スクリプト内で利用可能。呼び出し元の MCP サーバー URL | mcp-servers |
 | `CLAUDE_CODE_MCP_STARTUP_WAIT_MS` | 非対話（headless）セッションの最初のターンが接続中のMCPサーバーを待つ時間の上限（ミリ秒）。`0`で待たない（ただし `--allowedTools` または `mcp_tool` フックで指定された接続中のMCPサーバーは、`0` でも最大2秒待つ） | mcp-servers |
+| `CLAUDE_CODE_DISABLE_MCP_TASK_BACKGROUND` | `1` を設定すると、対話セッションでMCPタスクの結果をClaudeが待つ（MCPタスクを即座にバックグラウンドへ移さない）。自動バックグラウンド化が有効な間は、既定で2分後に呼び出しがバックグラウンドへ移る（公式 `/en/mcp`・`/en/env-vars` 参照） | mcp-servers |
+| `CLAUDE_CODE_DISABLE_MCP_TASKS` | `1` を設定すると、MCPタスクを無効化する | mcp-servers |
 | `CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE` | `git pull` 失敗時に既存マーケットプレイスキャッシュを保持 | marketplace |
 | `CLAUDE_CODE_PLUGIN_PREFER_HTTPS` | GitHubプラグインソースをSSHの代わりにHTTPSでクローン・更新する（add/update操作を含む）。SSH鍵がない環境（CI・企業ネットワーク等）向け | marketplace |
 | `CLAUDE_CODE_SESSION_ID` | 現在のセッションID（Stdio MCPサーバーのサブプロセス環境で利用可能） | mcp-servers |
