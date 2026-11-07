@@ -427,6 +427,10 @@ fi
 echo "[$MODEL] $DIR"
 ```
 
+## サブエージェントのステータスライン
+
+`subagentStatusLine` 設定は、プロンプト下のエージェントパネルに表示される各サブエージェントの行をカスタマイズする。プラグインは同梱の `settings.json` で既定の `subagentStatusLine` を提供でき、`command` では `${CLAUDE_PLUGIN_ROOT}` を使ってプラグイン自身のスクリプトを参照できる。詳細は [plugin-manifest.md](plugin-manifest.md) の「サポートされるキー」と公式 [`/en/statusline#subagent-status-lines`](https://code.claude.com/docs/en/statusline#subagent-status-lines) を参照。
+
 ## ベストプラクティス
 
 **簡潔に**: ステータスラインは1行に収まるべき。最も重要な情報に絞る。
