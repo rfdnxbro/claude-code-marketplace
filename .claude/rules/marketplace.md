@@ -672,6 +672,17 @@ export CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS=300000
 
 上位tierで同名エントリを再定義すると、下位tierで設定した`headers`は引き継がれず、上位tierのエントリで指定したフィールドのみが有効になります。カスタム`headers`を維持したい場合は、上位tierのエントリ内で`headers`を含めて完全な形でエントリを再定義する必要があります。
 
+## managed settings の extraKnownMarketplaces
+
+managed settings の `extraKnownMarketplaces` で宣言した名前のマーケットプレイスには、次の挙動がある。
+
+- 宣言済みの名前は、別のソースから追加できない
+- 他の由来の同名エントリは非表示になる
+- 宣言済みマーケットプレイスが載せているプラグインは、そのマーケットプレイスから再インストールされる
+- 未宣言のソースから同名で乗っ取られた場合、保存データは `cleanupPeriodDays` の間退避される。オプションとシークレットは `claude plugin restore-set-aside` を実行するまで退避される
+
+TODO: 要確認 — `claude plugin restore-set-aside` の引数・出力は plugins/cli-reference.md に記載なし。
+
 ## urlマーケットプレイスのheadersHelper
 
 `extraKnownMarketplaces` や `claude plugin marketplace add` でマーケットプレイス自体を `url` ソースとして登録する場合も、`headersHelper` を設定してカタログ（`marketplace.json`本体）取得時のHTTPヘッダーを動的生成できます。

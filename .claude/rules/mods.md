@@ -199,6 +199,12 @@ if (auth) {                                 // API キー・ゲートウェイ�
 | `claude --plugin-dir <dir>` | そのセッションだけ読み込む（インストールしない）。対話セッションではフォルダを監視し、保存でホットリロード |
 | `CLAUDE_CODE_PLUGIN_DIRS` | フラグを渡せない環境（Desktop アプリ等）向け。環境変数または `~/.claude/settings.json` の `env` に絶対パスをパス区切りで指定 |
 | Claude に書かせる | `plugin-authoring` スキルで `~/.claude/dev-mods/<セッションID>/<mod名>/` に書かれ、初回保存時の確認で有効化。そのセッションでのみ読み込まれ、`cleanupPeriodDays` を過ぎると削除される |
+
+**Claude が書いた Mod の有効化**:
+
+- `auto` / `bypassPermissions` モードでは、確認なしで有効化される。managed の `allowUnsandboxedCommands: false` や `allowManagedDomainsOnly` が設定されていても同様
+- `dontAsk` モードでは読み込まれない
+- それ以外のモードでは、初回保存時の確認に答えると有効化される
 | マーケットプレイス | 通常のプラグインと同じく `/plugin install <mod>@<marketplace>`。開いているセッションには `/reload-plugins` |
 
 - ターン中に Claude が保存した変更は、ターン終了時にリロードされる
@@ -234,6 +240,7 @@ claude plugin test plugins/my-mod
 | `$.store` | 合計 4 MiB |
 | トースト | 既定 4 秒 |
 
+- Mod 自身のツール呼び出し（`$.tool.call`、`$.mcp.call`）は、ユーザー自身の ask ルールがあっても、`dontAsk` や `-p` の実行でも、権限プロンプトを出さない。deny ルールと組織ポリシーは引き続き適用される
 - Mod はユーザー権限で動き、サンドボックスの対象外。`$.fs` / `$.process` にはパーミッションルールも PreToolUse hook も適用されない
 - 組織は managed settings の `pluginConfigs` で組み込みガードに `allowManagedModsOnly: true` を渡すと、ユーザーの Mod を止められる
 
