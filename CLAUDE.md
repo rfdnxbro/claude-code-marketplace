@@ -44,6 +44,8 @@ python3 scripts/validate_plugin.py plugins/my-plugin/**/*.md plugins/my-plugin/*
 - コマンドのfrontmatter（フィールド形式・必須項目）
 - `hooks/hooks.json`（JSONスキーマ・イベント名・フックタイプ）
 - YAMLパースエラー（frontmatter構文の妥当性）
+- プラグインのTypeScriptフックモジュールの型チェック（指摘は警告。`--strict` では失敗扱い）
+- modの `engine.create` フックの記述形式（不正な形式のmodは失敗。`$` 名詞の追加・除外・置換も対象）
 - スキーマ違反（未知フィールドや不正な値）
 - Claude Desktopの管理マーケットプレイス同期で拒否されるマーケットプレイス名／プラグイン名（警告）
 

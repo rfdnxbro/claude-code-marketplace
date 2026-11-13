@@ -274,6 +274,16 @@ def validate_plugin_json(file_path: Path, content: str) -> ValidationResult:
     if default_enabled is not None and not isinstance(default_enabled, bool):
         result.add_error(f"{file_path.name}: defaultEnabledはブール値（true/false）が必要です")
 
+    # engines の確認（型のみ。バージョン範囲の書式は公式ドキュメントに記載がないため検証しない）
+    engines = data.get("engines")
+    if engines is not None:
+        if not isinstance(engines, dict):
+            result.add_error(f"{file_path.name}: enginesはオブジェクトが必要です")
+        else:
+            claude_code_range = engines.get("claude-code")
+            if claude_code_range is not None and not isinstance(claude_code_range, str):
+                result.add_error(f'{file_path.name}: engines["claude-code"]は文字列が必要です')
+
     # 公式スキーマに存在しないフィールドを警告
     # settings は plugin.json のフィールドではなく、settings.json はプラグインルート
     # 直下に配置すれば自動検出される。誤って指定された場合にサイレント無視を防ぐ。

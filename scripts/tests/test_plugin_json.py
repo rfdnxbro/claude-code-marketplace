@@ -1347,3 +1347,31 @@ class TestModTypes:
         content = json.dumps({"name": "my-mod", "types": ["./types/index.d.ts"]})
         result = validate_plugin_json(Path("plugin.json"), content)
         assert any("types" in e and "文字列" in e for e in result.errors)
+
+
+class TestEngines:
+    """engines フィールドのテスト"""
+
+    def test_engines_claude_code_string(self):
+        """engines["claude-code"] に文字列を指定すると有効"""
+        content = json.dumps({"name": "my-plugin", "engines": {"claude-code": ">=2.1.323"}})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+
+    def test_engines_without_claude_code(self):
+        """engines が claude-code キーを持たなくても有効"""
+        content = json.dumps({"name": "my-plugin", "engines": {}})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert not result.has_errors()
+
+    def test_engines_not_object_error(self):
+        """engines に文字列を指定するとエラー"""
+        content = json.dumps({"name": "my-plugin", "engines": ">=2.1.323"})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert any("engines" in e and "オブジェクト" in e for e in result.errors)
+
+    def test_engines_claude_code_not_string_error(self):
+        """engines["claude-code"] に数値を指定するとエラー"""
+        content = json.dumps({"name": "my-plugin", "engines": {"claude-code": 2}})
+        result = validate_plugin_json(Path("plugin.json"), content)
+        assert any("claude-code" in e and "文字列" in e for e in result.errors)

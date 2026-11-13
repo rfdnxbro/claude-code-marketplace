@@ -51,6 +51,8 @@ paths: .claude-plugin/marketplace.json
 
 `renames` フィールドを使用すると、プラグイン名を変更した際にユーザーの設定を自動的に更新できます。マーケットプレイスの `renames` マップが自動的に適用され、古いプラグイン名を使用しているユーザーの設定が新しい名前に更新されます。
 
+`renames` マップに不正な項目があっても、他の項目の rename は有効なまま適用される。
+
 ```json
 {
   "name": "my-marketplace",
@@ -132,6 +134,10 @@ paths: .claude-plugin/marketplace.json
 「Installed」タブや `claude plugin details`、`/plugin` の Discover/Browse、`claude plugin list --json --available` などのUI表示に使われる `description` 等の表示用メタデータは、マーケットプレイスエントリ側の値が優先されます。マーケットプレイスエントリに値がない場合は `plugin.json` 側の値で補完されます。
 
 ## ソース指定
+
+マーケットプレイスとプラグインのインストールは、gitサブモジュールがリポジトリの記録するコミットにない場合に失敗する。
+
+TODO: 要確認 — 失敗時のエラーメッセージは plugins/marketplace-reference.md・plugins/create-marketplace.md に記載なし。
 
 ### `metadata.pluginRoot`による裸のソース名解決
 
