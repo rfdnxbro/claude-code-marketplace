@@ -108,6 +108,24 @@ Claude Code は hooks モジュールのソースを実行前に静的解析し�
 
 > typeahead（スラッシュコマンド候補）の上下キーでの選択移動を検知するイベントはない。
 
+### `engine.create` フック
+
+`engine.create` は mods API の構築時に発火する。`*`・名前空間・否定形で登録した hook は観察のみになる。`$` 名詞の追加・除外は、イベント名を指定した hook で行う。
+
+`claude plugin validate` は `engine.create` の hook が受け付けられる形で書かれているかを検証し、そうでない mod は失敗とする。インストール済みの mod は読み込まれ続ける。`$` 名詞の追加・除外・置換も検証対象。
+
+TODO: 要確認 — 受け付けられる記述形式の具体は plugins/mods/reference.md・plugins/mods/events.md の取得範囲に記載なし。
+
+### ツール関連 hook の挙動
+
+- `tool.list` hook が追加・除外するツールは、モデルとすべてのエージェントに適用される
+- `tool.check` hook による権限プロンプトは、hook した全プラグインではなく、要求元のプラグインだけを示す
+- `/fast on|off` は Vertex でもプラグインの `config.set` hook に問い合わせる
+
+### ペインの props
+
+`Pane` の `ui.render` に渡される props に `isPromptCovered` がある。プロンプトを、その上のダイアログや入力欄が覆っているかを示す。
+
 ## 描画（ui.render）
 
 `on('ui.render', { component: '<サイト>' }, hook)` でツリーを返すと描画し、`next(e)` を返すと何も描かない（または本体の描画を残す）。要素は `const { Box, Text, Button } = $.ui.resolve(e)` で取り、グローバルの `h` を JSX ファクトリとして使う。

@@ -48,8 +48,25 @@ Anthropic のプラグインと紛らわしい名前は、サードパーティ�
 | `privacyPolicyUrl` | string | ディレクトリ掲載用のプライバシーポリシーURL（`https://`） |
 | `termsOfServiceUrl` | string | ディレクトリ掲載用の利用規約URL（`https://`） |
 | `defaultEnabled` | boolean | `false` を指定するとプラグインをデフォルト無効でインストール。`/plugin` または `claude plugin enable` で有効化する。依存プラグインは有効化済みプラグインの依存関係として自動有効化される |
+| `engines` | object | プラグインが動作する Claude Code のバージョン範囲。`engines["claude-code"]` に指定する（→「engines」節） |
 
 `icon`・`documentationUrl`・`supportUrl`・`privacyPolicyUrl`・`termsOfServiceUrl` は、プラグインを Anthropic のディレクトリに提出したときの掲載情報として使われ、Claude Code 本体はロード時に読まない。`plugin.json` にだけ記述する。マーケットプレイスのエントリ（`marketplace.json` の `plugins[]`）に書くと、`claude plugin validate` は未知のフィールドとして報告する。本リポジトリのバリデーターは、値の形式（`icon` は `./` で始まるパス、他は `https://` の URL）とマーケットプレイスのエントリへの記述を警告する。
+
+## engines
+
+`engines["claude-code"]` でプラグインが対応する Claude Code のバージョン範囲を宣言する。範囲外のプラグインはインストール・更新・読み込みされない。インストールと更新では、範囲に合う最新のバージョンが選ばれる。
+
+```json
+{
+  "engines": {
+    "claude-code": "<バージョン範囲>"
+  }
+}
+```
+
+本リポジトリのバリデーターは、`engines` がオブジェクトであること、`engines["claude-code"]` が文字列であることを検証する。バージョン範囲の書式は検証しない。
+
+TODO: 要確認 — バージョン範囲の書式（semver range か否か）、範囲外のとき `claude plugin validate` が何を報告するかは、plugins/manifest-reference.md・plugins/loading.md・plugins/marketplace-reference.md に記載なし。
 
 ## コンポーネント参照
 
@@ -348,6 +365,10 @@ claude plugin init my-plugin
 | `subagentStatusLine` | サブエージェントのステータスライン設定 | 公式 [`/en/statusline#subagent-status-lines`](https://code.claude.com/docs/en/statusline#subagent-status-lines) を参照 |
 | `agent` | エージェント関連のデフォルト設定。**dispatched sessions（サブエージェントとして呼び出されたセッション）でも反映される** | [agents.md](agents.md) および公式 [`/en/sub-agents`](https://code.claude.com/docs/en/sub-agents) を参照 |
 
+`agent` 設定は非推奨。引き続き適用されるが、起動時、`claude plugin list`、`claude plugin validate` で警告が出る。
+
+TODO: 要確認 — 非推奨の対象がプラグイン同梱 `settings.json` の `agent` キーであると公式ドキュメント（plugins/manifest-reference.md・plugins/components.md）では確認できていない。
+
 ### settings.json のフォーマット例
 
 ```json
@@ -401,6 +422,8 @@ claude plugin init my-plugin
 | `default` | type に対応 | No | 未入力時のデフォルト値。`type` と一致する型で指定する（例: `type: "number"` なら数値リテラル、`type: "boolean"` なら真偽値リテラル） |
 
 > **注意**: `userConfig` の詳細スキーマ（追加フィールドなど）は公式ドキュメントを参照してください。
+
+`claude plugin install --json` の結果には、まだ値が設定されていない `userConfig` オプションの数が `unsetOptionCount` として含まれる。
 
 ### 入力値（pluginConfigs）の読み込み元
 
