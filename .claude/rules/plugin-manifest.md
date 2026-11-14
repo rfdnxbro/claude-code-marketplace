@@ -169,6 +169,8 @@ my-plugin/
   `monitors` のインライン配列によるモニター定義は対象外）
   - TODO: 要確認 — 絶対パス（`/etc/commands`、`C:\commands`、UNCパス）を指定した場合にClaude Code本体が拒否するかは未確認。本リポジトリのバリデーターは、配布先で成立しないパス指定として絶対パスも拒否する
 - 宣言するコンポーネントパス（`commands`/`agents`/`skills`/`hooks`等）がシンボリックリンクで、リンク先がプラグインディレクトリ外を指している場合、エラーで拒否される（プラグインディレクトリ外のファイルを読み取れてしまうことを防ぐため）
+- プラグインフォルダ内の一部の危険なパスやリンクは、プラグイン読み込み時にスキップされ、`claude plugin validate` がそれを報告する
+  - TODO: 要確認 — どのパス・リンクが「危険」と判定されるか、および報告時のメッセージ・レベル（エラー/警告）は、公式ドキュメント plugins/manifest-reference.md・plugins/marketplace-reference.md・plugins/troubleshooting.md に記載なし。本リポジトリのバリデーターは未対応
 
 ### ルートレベルの SKILL.md 構成例
 

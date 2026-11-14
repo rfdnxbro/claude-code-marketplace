@@ -221,6 +221,13 @@ GitHub sourceでは、fragment構文を使ってbranch、tag、またはcommit S
 > - 安定性重視 → commit SHA指定（例: `owner/plugin-repo#abc123def456789`）
 > - 常に最新を使用 → branch/tag指定（例: `owner/plugin-repo#main`）
 
+#### マーケットプレイスソースの `ref`
+
+マーケットプレイスソース（`github` / `git`）の `ref` には、ブランチ名・タグ名のほか、ブランチまたはタグ上の任意のコミットの完全なIDを指定できます。
+
+> **互換性の注意**: コミットIDで固定したマーケットプレイスは、この指定に対応していない古い Claude Code ではクローンできず、読み込まれなくなります。
+> TODO: 要確認 — 対応していない Claude Code の範囲（具体的なバージョン）は、公式ドキュメント plugins/marketplace-reference.md には `ref` が「Branch or tag」と書かれているだけでコミットIDの記載なし。
+
 ### Git URL
 
 ```json
