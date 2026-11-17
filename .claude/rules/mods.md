@@ -136,6 +136,8 @@ Claude Code は hooks モジュールのソースを実行前に静的解析し�
 | `Raster` / `Image` | ○ | × | × |
 
 - `Box` は `width`（数値または `"40%"` などの割合）と `backgroundColor` を持つため、全サーフェス共通のゲージを Box の入れ子で描ける
+- `Box` の `overflowX` は `'visible' | 'scroll'`。`"scroll"` は中の各行が幅を保ったまま横にまとめてスクロールする（`maxLines` は効かない）。ターミナルと VS Code は横スクロールできないため、各 `Text` を Box の端で切る
+- `Text` の `wrap` は `'wrap' | 'end' | 'middle' | 'truncate' | 'truncate-start' | 'truncate-middle' | 'truncate-end' | 'clip'`。`clip` は省略記号を付けずに切る（ターミナルは省略記号を描く）。`maxLines` は描く最大行数（1以上の整数）で、超えた分は最終行を省略記号で終える。`wrap` が先頭・中央を切る値または `clip` のときは、`maxLines` に関わらず各行が1行に収まる
 - サーフェスに無い要素や受け付けない prop を含むツリーは検証で落ち、その hook だけがスキップされる
 - リスト内の Button には固有の `key` を付ける
 

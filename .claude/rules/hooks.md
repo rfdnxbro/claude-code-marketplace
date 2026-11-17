@@ -273,7 +273,7 @@ HTTPエンドポイントにJSONをPOSTし、サーバーからのJSONレスポ�
 | `type` | string | ✓ | `"http"` を指定 |
 | `url` | string | ✓ | リクエスト送信先URL |
 | `method` | string | | HTTPメソッド（省略時: `POST`） |
-| `headers` | object | | リクエストヘッダー |
+| `headers` | object | | リクエストヘッダー。`Content-Length` と `Transfer-Encoding` は無視され、リクエスト長は本文から決まる |
 | `allowedEnvVars` | array | ✓* | ヘッダー値で展開を許可する環境変数名のリスト（*ヘッダーで環境変数を使用する場合は必須） |
 | `timeout` | number | | タイムアウト（秒単位、省略時: 600秒） |
 
@@ -294,6 +294,13 @@ HTTPエンドポイントにJSONをPOSTし、サーバーからのJSONレスポ�
 ```
 
 `allowedEnvVars` に含まれていない環境変数は展開されず、リテラル文字列として扱われます。
+
+managed policy settings で定義したフックを含め、すべてのソースのフックに HTTP フックの許可リストが適用される:
+
+- `allowedHttpHookUrls`: いずれかの設定レベルで定義されていると、マージ後の許可リストに URL が一致する HTTP フックだけが実行される
+- `httpHookAllowedEnvVars`: 定義されていると、このリストにある環境変数だけがフックのヘッダーに展開される
+
+> 出典: 公式ドキュメント [Hooks reference](https://code.claude.com/docs/en/hooks.md) の HTTP hook allowlists の記述
 
 #### HTTPフックのJSONレスポンス処理
 

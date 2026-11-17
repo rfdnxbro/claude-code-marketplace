@@ -452,6 +452,8 @@ MCPツール自身が `_meta['anthropic/alwaysLoad']` を `false` に設定し�
 
 `plugin.json` の `mcpServers` には、`.mcpb`（または `.dxt`）バンドルのパス（`"./bundle.mcpb"`）や https URL も指定できる（→ [plugin-manifest.md](plugin-manifest.md)）。バンドルのマニフェストが `user_config` ブロックで必須の設定を宣言していて、その値が未保存の場合、そのサーバーは起動しない。`/plugin` の Errors タブ・インストール時のメッセージ・`claude plugin install` がその旨を表示し、Configure へ誘導する。
 
+プラグインをアンインストールすると、そのプラグインの MCP バンドル（`.mcpb`、`.dxt`）から展開されたファイルも削除される。他のプラグインが同じバンドルを使っている場合は削除されない。
+
 ユーザーは次のどちらかで値を設定する:
 
 - `/plugin` の Installed タブでプラグインを選び、Configure を選ぶ
