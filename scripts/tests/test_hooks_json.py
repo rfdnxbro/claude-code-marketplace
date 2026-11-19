@@ -336,6 +336,29 @@ class TestValidateHooksJson:
         assert result.has_errors()
         assert any("once" in e for e in result.errors)
 
+    @staticmethod
+    def _on_failure_content(hook: dict) -> str:
+        return json.dumps({"hooks": {"PreToolUse": [{"matcher": "Bash", "hooks": [hook]}]}})
+
+    def test_on_failure_valid_values(self):
+        """onFailureが continue/block のとき、各タイプで有効"""
+        hooks = [
+            {"type": "command", "command": "echo", "onFailure": "block"},
+            {"type": "command", "command": "echo", "onFailure": "continue"},
+            {"type": "http", "url": "https://example.com", "onFailure": "block"},
+            {"type": "mcp_tool", "server": "s", "tool": "t", "onFailure": "block"},
+        ]
+        for hook in hooks:
+            result = validate_hooks_json(Path("hooks.json"), self._on_failure_content(hook))
+            assert not result.has_errors(), hook
+
+    def test_on_failure_invalid_value(self):
+        """onFailureが許可されない値の場合エラー"""
+        for value in ("deny", True, None):
+            hook = {"type": "mcp_tool", "server": "s", "tool": "t", "onFailure": value}
+            result = validate_hooks_json(Path("hooks.json"), self._on_failure_content(hook))
+            assert any("onFailure" in e for e in result.errors), value
+
     def test_valid_directory_added_hook(self):
         """DirectoryAddedフックが有効であることをテスト"""
         content = json.dumps(

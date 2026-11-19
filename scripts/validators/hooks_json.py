@@ -65,6 +65,9 @@ DISALLOWED_HOOK_TYPES_BY_EVENT = {
     "PermissionRequest": ({"agent"}, "command/httpタイプ"),
 }
 
+# onFailure に指定できる値
+VALID_ON_FAILURE_VALUES = ("continue", "block")
+
 # Mod の hooks モジュールとして使える拡張子
 HOOKS_MODULE_EXTENSIONS = {".js", ".mjs", ".cjs", ".jsx", ".ts", ".mts", ".cts", ".tsx"}
 
@@ -343,6 +346,13 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
                         result.add_error(
                             f"{file_path.name}: mcp_toolタイプにtoolフィールドがありません"
                         )
+
+                # onFailureの確認（"continue" または "block"）
+                if "onFailure" in h and h["onFailure"] not in VALID_ON_FAILURE_VALUES:
+                    values_str = "/".join(VALID_ON_FAILURE_VALUES)
+                    result.add_error(
+                        f"{file_path.name}: onFailureは{values_str}のいずれかが必要です"
+                    )
 
                 # onceの確認（boolean型）
                 once = h.get("once")

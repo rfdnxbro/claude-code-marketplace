@@ -141,6 +141,45 @@ TODO: 要確認 — 上限を超えた場合の挙動（超過分が無視され
 |-----------|---|------|
 | `statusMessage` | string | フック実行中にスピナーに表示するカスタムメッセージ |
 
+### onFailure フィールド
+
+`command`・`http`・`mcp_tool` タイプのフックで、フックが失敗したときにトリガーとなったアクションを続行するかを指定する（任意）。
+
+| 値 | 説明 |
+|---|------|
+| `"continue"` | フックが失敗してもアクションを続行する |
+| `"block"` | フックが失敗した場合にアクションをブロックする |
+
+未指定の場合、多くのイベントではフックが失敗またはタイムアウトしてもアクションは続行される。
+
+```json
+{
+  "type": "command",
+  "command": "node",
+  "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/check-command.js"],
+  "onFailure": "block"
+}
+```
+
+`"block"` 指定時、次のいずれも失敗として扱われる:
+
+- `command` フックが起動できない（スクリプトや実行ファイルが存在しないなど）
+- `command` フックの終了コードが 0 でも 2 でもない（許可を示すJSONを出力していても失敗になる。JSONで判断を返す場合は終了コード 0 にする）
+- `http` フックの接続失敗、または 2xx 以外のレスポンスステータス
+- フックが `timeout` に達した
+- JSON出力がパースできない、またはスキーマ検証に失敗した（`command` フックのプレーンテキストの標準出力は失敗ではない）
+
+失敗時の動作は、そのイベントでの終了コード 2 と同じ（`PermissionRequest` では要求を拒否する）。例えば `PreToolUse` ではツール呼び出しがブロックされ、`UserPromptSubmit` ではプロンプトがブロックされる。
+
+次のフックでは `onFailure` は効果を持たない:
+
+- `Stop`・`SubagentStop`・`TaskCompleted`・`TeammateIdle` フック
+- `async` または `asyncRewake` を設定したバックグラウンドの `command` フック
+
+出典: 公式 hooks の「Block the action when a hook fails」。`mcp_tool` フックへの適用は CHANGELOG の記述による。
+
+TODO: 要確認 — `mcp_tool` フックでの「失敗」の具体的な条件は hooks.md（公式）のフィールド表・該当節に記載なし。`prompt`・`agent` タイプでの `onFailure` の扱いも同ページに記載なし。
+
 ### command（Bashコマンド）
 
 Bashコマンドを実行:
