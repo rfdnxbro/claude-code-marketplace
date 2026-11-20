@@ -307,6 +307,14 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
                                 f'"${{{name}}}" のようにダブルクォートで囲んでください'
                             )
 
+                # onFailureフィールドの確認（command/http/mcp_toolタイプ）
+                if hook_type in ("command", "http", "mcp_tool") and "onFailure" in h:
+                    if h["onFailure"] not in ("continue", "block"):
+                        result.add_error(
+                            f"{file_path.name}: {hook_type}タイプのonFailureは"
+                            '"continue"または"block"が必要です'
+                        )
+
                 if hook_type == "prompt" and not h.get("prompt"):
                     result.add_error(
                         f"{file_path.name}: promptタイプにpromptフィールドがありません"

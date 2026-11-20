@@ -5,6 +5,8 @@ hooks_json.py のテスト
 import json
 from pathlib import Path
 
+import pytest
+
 from scripts.validators.hooks_json import validate_hooks_json
 
 
@@ -1124,6 +1126,33 @@ class TestValidateHooksJson:
         result = validate_hooks_json(Path("hooks.json"), content)
         assert result.has_errors()
         assert any("continueOnBlock" in e for e in result.errors)
+
+    @pytest.mark.parametrize("hook_type", ["command", "http", "mcp_tool"])
+    @pytest.mark.parametrize("value", ["block", "continue"])
+    def test_on_failure_valid(self, hook_type, value):
+        """onFailureに"block"/"continue"を指定できることをテスト"""
+        hook = {
+            "command": {"type": "command", "command": "echo test"},
+            "http": {"type": "http", "url": "https://example.com/hook"},
+            "mcp_tool": {"type": "mcp_tool", "server": "s", "tool": "t"},
+        }[hook_type]
+        hook["onFailure"] = value
+        content = json.dumps({"hooks": {"PreToolUse": [{"matcher": "Bash", "hooks": [hook]}]}})
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+
+    @pytest.mark.parametrize("hook_type", ["command", "http", "mcp_tool"])
+    def test_on_failure_invalid(self, hook_type):
+        """onFailureが不正な値の場合エラーになることをテスト"""
+        hook = {
+            "command": {"type": "command", "command": "echo test"},
+            "http": {"type": "http", "url": "https://example.com/hook"},
+            "mcp_tool": {"type": "mcp_tool", "server": "s", "tool": "t"},
+        }[hook_type]
+        hook["onFailure"] = "abort"
+        content = json.dumps({"hooks": {"PreToolUse": [{"matcher": "Bash", "hooks": [hook]}]}})
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert any("onFailure" in e for e in result.errors)
 
     def test_session_start_rejects_prompt_type(self):
         """SessionStartフックでpromptタイプがエラーになることをテスト（v2.1.142）"""
