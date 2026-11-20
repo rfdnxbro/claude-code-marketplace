@@ -334,6 +334,34 @@ HTTPフックのレスポンスでJSONを返さない場合（200以外のステ
 - **`SessionStart` および `Setup` イベントでは使用不可**: HTTPフックはこれらのイベントに対応していません
 - **サンドボックスモード時のプロキシ経由ルーティング**: サンドボックスモードが有効な場合、HTTPフックはサンドボックスネットワークプロキシ経由でルーティングされ、ドメイン許可リストが適用されます
 
+## onFailure フィールド
+
+フックが失敗（起動失敗・タイムアウトなど）したときに、そのフックを起動したアクションを続行するかを指定する。`command` / `http` / `mcp_tool` フックで使用できる（`prompt` / `agent` フックについては公式ドキュメントに記載なし）。
+
+| 値 | 説明 |
+|---|------|
+| `"continue"` | フックが失敗してもアクションを続行する |
+| `"block"` | フックが失敗したらアクションをブロックする |
+
+未設定の場合、ほとんどのイベントでは、フックが失敗またはタイムアウトしてもアクションは実行される。たとえばパスを間違えたポリシーフックやクラッシュしたスクリプトは、すべてを通過させてしまう。
+
+```json
+{
+  "type": "command",
+  "command": "node",
+  "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/check-command.js"],
+  "onFailure": "block"
+}
+```
+
+- `"block"` を設定すると、失敗はそのイベントでの exit code 2 と同じ動作になる。ただし `PermissionRequest` では、リクエストを拒否する
+- `PreToolUse` でタイムアウトした `command` / `http` / `mcp_tool` フックは、`onFailure: "block"` を設定しない限りツール呼び出しをブロックせず、通常のパーミッションフローに進む
+- 次のフックには効果がない:
+  - `Stop` / `SubagentStop` / `TaskCompleted` / `TeammateIdle` フック（これらのイベントでは exit code 2 が Claude を作業に戻すため）
+  - バックグラウンドで実行される command フック（`async` または `asyncRewake` を設定したもの）
+
+> 出典: 公式ドキュメント hooks.md の「Block the action when a hook fails」節
+
 ## フックタイプ制限
 
 `SessionStart`・`Setup`・`SubagentStart` イベントでは、`prompt` 型および `agent` 型のフックは使用できません。有効なフックタイプは下表の通りイベントごとに異なります（`SessionStart`/`Setup` は `command`/`mcp_tool`、`SubagentStart` は `command`/`http`/`mcp_tool`）。誤った設定時は「use a command-type hook instead」というエラーが表示されます。
@@ -798,10 +826,37 @@ EOF
 | フィールド | 説明 |
 |-----------|------|
 | `last_assistant_message` | 最後のアシスタント応答テキスト |
-| `background_tasks` | バックグラウンドタスクの情報。TODO: 要確認 - 正確な型・スキーマは未調査 |
-| `session_crons` | セッション内クロンの情報。TODO: 要確認 - 正確な型・スキーマは未調査 |
+| `background_tasks` | 実行中のバックグラウンドタスクの配列（下記参照）。親セッションが対象で、SubagentStopでもサブエージェント単位ではない |
+| `session_crons` | セッション単位のスケジュール済みウェイクアップ（`CronCreate` / `ScheduleWakeup` / `/loop` 由来）の配列（下記参照） |
 
 これにより、フックスクリプトがトランスクリプトファイルをパースすることなく、最後のアシスタント応答にアクセスできます。
+
+`background_tasks` と `session_crons` は、「セッションが完了した」状態と「バックグラウンド作業による再開を待って一時停止している」状態をフックが区別するための配列。タスクレジストリに到達できるときに存在し、実行中・予約済みのものがなければ空になる。
+
+`background_tasks` の各要素は実行中のタスク1件を表す:
+
+| フィールド | 説明 |
+|-----------|------|
+| `id` | タスク識別子 |
+| `type` | タスク種別のラベル。`shell` / `subagent` / `monitor` / `workflow` / `teammate` / `cloud session` / `MCP task` など。Monitorのスクリプトは `monitor` として列挙される。未知の種別は元の識別子がそのまま入る |
+| `status` | タスクの現在の状態 |
+| `description` | 自由記述の説明。1000文字まで（超過分は文字列内に `… [+N chars]` マーカーで示される） |
+| `command` | シェルコマンドライン（1000文字まで）。`shell` タスクと、コマンドを実行する `monitor` タスクのみ |
+| `agent_type` | サブエージェントのタイプ名。`subagent` タスクのみ |
+| `server` | MCPサーバー名。`monitor` と `MCP task` タスクのみ |
+| `tool` | MCPツール名。`monitor` と `MCP task` タスクのみ |
+| `name` | ワークフロー名。`workflow` タスクのみ |
+
+`session_crons` の各要素はセッション単位のスケジュール済みウェイクアップ1件を表す:
+
+| フィールド | 説明 |
+|-----------|------|
+| `id` | クロンタスク識別子 |
+| `schedule` | cron式（例: `0 9 * * 1-5`） |
+| `recurring` | 単発ウェイクアップなら `false`、一致するたびに再実行されるなら `true` |
+| `prompt` | クロン発火時に送信されるプロンプト。1000文字まで（`… [+N chars]` マーカー付き） |
+
+> 出典: 公式ドキュメント hooks.md の「Stop input」節
 
 **使用例:**
 
