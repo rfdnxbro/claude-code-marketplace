@@ -118,6 +118,7 @@ Claude Code は hooks モジュールのソースを実行前に静的解析し�
 |-------|-------------------|------|
 | `Pane` | Terminal / Desktop / VS Code | `$.ui.open({ id, title })` で開くペイン。`requestId` が id。ターミナルは全画面かつ十分な幅でトランスクリプト横に dock、それ以外は入力欄の上に inline |
 | `AbovePrompt` | Terminal / Desktop | 入力欄のすぐ上の帯。インスタンスは1つで全 Mod 共有。`e.props.hasSurvey` が true の間はアンケートに譲る |
+| `AbovePromptList` | Terminal / Desktop | `AbovePrompt` の行を積んだスタック。`rows` は各 Mod の `{ plugin, tree }` のリストで、`AbovePrompt` の props も受け取る。VS Code では描画されない |
 | `UserMessage` / `AssistantMessage` / `ToolUse` / `ToolResult` / `ToolGroup` / `AskUserQuestion` / `Spinner` | Terminal / Desktop / VS Code | 既存 UI の差し替え |
 | `CommandOutput` / `SessionMode` / `PromptHint` | Terminal / Desktop | コマンド出力行、モード表示、入力欄下のヒント行 |
 | `ToolProgress` / `TurnDuration` / `InfoNotice` | Terminal のみ | |
