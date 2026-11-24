@@ -232,6 +232,12 @@ my-plugin/
 - `version` を省略した場合、依存先マーケットプレイスが提供する最新バージョンを追跡します
 - `marketplace` を指定してもルートマーケットプレイスの許可リストに含まれない場合、`cross-marketplace` エラーでインストールが失敗します
 
+## オプション依存関係（optionalDependencies）
+
+`plugin.json` の `optionalDependencies` には、このプラグインと一緒にインストールされ、単独で無効化・アンインストールできるプラグインを列挙します。
+
+TODO: 要確認 — 値の形式（`dependencies` と同じ文字列／オブジェクト形式か）、`dependencies` との挙動の細かな違い、依存先が無い場合の挙動は、plugins/dependencies.md・plugins/manifest-reference.md・plugins/marketplace-reference.md・plugins/components.md・plugins/install.md に記載がなく未確認。このため、バリデーターは `optionalDependencies` の型検証を追加していない。
+
 ## パーミッション設定
 
 プラグインでは、ツールの実行権限を `allow` と `ask` フィールドで制御できます。これらはスキル、エージェント、スラッシュコマンドのfrontmatterで指定します。
