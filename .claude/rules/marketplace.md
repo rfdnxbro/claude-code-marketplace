@@ -672,6 +672,32 @@ export CLAUDE_CODE_PLUGIN_GIT_TIMEOUT_MS=300000
 
 上位tierで同名エントリを再定義すると、下位tierで設定した`headers`は引き継がれず、上位tierのエントリで指定したフィールドのみが有効になります。カスタム`headers`を維持したい場合は、上位tierのエントリ内で`headers`を含めて完全な形でエントリを再定義する必要があります。
 
+## extraKnownMarketplacesのautoUpdate
+
+`extraKnownMarketplaces` のエントリには、そのマーケットプレイスをバックグラウンドで自動更新するかを指定する `autoUpdate`（`true` / `false`）を含められます。
+
+- マーケットプレイスが自動更新されるかは、次のうち最初に設定されているもので決まります
+  1. settingsファイルの `extraKnownMarketplaces` エントリの `autoUpdate`
+  2. `known_marketplaces.json` のエントリの `autoUpdate`（`/plugin` の **Marketplaces** にある自動更新トグルが書き込む）
+  3. 既定値（Anthropic公式マーケットプレイスは有効、`knowledge-work-plugins` と `first-party-plugins` は無効、claude.aiから追加したマーケットプレイスは有効、それ以外は無効）
+- managed settings のエントリが `autoUpdate` を指定している場合、ユーザーの `/plugin` トグル操作は `Auto-update for '<name>' is set by` で始まるエラーで拒否されます。未指定の場合はユーザーのトグルが保存されます
+- 特定のエントリだけ自動更新を止めるには `"autoUpdate": false` を指定します
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "my-marketplace": {
+      "source": { "source": "github", "repo": "org/repo" },
+      "autoUpdate": false
+    }
+  }
+}
+```
+
+> 出典: [Plugin loading reference](https://code.claude.com/docs/en/plugins/loading.md) 「Which marketplaces and plugins auto-update」、[Manage Claude Code plugins for your organization](https://code.claude.com/docs/en/plugins/org.md) 「Turn auto-update on or off per marketplace」
+
+TODO: 要確認 — managed settingsの `extraKnownMarketplaces` の既定値を自動更新有効に変える予定がCHANGELOGにあるが、plugins/loading.md と plugins/org.md には記載がなく、現時点の既定値は上記の公式記述のみを根拠にしている。
+
 ## urlマーケットプレイスのheadersHelper
 
 `extraKnownMarketplaces` や `claude plugin marketplace add` でマーケットプレイス自体を `url` ソースとして登録する場合も、`headersHelper` を設定してカタログ（`marketplace.json`本体）取得時のHTTPヘッダーを動的生成できます。

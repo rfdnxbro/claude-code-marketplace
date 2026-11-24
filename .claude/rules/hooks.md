@@ -1687,7 +1687,11 @@ MCPエリシテーションのレスポンス結果を受け取るフック。
 ### PermissionDenied
 
 autoモード（自動モード）のクラシファイアーがツール実行を拒否した後に発火するフック。
-フックから `{retry: true}` を返すと、モデルにリトライを促すことができます。
+フックから `hookSpecificOutput.retry: true` を返すと、拒否されたツール呼び出しをモデルが再試行してよいことを伝えられます。Claude Code自身は拒否を取り消しません。
+
+`retry: true` を返すと、会話に「そのツール呼び出しを再試行してよい」旨のメッセージが追加されます。フックがJSONを返さない場合や `retry: false` の場合は拒否が維持され、モデルには元の拒否メッセージが渡されます。クラシファイアーが判定を出せなかった拒否（応答が解析できなかった場合など）では `retry: true` は無視されます。
+
+> 出典: [Hooks reference](https://code.claude.com/docs/en/hooks) 「PermissionDenied decision control」
 
 **使用例:**
 
@@ -1713,7 +1717,7 @@ autoモード（自動モード）のクラシファイアーがツール実行�
 
 | フィールド | 型 | 説明 |
 |-----------|---|------|
-| `retry` | boolean | `retry: true` を返すとモデルにリトライを促す |
+| `retry` | boolean | `hookSpecificOutput.retry: true` を返すと、拒否されたツール呼び出しを再試行してよいとモデルに伝える（クラシファイアーの判定がない拒否では無視される） |
 
 **ユースケース:**
 
