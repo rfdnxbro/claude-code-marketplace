@@ -128,6 +128,7 @@ TODO: 要確認 — 上限を超えた場合の挙動（超過分が無視され
 | `MessageDisplay` | アシスタントのメッセージテキストが表示される際（変換・非表示に利用可能） | × |
 | `PreModelSwitch` | モデル切り替え前（ブロック・確認が可能）。TODO: 要確認 - マッチャー対応の可否は未調査 | |
 | `PostModelSwitch` | モデル切り替え後（注釈付与が可能）。TODO: 要確認 - マッチャー対応の可否は未調査 | |
+| `PreSkillShellCommand` | スキル／コマンドのインラインシェルコマンド（`` !`command` ``）の実行前（拒否可能） | ✓ |
 
 > **フックソース表示**: パーミッションプロンプトでフックの確認が必要な場合、フックのソース（`settings` / `plugin` / `skill`）が表示されます。
 
@@ -1772,6 +1773,57 @@ autoモード（自動モード）のクラシファイアーがツール実行�
 - プロンプト送信のログ記録・監査
 - プロンプト内容に基づくセッションタイトルの自動設定
 - プロンプト送信時の前処理・バリデーション
+
+### PreSkillShellCommand
+
+スキル／コマンドのロード時に実行されるインラインシェルコマンドの実行前に発火するフック。ブロック可能で、`PreToolUse` フックはインラインコマンドに対して発火しないため、ログ記録や拒否にはこのイベントを使う。
+
+- **マッチャー**: コマンドを実行するツール名（`Bash`、`PowerShell`）にマッチする
+- **`if` フィールド**: `PreToolUse` などと同様に評価される
+: コマンドをブロックし、スキルは当該コマンドの出力なしでロードされる
+
+**使用例:**
+
+```json
+{
+  "hooks": {
+    "PreSkillShellCommand": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/check-skill-shell.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**入力フィールド**（共通入力フィールドに加えて）:
+
+| フィールド | 説明 |
+|-----------|------|
+| `tool_name` | コマンドを実行するツール（`Bash` または `PowerShell`） |
+| `tool_input.command` | 実行されるシェルコマンド |
+| `tool_use_id` | このコマンドのID（トランスクリプト上のツール呼び出しには対応しない） |
+| `command_name` | ロード中のスキル／コマンド名（例: `pr-summary`、プラグインのスキルは `my-plugin:deploy`） |
+| `command_source` | 取得元（例: `userSettings`、`projectSettings`、`policySettings`、`plugin`、`builtin`） |
+| `invoked_by` | `"user"`（ユーザーが名前を入力、またはAgent SDKアプリが送信）、`"claude"`（Claudeまたはセッションスコープのスケジュールタスクが呼び出し）、`"other"`（スキルをプリロードするサブエージェントなど） |
+
+**決定制御**: このフックはコマンドをブロックできるが、承認や変更はできない。JSON出力は `PreToolUse` の形式を使う（`hookEventName` は `PreToolUse` のままで両イベント共用でき、このイベント専用なら `PreSkillShellCommand` も指定可能）。
+
+| フック結果 | 動作 |
+|-----------|------|
+| exit 0（決定なし）または `permissionDecision: "allow"` | 他のフックがブロックしない限りコマンドが実行される |
+| exit 2、`permissionDecision: "deny"`、またはトップレベルの `decision: "block"` | コマンドは実行されない。スキルはロードされ、Claudeはコマンド出力の代わりに `[not run: blocked by hook: <reason>]` を読む |
+| `permissionDecision: "ask"` / `"defer"`、または `updatedInput` を含む | `"deny"` と同様にブロックされる |
+| `continue: false` | スキルの呼び出しが `Operation stopped by hook: <stopReason>` で失敗し、インラインコマンドは1つも実行されない |
+| フックの失敗（JSON出力なしの exit 1 など）またはタイムアウト | 失敗でアクションをブロックする設定のフックでない限りコマンドは実行される |
+
+ブロック理由はexit 2時にstderrへ書くか、JSONの `permissionDecisionReason`（トップレベル `decision` の場合は `reason`）に入れる。
 
 ### PreModelSwitch / PostModelSwitch
 
