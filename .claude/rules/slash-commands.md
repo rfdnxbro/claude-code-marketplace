@@ -343,6 +343,10 @@ CLAUDE.md が Claude に自動注入される際、`<!-- ... -->` 形式の HTML
 
 Claude Codeには組み込みのバンドルコマンド（`/clear`, `/model`, `/memory`, `/code-review`, `/batch` 等）が存在します。バンドルコマンドとユーザー定義コマンドで名前が衝突した場合の動作は保証されないため、これらと同名のコマンドをプラグインで定義することは避けてください。
 
+## `computer-use` 予約名に関する注意
+
+computer use が有効なmacOSでは、`computer-use` という名前のコマンドはロードされず、起動時に名前の変更を促す通知が表示されます。詳細は[skill-authoring.md](skill-authoring.md#スキルの自動検出)を参照してください。
+
 ## `anthropic-skills` 名前空間に関する注意
 
 名前空間が `anthropic-skills` になるコマンドファイル・workflowコマンドは読み込まれません。詳細は[skill-authoring.md](skill-authoring.md#スキルの自動検出)を参照してください。

@@ -522,6 +522,9 @@ Claude Codeは`.claude/skills`ディレクトリ内のスキルを自動的に�
 - **バンドルスキルとの名前衝突時の動作**: `/checkup`、`/review` 等の組み込みバンドルスキルのエイリアスと同名のユーザー/プロジェクトスキルを定義した場合、ユーザー/プロジェクトスキル側が優先され、バンドルスキルをシャドーイングする。この優先順位は `-p` モードやプラグイン/MCP読み込み時も含めて一貫して適用される
 - **`anthropic-skills` 名前空間は予約済み**: 名前空間が `anthropic-skills` になるスキルフォルダ・コマンドファイル・workflowコマンドは読み込まれない。`anthropic-skills` という名前のプラグイン自体はロードされるが、claude.ai から同期されたスキルと名前が同じ場合は同期スキルが優先される。プラグイン名やスキルのディレクトリ名に `anthropic-skills` を使わないこと
 
+- **MCPサーバー提供のスキル（ベータ）**: MCPサーバーが提供するスキルの名前は `<server>:<skill>` 形式で、`/` メニューにもこの名前で表示される（例: `docs` サーバーの `pdf` スキルは `/docs:pdf`）。claude.ai コネクターやプラグインのサーバーには接頭辞が付く（例: `claude_ai_Docs:pdf`、`plugin_my-plugin_docs:pdf`）。`<server>` 内では `-` 以外の空白・記号が `_` に置き換わる。詳細は[mcp-servers.md](mcp-servers.md)を参照
+- **`computer-use` は予約済みのスキル名**: computer use が有効なmacOSでは、`computer-use` という名前の独自スキル・コマンドはロードされず、起動時に名前の変更を促す通知が表示される。スキル・コマンドの名前に `computer-use` を使わないこと
+
 ### パーミッションルールでのスキル指定（`Skill(name)`）
 
 `allowed-tools`/`disallowed-tools`等のパーミッションルールで、`Skill(name)`形式を使うと特定のスキルを対象にallow/denyを指定できます（構文の詳細は[slash-commands.md](slash-commands.md)の`Tool(param:value)`構文を参照）。

@@ -79,6 +79,7 @@ class TestValidateHooksJson:
             "MessageDisplay",
             "PreModelSwitch",
             "PostModelSwitch",
+            "PreSkillShellCommand",
         ]
         for event in valid_events:
             content = json.dumps(
@@ -904,6 +905,41 @@ class TestValidateHooksJson:
         result = validate_hooks_json(Path("hooks.json"), content)
         assert not result.has_errors()
         assert any("matcher" in w for w in result.warnings)
+
+    def test_pre_skill_shell_command_no_matcher_warning(self):
+        """PreSkillShellCommandフックはmatcher対応なので未設定時は警告が出る"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PreSkillShellCommand": [
+                        {"hooks": [{"type": "command", "command": "echo check"}]}
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+        assert any("matcher" in w for w in result.warnings)
+
+    def test_pre_skill_shell_command_with_matcher_and_if(self):
+        """PreSkillShellCommandフックにmatcherとifを指定しても有効"""
+        content = json.dumps(
+            {
+                "hooks": {
+                    "PreSkillShellCommand": [
+                        {
+                            "matcher": "Bash",
+                            "hooks": [
+                                {"type": "command", "command": "echo check", "if": "Bash(rm *)"}
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        result = validate_hooks_json(Path("hooks.json"), content)
+        assert not result.has_errors()
+        assert not result.warnings
 
     def test_valid_mcp_tool_type(self):
         """mcp_toolタイプのフックが有効であることをテスト（v2.1.118以降）"""

@@ -173,6 +173,7 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
         "MessageDisplay",
         "PreModelSwitch",
         "PostModelSwitch",
+        "PreSkillShellCommand",
     ]
 
     for event_name, event_hooks in hooks.items():
@@ -198,6 +199,7 @@ def validate_hooks_json(file_path: Path, content: str) -> ValidationResult:
                 "PostToolUseFailure",
                 "PermissionRequest",
                 "PermissionDenied",
+                "PreSkillShellCommand",
                 "Notification",
                 "SubagentStart",
                 "SubagentStop",
